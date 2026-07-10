@@ -282,6 +282,8 @@ def aitp_v5_codex_expand(
     style: str = "jhep",
     objective_text: str = "",
     user_goal: str = "",
+    record_refs: list[str] | None = None,
+    offset: int = 0,
 ) -> dict:
     """Expand one Codex context family on demand."""
 
@@ -295,6 +297,8 @@ def aitp_v5_codex_expand(
         style=style,
         objective_text=objective_text,
         user_goal=user_goal,
+        record_refs=record_refs,
+        offset=offset,
     )
 
 

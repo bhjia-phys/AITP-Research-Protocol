@@ -19,6 +19,34 @@ from brain.v5.record_repository import record_family_paths
 
 _LATIN_TOKEN_RE = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.+-]*")
 _CJK_TOKEN_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]+")
+_CONTEXT_SUMMARY_FIELDS = (
+    "active_uncertainty",
+    "artifact_type",
+    "claim_status",
+    "confidence_state",
+    "created_at",
+    "event_type",
+    "evidence_status",
+    "failure_modes",
+    "lifecycle_status",
+    "maturity_level",
+    "next_action",
+    "objective",
+    "outputs",
+    "phase",
+    "pivot_reason",
+    "research_question",
+    "risk",
+    "scope",
+    "statement",
+    "summary",
+    "superseded_by",
+    "timestamp",
+    "tool_family",
+    "tool_name",
+    "updated_at",
+    "validation_status",
+)
 
 
 class IndexIntegrityError(RuntimeError):
@@ -211,6 +239,14 @@ def load_query_index(ws: WorkspacePaths) -> LoadedQueryIndex:
     )
 
 
+def load_query_manifest(ws: WorkspacePaths) -> IndexManifest:
+    """Load only the small manifest for exact-read freshness and coverage checks."""
+
+    manifest_data = _load_json(ws.root / "indexes" / "manifest.json")
+    manifest_data.setdefault("malformed_family_counts", {})
+    return IndexManifest(**manifest_data)
+
+
 def current_canonical_watermark(ws: WorkspacePaths) -> str:
     """Compute the current canonical content watermark without writing an index."""
 
@@ -262,6 +298,11 @@ def _document_row(ws, spec, frontmatter, body, envelope, path):
         "record_content_hash": envelope.content_hash,
         "typed_materialization_status": _typed_materialization_status(frontmatter, spec),
         "relative_path": _relative_path(ws, path),
+        "summary_fields": {
+            key: _json_safe(frontmatter[key])
+            for key in _CONTEXT_SUMMARY_FIELDS
+            if key in frontmatter and frontmatter[key] not in (None, "", [], {})
+        },
         "search_text": f"{searchable}\n{body}".strip(),
     }
 

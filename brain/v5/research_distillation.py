@@ -6,8 +6,10 @@ import json
 import re
 from typing import Any
 
+from brain.v5.active_claim_focus import active_claim_focus_families
 from brain.v5.brief import build_execution_brief
 from brain.v5.claim_relation_map import build_claim_relation_map
+from brain.v5.context_compiler import load_indexed_topic_snapshot
 from brain.v5.models import ClaimRecord
 from brain.v5.objective_graph import build_objective_graph
 from brain.v5.output_stability import load_final_output_profile
@@ -39,10 +41,30 @@ def build_research_distillation_candidates(
     """
 
     recovered = recover_session_binding_for_read(ws, session_id)
-    session = recovered.session
-    objective_graph = build_objective_graph(ws, session_id)
-    execution_brief = build_execution_brief(ws, session_id)
-    relation_map = execution_brief.get("claim_relation_map") or build_claim_relation_map(ws, session_id)
+    snapshot = load_indexed_topic_snapshot(
+        ws,
+        recovered.session.session_id,
+        families=tuple(
+            dict.fromkeys(
+                (
+                    "artifacts",
+                    "claim_statuses",
+                    "claims",
+                    "evidence",
+                    "legacy_semantic_reviews",
+                    "object_relations",
+                    "proof_obligations",
+                    "research_runs",
+                    "routes",
+                    "tool_runs",
+                    *active_claim_focus_families(),
+                )
+            )
+        ),
+    )
+    session = snapshot.session
+    objective_graph = build_objective_graph(ws, session_id, indexed_snapshot=snapshot)
+    relation_map = build_claim_relation_map(ws, session_id, indexed_snapshot=snapshot)
     claims_by_id = {
         claim["claim_id"]: claim
         for claim in objective_graph.get("claims", [])
@@ -99,6 +121,10 @@ def build_research_distillation_candidates(
         "next_valid_actions": _next_valid_actions(candidates, relation_map),
         "source_records": source_records,
         "read_errors": read_errors,
+        "retrieval_coverage": snapshot.coverage,
+        "index_status": snapshot.index_status,
+        "source_index_generation": snapshot.index_generation,
+        "retrieval_truncated": snapshot.truncated,
         "distillation_boundary": {
             "does_not_create_skills": True,
             "does_not_create_l2_memory": True,

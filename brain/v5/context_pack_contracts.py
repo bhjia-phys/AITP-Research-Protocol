@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from brain.v5.context_compiler import estimate_context_tokens
 from brain.v5.contracts import (
     ContractError,
     ContractResult,
@@ -56,6 +57,11 @@ def validate_aitp_context_pack(payload: dict[str, Any], *, path: str = "aitp_con
     _require_mapping(payload.get("injection_policy"), f"{path}.injection_policy", result)
     _require_mapping(payload.get("expand"), f"{path}.expand", result)
     _require_mapping(payload.get("source_records"), f"{path}.source_records", result)
+    _require_mapping(payload.get("retrieval_coverage"), f"{path}.retrieval_coverage", result)
+    _require_mapping(payload.get("context_budget"), f"{path}.context_budget", result)
+    _require_list(payload.get("record_refs"), f"{path}.record_refs", result)
+    _validate_compiled_budget(payload, path, result)
+    _validate_retrieval_coverage(payload, path, result)
     _validate_distillation_status(payload.get("distillation_status"), f"{path}.distillation_status", result)
     _validate_task_profile(payload.get("task_profile"), f"{path}.task_profile", result)
     _validate_profile_template_hint(payload.get("profile_template_hint"), f"{path}.profile_template_hint", result)
@@ -79,6 +85,63 @@ def validate_aitp_context_pack(payload: dict[str, Any], *, path: str = "aitp_con
             result,
         )
     return result
+
+
+def _validate_compiled_budget(payload: dict[str, Any], path: str, result: ContractResult) -> None:
+    markdown = payload.get("markdown")
+    byte_count = payload.get("byte_count")
+    token_count = payload.get("estimated_tokens")
+    budget = payload.get("context_budget")
+    if not isinstance(markdown, str):
+        result.add(f"{path}.markdown", "must be a string")
+        return
+    actual_bytes = len(markdown.encode("utf-8"))
+    actual_tokens = estimate_context_tokens(markdown)
+    if byte_count != actual_bytes:
+        result.add(f"{path}.byte_count", "must match markdown UTF-8 bytes")
+    if token_count != actual_tokens:
+        result.add(f"{path}.estimated_tokens", "must match deterministic token estimate")
+    if not isinstance(budget, dict):
+        return
+    max_bytes = budget.get("max_bytes")
+    max_tokens = budget.get("max_tokens")
+    if not isinstance(max_bytes, int) or isinstance(max_bytes, bool) or max_bytes < 1:
+        result.add(f"{path}.context_budget.max_bytes", "must be a positive integer")
+    elif actual_bytes > max_bytes:
+        result.add(f"{path}.byte_count", "must not exceed context_budget.max_bytes")
+    if not isinstance(max_tokens, int) or isinstance(max_tokens, bool) or max_tokens < 1:
+        result.add(f"{path}.context_budget.max_tokens", "must be a positive integer")
+    elif actual_tokens > max_tokens:
+        result.add(f"{path}.estimated_tokens", "must not exceed context_budget.max_tokens")
+
+
+def _validate_retrieval_coverage(payload: dict[str, Any], path: str, result: ContractResult) -> None:
+    coverage = payload.get("retrieval_coverage")
+    if not isinstance(coverage, dict):
+        return
+    for key in (
+        "exhaustive",
+        "can_claim_no_result",
+        "checked_families",
+        "unchecked_families",
+        "malformed_count",
+        "reason",
+    ):
+        if key not in coverage:
+            result.add(f"{path}.retrieval_coverage.{key}", "is required")
+    index_status = payload.get("index_status")
+    if index_status not in {"fresh", "stale"}:
+        result.add(f"{path}.index_status", "must be fresh or stale")
+    generation = payload.get("source_index_generation")
+    if not isinstance(generation, int) or isinstance(generation, bool) or generation < 1:
+        result.add(f"{path}.source_index_generation", "must be a positive integer")
+    if index_status == "stale" and coverage.get("exhaustive"):
+        result.add(f"{path}.retrieval_coverage.exhaustive", "must be false for a stale index")
+    if (coverage.get("malformed_count") or payload.get("read_errors")) and coverage.get("can_claim_no_result"):
+        result.add(
+            f"{path}.retrieval_coverage.can_claim_no_result",
+            "must be false when reads are partial",
+        )
 
 
 def require_valid_aitp_context_pack(payload: dict[str, Any]) -> dict[str, Any]:

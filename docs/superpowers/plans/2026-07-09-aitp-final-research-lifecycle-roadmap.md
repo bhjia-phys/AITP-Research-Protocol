@@ -257,13 +257,13 @@ are green without relaxing limits.
 - Produces: `compile_research_context(ws, request: ContextRequest) -> ContextBundle`
 - Produces compact coverage header and exact expansion handles.
 
-- [ ] Stop recursive context builders from independently scanning the store.
-- [ ] Add byte/token budgets in addition to line budgets.
-- [ ] Add paginated `record_refs` expansion to the compact facade.
-- [ ] Preserve active-claim trust scope while allowing orientation-only focus
+- [x] Stop recursive context builders from independently scanning the store.
+- [x] Add byte/token budgets in addition to line budgets.
+- [x] Add paginated `record_refs` expansion to the compact facade.
+- [x] Preserve active-claim trust scope while allowing orientation-only focus
   and related-topic cards.
-- [ ] Add read-error and stale-index behavior to context contracts.
-- [ ] Meet warm/cold latency budgets on a versioned 10,000-record fixture.
+- [x] Add read-error and stale-index behavior to context contracts.
+- [x] Meet warm/cold latency budgets on a versioned 10,000-record fixture.
 
 ### Task 0.6: Replace Unbounded Keyword Injection
 

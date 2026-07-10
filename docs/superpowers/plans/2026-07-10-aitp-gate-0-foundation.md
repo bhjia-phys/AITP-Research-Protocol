@@ -694,25 +694,37 @@ git commit -m "v5: add indexed research retrieval"
 **Files:**
 - Create: `brain/v5/context_compiler.py`
 - Create: `brain/v5/context_compiler_contracts.py`
+- Create: `brain/v5/context_pack_projection.py`
+- Create: `brain/v5/indexed_topic_snapshot.py`
+- Create: `brain/v5/research_timeline_time.py`
 - Create: `tests/test_v5_context_compiler.py`
+- Create: `tests/test_v5_context_performance.py`
+- Create: `tests/fixtures/v5_context_10000_fixture.json`
 - Modify: `brain/v5/context_pack.py`
+- Modify: `brain/v5/context_pack_contracts.py`
+- Modify: `brain/v5/active_claim_focus.py`
 - Modify: `brain/v5/objective_graph.py`
 - Modify: `brain/v5/research_distillation.py`
 - Modify: `brain/v5/claim_relation_map.py`
 - Modify: `brain/v5/research_timeline.py`
 - Modify: `brain/v5/codex_facade.py`
+- Modify: `brain/v5/mcp_tools.py`
+- Modify: `brain/v5/query_index.py`
+- Modify: `brain/v5/record_repository.py`
+- Modify: `brain/v5/research_retrieval.py`
+- Modify: `brain/v5/retrieval_audit.py`
 
 **Interfaces:**
 - Produces: `ContextRequest`, `ContextBundle`,
   `compile_research_context(ws, request)`, and compact `record_refs` expansion.
 
-- [ ] **Step 1: Write a failing no-whole-store-rescan test**
+- [x] **Step 1: Write a failing no-whole-store-rescan test**
 
 Inject a counting repository/query index into the compiler and assert compact
 context uses one query plan rather than invoking independent full-family scans
 from compact brief, relation map, and distillation.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 ```powershell
 python -m pytest tests\test_v5_context_compiler.py -q -p no:cacheprovider --basetemp tmp\pytest-g0-context-red
@@ -720,29 +732,29 @@ python -m pytest tests\test_v5_context_compiler.py -q -p no:cacheprovider --base
 
 Expected: import failure for `context_compiler`.
 
-- [ ] **Step 3: Implement ContextRequest and bounded compilation**
+- [x] **Step 3: Implement ContextRequest and bounded compilation**
 
 Compile objective, current boundary, recent process refs, candidate summaries,
 coverage, errors, and expansion handles from one retrieval result. Estimate
 tokens deterministically and enforce both token and byte limits.
 
-- [ ] **Step 4: Add failing stale/read-error/truncation contract tests**
+- [x] **Step 4: Add failing stale/read-error/truncation contract tests**
 
 Assert context reports partial coverage, cannot claim no prior result, and
 requires exact expansion before trust-sensitive conclusions.
 
-- [ ] **Step 5: Implement contracts and compact facade `record_refs` expansion**
+- [x] **Step 5: Implement contracts and compact facade `record_refs` expansion**
 
 Add `record_refs` to the allowed expansion names with bounded refs and page size.
 Keep full record bodies out of the default context.
 
-- [ ] **Step 6: Migrate context builders incrementally**
+- [x] **Step 6: Migrate context builders incrementally**
 
 Add query-backed paths to context pack, objective graph, relation map, timeline,
 and distillation while preserving old public function signatures. Remove old
 whole-store fallbacks only after parity tests pass.
 
-- [ ] **Step 7: Run context/facade/parity tests**
+- [x] **Step 7: Run context/facade/parity tests**
 
 ```powershell
 python -m pytest tests\test_v5_context_compiler.py tests\test_v5_context_pack.py tests\test_v5_codex_facade.py tests\test_v5_claim_relation_map.py tests\test_v5_research_timeline.py -q -p no:cacheprovider --basetemp tmp\pytest-g0-context-green
@@ -750,17 +762,17 @@ python -m pytest tests\test_v5_context_compiler.py tests\test_v5_context_pack.py
 
 Expected: all selected tests pass.
 
-- [ ] **Step 8: Run 10,000-record performance acceptance**
+- [x] **Step 8: Run 10,000-record performance acceptance**
 
 Measure cold/warm minimal entry, normal expansion, exact ref lookup, context
 bytes/tokens, and full-scan count. Fail the performance test if warm minimal
 entry is at least 1 second, cold minimal entry at least 3 seconds, normal warm
 expansion at least 2 seconds, or exact-ref lookup at least 250 milliseconds.
 
-- [ ] **Step 9: Commit Task 6**
+- [x] **Step 9: Commit Task 6**
 
 ```powershell
-git add brain/v5/context_compiler.py brain/v5/context_compiler_contracts.py brain/v5/context_pack.py brain/v5/objective_graph.py brain/v5/research_distillation.py brain/v5/claim_relation_map.py brain/v5/research_timeline.py brain/v5/codex_facade.py tests/test_v5_context_compiler.py
+git add brain/v5/context_compiler.py brain/v5/context_compiler_contracts.py brain/v5/context_pack.py brain/v5/context_pack_contracts.py brain/v5/context_pack_projection.py brain/v5/indexed_topic_snapshot.py brain/v5/research_timeline_time.py brain/v5/active_claim_focus.py brain/v5/objective_graph.py brain/v5/research_distillation.py brain/v5/claim_relation_map.py brain/v5/research_timeline.py brain/v5/codex_facade.py brain/v5/query_index.py brain/v5/record_repository.py brain/v5/research_retrieval.py brain/v5/retrieval_audit.py tests/test_v5_context_compiler.py tests/test_v5_context_performance.py tests/fixtures/v5_context_10000_fixture.json docs/superpowers/progress/2026-07-10-aitp-context-compiler.md docs/superpowers/plans/2026-07-09-aitp-final-research-lifecycle-roadmap.md docs/superpowers/plans/2026-07-10-aitp-gate-0-foundation.md
 git commit -m "v5: compile context from indexed queries"
 ```
 

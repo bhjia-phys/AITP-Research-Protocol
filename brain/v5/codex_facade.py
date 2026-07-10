@@ -32,6 +32,7 @@ from brain.v5.recording_navigator import (
     expand_recording_slot,
     verify_recording_effect,
 )
+from brain.v5.research_retrieval import exact_expand
 from brain.v5.research_timeline import build_research_timeline
 from brain.v5.research_state import attach_artifact, create_proof_obligation
 from brain.v5.sensemaking import record_sensemaking_report
@@ -97,6 +98,7 @@ def codex_tool_catalog(profile: str = "entry") -> dict[str, Any]:
                 "note_outline",
                 "source_reconstruction",
                 "trust_audit",
+                "record_refs",
             ],
             "state_effect": "read_only",
         },
@@ -402,6 +404,8 @@ def codex_expand_context(
     style: str = "jhep",
     objective_text: str = "",
     user_goal: str = "",
+    record_refs: list[str] | tuple[str, ...] | None = None,
+    offset: int = 0,
 ) -> dict[str, Any]:
     """Expand one Codex context family on demand."""
 
@@ -450,6 +454,15 @@ def codex_expand_context(
         if not claim_id:
             return _needs_claim_id(selected)
         payload["surface"] = audit_claim_trust(ws, claim_id=claim_id)
+    elif selected == "record_refs":
+        payload["surface"] = _expand_record_refs(
+            ws,
+            refs=record_refs or (),
+            offset=offset,
+            limit=limit,
+        )
+        if not payload["surface"]["ok"]:
+            payload["ok"] = False
     else:
         payload["ok"] = False
         payload["error"] = f"unsupported expansion: {expansion}"
@@ -1315,6 +1328,7 @@ def _allowed_expansions() -> list[str]:
         "note_outline",
         "source_reconstruction",
         "trust_audit",
+        "record_refs",
     ]
 
 def _expansion_name(expansion: str) -> str:
@@ -1330,6 +1344,57 @@ def _expansion_name(expansion: str) -> str:
         "trust": "trust_audit",
     }
     return aliases.get(clean, clean)
+
+
+def _expand_record_refs(
+    ws: WorkspacePaths,
+    *,
+    refs: list[str] | tuple[str, ...],
+    offset: int,
+    limit: int,
+) -> dict[str, Any]:
+    unique_refs = list(dict.fromkeys(str(ref).strip() for ref in refs if str(ref).strip()))
+    bounded_refs = unique_refs[:50]
+    clean_offset = max(0, int(offset))
+    page_size = max(1, min(int(limit), 20))
+    page_refs = bounded_refs[clean_offset : clean_offset + page_size]
+    if not page_refs:
+        return {
+            "ok": False,
+            "kind": "record_ref_expansion",
+            "error": "record_refs expansion requires at least one ref in the requested page",
+            "requested_ref_count": len(unique_refs),
+            "offset": clean_offset,
+            "limit": page_size,
+            "summary_inputs_trusted": False,
+            "orientation_only": True,
+            "can_update_kernel_state": False,
+            "can_update_claim_trust": False,
+        }
+    result = exact_expand(ws, page_refs, limit=page_size)
+    next_offset = clean_offset + page_size
+    if next_offset >= len(bounded_refs):
+        next_offset = None
+    return {
+        "ok": True,
+        "kind": "record_ref_expansion",
+        "items": [asdict(item) for item in result.items],
+        "returned_refs": [item.record_ref for item in result.items],
+        "unresolved_refs": list(result.excluded_candidates),
+        "requested_ref_count": len(unique_refs),
+        "bounded_ref_count": len(bounded_refs),
+        "input_truncated": len(unique_refs) > len(bounded_refs),
+        "offset": clean_offset,
+        "limit": page_size,
+        "next_offset": next_offset,
+        "index_status": result.index_status,
+        "index_generation": result.index_generation,
+        "coverage": asdict(result.coverage),
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
 
 
 def _needs_claim_id(expansion: str) -> dict[str, Any]:

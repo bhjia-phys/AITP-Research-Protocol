@@ -6,7 +6,12 @@ from dataclasses import asdict, dataclass, is_dataclass
 from typing import Any
 
 from brain.v5.paths import WorkspacePaths
-from brain.v5.query_index import canonical_state_token, lexical_terms, load_query_index
+from brain.v5.query_index import (
+    canonical_state_token,
+    lexical_terms,
+    load_query_index,
+    load_query_manifest,
+)
 from brain.v5.record_envelope import RecordActor
 from brain.v5.record_repository import RecordRepository
 from brain.v5.record_family_registry import record_family_specs
@@ -53,6 +58,7 @@ class RetrievalResult:
     truncated: bool
     next_offset: int | None
     index_status: str
+    index_generation: int
     coverage: RetrievalCoverage
     excluded_candidates: tuple[str, ...] = ()
     can_update_kernel_state: bool = False
@@ -146,6 +152,7 @@ def query_records(ws: WorkspacePaths, query: ResearchQuery) -> RetrievalResult:
         truncated=next_offset is not None,
         next_offset=next_offset,
         index_status=index_status,
+        index_generation=index.manifest.generation,
         coverage=coverage,
         excluded_candidates=tuple(excluded),
     )
@@ -157,7 +164,64 @@ def exact_expand(
     *,
     limit: int = 50,
 ) -> RetrievalResult:
-    return query_records(ws, ResearchQuery(exact_refs=tuple(refs[:limit]), limit=limit))
+    if limit < 1:
+        raise ValueError("limit must be positive")
+    requested = tuple(dict.fromkeys(str(ref).strip() for ref in refs if str(ref).strip()))
+    page_refs = requested[:limit]
+    manifest = load_query_manifest(ws)
+    fresh = canonical_state_token(ws) == manifest.canonical_state_token
+    repository = RecordRepository(
+        ws,
+        actor=RecordActor(actor_type="migration", actor_id="retrieval-read", host="retrieval"),
+    )
+    items: list[RetrievalItem] = []
+    excluded: list[str] = []
+    for ref in page_refs:
+        item = _exact_item_from_repository(repository, ref)
+        if item is None:
+            excluded.append(ref)
+        else:
+            items.append(item)
+    checked = tuple(
+        sorted(
+            {
+                family
+                for family in (_family_for_ref(ref) for ref in page_refs)
+                if family
+            }
+        )
+    )
+    all_families = tuple(sorted(record_family_specs()))
+    unchecked = tuple(family for family in all_families if family not in checked)
+    malformed_count = sum(manifest.malformed_family_counts.get(family, 0) for family in checked)
+    exhaustive = fresh and malformed_count == 0 and not excluded
+    if not fresh:
+        reason = "stale coverage forbids absolute no-result language"
+    elif malformed_count or excluded:
+        reason = "read errors in the requested exact refs forbid absolute no-result language"
+    else:
+        reason = "fresh canonical exact reads cover every requested ref"
+    coverage = RetrievalCoverage(
+        exhaustive=exhaustive,
+        can_claim_no_result=exhaustive,
+        checked_families=checked,
+        unchecked_families=unchecked,
+        malformed_count=malformed_count,
+        reason=reason,
+    )
+    next_offset = limit if len(requested) > limit else None
+    return RetrievalResult(
+        items=tuple(items),
+        total_count=len(items),
+        offset=0,
+        limit=limit,
+        truncated=next_offset is not None,
+        next_offset=next_offset,
+        index_status="fresh" if fresh else "stale",
+        index_generation=manifest.generation,
+        coverage=coverage,
+        excluded_candidates=tuple(excluded),
+    )
 
 
 def _exact_item(
@@ -177,6 +241,35 @@ def _exact_item(
         if indexed is None:
             return None
         record = dict(indexed)
+    family = _family_for_ref(ref)
+    return RetrievalItem(
+        record_ref=ref,
+        family=family,
+        topic_id=str(record.get("topic_id") or record.get("topic") or ""),
+        exact_score=100,
+        lexical_score=0,
+        total_score=100,
+        record=record,
+    )
+
+
+def _exact_item_from_repository(
+    repository: RecordRepository,
+    ref: str,
+) -> RetrievalItem | None:
+    result = repository.read(ref)
+    if result.status == "found":
+        record = asdict(result.record) if is_dataclass(result.record) else dict(result.record)
+    elif (
+        result.issue is not None
+        and result.issue.error_type in {"TypeError", "ValueError"}
+        and result.frontmatter is not None
+    ):
+        record = dict(result.frontmatter)
+        if result.body:
+            record["body"] = result.body
+    else:
+        return None
     family = _family_for_ref(ref)
     return RetrievalItem(
         record_ref=ref,

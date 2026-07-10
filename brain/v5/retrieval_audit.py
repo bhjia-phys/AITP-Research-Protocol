@@ -18,6 +18,7 @@ def build_retrieval_audit(
         "kind": "research_retrieval_audit",
         "query": asdict(query),
         "index_status": result.index_status,
+        "index_generation": result.index_generation,
         "returned_refs": [item.record_ref for item in result.items],
         "excluded_candidates": list(result.excluded_candidates),
         "total_count": result.total_count,

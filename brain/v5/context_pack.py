@@ -8,6 +8,18 @@ from typing import Any
 
 from brain.v5.context_profile_templates import build_context_profile_template_catalog
 from brain.v5.context_profiles import builtin_context_profiles, context_profile_payload
+from brain.v5.context_compiler import (
+    ContextRequest,
+    compile_research_context,
+    estimate_context_tokens,
+)
+from brain.v5.context_pack_projection import (
+    bounded_context_lines as _bounded_context_lines,
+    compact_from_bundle as _compact_from_bundle,
+    compiler_candidate as _compiler_candidate,
+    distillation_from_candidates as _distillation_from_candidates,
+    focus_reconciliation_from_bundle as _focus_reconciliation_from_bundle,
+)
 from brain.v5.objective_graph import build_compact_brief
 from brain.v5.paths import WorkspacePaths
 from brain.v5.research_distillation import build_research_distillation_candidates
@@ -40,29 +52,46 @@ def build_aitp_context_pack(
     profile_warning = []
     if task_profile and not selected_profile:
         profile_warning.append(f"unknown_task_profile:{task_profile}")
-    compact = build_compact_brief(
+    max_bytes = max(1200, min(12_000, line_limit * 180))
+    max_tokens = max(240, min(3000, line_limit * 32))
+    bundle = compile_research_context(
         ws,
-        session_id,
-        max_lines=min(line_limit, 40),
+        ContextRequest(
+            session_id=session_id,
+            objective_text=objective_text,
+            user_goal=user_goal,
+            max_tokens=max_tokens,
+            max_bytes=max_bytes,
+            record_limit=max(24, candidate_limit * 8),
+            candidate_limit=max(candidate_limit * 3, 8),
+        ),
+    )
+    compact = _compact_from_bundle(bundle)
+    top_candidates = [
+        _compiler_candidate(candidate)
+        for candidate in bundle.candidate_summaries[:candidate_limit]
+    ]
+    distillation = _distillation_from_candidates(top_candidates)
+    focus_reconciliation = _focus_reconciliation_from_bundle(
+        bundle,
         objective_text=objective_text,
         user_goal=user_goal,
     )
-    distillation = build_research_distillation_candidates(ws, session_id, limit=candidate_limit)
-    top_candidates = [
-        _candidate_summary(candidate)
-        for candidate in list(distillation.get("candidates") or [])[:candidate_limit]
-        if isinstance(candidate, dict)
-    ]
+    drift_detected = focus_reconciliation["status"] == "active_claim_focus_drift_detected"
+    warnings = ["active_claim_focus_drift_detected"] if drift_detected else []
+    compact["not_authoritative_for_current_goal_if_rebind_needed"] = drift_detected
+    compact["warnings"] = warnings
+    compact["active_claim_focus_reconciliation"] = focus_reconciliation
     derived_surfaces = [
-        "compact_execution_brief",
-        "objective_graph",
-        "research_distillation_candidates",
+        "query_index",
+        "context_compiler",
+        "compiled_candidate_projection",
     ]
     if profile_template_hint:
         derived_surfaces.append("context_profile_template_catalog")
     source_records = _merge_source_records(
         compact.get("source_records") if isinstance(compact.get("source_records"), dict) else {},
-        distillation.get("source_records") if isinstance(distillation.get("source_records"), dict) else {},
+        {"record_refs": list(bundle.record_refs)},
         {"derived_surfaces": derived_surfaces},
     )
 
@@ -91,6 +120,14 @@ def build_aitp_context_pack(
         ),
         "warnings": list(compact.get("warnings") or []),
         "active_claim_focus_reconciliation": compact.get("active_claim_focus_reconciliation") or {},
+        "retrieval_coverage": bundle.coverage,
+        "index_status": bundle.index_status,
+        "source_index_generation": bundle.source_index_generation,
+        "record_refs": list(bundle.record_refs),
+        "context_budget": {
+            "max_bytes": max_bytes,
+            "max_tokens": max_tokens,
+        },
         "distillation_status": {
             "summary": distillation.get("summary") or {},
             "top_candidates": top_candidates,
@@ -109,6 +146,8 @@ def build_aitp_context_pack(
             "recommended_hook": "TurnInputContributor",
             "recommended_authority": "contextual_user_fragment",
             "max_lines": line_limit,
+            "max_bytes": max_bytes,
+            "max_tokens": max_tokens,
             "inject_when": [
                 "session is first restored",
                 "pack fingerprint changes",
@@ -138,9 +177,15 @@ def build_aitp_context_pack(
             "mcp_research_distillation_candidates": "aitp_v5_get_research_distillation_candidates",
             "mcp_detect_active_claim_focus_drift": "aitp_v5_detect_active_claim_focus_drift",
             "mcp_confirm_active_claim_rebind": "aitp_v5_confirm_active_claim_rebind",
+            "record_refs": {
+                "surface": "record_refs",
+                "refs": list(bundle.record_refs),
+                "page_size": bundle.expansion["page_size"],
+                "requires_explicit_call": True,
+            },
         },
         "source_records": source_records,
-        "read_errors": list(distillation.get("read_errors") or []),
+        "read_errors": list(bundle.read_errors),
         "truth_source": "typed_records_derived_context_pack_not_evidence",
         "orientation_only": True,
         "summary_inputs_trusted": False,
@@ -150,9 +195,16 @@ def build_aitp_context_pack(
     }
     if profile_warning:
         payload["warnings"].extend(profile_warning)
-    payload["context_lines"] = _context_lines(payload, compact)[:line_limit]
+    payload["context_lines"] = _bounded_context_lines(
+        _context_lines(payload, compact),
+        line_limit=line_limit,
+        max_bytes=max_bytes,
+        max_tokens=max_tokens,
+    )
     payload["line_count"] = len(payload["context_lines"])
     payload["markdown"] = "\n".join(payload["context_lines"]) + "\n"
+    payload["byte_count"] = len(payload["markdown"].encode("utf-8"))
+    payload["estimated_tokens"] = estimate_context_tokens(payload["markdown"])
     payload["fingerprint"] = _fingerprint(payload)
     payload["pack_id"] = f"aitp-context-pack-{payload['session_id']}-{payload['fingerprint'][:12]}"
     return payload

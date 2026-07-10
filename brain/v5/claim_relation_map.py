@@ -10,8 +10,13 @@ import json
 from dataclasses import asdict
 from typing import Any
 
-from brain.v5.active_claim_focus import detect_active_claim_focus_drift, empty_active_claim_focus_reconciliation
+from brain.v5.active_claim_focus import (
+    active_claim_focus_families,
+    detect_active_claim_focus_drift,
+    empty_active_claim_focus_reconciliation,
+)
 from brain.v5.evidence import list_evidence_for_claim
+from brain.v5.context_compiler import load_indexed_topic_snapshot
 from brain.v5.legacy_migration_audit import audit_legacy_migration_coverage
 from brain.v5.models import (
     ClaimRecord,
@@ -145,9 +150,11 @@ def build_claim_relation_map(
     registry_index: dict[str, dict[str, list[Any]]] | None = None,
     objective_text: str = "",
     user_goal: str = "",
+    indexed_snapshot: Any | None = None,
 ) -> dict[str, Any]:
     """Build a read-only relation map for the session's active claim."""
 
+    snapshot = indexed_snapshot
     try:
         recovered = recover_session_binding_for_read(ws, session_id)
     except (FileNotFoundError, TypeError, ValueError) as error:
@@ -159,6 +166,27 @@ def build_claim_relation_map(
     session = recovered.session
     requested_session_id = recovered.requested_session_id
     recovery_selection_source = recovered.recovery_selection_source
+    if registry_index is None:
+        if snapshot is None:
+            snapshot = load_indexed_topic_snapshot(
+                ws,
+                session.session_id,
+                families=tuple(
+                    dict.fromkeys(
+                        (
+                            "claim_statuses",
+                            "claims",
+                            "evidence",
+                            "legacy_semantic_reviews",
+                            "object_relations",
+                            "proof_obligations",
+                            "tool_runs",
+                            *active_claim_focus_families(),
+                        )
+                    )
+                ),
+            )
+        registry_index = _registry_index_from_snapshot(ws, snapshot)
     if not session.active_claim:
         return empty_claim_relation_map(
             topic_id=session.topic_id,
@@ -222,6 +250,7 @@ def build_claim_relation_map(
         session_id,
         objective_text=objective_text or claim.statement,
         user_goal=user_goal,
+        indexed_snapshot=snapshot,
     )
     drift_detected = bool(focus_reconciliation.get("not_authoritative_for_current_goal_if_rebind_needed"))
 
@@ -369,6 +398,11 @@ def build_claim_relation_map(
                 if _legacy_migration_topic_ref(record)
             ],
         },
+        "retrieval_coverage": snapshot.coverage if snapshot else {},
+        "index_status": snapshot.index_status if snapshot else "external_registry_index",
+        "source_index_generation": snapshot.index_generation if snapshot else 0,
+        "retrieval_truncated": snapshot.truncated if snapshot else False,
+        "read_errors": list(snapshot.read_errors) if snapshot else [],
         "derived_from": [
             "claim_status_records",
             "evidence_records",
@@ -387,6 +421,22 @@ def build_claim_relation_map(
         "trust_update_allowed": False,
     }
     return payload
+
+
+def _registry_index_from_snapshot(ws, snapshot) -> dict[str, dict[str, list[Any]]]:
+    records = snapshot.records_by_family
+    return {
+        "evidence": _group_by_claim(list(records.get("evidence", ()))),
+        "tool_runs": _group_by_claim(list(records.get("tool_runs", ()))),
+        "claim_statuses": _group_by_claim(list(records.get("claim_statuses", ()))),
+        "proof_obligations": _group_by_claim(list(records.get("proof_obligations", ()))),
+        "object_relations": _group_by_claim(list(records.get("object_relations", ()))),
+        "claims_by_topic": _group_claims_by_topic(list(records.get("claims", ()))),
+        "legacy_semantic_reviews": _group_by_topic(
+            list(records.get("legacy_semantic_reviews", ()))
+        ),
+        "legacy_migration_topics": _legacy_migration_topics_by_topic(ws),
+    }
 
 
 def build_claim_relation_registry_index(ws) -> dict[str, dict[str, list[Any]]]:

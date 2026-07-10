@@ -6,6 +6,7 @@ from typing import Any
 
 from brain.v5.brief import build_execution_brief
 from brain.v5.claim_relation_map import build_claim_relation_map
+from brain.v5.context_compiler import load_indexed_topic_snapshot
 from brain.v5.models import (
     ArtifactRecord,
     ClaimRecord,
@@ -18,21 +19,47 @@ from brain.v5.models import (
 from brain.v5.paths import WorkspacePaths
 from brain.v5.recovery_session import recover_session_binding_for_read
 from brain.v5.research_timeline import previous_failed_attempts_from_relation_map
-from brain.v5.store import list_valid_records, read_record
+from brain.v5.store import list_valid_records
 
 
-def build_objective_graph(ws: WorkspacePaths, session_id: str) -> dict[str, Any]:
+def build_objective_graph(
+    ws: WorkspacePaths,
+    session_id: str,
+    *,
+    indexed_snapshot: Any | None = None,
+) -> dict[str, Any]:
     """Build an orientation-only objective/work-package view from typed records."""
 
     recovered = recover_session_binding_for_read(ws, session_id)
-    session = recovered.session
-    topic = _read_topic(ws, session.topic_id)
-    claims = _topic_claims(ws, session.topic_id)
-    artifacts = _topic_artifacts(ws, session.topic_id)
-    routes = _topic_routes(ws, session.topic_id)
-    runs = _topic_runs(ws, session.topic_id)
-    statuses = _topic_claim_statuses(ws, session.topic_id)
-    obligations = _topic_proof_obligations(ws, session.topic_id)
+    snapshot = indexed_snapshot or load_indexed_topic_snapshot(
+        ws,
+        recovered.session.session_id,
+        families=(
+            "artifacts",
+            "claim_statuses",
+            "claims",
+            "proof_obligations",
+            "research_runs",
+            "routes",
+        ),
+    )
+    session = snapshot.session
+    records = snapshot.records_by_family
+    topic = next(
+        (
+            record
+            for record in records.get("topics", ())
+            if isinstance(record, TopicRecord) and record.topic_id == session.topic_id
+        ),
+        None,
+    )
+    claims = _typed_topic_records(records, "claims", ClaimRecord, session.topic_id)
+    claims = [claim for claim in claims if getattr(claim, "lifecycle_status", "active") == "active"]
+    artifacts = _typed_topic_records(records, "artifacts", ArtifactRecord, session.topic_id)
+    routes = _typed_topic_records(records, "routes", ResearchRouteRecord, session.topic_id)
+    runs = _typed_topic_records(records, "research_runs", ResearchRunRecord, session.topic_id)
+    statuses = _typed_topic_records(records, "claim_statuses", ClaimStatusRecord, session.topic_id)
+    obligations = _typed_topic_records(records, "proof_obligations", ProofObligationRecord, session.topic_id)
 
     work_packages = _work_packages(
         active_claim_id=session.active_claim,
@@ -78,6 +105,11 @@ def build_objective_graph(ws: WorkspacePaths, session_id: str) -> dict[str, Any]
             "claim_statuses": [status.status_id for status in statuses],
             "proof_obligations": [obligation.obligation_id for obligation in obligations],
         },
+        "retrieval_coverage": snapshot.coverage,
+        "index_status": snapshot.index_status,
+        "source_index_generation": snapshot.index_generation,
+        "retrieval_truncated": snapshot.truncated,
+        "read_errors": list(snapshot.read_errors),
         "truth_source": False,
         "orientation_only": True,
         "summary_inputs_trusted": False,
@@ -178,6 +210,11 @@ def build_compact_brief(
             "mcp_research_timeline": "aitp_v5_get_research_timeline",
             "mcp_objective_graph": "aitp_v5_get_objective_graph",
         },
+        "retrieval_coverage": objective_graph.get("retrieval_coverage") or {},
+        "index_status": str(objective_graph.get("index_status") or ""),
+        "source_index_generation": int(objective_graph.get("source_index_generation") or 0),
+        "retrieval_truncated": bool(objective_graph.get("retrieval_truncated")),
+        "read_errors": list(objective_graph.get("read_errors") or []),
         "source_records": {
             "objective_graph": "derived",
             "execution_brief": f"execution_brief:{session_id}",
@@ -197,58 +234,16 @@ def build_compact_brief(
     return payload
 
 
-def _read_topic(ws: WorkspacePaths, topic_id: str) -> TopicRecord | None:
-    try:
-        return read_record(ws.topic_dir(topic_id) / "topic.md", TopicRecord)
-    except (FileNotFoundError, TypeError, ValueError):
-        return None
-
-
-def _topic_claims(ws: WorkspacePaths, topic_id: str) -> list[ClaimRecord]:
+def _typed_topic_records(
+    records_by_family: dict[str, tuple[Any, ...]],
+    family: str,
+    cls: type[Any],
+    topic_id: str,
+) -> list[Any]:
     return [
-        claim
-        for claim in list_valid_records(ws.registry_dir("claims"), ClaimRecord)
-        if claim.topic_id == topic_id and getattr(claim, "lifecycle_status", "active") == "active"
-    ]
-
-
-def _topic_artifacts(ws: WorkspacePaths, topic_id: str) -> list[ArtifactRecord]:
-    return [
-        artifact
-        for artifact in list_valid_records(ws.registry_dir("artifacts"), ArtifactRecord)
-        if artifact.topic_id == topic_id
-    ]
-
-
-def _topic_routes(ws: WorkspacePaths, topic_id: str) -> list[ResearchRouteRecord]:
-    return [
-        route
-        for route in list_valid_records(ws.registry_dir("routes"), ResearchRouteRecord)
-        if route.topic_id == topic_id
-    ]
-
-
-def _topic_runs(ws: WorkspacePaths, topic_id: str) -> list[ResearchRunRecord]:
-    return [
-        run
-        for run in list_valid_records(ws.registry_dir("research_runs"), ResearchRunRecord)
-        if run.topic_id == topic_id
-    ]
-
-
-def _topic_claim_statuses(ws: WorkspacePaths, topic_id: str) -> list[ClaimStatusRecord]:
-    return [
-        status
-        for status in list_valid_records(ws.registry_dir("claim_statuses"), ClaimStatusRecord)
-        if status.topic_id == topic_id
-    ]
-
-
-def _topic_proof_obligations(ws: WorkspacePaths, topic_id: str) -> list[ProofObligationRecord]:
-    return [
-        obligation
-        for obligation in list_valid_records(ws.registry_dir("proof_obligations"), ProofObligationRecord)
-        if obligation.topic_id == topic_id
+        record
+        for record in records_by_family.get(family, ())
+        if isinstance(record, cls) and str(getattr(record, "topic_id", "") or "") == topic_id
     ]
 
 

@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import fields, is_dataclass
-from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
+from brain.v5.active_claim_focus import active_claim_focus_families
 from brain.v5.claim_relation_map import build_claim_relation_map
-from brain.v5.markdown import read_md
+from brain.v5.context_compiler import load_indexed_topic_snapshot
 from brain.v5.models import (
     ArtifactRecord,
     ClaimStatusRecord,
@@ -25,6 +23,7 @@ from brain.v5.models import (
 )
 from brain.v5.paths import WorkspacePaths
 from brain.v5.recovery_session import recover_session_binding_for_read
+from brain.v5.research_timeline_time import event_time as _event_time
 
 
 _SUPPORT_STATUSES = {"support", "supports", "supported", "passed", "pass", "valid", "positive"}
@@ -80,12 +79,27 @@ def build_research_timeline(
 
     limit = max(1, min(int(limit or 80), 200))
     recovered = recover_session_binding_for_read(ws, session_id)
-    session = recovered.session
-    focus_claim_id = claim_id or session.active_claim
-    relation_map = build_claim_relation_map(ws, session_id)
-    relation_buckets = _relation_buckets(relation_map)
-    events = _timeline_events(
+    snapshot = load_indexed_topic_snapshot(
         ws,
+        recovered.session.session_id,
+        families=tuple(
+            dict.fromkeys(
+                (
+                    *(spec[0] for spec in _RECORD_SPECS),
+                    "claims",
+                    "legacy_semantic_reviews",
+                    "object_relations",
+                    *active_claim_focus_families(),
+                )
+            )
+        ),
+    )
+    session = snapshot.session
+    focus_claim_id = claim_id or session.active_claim
+    relation_map = build_claim_relation_map(ws, session_id, indexed_snapshot=snapshot)
+    relation_buckets = _relation_buckets(relation_map)
+    events = _timeline_events_from_snapshot(
+        snapshot,
         topic_id=session.topic_id,
         claim_id=focus_claim_id,
         session_id=session.session_id,
@@ -138,6 +152,11 @@ def build_research_timeline(
             "previous_failed_attempts": [item.get("record_ref", "") for item in failed_attempts if item.get("record_ref")],
             "wrong_or_superseded_routes": [item.get("record_ref", "") for item in wrong_routes if item.get("record_ref")],
         },
+        "retrieval_coverage": snapshot.coverage,
+        "index_status": snapshot.index_status,
+        "source_index_generation": snapshot.index_generation,
+        "retrieval_truncated": snapshot.truncated,
+        "read_errors": list(snapshot.read_errors),
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
         "orientation_only": True,
@@ -145,6 +164,71 @@ def build_research_timeline(
         "can_update_claim_trust": False,
     }
     return payload
+
+
+def _timeline_events_from_snapshot(
+    snapshot: Any,
+    *,
+    topic_id: str,
+    claim_id: str,
+    session_id: str,
+    relation_buckets: dict[str, str],
+) -> list[dict[str, Any]]:
+    specs = {
+        family: (cls, id_attr, kind, summary_fields)
+        for family, cls, id_attr, kind, summary_fields in _RECORD_SPECS
+    }
+    events: list[dict[str, Any]] = []
+    for indexed in snapshot.indexed_records:
+        spec = specs.get(indexed.family)
+        if spec is None:
+            continue
+        cls, id_attr, kind, summary_fields = spec
+        record = indexed.record
+        if not isinstance(record, cls):
+            continue
+        if not _record_in_scope(record, topic_id=topic_id, claim_id=claim_id, session_id=session_id):
+            continue
+        record_id = str(getattr(record, id_attr, "") or "")
+        record_ref = f"{kind}:{record_id}" if record_id else kind
+        event_time, time_source, sort_time = _event_time(indexed.path, record, indexed.frontmatter)
+        status = _record_status(record)
+        lifecycle = str(getattr(record, "lifecycle_status", "") or "")
+        text = _record_text(record, summary_fields)
+        if str(getattr(record, "superseded_by", "") or "").strip():
+            classification = "superseded_or_duplicate_route"
+        elif relation_buckets.get(record_id):
+            classification = relation_buckets[record_id]
+        else:
+            classification = _classify_record(
+                status=status,
+                lifecycle_status=lifecycle,
+                text=text,
+                kind=kind,
+            )
+        events.append(
+            {
+                "record_ref": record_ref,
+                "record_kind": kind,
+                "record_id": record_id,
+                "event_time": event_time,
+                "time_source": time_source,
+                "topic_id": str(getattr(record, "topic_id", "") or topic_id),
+                "claim_id": str(getattr(record, "claim_id", "") or ""),
+                "session_id": str(getattr(record, "session_id", "") or ""),
+                "status": status,
+                "lifecycle_status": lifecycle,
+                "classification": classification,
+                "summary": _short_text(text or record_ref),
+                "refs": _record_refs(record),
+                "orientation_only": bool(
+                    getattr(record, "orientation_only", kind not in {"evidence", "validation_result"})
+                ),
+                "can_update_claim_trust": bool(getattr(record, "can_update_claim_trust", False)),
+                "_sort_time": sort_time,
+            }
+        )
+    return events
 
 
 def previous_failed_attempts_from_relation_map(payload: dict[str, Any], *, limit: int = 8) -> list[dict[str, Any]]:
@@ -177,74 +261,6 @@ def previous_failed_attempts_from_relation_map(payload: dict[str, Any], *, limit
     return rows
 
 
-def _timeline_events(
-    ws: WorkspacePaths,
-    *,
-    topic_id: str,
-    claim_id: str,
-    session_id: str,
-    relation_buckets: dict[str, str],
-) -> list[dict[str, Any]]:
-    events: list[dict[str, Any]] = []
-    for directory, cls, id_attr, kind, summary_fields in _RECORD_SPECS:
-        for record, path, frontmatter in _records_with_paths(ws.registry_dir(directory), cls):
-            if not _record_in_scope(record, topic_id=topic_id, claim_id=claim_id, session_id=session_id):
-                continue
-            record_id = str(getattr(record, id_attr, "") or "")
-            record_ref = f"{kind}:{record_id}" if record_id else kind
-            event_time, time_source, sort_time = _event_time(path, record, frontmatter)
-            status = _record_status(record)
-            lifecycle = str(getattr(record, "lifecycle_status", "") or "")
-            text = _record_text(record, summary_fields)
-            if str(getattr(record, "superseded_by", "") or "").strip():
-                classification = "superseded_or_duplicate_route"
-            elif relation_buckets.get(record_id):
-                classification = relation_buckets[record_id]
-            else:
-                classification = _classify_record(
-                    status=status,
-                    lifecycle_status=lifecycle,
-                    text=text,
-                    kind=kind,
-                )
-            events.append(
-                {
-                    "record_ref": record_ref,
-                    "record_kind": kind,
-                    "record_id": record_id,
-                    "event_time": event_time,
-                    "time_source": time_source,
-                    "topic_id": str(getattr(record, "topic_id", "") or topic_id),
-                    "claim_id": str(getattr(record, "claim_id", "") or ""),
-                    "session_id": str(getattr(record, "session_id", "") or ""),
-                    "status": status,
-                    "lifecycle_status": lifecycle,
-                    "classification": classification,
-                    "summary": _short_text(text or record_ref),
-                    "refs": _record_refs(record),
-                    "orientation_only": bool(getattr(record, "orientation_only", kind not in {"evidence", "validation_result"})),
-                    "can_update_claim_trust": bool(getattr(record, "can_update_claim_trust", False)),
-                    "_sort_time": sort_time,
-                }
-            )
-    return events
-
-
-def _records_with_paths(directory: Path, cls: type[Any]) -> list[tuple[Any, Path, dict[str, Any]]]:
-    if not directory.exists():
-        return []
-    records: list[tuple[Any, Path, dict[str, Any]]] = []
-    allowed = {field.name for field in fields(cls)} if is_dataclass(cls) else set()
-    for path in sorted(directory.glob("*.md")):
-        try:
-            frontmatter, _ = read_md(path)
-            data = {key: value for key, value in frontmatter.items() if key in allowed} if allowed else dict(frontmatter)
-            records.append((cls(**data), path, frontmatter))
-        except (TypeError, ValueError, OSError):
-            continue
-    return records
-
-
 def _record_in_scope(record: Any, *, topic_id: str, claim_id: str, session_id: str) -> bool:
     record_topic = str(getattr(record, "topic_id", "") or "")
     if record_topic and record_topic != topic_id:
@@ -256,49 +272,6 @@ def _record_in_scope(record: Any, *, topic_id: str, claim_id: str, session_id: s
     if record_session and record_session == session_id:
         return True
     return not record_claim and not record_session
-
-
-def _event_time(path: Path, record: Any, frontmatter: dict[str, Any]) -> tuple[str, str, float]:
-    for key in ("timestamp", "updated_at", "created_at", "captured_at", "acquired_at"):
-        value = _time_value(frontmatter.get(key))
-        if value:
-            return value, key, _sort_time(value, path)
-    metadata = frontmatter.get("metadata")
-    if isinstance(metadata, dict):
-        for key in ("timestamp", "updated_at", "created_at", "captured_at", "acquired_at"):
-            value = _time_value(metadata.get(key))
-            if value:
-                return value, f"metadata.{key}", _sort_time(value, path)
-    runtime = frontmatter.get("runtime_environment")
-    if isinstance(runtime, dict):
-        for key in ("timestamp", "captured_at", "created_at"):
-            value = _time_value(runtime.get(key))
-            if value:
-                return value, f"runtime_environment.{key}", _sort_time(value, path)
-    for key in ("timestamp", "acquired_at"):
-        value = _time_value(getattr(record, key, ""))
-        if value:
-            return value, key, _sort_time(value, path)
-    mtime = path.stat().st_mtime
-    return datetime.fromtimestamp(mtime, timezone.utc).isoformat(), "file_mtime", mtime
-
-
-def _time_value(value: Any) -> str:
-    text = str(value or "").strip()
-    return text if text else ""
-
-
-def _sort_time(value: str, path: Path) -> float:
-    text = str(value or "").strip()
-    if text:
-        try:
-            return datetime.fromisoformat(text.replace("Z", "+00:00")).timestamp()
-        except ValueError:
-            pass
-    try:
-        return path.stat().st_mtime
-    except OSError:
-        return 0.0
 
 
 def _record_status(record: Any) -> str:

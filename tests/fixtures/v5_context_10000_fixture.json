@@ -1,0 +1,9 @@
+{
+  "fixture_version": "v1",
+  "topic_count": 40,
+  "claims_per_topic": 248,
+  "expected_record_count": 10000,
+  "active_topic_id": "topic-000",
+  "active_session_id": "session-000",
+  "active_claim_id": "claim-topic-000-000"
+}

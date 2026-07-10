@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 import re
 from typing import Any
 
+from brain.v5.context_compiler import load_indexed_topic_snapshot
 from brain.v5.ids import prefixed_id
 from brain.v5.models import (
     ActiveClaimRebindAuditRecord,
@@ -105,6 +106,7 @@ def detect_active_claim_focus_drift(
     user_goal: str = "",
     candidate_limit: int = _DEFAULT_CANDIDATE_LIMIT,
     recent_window_size: int = _RECENT_WINDOW_SIZE,
+    indexed_snapshot: Any | None = None,
 ) -> dict[str, Any]:
     """Detect whether recent typed records point away from the active claim."""
 
@@ -118,10 +120,19 @@ def detect_active_claim_focus_drift(
         )
 
     session = recovered.session
-    claims = _topic_claims(ws, session.topic_id)
+    snapshot = indexed_snapshot or load_indexed_topic_snapshot(
+        ws,
+        session.session_id,
+        families=active_claim_focus_families(),
+    )
+    claims = [
+        claim
+        for claim in snapshot.records_by_family.get("claims", ())
+        if isinstance(claim, ClaimRecord) and claim.topic_id == session.topic_id
+    ]
     claims_by_id = {claim.claim_id: claim for claim in claims}
     active_claim = claims_by_id.get(session.active_claim)
-    observations = _record_observations(ws, session.topic_id)
+    observations = _record_observations_from_snapshot(snapshot, session.topic_id)
     recent_observations = sorted(
         observations,
         key=lambda item: (float(item.get("mtime") or 0.0), str(item.get("record_id") or "")),
@@ -179,6 +190,11 @@ def detect_active_claim_focus_drift(
             "active_claim_latest_update": str(active_stats.get("latest_update") or ""),
             "by_claim": _record_distribution_rows(claims, stats_by_claim),
         },
+        "retrieval_coverage": snapshot.coverage,
+        "index_status": snapshot.index_status,
+        "source_index_generation": snapshot.index_generation,
+        "retrieval_truncated": snapshot.truncated,
+        "read_errors": list(snapshot.read_errors),
         "available_options": _available_options(),
         "recommended_next_action": (
             "choose keep, explicit rebind, claim split, or stale read-only mode before treating the active-claim relation map as current-goal context"
@@ -196,6 +212,56 @@ def detect_active_claim_focus_drift(
         "can_rebind_without_confirmation": False,
     }
     return payload
+
+
+def active_claim_focus_families() -> tuple[str, ...]:
+    """Return the indexed families used by active-claim drift scoring."""
+
+    return tuple(
+        family
+        for family in dict.fromkeys(["claims", *(spec[0] for spec in _RECORD_SPECS)])
+        if family != "reference_locations"
+    )
+
+
+def _record_observations_from_snapshot(snapshot: Any, topic_id: str) -> list[dict[str, Any]]:
+    specs = {
+        family: (id_attr, text_attrs, default)
+        for family, _cls, id_attr, text_attrs, default in _RECORD_SPECS
+    }
+    observations: list[dict[str, Any]] = []
+    for indexed in snapshot.indexed_records:
+        spec = specs.get(indexed.family)
+        if spec is None:
+            continue
+        record = indexed.record
+        if str(getattr(record, "topic_id", "") or "") != topic_id:
+            continue
+        claim_id = str(getattr(record, "claim_id", "") or "").strip()
+        if not claim_id:
+            continue
+        id_attr, text_attrs, default_orientation_only = spec
+        try:
+            mtime = indexed.path.stat().st_mtime
+        except OSError:
+            mtime = 0.0
+        observations.append(
+            {
+                "record_kind": indexed.family,
+                "record_id": str(getattr(record, id_attr, "") or indexed.path.stem),
+                "claim_id": claim_id,
+                "mtime": mtime,
+                "latest_update": _iso_from_mtime(mtime),
+                "text": _record_text(record, text_attrs),
+                "orientation_only": bool(
+                    getattr(record, "orientation_only", default_orientation_only)
+                ),
+                "can_update_claim_trust": bool(
+                    getattr(record, "can_update_claim_trust", False)
+                ),
+            }
+        )
+    return observations
 
 
 def propose_active_claim_rebind(

@@ -83,6 +83,8 @@ class RecordReadResult:
     path: str
     record: Any | None = None
     issue: RecordReadIssue | None = None
+    frontmatter: dict[str, Any] | None = None
+    body: str = ""
 
 
 class RecordRepository:
@@ -235,6 +237,8 @@ class RecordRepository:
                 record_ref=record_ref,
                 path=str(path),
             )
+        frontmatter: dict[str, Any] | None = None
+        body = ""
         try:
             frontmatter, body = read_md(path)
             _stored_content_hash(frontmatter, body)
@@ -252,12 +256,16 @@ class RecordRepository:
                 record_ref=record_ref,
                 path=str(path),
                 issue=issue,
+                frontmatter=frontmatter,
+                body=body,
             )
         return RecordReadResult(
             status="found",
             record_ref=record_ref,
             path=str(path),
             record=record,
+            frontmatter=frontmatter,
+            body=body,
         )
 
     @contextmanager
