@@ -60,16 +60,21 @@ def write_text_atomic(path: str | Path, text: str) -> None:
 
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(
-        "w",
-        encoding="utf-8",
-        dir=str(p.parent),
-        delete=False,
-        newline="\n",
-    ) as tmp:
-        tmp.write(text)
-        tmp_path = Path(tmp.name)
-    os.replace(tmp_path, p)
+    tmp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            dir=str(p.parent),
+            delete=False,
+            newline="\n",
+        ) as tmp:
+            tmp.write(text)
+            tmp_path = Path(tmp.name)
+        os.replace(tmp_path, p)
+    finally:
+        if tmp_path is not None:
+            tmp_path.unlink(missing_ok=True)
 
 
 def write_md(path: str | Path, frontmatter: dict[str, Any], body: str) -> None:

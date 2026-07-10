@@ -191,12 +191,17 @@ topic_id: <optional primary topic>
 program_id: <optional research program>
 scope_refs: []
 source_record_refs: []
-content_hash: <canonical payload hash>
+record_content_hash: <canonical record-payload hash>
 revision: 1
 lifecycle_status: active
 supersedes: []
 trust_effect: none | candidate_only | trust_path_input
 ```
+
+`record_content_hash` is reserved for repository integrity. Domain records may
+retain their own hashes under semantically specific fields; in particular,
+`SourceAssetRecord.content_hash` continues to mean the acquired source bytes
+and must remain part of the scientific payload hash.
 
 `orientation_only` is a property of a derived read surface. A persistent
 closeout, candidate batch, or recall audit is a real kernel process record with

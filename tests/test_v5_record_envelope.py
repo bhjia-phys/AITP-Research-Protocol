@@ -24,11 +24,11 @@ def test_envelope_hash_is_stable_for_key_order():
 
 def test_envelope_hash_covers_scientific_content_but_not_its_own_digest():
     baseline = canonical_record_hash(
-        {"claim_id": "c1", "statement": "A", "content_hash": "old"},
+        {"claim_id": "c1", "statement": "A", "record_content_hash": "old"},
         "# Claim\r\n",
     )
     same_payload = canonical_record_hash(
-        {"statement": "A", "claim_id": "c1", "content_hash": "new"},
+        {"statement": "A", "claim_id": "c1", "record_content_hash": "new"},
         "# Claim\n",
     )
     changed_statement = canonical_record_hash(
@@ -38,6 +38,39 @@ def test_envelope_hash_covers_scientific_content_but_not_its_own_digest():
 
     assert baseline == same_payload
     assert baseline != changed_statement
+
+
+def test_source_asset_content_hash_remains_scientific_payload():
+    left = canonical_record_hash(
+        {"asset_id": "a1", "content_hash": "source-bytes-a"},
+        "# Source\n",
+    )
+    right = canonical_record_hash(
+        {"asset_id": "a1", "content_hash": "source-bytes-b"},
+        "# Source\n",
+    )
+
+    assert left != right
+
+
+def test_envelope_hash_ignores_only_control_metadata_needed_for_revisions():
+    scientific = {"claim_id": "c1", "topic_id": "t1", "statement": "A"}
+    envelope_aware = {
+        **scientific,
+        "record_id": "c1",
+        "record_family": "claims",
+        "schema_version": "v1",
+        "created_at": "2026-07-10T00:00:00+00:00",
+        "created_by": {"actor_type": "model", "actor_id": "a1", "host": "codex"},
+        "revision": 2,
+        "lifecycle_status": "active",
+        "supersedes": ["claim:c1@sha256:old"],
+        "trust_effect": "trust_path_input",
+    }
+
+    assert canonical_record_hash(scientific, "# Claim\n") == canonical_record_hash(
+        envelope_aware, "# Claim\n"
+    )
 
 
 def test_envelope_hash_normalizes_yaml_date_values():
@@ -170,6 +203,33 @@ def test_envelope_validation_rejects_invalid_actor_revision_family_hash_and_trus
     assert any("content_hash" in error for error in errors)
     assert any("revision" in error for error in errors)
     assert any("trust_effect" in error for error in errors)
+
+
+def test_envelope_validation_rejects_untyped_scope_and_source_refs():
+    claim = ClaimRecord(
+        claim_id="c1",
+        topic_id="t1",
+        statement="The scoped statement.",
+        evidence_profile="formal_derivation",
+        confidence_state="hypothesis",
+        active_uncertainty="Open.",
+    )
+    valid = envelope_for_record(
+        claim,
+        family="claims",
+        actor=RecordActor(actor_type="human", actor_id="researcher", host="cli"),
+        timestamp="2026-07-10T12:00:00+00:00",
+    )
+    invalid = replace(
+        valid,
+        scope_refs=("missing-colon",),
+        source_record_refs=("also-missing-colon",),
+    )
+
+    errors = validate_record_envelope(invalid)
+
+    assert any("scope_refs" in error and "typed refs" in error for error in errors)
+    assert any("source_record_refs" in error and "typed refs" in error for error in errors)
 
 
 @pytest.mark.parametrize("revision", [0, -1, "not-an-integer", True])

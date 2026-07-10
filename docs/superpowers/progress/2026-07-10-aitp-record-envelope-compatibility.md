@@ -24,6 +24,8 @@ session recall can be enabled.
 ## Compatibility Decisions Proven Against Real Records
 
 - YAML date scalars are normalized to ISO dates before canonical hashing.
+- Repository integrity uses `record_content_hash`; a domain field named
+  `content_hash` remains scientific payload (for example source-asset bytes).
 - Current family-specific IDs remain canonical for new records.
 - Schema-v1 generic `id` and `topic` fields are accepted only as labeled
   compatibility sources.

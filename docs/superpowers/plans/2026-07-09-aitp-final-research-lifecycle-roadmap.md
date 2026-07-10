@@ -178,13 +178,15 @@ are green without relaxing limits.
 - Produces: `record_family_specs() -> dict[str, RecordFamilySpec]`
 - Produces: `validate_record_family_registry() -> dict[str, Any]`
 
-- [ ] Add schema/version/actor/revision/hash/lifecycle/trust-effect envelope
+- [x] Add schema/version/actor/revision/hash/lifecycle/trust-effect envelope
   contracts without rewriting existing records.
-- [ ] Register every actual canonical family and memory-entry location.
-- [ ] Generate layout directories and exact-ref aliases from one registry.
-- [ ] Reject a writable family that lacks exact-ref and inventory support.
-- [ ] Preserve schema-v1 dataclass readers through compatibility adapters.
-- [ ] Add a migration report for envelope fields absent from existing records.
+- [x] Register every actual canonical family and memory-entry location.
+- [x] Generate layout directories and exact-ref aliases from one registry.
+- [x] Reject a writable family that lacks exact-ref and inventory support.
+- [x] Preserve schema-v1 readers through compatibility adapters.
+- [x] Add a migration report for envelope fields absent from existing records.
+- [x] Reserve `record_content_hash` for repository integrity so domain hashes,
+  especially `SourceAssetRecord.content_hash`, remain scientific payload.
 
 ### Task 0.3: Introduce RecordRepository
 
@@ -194,21 +196,22 @@ are green without relaxing limits.
 - Create: `tests/test_v5_record_repository.py`
 - Modify: `brain/v5/store.py`
 - Modify: `brain/v5/markdown.py`
-- Modify: `brain/v5/lifecycle_events.py`
+- Modify: `brain/v5/paths.py`
+- Modify: `brain/v5/references.py`
 
 **Interfaces:**
 - Produces: `RecordRepository.write(record, *, body: str, policy: WritePolicy) -> WriteResult`
 - Produces: `RecordRepository.read(ref: str) -> ReadResult`
 - Produces: `RecordRepository.list(family: str, query: RecordQuery) -> RecordReadReport`
 
-- [ ] Make identical same-id writes idempotent.
-- [ ] Reject different same-id content unless revision/supersession is explicit.
-- [ ] Validate schema and typed refs before atomic write.
-- [ ] Implement actual lock or compare-and-swap protection.
-- [ ] Report malformed records with path and error instead of silently omitting
+- [x] Make identical same-id writes idempotent.
+- [x] Reject different same-id content unless revision/supersession is explicit.
+- [x] Validate family schema and typed-ref syntax before atomic write.
+- [x] Implement actual lock or compare-and-swap protection.
+- [x] Report malformed records with path and error instead of silently omitting
   them from canonical reads.
 - [ ] Limit tolerant reads to named legacy migration operations.
-- [ ] Migrate one low-risk writer family first and prove compatibility.
+- [x] Migrate one low-risk writer family first and prove compatibility.
 
 ### Task 0.4: Build Generation-Stamped Index And Unified Query Layer
 

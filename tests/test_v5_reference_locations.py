@@ -43,6 +43,11 @@ def test_record_reference_location_persists_orientation_only_pointer(tmp_path):
     assert fm["orientation_only"] is True
     assert fm["source_ref"] == "paper:jain-1989"
     assert fm["metadata"]["backend"] == "ima"
+    assert fm["record_id"] == location.location_id
+    assert fm["record_family"] == "reference_locations"
+    assert fm["schema_version"] == "v1"
+    assert fm["created_by"]["actor_type"] == "tool"
+    assert fm["trust_effect"] == "none"
     assert "not evidence by itself" in body
 
 
@@ -68,6 +73,34 @@ def test_reference_location_record_is_public_surface_valid(tmp_path):
     payload = {"ok": True, **asdict(location)}
 
     assert require_valid_public_surface("reference_location_record", payload) == payload
+
+
+def test_reference_location_writer_persists_repository_envelope_metadata(tmp_path):
+    from brain.v5.markdown import read_md
+    from brain.v5.references import record_reference_location
+    from brain.v5.workspace import create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "qg", context_id="formal-theory", title="Quantum Gravity")
+    location = record_reference_location(
+        ws,
+        topic_id="qg",
+        connector_id="local_pdf",
+        location_type="paper_pdf",
+        uri="file:///papers/qg.pdf",
+        label="QG paper",
+    )
+
+    frontmatter, _body = read_md(
+        ws.registry_dir("reference_locations") / f"{location.location_id}.md"
+    )
+    assert frontmatter["record_family"] == "reference_locations"
+    assert frontmatter["schema_version"] == "v1"
+    assert frontmatter["created_by"]["actor_type"] == "tool"
+    assert frontmatter["created_by"]["actor_id"] == "record_reference_location"
+    assert len(frontmatter["record_content_hash"]) == 64
+    assert frontmatter["revision"] == 1
+    assert frontmatter["trust_effect"] == "none"
 
 
 def test_cli_reference_location_record_returns_json(tmp_path, capsys):

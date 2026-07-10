@@ -4,7 +4,7 @@ This report is read-only structural evidence. It cannot update canonical researc
 
 - repo_root: `F:\AI_Workspace\repos\AITP-Research-Protocol`
 - workspace_base: `F:\AI_Workspace\Theoretical-Physics\research\aitp-topics`
-- file_count: `531`
+- file_count: `538`
 - actual_registry_record_count: `7235`
 - truth_source: `static_source_and_filesystem_inventory`
 - summary_inputs_trusted: false
@@ -14,11 +14,11 @@ This report is read-only structural evidence. It cannot update canonical researc
 
 ## File Classification Summary
 
-- directly_touched_by_plan: `52`
+- directly_touched_by_plan: `39`
 - covered_by_integration_choke_point: `0`
-- adjacent_but_no_change_expected: `415`
+- adjacent_but_no_change_expected: `434`
 - requires_task_update: `0`
-- deferred_legacy_or_domain_surface: `64`
+- deferred_legacy_or_domain_surface: `65`
 
 ## Runtime Capability Drift
 
@@ -38,7 +38,7 @@ This report is read-only structural evidence. It cannot update canonical researc
 
 - layout: `active_claim_rebind_audits, artifacts, attempts, authorities, benchmarks, checkpoints, claim_statuses, claims, code_states, code_workspaces, evidence, exploratory_records, failure_mode_reviews, ideas, intents, lane_contracts, legacy_l2_seed_group_reviews, legacy_semantic_repairs, legacy_semantic_reviews, legacy_source_reconstruction_repairs, lifecycle_events, monitor_snapshots, object_relations, outputs, physics_objects, promotion_packets, proof_obligations, questions, quiet_checkpoints, reference_locations, research_run_events, research_runs, routes, sensemaking_reports, skill_patch_proposals, source_assets, source_reconstruction_reviews, tool_recipes, tool_runs, trust_updates, validation_contracts, validation_results`
 - literal_uses: `active_claim_rebind_audits, artifacts, authorities, checkpoints, claim_statuses, claims, code_states, code_workspaces, evidence, exploratory_records, failure_mode_reviews, lane_contracts, legacy_l2_seed_group_reviews, legacy_semantic_repairs, legacy_semantic_reviews, legacy_source_reconstruction_repairs, lifecycle_events, monitor_snapshots, object_relations, physics_objects, promotion_packets, proof_obligations, quiet_checkpoints, reference_locations, research_run_events, research_runs, routes, sensemaking_reports, skill_patch_proposals, source_assets, source_reconstruction_reviews, tool_recipes, tool_runs, trust_updates, validation_contracts, validation_results`
-- actual_workspace: `active_claim_rebind_audits, artifacts, attempts, authorities, benchmarks, checkpoints, claim_statuses, claims, code_states, code_workspaces, evidence, exploratory_records, ideas, intents, lane_contracts, legacy_l2_seed_group_reviews, legacy_semantic_repairs, legacy_semantic_reviews, legacy_source_reconstruction_repairs, lifecycle_events, object_relations, outputs, physics_objects, promotion_packets, proof_obligations, questions, quiet_checkpoints, reference_locations, research_run_events, research_runs, routes, sensemaking_reports, source_assets, source_reconstruction_reviews, tool_recipes, tool_runs, trust_updates, validation_contracts, validation_results`
+- actual_workspace: `active_claim_rebind_audits, artifacts, attempts, authorities, benchmarks, checkpoints, claim_statuses, claims, code_states, code_workspaces, evidence, exploratory_records, failure_mode_reviews, ideas, intents, lane_contracts, legacy_l2_seed_group_reviews, legacy_semantic_repairs, legacy_semantic_reviews, legacy_source_reconstruction_repairs, lifecycle_events, monitor_snapshots, object_relations, outputs, physics_objects, promotion_packets, proof_obligations, questions, quiet_checkpoints, reference_locations, research_run_events, research_runs, routes, sensemaking_reports, skill_patch_proposals, source_assets, source_reconstruction_reviews, tool_recipes, tool_runs, trust_updates, validation_contracts, validation_results`
 - used_not_layout: `none`
 - actual_not_layout: `none`
 - layout_not_used: `attempts, benchmarks, ideas, intents, outputs, questions`
@@ -59,6 +59,7 @@ This report is read-only structural evidence. It cannot update canonical researc
 | code_workspaces | 0 |
 | evidence | 783 |
 | exploratory_records | 1 |
+| failure_mode_reviews | 0 |
 | ideas | 0 |
 | intents | 0 |
 | lane_contracts | 1 |
@@ -67,6 +68,7 @@ This report is read-only structural evidence. It cannot update canonical researc
 | legacy_semantic_reviews | 138 |
 | legacy_source_reconstruction_repairs | 2 |
 | lifecycle_events | 7 |
+| monitor_snapshots | 0 |
 | object_relations | 206 |
 | outputs | 0 |
 | physics_objects | 204 |
@@ -79,6 +81,7 @@ This report is read-only structural evidence. It cannot update canonical researc
 | research_runs | 18 |
 | routes | 3 |
 | sensemaking_reports | 699 |
+| skill_patch_proposals | 0 |
 | source_assets | 1198 |
 | source_reconstruction_reviews | 43 |
 | tool_recipes | 158 |
@@ -144,7 +147,9 @@ This report is read-only structural evidence. It cannot update canonical researc
 | `brain/v5/physics_objects.py` | `record_physics_object` | `write_record` | physics_objects | false |
 | `brain/v5/physics_objects.py` | `record_object_relation` | `write_record` | object_relations | false |
 | `brain/v5/quiet_checkpoint.py` | `apply_quiet_checkpoint_batch` | `write_record` | quiet_checkpoints | false |
-| `brain/v5/references.py` | `record_reference_location` | `write_record` | reference_locations | false |
+| `brain/v5/record_repository.py` | `write` | `write_text_atomic` | none | false |
+| `brain/v5/record_repository.py` | `write` | `write_md` | none | false |
+| `brain/v5/record_repository.py` | `write` | `write_md` | none | false |
 | `brain/v5/replay.py` | `write_workspace_replay_packet` | `write_md` | none | false |
 | `brain/v5/research_intent.py` | `record_research_intent_packet` | `write_md` | none | false |
 | `brain/v5/research_intent.py` | `materialize_steering_redirect` | `write_md` | none | false |
@@ -256,7 +261,7 @@ This report is read-only structural evidence. It cannot update canonical researc
 | `brain/tools/__init__.py` | adjacent_but_no_change_expected | none |
 | `brain/tools/l4_code_method.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/__init__.py` | adjacent_but_no_change_expected | none |
-| `brain/v5/active_claim_focus.py` | directly_touched_by_plan | none |
+| `brain/v5/active_claim_focus.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/active_claim_focus_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/adapter_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/adapter_protocols.py` | adjacent_but_no_change_expected | none |
@@ -301,8 +306,8 @@ This report is read-only structural evidence. It cannot update canonical researc
 | `brain/v5/cli_summaries.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/cli_validation.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/cli_vnext.py` | adjacent_but_no_change_expected | none |
-| `brain/v5/closeout_completeness.py` | directly_touched_by_plan | none |
-| `brain/v5/code.py` | directly_touched_by_plan | none |
+| `brain/v5/closeout_completeness.py` | adjacent_but_no_change_expected | none |
+| `brain/v5/code.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/codex_facade.py` | directly_touched_by_plan | none |
 | `brain/v5/context_pack.py` | directly_touched_by_plan | none |
 | `brain/v5/context_pack_contracts.py` | adjacent_but_no_change_expected | none |
@@ -310,15 +315,15 @@ This report is read-only structural evidence. It cannot update canonical researc
 | `brain/v5/context_profile_drafts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/context_profile_template_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/context_profile_templates.py` | adjacent_but_no_change_expected | none |
-| `brain/v5/context_profiles.py` | directly_touched_by_plan | none |
+| `brain/v5/context_profiles.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/curated_legacy_migration.py` | adjacent_but_no_change_expected | none |
-| `brain/v5/curated_rag_contracts.py` | directly_touched_by_plan | none |
-| `brain/v5/curated_rag_corpus.py` | directly_touched_by_plan | none |
+| `brain/v5/curated_rag_contracts.py` | adjacent_but_no_change_expected | none |
+| `brain/v5/curated_rag_corpus.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/domain_pack_contracts.py` | deferred_legacy_or_domain_surface | none |
 | `brain/v5/domain_packs.py` | deferred_legacy_or_domain_surface | none |
 | `brain/v5/domain_skill_shim_contracts.py` | deferred_legacy_or_domain_surface | none |
-| `brain/v5/domain_skill_shims.py` | directly_touched_by_plan | none |
+| `brain/v5/domain_skill_shims.py` | deferred_legacy_or_domain_surface | none |
 | `brain/v5/evidence.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/evolution.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/exploration.py` | adjacent_but_no_change_expected | none |
@@ -332,11 +337,11 @@ This report is read-only structural evidence. It cannot update canonical researc
 | `brain/v5/gate_protocols.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/goal_continuation.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/goal_continuation_contracts.py` | adjacent_but_no_change_expected | none |
-| `brain/v5/harness_feedback.py` | directly_touched_by_plan | none |
+| `brain/v5/harness_feedback.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/harness_feedback_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/hook_adapters.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/hook_bridge_markdown.py` | adjacent_but_no_change_expected | none |
-| `brain/v5/hook_codex_install.py` | directly_touched_by_plan | none |
+| `brain/v5/hook_codex_install.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/hook_entrypoint_schemas.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/hook_fixture_templates.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/hook_install_audit.py` | adjacent_but_no_change_expected | none |
@@ -346,13 +351,13 @@ This report is read-only structural evidence. It cannot update canonical researc
 | `brain/v5/hook_kimi_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/hook_kimi_install.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/hook_opencode_install.py` | adjacent_but_no_change_expected | none |
-| `brain/v5/hook_protocol_contracts.py` | directly_touched_by_plan | none |
+| `brain/v5/hook_protocol_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/hook_python.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/hook_runner_payloads.py` | adjacent_but_no_change_expected | none |
-| `brain/v5/hook_smoke_coverage.py` | directly_touched_by_plan | none |
+| `brain/v5/hook_smoke_coverage.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/hooks.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/host_lifecycle_contracts.py` | adjacent_but_no_change_expected | none |
-| `brain/v5/host_readiness.py` | directly_touched_by_plan | none |
+| `brain/v5/host_readiness.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/host_readiness_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/hpc_cockpit.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/hpc_cockpit_contracts.py` | adjacent_but_no_change_expected | none |
@@ -363,7 +368,7 @@ This report is read-only structural evidence. It cannot update canonical researc
 | `brain/v5/interaction_worklist.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/interaction_worklist_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/knowledge_connector_binding_contracts.py` | adjacent_but_no_change_expected | none |
-| `brain/v5/knowledge_connector_bindings.py` | directly_touched_by_plan | none |
+| `brain/v5/knowledge_connector_bindings.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/knowledge_connector_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/knowledge_connectors.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/lane_contracts.py` | adjacent_but_no_change_expected | none |
@@ -444,7 +449,7 @@ This report is read-only structural evidence. It cannot update canonical researc
 | `brain/v5/literature_intake_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/literature_reading_route.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/literature_reading_route_contracts.py` | adjacent_but_no_change_expected | none |
-| `brain/v5/literature_source_extraction.py` | directly_touched_by_plan | none |
+| `brain/v5/literature_source_extraction.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/literature_source_extraction_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/literature_source_review_handoff.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/literature_source_review_handoff_contracts.py` | adjacent_but_no_change_expected | none |
@@ -486,7 +491,7 @@ This report is read-only structural evidence. It cannot update canonical researc
 | `brain/v5/memory_audit_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/memory_index.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/models.py` | directly_touched_by_plan | none |
-| `brain/v5/moment_policy.py` | directly_touched_by_plan | none |
+| `brain/v5/moment_policy.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/moment_policy_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/native_mcp.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/note_outline.py` | adjacent_but_no_change_expected | none |
@@ -501,28 +506,32 @@ This report is read-only structural evidence. It cannot update canonical researc
 | `brain/v5/output_stability_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/paths.py` | directly_touched_by_plan | none |
 | `brain/v5/payload_hints.py` | adjacent_but_no_change_expected | none |
-| `brain/v5/physics_objects.py` | directly_touched_by_plan | none |
+| `brain/v5/physics_objects.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/policy.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/pretool_policy.py` | adjacent_but_no_change_expected | none |
-| `brain/v5/process_graph.py` | adjacent_but_no_change_expected | none |
+| `brain/v5/process_graph.py` | directly_touched_by_plan | none |
 | `brain/v5/process_graph_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/public_surfaces.py` | directly_touched_by_plan | none |
 | `brain/v5/qsgw_cockpit.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/qsgw_cockpit_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/question_engine.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/question_intents.py` | adjacent_but_no_change_expected | none |
-| `brain/v5/quiet_checkpoint.py` | directly_touched_by_plan | none |
+| `brain/v5/quiet_checkpoint.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/quiet_checkpoint_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/record_contracts.py` | adjacent_but_no_change_expected | none |
+| `brain/v5/record_envelope.py` | directly_touched_by_plan | none |
+| `brain/v5/record_envelope_audit.py` | directly_touched_by_plan | none |
 | `brain/v5/record_family_contracts.py` | directly_touched_by_plan | none |
 | `brain/v5/record_family_registry.py` | directly_touched_by_plan | none |
 | `brain/v5/record_gate_audit_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/record_ref_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/record_refs.py` | directly_touched_by_plan | none |
-| `brain/v5/recording_navigator.py` | directly_touched_by_plan | none |
+| `brain/v5/record_repository.py` | directly_touched_by_plan | none |
+| `brain/v5/record_repository_contracts.py` | directly_touched_by_plan | none |
+| `brain/v5/recording_navigator.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/recording_navigator_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/recovery_session.py` | adjacent_but_no_change_expected | none |
-| `brain/v5/references.py` | adjacent_but_no_change_expected | none |
+| `brain/v5/references.py` | directly_touched_by_plan | none |
 | `brain/v5/replay.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/replay_backlog_summary.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/replay_contracts.py` | adjacent_but_no_change_expected | none |
@@ -546,7 +555,7 @@ This report is read-only structural evidence. It cannot update canonical researc
 | `brain/v5/run_iterations.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/runtime_audit.py` | directly_touched_by_plan | none |
 | `brain/v5/runtime_audit_contracts.py` | directly_touched_by_plan | none |
-| `brain/v5/runtime_audit_rendering.py` | adjacent_but_no_change_expected | none |
+| `brain/v5/runtime_audit_rendering.py` | directly_touched_by_plan | none |
 | `brain/v5/runtime_bridge_target_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/runtime_bridge_targets.py` | directly_touched_by_plan | none |
 | `brain/v5/runtime_entrypoint_catalog.py` | directly_touched_by_plan | none |
@@ -573,7 +582,7 @@ This report is read-only structural evidence. It cannot update canonical researc
 | `brain/v5/tool_executor_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/tool_executor_kernels.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/tool_executors.py` | adjacent_but_no_change_expected | none |
-| `brain/v5/tools.py` | directly_touched_by_plan | none |
+| `brain/v5/tools.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/topic_status.py` | directly_touched_by_plan | none |
 | `brain/v5/topic_status_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/trace.py` | adjacent_but_no_change_expected | none |
@@ -585,7 +594,7 @@ This report is read-only structural evidence. It cannot update canonical researc
 | `brain/v5/validation.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/vnext_readiness.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/vnext_readiness_contracts.py` | adjacent_but_no_change_expected | none |
-| `brain/v5/workspace.py` | directly_touched_by_plan | none |
+| `brain/v5/workspace.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/workspace_file_migration_ledger.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/workspace_file_migration_ledger_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/workspace_interaction_preview.py` | adjacent_but_no_change_expected | none |
@@ -611,9 +620,9 @@ This report is read-only structural evidence. It cannot update canonical researc
 | `hooks/aitp_event.py` | adjacent_but_no_change_expected | none |
 | `hooks/aitp_l4_watchdog.py` | adjacent_but_no_change_expected | none |
 | `hooks/aitp_v5_adapter_event_runner.py` | adjacent_but_no_change_expected | none |
-| `hooks/aitp_v5_claude_hook.py` | directly_touched_by_plan | none |
+| `hooks/aitp_v5_claude_hook.py` | adjacent_but_no_change_expected | none |
 | `hooks/aitp_v5_hook.py` | adjacent_but_no_change_expected | none |
-| `hooks/aitp_v5_kimi_hook.py` | directly_touched_by_plan | none |
+| `hooks/aitp_v5_kimi_hook.py` | adjacent_but_no_change_expected | none |
 | `hooks/compact.py` | adjacent_but_no_change_expected | none |
 | `hooks/hook_utils.py` | adjacent_but_no_change_expected | none |
 | `hooks/session_start.py` | adjacent_but_no_change_expected | none |
@@ -661,7 +670,7 @@ This report is read-only structural evidence. It cannot update canonical researc
 | `tests/test_v5_exploration.py` | adjacent_but_no_change_expected | none |
 | `tests/test_v5_final_readiness.py` | adjacent_but_no_change_expected | none |
 | `tests/test_v5_goal_continuation.py` | adjacent_but_no_change_expected | none |
-| `tests/test_v5_harness_feedback.py` | directly_touched_by_plan | none |
+| `tests/test_v5_harness_feedback.py` | adjacent_but_no_change_expected | none |
 | `tests/test_v5_hooks.py` | adjacent_but_no_change_expected | none |
 | `tests/test_v5_host_readiness.py` | adjacent_but_no_change_expected | none |
 | `tests/test_v5_hpc_cockpit.py` | adjacent_but_no_change_expected | none |
@@ -696,7 +705,10 @@ This report is read-only structural evidence. It cannot update canonical researc
 | `tests/test_v5_question_intents.py` | adjacent_but_no_change_expected | none |
 | `tests/test_v5_quiet_checkpoint.py` | adjacent_but_no_change_expected | none |
 | `tests/test_v5_real_workflows.py` | adjacent_but_no_change_expected | none |
+| `tests/test_v5_record_envelope.py` | directly_touched_by_plan | none |
+| `tests/test_v5_record_envelope_audit.py` | directly_touched_by_plan | none |
 | `tests/test_v5_record_family_registry.py` | directly_touched_by_plan | none |
+| `tests/test_v5_record_repository.py` | directly_touched_by_plan | none |
 | `tests/test_v5_recording_navigator.py` | adjacent_but_no_change_expected | none |
 | `tests/test_v5_reference_locations.py` | adjacent_but_no_change_expected | none |
 | `tests/test_v5_replay.py` | adjacent_but_no_change_expected | none |

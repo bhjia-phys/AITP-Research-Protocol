@@ -5,7 +5,9 @@ from __future__ import annotations
 from brain.v5.ids import prefixed_id
 from brain.v5.models import ReferenceLocationRecord
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import list_valid_records, write_record
+from brain.v5.record_envelope import RecordActor
+from brain.v5.record_repository import RecordRepository
+from brain.v5.store import list_valid_records
 
 
 def record_reference_location(
@@ -55,8 +57,15 @@ def record_reference_location(
             f"URI: `{uri}`",
         ]
     )
-    write_record(
-        ws.registry_dir("reference_locations") / f"{location_id}.md",
+    RecordRepository(
+        ws,
+        actor=RecordActor(
+            actor_type="tool",
+            actor_id="record_reference_location",
+            host="aitp",
+        ),
+    ).write(
+        "reference_locations",
         record,
         body=body,
     )

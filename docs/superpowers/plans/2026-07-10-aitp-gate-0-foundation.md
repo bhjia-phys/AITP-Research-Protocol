@@ -524,7 +524,7 @@ git commit -m "v5: add record envelope compatibility"
 - Produces: `RecordReadReport(records, checked_count, loaded_count, malformed, missing)`
 - Produces: `RecordRepository.write(...)`, `.read(...)`, and `.list(...)`.
 
-- [ ] **Step 1: Write failing idempotency and collision tests**
+- [x] **Step 1: Write failing idempotency and collision tests**
 
 ```python
 def test_repository_same_content_is_idempotent(tmp_path):
@@ -543,7 +543,7 @@ def test_repository_rejects_same_id_with_different_content(tmp_path):
         repo.write("claims", changed, body="# Changed\n")
 ```
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run:
 
@@ -553,14 +553,14 @@ python -m pytest tests\test_v5_record_repository.py -q -p no:cacheprovider --bas
 
 Expected: import failure for `record_repository`.
 
-- [ ] **Step 3: Implement create-or-idempotent writes with atomic lock files**
+- [x] **Step 3: Implement create-or-idempotent writes with atomic lock files**
 
 Resolve paths through `RecordFamilySpec`, compute canonical hash before write,
 acquire a family/id lock under `.aitp/runtime/locks`, compare existing content,
 and call the existing atomic Markdown writer only for creation. Always release
 the lock in `finally`.
 
-- [ ] **Step 4: Add malformed-read reporting test**
+- [x] **Step 4: Add malformed-read reporting test**
 
 ```python
 def test_repository_list_reports_malformed_record(tmp_path):
@@ -574,24 +574,24 @@ def test_repository_list_reports_malformed_record(tmp_path):
     assert report.malformed[0].path == str(bad)
 ```
 
-- [ ] **Step 5: Verify RED, then implement strict read reports**
+- [x] **Step 5: Verify RED, then implement strict read reports**
 
 Do not catch-and-drop parse or constructor errors. Return path, family, error
 type, and message. Keep the old `list_valid_records` only as an explicitly
 legacy compatibility function and document it as unsuitable for exhaustive
 queries.
 
-- [ ] **Step 6: Add revision and compare-and-swap tests**
+- [x] **Step 6: Add revision and compare-and-swap tests**
 
 Test explicit supersession, expected-hash mismatch, stale lock cleanup policy,
 and concurrent same-content creation.
 
-- [ ] **Step 7: Migrate one low-risk writer**
+- [x] **Step 7: Migrate one low-risk writer**
 
 Migrate `record_reference_location` or another low-risk orientation/process
 writer selected by the live audit. Preserve its public return type and body.
 
-- [ ] **Step 8: Run repository, writer, and record-ref tests**
+- [x] **Step 8: Run repository, writer, and record-ref tests**
 
 ```powershell
 python -m pytest tests\test_v5_record_repository.py tests\test_v5_reference_locations.py tests\test_v5_adapters.py -q -p no:cacheprovider --basetemp tmp\pytest-g0-repository-green
@@ -599,10 +599,15 @@ python -m pytest tests\test_v5_record_repository.py tests\test_v5_reference_loca
 
 Expected: all selected tests pass.
 
-- [ ] **Step 9: Commit Task 4**
+The persisted repository-integrity field is `record_content_hash`, not
+`content_hash`. This avoids colliding with domain fields such as
+`SourceAssetRecord.content_hash`, which denotes source bytes and remains part
+of the scientific record payload.
+
+- [x] **Step 9: Commit Task 4**
 
 ```powershell
-git add brain/v5/record_repository.py brain/v5/record_repository_contracts.py brain/v5/store.py brain/v5/markdown.py brain/v5/references.py tests/test_v5_record_repository.py
+git add brain/v5/record_repository.py brain/v5/record_repository_contracts.py brain/v5/store.py brain/v5/markdown.py brain/v5/paths.py brain/v5/record_envelope.py brain/v5/references.py tests/test_v5_record_repository.py tests/test_v5_record_envelope.py tests/test_v5_reference_locations.py docs/superpowers/progress/2026-07-10-aitp-record-repository.md docs/superpowers/progress/2026-07-10-aitp-runtime-capability-audit.md docs/superpowers/specs/2026-07-10-aitp-final-research-operating-memory-design.md docs/superpowers/plans/2026-07-10-aitp-gate-0-foundation.md
 git commit -m "v5: add safe record repository"
 ```
 

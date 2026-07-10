@@ -18,6 +18,20 @@ from brain.v5.record_family_registry import RecordFamilySpec, record_family_spec
 _ACTOR_TYPES = {"human", "model", "tool", "migration"}
 _TRUST_EFFECTS = {"none", "candidate_only", "trust_path_input"}
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+_CONTROL_METADATA_FIELDS = {
+    "created_at",
+    "created_by",
+    "creation_time_source",
+    "lifecycle_status",
+    "record_family",
+    "record_id",
+    "record_id_source",
+    "record_content_hash",
+    "revision",
+    "schema_version",
+    "supersedes",
+    "trust_effect",
+}
 
 
 @dataclass(frozen=True)
@@ -58,9 +72,13 @@ class EnvelopeValidationError(ValueError):
 
 
 def canonical_record_hash(frontmatter: Mapping[str, Any], body: str) -> str:
-    """Return a stable SHA-256 over all payload fields except the hash itself."""
+    """Return a stable SHA-256 over scientific payload, excluding envelope control fields."""
 
-    payload = {str(key): value for key, value in frontmatter.items() if key != "content_hash"}
+    payload = {
+        str(key): value
+        for key, value in frontmatter.items()
+        if str(key) not in _CONTROL_METADATA_FIELDS
+    }
     normalized = _json_compatible(payload)
     serialized = json.dumps(
         normalized,
@@ -155,6 +173,12 @@ def validate_record_envelope(envelope: RecordEnvelope) -> tuple[str, ...]:
     ):
         if any(not isinstance(ref, str) or not ref.strip() for ref in refs):
             errors.append(f"{field_name} must contain non-empty strings")
+    for field_name, refs in (
+        ("scope_refs", envelope.scope_refs),
+        ("source_record_refs", envelope.source_record_refs),
+    ):
+        if any(not _is_typed_ref(ref) for ref in refs):
+            errors.append(f"{field_name} must contain typed refs")
     return tuple(errors)
 
 
@@ -282,6 +306,11 @@ def _string_tuple(value: Any) -> tuple[str, ...]:
         return ()
     items = value if isinstance(value, (list, tuple, set, frozenset)) else [value]
     return tuple(str(item).strip() for item in items if str(item).strip())
+
+
+def _is_typed_ref(value: str) -> bool:
+    kind, separator, record_id = str(value).partition(":")
+    return bool(separator and kind.strip() and record_id.strip())
 
 
 def _merge_string_tuples(*values: Any) -> tuple[str, ...]:

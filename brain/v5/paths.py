@@ -30,6 +30,7 @@ _NON_REGISTRY_LAYOUT_DIRS = [
     "runtime/code_workspaces",
     "runtime/locks/topics",
     "runtime/locks/claims",
+    "revisions",
     "surfaces",
     "schemas",
     "migrations",

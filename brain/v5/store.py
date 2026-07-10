@@ -45,7 +45,11 @@ def list_records(directory: str | Path, cls: type[T]) -> list[T]:
 
 
 def list_valid_records(directory: str | Path, cls: type[T]) -> list[T]:
-    """Read valid Markdown records and skip malformed legacy leftovers."""
+    """Legacy-tolerant read that skips malformed files.
+
+    Do not use this helper for exhaustive canonical queries or absence claims;
+    use ``RecordRepository.list`` so every malformed path remains visible.
+    """
 
     root = Path(directory)
     if not root.exists():
