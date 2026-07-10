@@ -30,6 +30,7 @@
 | File | Responsibility |
 |---|---|
 | `brain/v5/runtime_audit.py` | Static and workspace-aware inventory of files, record families, writers, surfaces, and drift. |
+| `brain/v5/runtime_audit_rendering.py` | Focused Markdown renderer for the runtime audit, kept separate from inventory logic. |
 | `brain/v5/runtime_audit_contracts.py` | Validation of the audit payload and classifications. |
 | `brain/v5/record_envelope.py` | Common compatibility envelope and payload hashing. |
 | `brain/v5/record_family_registry.py` | Single family specification registry and path/ref metadata. |
@@ -49,6 +50,7 @@
 
 **Files:**
 - Create: `brain/v5/runtime_audit.py`
+- Create: `brain/v5/runtime_audit_rendering.py`
 - Create: `brain/v5/runtime_audit_contracts.py`
 - Create: `tests/test_v5_runtime_audit.py`
 - Create: `docs/superpowers/progress/2026-07-10-aitp-runtime-capability-audit.md`
@@ -60,7 +62,7 @@
 - Produces: `validate_runtime_capability_audit(payload: dict[str, Any]) -> ContractResult`
 - Consumes: `_LAYOUT_DIRS`, literal `WorkspacePaths.registry_dir(...)` calls, actual workspace registry directories, plan file paths, public surface tuple, runtime entrypoint catalog, MCP wrapper names, compact allowlist, and source/test file lists.
 
-- [ ] **Step 1: Write the failing static audit test**
+- [x] **Step 1: Write the failing static audit test**
 
 ```python
 from pathlib import Path
@@ -91,7 +93,7 @@ def test_runtime_audit_finds_registry_drift_and_classifies_every_file(tmp_path):
     assert all(row["classification"] for row in payload["files"])
 ```
 
-- [ ] **Step 2: Run the test and verify RED**
+- [x] **Step 2: Run the test and verify RED**
 
 Run:
 
@@ -101,7 +103,7 @@ python -m pytest tests\test_v5_runtime_audit.py::test_runtime_audit_finds_regist
 
 Expected: collection fails with `ModuleNotFoundError: No module named 'brain.v5.runtime_audit'`.
 
-- [ ] **Step 3: Implement literal family and file inventory**
+- [x] **Step 3: Implement literal family and file inventory**
 
 Create `brain/v5/runtime_audit.py` with these concrete building blocks:
 
@@ -176,13 +178,13 @@ legacy-prefixed files are `deferred_legacy_or_domain_surface`, choke points are
 `covered_by_integration_choke_point`, and all remaining files are
 `adjacent_but_no_change_expected`.
 
-- [ ] **Step 4: Run the focused test and verify GREEN**
+- [x] **Step 4: Run the focused test and verify GREEN**
 
 Run the Step 2 command.
 
 Expected: `1 passed`.
 
-- [ ] **Step 5: Add actual-workspace and malformed-input tests**
+- [x] **Step 5: Add actual-workspace and malformed-input tests**
 
 ```python
 def test_runtime_audit_reports_actual_workspace_families(tmp_path):
@@ -226,7 +228,7 @@ def _minimal_repo(tmp_path):
     return repo
 ```
 
-- [ ] **Step 6: Run both tests and verify RED**
+- [x] **Step 6: Run both tests and verify RED**
 
 Run:
 
@@ -236,14 +238,14 @@ python -m pytest tests\test_v5_runtime_audit.py -q -p no:cacheprovider --basetem
 
 Expected: failures show missing actual-workspace or parse-error handling.
 
-- [ ] **Step 7: Add actual family and parse-error handling**
+- [x] **Step 7: Add actual family and parse-error handling**
 
 Implement `_actual_registry_families` against
 `workspace_base/.aitp/registry`. Catch `SyntaxError` per source file, set
 `classification="requires_task_update"`, and retain the formatted error in
 `parse_error`.
 
-- [ ] **Step 8: Add contract and Markdown renderer tests**
+- [x] **Step 8: Add contract and Markdown renderer tests**
 
 ```python
 from brain.v5.runtime_audit import render_runtime_capability_audit_markdown
@@ -262,7 +264,7 @@ def test_runtime_audit_contract_and_markdown(tmp_path):
     assert "can_update_claim_trust: false" in rendered
 ```
 
-- [ ] **Step 9: Run the contract test and verify RED**
+- [x] **Step 9: Run the contract test and verify RED**
 
 Run:
 
@@ -272,14 +274,14 @@ python -m pytest tests\test_v5_runtime_audit.py::test_runtime_audit_contract_and
 
 Expected: import failure for `runtime_audit_contracts` or missing renderer.
 
-- [ ] **Step 10: Implement the validator and renderer**
+- [x] **Step 10: Implement the validator and renderer**
 
 Use the repository `ContractResult`/`Issue` pattern. Require the top-level kind,
 list-shaped files, all valid classifications, record-family lists, and false
 trust/mutation flags. Render inventory counts, drift lists, parse errors, and one
 Markdown table row per file.
 
-- [ ] **Step 11: Run all Task 1 tests**
+- [x] **Step 11: Run all Task 1 tests**
 
 Run:
 
@@ -289,7 +291,7 @@ python -m pytest tests\test_v5_runtime_audit.py tests\test_v5_workspace_inventor
 
 Expected: all tests pass.
 
-- [ ] **Step 12: Generate the live report**
+- [x] **Step 12: Generate the live report**
 
 Run the new renderer against:
 
@@ -304,10 +306,10 @@ Write the rendered result to
 project atomic text writer. Confirm the report is read-only and contains every
 file row.
 
-- [ ] **Step 13: Commit Task 1**
+- [x] **Step 13: Commit Task 1**
 
 ```powershell
-git add brain/v5/runtime_audit.py brain/v5/runtime_audit_contracts.py brain/v5/workspace_inventory.py tests/test_v5_runtime_audit.py docs/superpowers/progress/2026-07-10-aitp-runtime-capability-audit.md docs/superpowers/plans/2026-07-10-aitp-gate-0-foundation.md
+git add brain/v5/runtime_audit.py brain/v5/runtime_audit_rendering.py brain/v5/runtime_audit_contracts.py tests/test_v5_runtime_audit.py docs/superpowers/progress/2026-07-10-aitp-runtime-capability-audit.md docs/superpowers/plans/2026-07-10-aitp-gate-0-foundation.md
 git commit -m "v5: add runtime capability audit"
 ```
 
