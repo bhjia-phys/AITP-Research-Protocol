@@ -49,16 +49,28 @@ def test_record_family_registry_contract_is_self_consistent():
     assert "memory_entrie" not in record_family_specs()["memory_entries"].exact_ref_aliases
     assert "claim_statuse" not in record_family_specs()["claim_statuses"].exact_ref_aliases
 
+    assert "id" in record_family_specs()["claims"].legacy_id_fields
+    assert "reference_location_id" in record_family_specs()["reference_locations"].legacy_id_fields
+    assert "validation_result_id" in record_family_specs()["validation_results"].legacy_id_fields
+
 
 def test_record_family_contract_rejects_incomplete_query_and_surface_metadata():
     specs = record_family_specs()
-    specs["claims"] = replace(specs["claims"], surface="", index_fields=("topic_id",))
+    specs["claims"] = replace(
+        specs["claims"],
+        surface="",
+        index_fields=("topic_id",),
+        schema_version="",
+        trust_effect="promotes_claim",
+    )
 
     payload = validate_specs(specs)
 
     assert payload["ok"] is False
     assert any("surface" in error for error in payload["errors"])
     assert any("index_fields" in error for error in payload["errors"])
+    assert any("schema_version" in error for error in payload["errors"])
+    assert any("trust_effect" in error for error in payload["errors"])
 
 
 def test_family_consumers_are_canonical_registry_projections():

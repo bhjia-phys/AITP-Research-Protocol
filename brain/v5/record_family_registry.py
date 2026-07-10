@@ -18,6 +18,9 @@ class RecordFamilySpec:
     id_field: str
     ref_kind: str
     relative_dir: str
+    schema_version: str = "v1"
+    trust_effect: str = "none"
+    legacy_id_fields: tuple[str, ...] = ()
     exact_ref_aliases: tuple[str, ...] = ()
     lifecycle_policy: str = "append_revision"
     index_fields: tuple[str, ...] = ()
@@ -134,6 +137,10 @@ _SURFACES = {
     "sessions": "session_binding",
     "source_reconstruction_reviews": "source_reconstruction_review_result_record",
 }
+_LEGACY_ID_FIELDS = {
+    "reference_locations": ("reference_location_id",),
+    "validation_results": ("validation_result_id",),
+}
 
 _LIFECYCLE_FAMILIES = {"claims", "evidence"}
 _APPEND_ONLY_FAMILIES = {
@@ -147,6 +154,32 @@ _APPEND_ONLY_FAMILIES = {
     "trust_updates",
 }
 _BOUNDED_AUTO_WRITE_FAMILIES = {"monitor_snapshots", "research_run_events"}
+_TRUST_PATH_FAMILIES = {
+    "artifacts",
+    "authorities",
+    "benchmarks",
+    "claims",
+    "code_states",
+    "evidence",
+    "failure_mode_reviews",
+    "memory_entries",
+    "promotion_packets",
+    "proof_obligations",
+    "source_reconstruction_reviews",
+    "tool_runs",
+    "validation_contracts",
+    "validation_results",
+}
+_CANDIDATE_ONLY_FAMILIES = {
+    "attempts",
+    "claim_statuses",
+    "exploratory_records",
+    "ideas",
+    "intents",
+    "outputs",
+    "questions",
+    "sensemaking_reports",
+}
 
 
 def record_family_specs() -> dict[str, RecordFamilySpec]:
@@ -211,6 +244,8 @@ def _registry_spec(
         id_field=id_field,
         ref_kind=ref_kind,
         relative_dir=f"registry/{family}",
+        trust_effect=_trust_effect(family),
+        legacy_id_fields=_legacy_id_fields(family),
         exact_ref_aliases=_aliases(family, kind, ref_kind),
         lifecycle_policy="append_only" if family in _APPEND_ONLY_FAMILIES else "append_revision",
         index_fields=(id_field, "topic_id", "claim_id", "kind", "status"),
@@ -243,6 +278,8 @@ def _special_spec(
         id_field=id_field,
         ref_kind=ref_kind,
         relative_dir=relative_dir,
+        trust_effect=_trust_effect(family),
+        legacy_id_fields=_legacy_id_fields(family),
         exact_ref_aliases=_aliases(family, kind, ref_kind),
         lifecycle_policy=(
             "runtime_binding"
@@ -282,3 +319,15 @@ def _singular_family(family: str) -> str:
     if family.endswith("s"):
         return family[:-1]
     return family
+
+
+def _trust_effect(family: str) -> str:
+    if family in _TRUST_PATH_FAMILIES:
+        return "trust_path_input"
+    if family in _CANDIDATE_ONLY_FAMILIES:
+        return "candidate_only"
+    return "none"
+
+
+def _legacy_id_fields(family: str) -> tuple[str, ...]:
+    return ("id", *_LEGACY_ID_FIELDS.get(family, ()))

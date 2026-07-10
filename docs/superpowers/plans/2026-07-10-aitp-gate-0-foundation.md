@@ -429,9 +429,12 @@ git commit -m "v5: centralize record family registry"
 
 **Files:**
 - Create: `brain/v5/record_envelope.py`
+- Create: `brain/v5/record_envelope_audit.py`
 - Create: `tests/test_v5_record_envelope.py`
-- Modify: `brain/v5/models.py`
+- Create: `tests/test_v5_record_envelope_audit.py`
+- Create: `docs/superpowers/progress/2026-07-10-aitp-record-envelope-compatibility.md`
 - Modify: `brain/v5/record_family_registry.py`
+- Modify: `brain/v5/record_family_contracts.py`
 
 **Interfaces:**
 - Produces: `RecordEnvelope`
@@ -439,7 +442,7 @@ git commit -m "v5: centralize record family registry"
 - Produces: `canonical_record_hash(frontmatter: Mapping[str, Any], body: str) -> str`
 - Produces: `read_envelope_compat(frontmatter, family_spec, path) -> RecordEnvelope`
 
-- [ ] **Step 1: Write failing hash and schema-v1 compatibility tests**
+- [x] **Step 1: Write failing hash and schema-v1 compatibility tests**
 
 ```python
 def test_envelope_hash_is_stable_for_key_order():
@@ -459,7 +462,7 @@ def test_schema_v1_record_gets_compatibility_envelope(tmp_path):
     assert envelope.trust_effect == "trust_path_input"
 ```
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run:
 
@@ -469,20 +472,20 @@ python -m pytest tests\test_v5_record_envelope.py -q -p no:cacheprovider --baset
 
 Expected: import failure for `record_envelope`.
 
-- [ ] **Step 3: Implement stable hashing and compatibility envelopes**
+- [x] **Step 3: Implement stable hashing and compatibility envelopes**
 
 Use sorted JSON-compatible frontmatter normalization and SHA-256. Exclude no
 scientific fields. Compatibility envelopes derive ids and scopes from
 `RecordFamilySpec`, use file mtime only as an explicitly labeled fallback
 creation timestamp, and never write the derived fallback into canonical files.
 
-- [ ] **Step 4: Add actor/revision/trust-effect validation tests**
+- [x] **Step 4: Add actor/revision/trust-effect validation tests**
 
 Require actor type in `human|model|tool|migration`, positive revisions,
 registered family, non-empty hash, and trust effect in
 `none|candidate_only|trust_path_input`.
 
-- [ ] **Step 5: Run envelope and representative model tests**
+- [x] **Step 5: Run envelope and representative model tests**
 
 ```powershell
 python -m pytest tests\test_v5_record_envelope.py tests\test_v5_kernel.py -q -p no:cacheprovider --basetemp tmp\pytest-g0-envelope-green
@@ -490,10 +493,18 @@ python -m pytest tests\test_v5_record_envelope.py tests\test_v5_kernel.py -q -p 
 
 Expected: all selected tests pass.
 
-- [ ] **Step 6: Commit Task 3**
+- [x] **Step 5a: Audit every real registry record through the compatibility layer**
+
+Add a bounded, read-only audit that reports checked, loaded, and malformed
+counts separately. Verify YAML `date` values, generic schema-v1 `id`/`topic`
+fields, and family-specific legacy ID fields without rewriting canonical
+Markdown. Record the measured full-store result and wall-clock baseline in the
+progress report.
+
+- [x] **Step 6: Commit Task 3**
 
 ```powershell
-git add brain/v5/record_envelope.py brain/v5/record_family_registry.py brain/v5/models.py tests/test_v5_record_envelope.py
+git add brain/v5/record_envelope.py brain/v5/record_envelope_audit.py brain/v5/record_family_registry.py brain/v5/record_family_contracts.py tests/test_v5_record_envelope.py tests/test_v5_record_envelope_audit.py tests/test_v5_record_family_registry.py docs/superpowers/progress/2026-07-10-aitp-record-envelope-compatibility.md docs/superpowers/plans/2026-07-10-aitp-gate-0-foundation.md
 git commit -m "v5: add record envelope compatibility"
 ```
 

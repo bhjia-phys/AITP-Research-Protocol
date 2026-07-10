@@ -21,6 +21,7 @@ _AUTO_WRITE_POLICIES = {
     "unimplemented_layout",
 }
 _STORAGE_SCOPES = {"context", "memory", "registry", "runtime", "topic"}
+_TRUST_EFFECTS = {"none", "candidate_only", "trust_path_input"}
 
 
 def validate_record_family_registry(
@@ -51,6 +52,10 @@ def validate_record_family_registry(
             errors.append(f"{prefix}.lifecycle_policy is unsupported")
         if spec.auto_write_policy not in _AUTO_WRITE_POLICIES:
             errors.append(f"{prefix}.auto_write_policy is unsupported")
+        if not spec.schema_version:
+            errors.append(f"{prefix}.schema_version must be non-empty")
+        if spec.trust_effect not in _TRUST_EFFECTS:
+            errors.append(f"{prefix}.trust_effect is unsupported")
         if not {"exact_ref", "inventory"} <= set(spec.participates_in):
             errors.append(f"{prefix}.participates_in must include exact_ref and inventory")
         if "exact_ref" in spec.participates_in and not spec.surface:
@@ -69,6 +74,10 @@ def validate_record_family_registry(
                 errors.append(f"{prefix}.exact_ref_aliases collides with {previous}: {alias}")
             else:
                 aliases[normalized] = key
+        if spec.id_field in spec.legacy_id_fields or len(set(spec.legacy_id_fields)) != len(
+            spec.legacy_id_fields
+        ):
+            errors.append(f"{prefix}.legacy_id_fields must be unique aliases")
 
     registry_count = sum(1 for spec in specs.values() if spec.is_registry_family)
     return {
