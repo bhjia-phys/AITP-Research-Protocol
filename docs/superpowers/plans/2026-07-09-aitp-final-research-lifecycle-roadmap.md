@@ -230,15 +230,15 @@ are green without relaxing limits.
 - Produces: `query_records(ws, query: ResearchQuery) -> RetrievalResult`
 - Produces: `exact_expand(ws, refs: list[str], *, limit: int) -> RetrievalResult`
 
-- [ ] Index record envelope fields, ids, scopes, source refs, selected text,
+- [x] Index record envelope fields, ids, scopes, source refs, selected text,
   lifecycle, and family-specific fields.
-- [ ] Store canonical watermark, manifest hash, generation, build time, counts,
+- [x] Store canonical watermark, manifest and component hashes, generation, build time, counts,
   and malformed-record diagnostics.
-- [ ] Implement exact, metadata-filtered, and deterministic lexical retrieval.
-- [ ] Return checked families, read errors, truncation, and excluded candidates.
-- [ ] Invalidate or mark stale indexes after canonical writes.
-- [ ] Prohibit exhaustive "none found" claims from stale or partial results.
-- [ ] Benchmark index build and representative queries on the real store.
+- [x] Implement exact, metadata-filtered, and deterministic lexical retrieval.
+- [x] Return checked families, read errors, truncation, and excluded candidates.
+- [x] Mark indexes stale after canonical file-state changes.
+- [x] Prohibit exhaustive "none found" claims from stale or partial results.
+- [x] Benchmark index build and representative queries on the real store.
 
 ### Task 0.5: Move Context Builders Onto The Query Layer
 

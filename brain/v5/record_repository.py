@@ -190,7 +190,7 @@ class RecordRepository:
         """Read every record in a family and report every malformed path."""
 
         spec = spec_for_family(family)
-        paths, storage_exists = _family_paths(self.ws, spec)
+        paths, storage_exists = record_family_paths(self.ws, spec)
         if not storage_exists:
             return RecordReadReport((), 0, 0, (), True)
 
@@ -410,7 +410,12 @@ def _record_path(ws: WorkspacePaths, spec: RecordFamilySpec, record_id: str) -> 
     raise ValueError(f"unsupported special record family: {spec.family}")
 
 
-def _family_paths(ws: WorkspacePaths, spec: RecordFamilySpec) -> tuple[list[Path], bool]:
+def record_family_paths(
+    ws: WorkspacePaths,
+    spec: RecordFamilySpec,
+) -> tuple[list[Path], bool]:
+    """Return sorted canonical paths and whether the family storage exists."""
+
     if spec.is_registry_family:
         directory = ws.root / spec.relative_dir
         return sorted(directory.glob("*.md")) if directory.exists() else [], directory.exists()

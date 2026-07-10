@@ -20,6 +20,7 @@ _NON_REGISTRY_LAYOUT_DIRS = [
     "memory/upstream_snapshots",
     "memory/route_memory",
     "curated_rag/indexes",
+    "indexes",
     "knowledge_connectors",
     "tools/recipes",
     "tools/trust_cards",

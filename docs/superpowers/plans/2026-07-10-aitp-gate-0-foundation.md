@@ -621,6 +621,7 @@ git commit -m "v5: add safe record repository"
 - Create: `tests/test_v5_query_index.py`
 - Create: `tests/test_v5_research_retrieval.py`
 - Modify: `brain/v5/paths.py`
+- Modify: `brain/v5/record_repository.py`
 
 **Interfaces:**
 - Produces: `IndexManifest`, `IndexBuildReport`, `ResearchQuery`,
@@ -628,13 +629,13 @@ git commit -m "v5: add safe record repository"
 - Produces: `build_query_index(ws)`, `load_query_index(ws)`,
   `query_records(ws, query)`, and `exact_expand(ws, refs, limit=50)`.
 
-- [ ] **Step 1: Write failing deterministic-index test**
+- [x] **Step 1: Write failing deterministic-index test**
 
 Create claims and source records in two insertion orders, build indexes, and
 assert identical manifest content hash, sorted record refs, family counts, and
 canonical watermark.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 ```powershell
 python -m pytest tests\test_v5_query_index.py -q -p no:cacheprovider --basetemp tmp\pytest-g0-index-red
@@ -642,37 +643,37 @@ python -m pytest tests\test_v5_query_index.py -q -p no:cacheprovider --basetemp 
 
 Expected: import failure for `query_index`.
 
-- [ ] **Step 3: Implement deterministic metadata/lexical index files**
+- [x] **Step 3: Implement deterministic metadata/lexical index files**
 
 Use `RecordRepository` read reports. Persist a manifest plus normalized document
 rows and inverted lexical terms under `.aitp/indexes`. Include generation,
 canonical watermark, family counts, malformed records, build timestamp, and
 manifest hash. Index build never writes canonical records.
 
-- [ ] **Step 4: Write failing stale-index and partial-coverage tests**
+- [x] **Step 4: Write failing stale-index and partial-coverage tests**
 
 After index build, create a new canonical record and assert query result reports
 `index_status="stale"`, `coverage.exhaustive=False`, and forbids absolute
 no-result language.
 
-- [ ] **Step 5: Implement freshness and coverage**
+- [x] **Step 5: Implement freshness and coverage**
 
 Compare the canonical watermark against manifest state. Query exact refs through
 the repository even when the index is stale. Metadata/lexical searches return
 stale diagnostics and checked/unchecked families.
 
-- [ ] **Step 6: Write failing exact, filter, and lexical retrieval tests**
+- [x] **Step 6: Write failing exact, filter, and lexical retrieval tests**
 
 Cover topic/family/status filters, exact refs, deterministic lexical ranking,
 pagination, truncation, malformed-record propagation, and excluded candidates.
 
-- [ ] **Step 7: Implement retrieval and audit payload**
+- [x] **Step 7: Implement retrieval and audit payload**
 
 Keep ranking transparent: exact score, lexical score, scope filter, lifecycle
 filter, and stable tie-break id. `retrieval_audit.py` creates a trust-neutral
 persistable payload but does not write it during Gate 0.
 
-- [ ] **Step 8: Run query tests and a real-store read-only benchmark**
+- [x] **Step 8: Run query tests and a real-store read-only benchmark**
 
 ```powershell
 python -m pytest tests\test_v5_query_index.py tests\test_v5_research_retrieval.py -q -p no:cacheprovider --basetemp tmp\pytest-g0-index-green
@@ -681,10 +682,10 @@ python -m pytest tests\test_v5_query_index.py tests\test_v5_research_retrieval.p
 Expected: all selected tests pass. Record index-build and query timings against
 the real store without modifying canonical files.
 
-- [ ] **Step 9: Commit Task 5**
+- [x] **Step 9: Commit Task 5**
 
 ```powershell
-git add brain/v5/query_index.py brain/v5/query_index_contracts.py brain/v5/research_retrieval.py brain/v5/retrieval_audit.py brain/v5/paths.py tests/test_v5_query_index.py tests/test_v5_research_retrieval.py
+git add brain/v5/query_index.py brain/v5/query_index_contracts.py brain/v5/research_retrieval.py brain/v5/retrieval_audit.py brain/v5/paths.py brain/v5/record_repository.py tests/test_v5_query_index.py tests/test_v5_research_retrieval.py docs/superpowers/progress/2026-07-10-aitp-indexed-retrieval.md docs/superpowers/progress/2026-07-10-aitp-runtime-capability-audit.md docs/superpowers/plans/2026-07-09-aitp-final-research-lifecycle-roadmap.md docs/superpowers/plans/2026-07-10-aitp-gate-0-foundation.md
 git commit -m "v5: add indexed research retrieval"
 ```
 
