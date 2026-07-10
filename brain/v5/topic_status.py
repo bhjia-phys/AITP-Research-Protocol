@@ -8,6 +8,11 @@ from typing import Any
 
 from brain.v5.brief import build_execution_brief
 from brain.v5.claim_relation_map import compact_claim_relation_map, render_claim_relation_map_markdown
+from brain.v5.compact_context_boundary import (
+    compact_context_boundary,
+    render_compact_context_section,
+)
+from brain.v5.context_pack import build_aitp_context_pack
 from brain.v5.evidence import list_evidence_for_claim
 from brain.v5.paths import WorkspacePaths
 
@@ -16,12 +21,14 @@ def write_topic_status_surfaces(ws: WorkspacePaths, *, session_id: str) -> dict[
     """Write topic status files that explain the current route without chat history."""
 
     brief = build_execution_brief(ws, session_id)
+    context_pack = build_aitp_context_pack(ws, session_id, max_lines=45, candidate_limit=3)
+    compact_context = compact_context_boundary(context_pack)
     session = brief["session"]
     topic_id = session["topic_id"]
     runtime_dir = ws.topic_dir(topic_id) / "runtime"
     runtime_dir.mkdir(parents=True, exist_ok=True)
 
-    topic_state = _topic_state(ws, brief)
+    topic_state = _topic_state(ws, brief, compact_context=compact_context)
     files = {
         "topic_state": str(runtime_dir / "topic_state.json"),
         "topic_dashboard": str(runtime_dir / "topic_dashboard.md"),
@@ -45,6 +52,7 @@ def write_topic_status_surfaces(ws: WorkspacePaths, *, session_id: str) -> dict[
         "session_id": session_id,
         "files": files,
         "topic_state": topic_state,
+        "compact_context": compact_context,
         "source_records": _source_records(topic_state),
         "derived_from": "execution_brief",
         "truth_source": False,
@@ -108,7 +116,12 @@ def compact_topic_status_bundle(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _topic_state(ws: WorkspacePaths, brief: dict[str, Any]) -> dict[str, Any]:
+def _topic_state(
+    ws: WorkspacePaths,
+    brief: dict[str, Any],
+    *,
+    compact_context: dict[str, Any],
+) -> dict[str, Any]:
     session = brief["session"]
     focus = brief["current_focus"]
     active_claim_id = str(focus.get("active_claim") or "")
@@ -139,6 +152,7 @@ def _topic_state(ws: WorkspacePaths, brief: dict[str, Any]) -> dict[str, Any]:
         "strategy_memory": known_context.get("strategy_memory", {}),
         "run_iterations": known_context.get("run_iterations", {}),
         "lane_exemplars": known_context.get("lane_exemplars", {}),
+        "compact_context": compact_context,
         "summary_inputs_trusted": False,
         "can_update_claim_trust": False,
     }
@@ -222,6 +236,7 @@ def _session_start(topic_state: dict[str, Any]) -> str:
         _claim_relation_map_section(topic_state.get("claim_relation_map") or {}),
         _strategy_rules_section(topic_state.get("strategy_memory") or {}),
         _lane_exemplars_section(topic_state.get("lane_exemplars") or {}),
+        render_compact_context_section(topic_state.get("compact_context") or {}),
     ]
     if checkpoint.get("active"):
         parts.append(_checkpoint_section(checkpoint))

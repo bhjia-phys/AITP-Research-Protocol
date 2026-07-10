@@ -780,23 +780,29 @@ git commit -m "v5: compile context from indexed queries"
 
 **Files:**
 - Modify: `deploy/hooks/aitp-keyword-router.py`
+- Modify: `deploy/templates/claude-code/aitp-keyword-router.py`
 - Modify: `tests/test_aitp_pm_deploy_surfaces.py`
+- Create: `brain/v5/compact_context_boundary.py`
+- Create: `brain/v5/topic_status_startup.py`
 - Modify: `brain/v5/topic_status.py`
+- Modify: `brain/v5/topic_status_contracts.py`
 - Modify: `brain/v5/workspace_refresh.py`
+- Modify: `brain/v5/workspace_refresh_contracts.py`
 - Create: `tests/test_v5_context_injection_budget.py`
+- Create: `docs/superpowers/progress/2026-07-10-aitp-bounded-host-injection.md`
 
 **Interfaces:**
 - Produces a bounded route hint with matched signal, candidate topic ids/titles,
   base path, compact facade entrypoint, and no topic-memory bodies.
 
-- [ ] **Step 1: Write failing no-memory-body and UTF-8 tests**
+- [x] **Step 1: Write failing no-memory-body and UTF-8 tests**
 
 Create two topics with large `MEMORY.md` files, invoke the deployed router with a
 Chinese theoretical-physics request, and assert output includes topic ids but
 none of either memory body. Assert the serialized additional context stays under
 4,096 bytes.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 ```powershell
 python -m pytest tests\test_aitp_pm_deploy_surfaces.py tests\test_v5_context_injection_budget.py -q -p no:cacheprovider --basetemp tmp\pytest-g0-router-red
@@ -804,18 +810,18 @@ python -m pytest tests\test_aitp_pm_deploy_surfaces.py tests\test_v5_context_inj
 
 Expected: current router leaks memory text or exceeds the byte budget.
 
-- [ ] **Step 3: Remove memory reads and fix keyword encoding**
+- [x] **Step 3: Remove memory reads and fix keyword encoding**
 
 Keep state/topic title and a short question excerpt. Replace mojibake literals
 with valid UTF-8 Chinese strings already used by tests. Emit only autoroute and
 exact-expansion instructions.
 
-- [ ] **Step 4: Add session-start consistency test**
+- [x] **Step 4: Add session-start consistency test**
 
 Assert generated topic status and workspace startup use the same compact context
 fingerprint/coverage boundary and remain orientation-only.
 
-- [ ] **Step 5: Run router/startup tests**
+- [x] **Step 5: Run router/startup tests**
 
 ```powershell
 python -m pytest tests\test_aitp_pm_deploy_surfaces.py tests\test_v5_context_injection_budget.py tests\test_v5_topic_status.py tests\test_v5_workspace_refresh.py -q -p no:cacheprovider --basetemp tmp\pytest-g0-router-green
@@ -823,10 +829,10 @@ python -m pytest tests\test_aitp_pm_deploy_surfaces.py tests\test_v5_context_inj
 
 Expected: all selected tests pass.
 
-- [ ] **Step 6: Commit Task 7**
+- [x] **Step 6: Commit Task 7**
 
 ```powershell
-git add deploy/hooks/aitp-keyword-router.py brain/v5/topic_status.py brain/v5/workspace_refresh.py tests/test_aitp_pm_deploy_surfaces.py tests/test_v5_context_injection_budget.py
+git add deploy/hooks/aitp-keyword-router.py deploy/templates/claude-code/aitp-keyword-router.py brain/v5/compact_context_boundary.py brain/v5/topic_status.py brain/v5/topic_status_contracts.py brain/v5/topic_status_startup.py brain/v5/workspace_refresh.py brain/v5/workspace_refresh_contracts.py tests/test_aitp_pm_deploy_surfaces.py tests/test_v5_context_injection_budget.py docs/superpowers/progress/2026-07-10-aitp-bounded-host-injection.md docs/superpowers/plans/2026-07-09-aitp-final-research-lifecycle-roadmap.md docs/superpowers/plans/2026-07-10-aitp-gate-0-foundation.md
 git commit -m "v5: bound host research context injection"
 ```
 

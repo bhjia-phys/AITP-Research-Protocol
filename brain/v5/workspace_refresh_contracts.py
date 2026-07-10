@@ -87,12 +87,19 @@ def validate_workspace_refresh_bundle(payload: dict[str, Any], *, path: str = "w
         _require_mapping(payload.get("source_reconstruction_obsidian_view"), f"{path}.source_reconstruction_obsidian_view", result)
     else:
         _require_list(payload.get("deferred_surfaces"), f"{path}.deferred_surfaces", result)
+        _require_mapping(payload.get("compact_context"), f"{path}.compact_context", result)
     _require_mapping(payload.get("workspace_interaction_preview"), f"{path}.workspace_interaction_preview", result)
     _require_mapping(payload.get("interaction_recording_worklist"), f"{path}.interaction_recording_worklist", result)
     _require_list(payload.get("topic_status_bundles"), f"{path}.topic_status_bundles", result)
     if isinstance(payload.get("topic_status_bundles"), list):
         for index, item in enumerate(payload["topic_status_bundles"]):
             result.extend(validate_topic_status_bundle(item, path=f"{path}.topic_status_bundles[{index}]"))
+        if refresh_mode == "startup_lightweight" and payload["topic_status_bundles"]:
+            if payload.get("compact_context") != payload["topic_status_bundles"][0].get("compact_context"):
+                result.add(
+                    f"{path}.compact_context",
+                    "must match the current-session topic status compact_context",
+                )
     _require_mapping(payload.get("topic_status_refresh_policy"), f"{path}.topic_status_refresh_policy", result)
     if "legacy_source_reconstruction_obsidian_view" in payload:
         _require_mapping(

@@ -278,11 +278,11 @@ are green without relaxing limits.
 - Produces a bounded route hint containing topic ids/titles and facade entrypoint,
   not full topic memories.
 
-- [ ] Remove loading and injection of all topic `MEMORY.md` bodies.
-- [ ] Fix mojibake keyword literals and test UTF-8 input.
-- [ ] Require topic/focus selection through the compact facade.
-- [ ] Test maximum bytes/tokens and multi-topic isolation.
-- [ ] Keep generated startup files orientation-only and consistent with compact
+- [x] Remove loading and injection of all topic `MEMORY.md` bodies.
+- [x] Fix mojibake keyword literals and test UTF-8 input.
+- [x] Require topic/focus selection through the compact facade.
+- [x] Test maximum bytes/tokens and multi-topic isolation.
+- [x] Keep generated startup files orientation-only and consistent with compact
   context.
 
 ### Task 0.7: Add CapabilitySpec And Restore Architecture Boundaries

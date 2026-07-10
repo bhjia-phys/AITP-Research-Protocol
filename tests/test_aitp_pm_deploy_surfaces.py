@@ -144,6 +144,7 @@ def test_deploy_hooks_guard_canonical_and_root_stores():
     assert "aitp_v5_codex_expand" in keyword_router
     assert "aitp_v5_get_execution_brief" not in keyword_router
     assert "aitp_v5_get_claim_relation_map" not in keyword_router
+    assert "MEMORY.md" not in keyword_router
     assert "canonical research/aitp-topics/.aitp store" in keyword_router
 
 
@@ -165,8 +166,9 @@ def test_keyword_router_detects_english_and_chinese_research_requests(tmp_path):
         assert result.stdout
         payload = json.loads(result.stdout)
         context = payload["hookSpecificOutput"]["additionalContext"]
-        assert "AITP RESEARCH REQUEST DETECTED" in context
+        assert "AITP ROUTE HINT" in context
         assert expected_keyword in context
+        assert len(context.encode("utf-8")) <= 4096
 
 
 def test_routing_guard_blocks_write_edit_and_multiedit_to_aitp_state(tmp_path):

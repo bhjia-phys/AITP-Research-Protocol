@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""UserPromptSubmit hook: detect AITP requests and inject v5 routing context.
-
-The hook is only a router/reminder. It never updates AITP state.
-"""
+"""UserPromptSubmit hook: emit a bounded AITP topic route hint."""
 
 from __future__ import annotations
 
@@ -17,6 +14,8 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stdin, "reconfigure"):
     sys.stdin.reconfigure(encoding="utf-8")
 
+MAX_CONTEXT_BYTES = 4096
+MAX_CANDIDATES = 6
 AITP_KEYWORDS = [
     "aitp",
     "topic",
@@ -63,12 +62,23 @@ AITP_KEYWORDS = [
     "测量诱导",
     "自能",
 ]
-
+_GENERIC_SIGNALS = {
+    "topic",
+    "research",
+    "current topic",
+    "this topic",
+    "研究",
+    "科研",
+    "课题",
+    "继续科研",
+    "继续研究",
+    "继续这个",
+}
 AITP_TOPICS_ROOT = Path(os.environ.get("AITP_TOPICS_ROOT", "{{TOPICS_ROOT}}"))
 
 
 def parse_yaml_frontmatter(text: str) -> dict[str, str]:
-    match = re.match(r"^---\s*\n(.*?)\n---", text, re.DOTALL)
+    match = re.match(r"^---\s*\r?\n(.*?)\r?\n---", text, re.DOTALL)
     if not match:
         return {}
     frontmatter: dict[str, str] = {}
@@ -83,129 +93,177 @@ def parse_yaml_frontmatter(text: str) -> dict[str, str]:
 def scan_topics() -> list[dict[str, str]]:
     if not AITP_TOPICS_ROOT.is_dir():
         return []
-    topics: list[dict[str, str]] = []
+    topics: dict[str, dict[str, str]] = {}
+    v5_root = AITP_TOPICS_ROOT / ".aitp" / "topics"
+    if v5_root.is_dir():
+        for directory in sorted(v5_root.iterdir()):
+            topic_file = directory / "topic.md"
+            if directory.is_dir() and topic_file.is_file():
+                topics[directory.name] = _topic_metadata(directory.name, topic_file)
     for directory in sorted(AITP_TOPICS_ROOT.iterdir()):
-        if not directory.is_dir():
-            continue
         state_file = directory / "state.md"
-        topic_file = AITP_TOPICS_ROOT / ".aitp" / "topics" / directory.name / "topic.md"
-        if not state_file.exists() and not topic_file.exists():
+        if not directory.is_dir() or directory.name.startswith(".") or not state_file.is_file():
             continue
-        try:
-            text = state_file.read_text(encoding="utf-8") if state_file.exists() else topic_file.read_text(encoding="utf-8")
-            frontmatter = parse_yaml_frontmatter(text)
-            body = re.sub(r"^---.*?---\s*", "", text, flags=re.DOTALL)
-            question_match = re.search(r"## Research Question\s*\n(.*?)(?:\n\n|\n#|$)", body, re.DOTALL)
-            question = question_match.group(1).strip() if question_match else ""
-            memory_file = directory / "MEMORY.md"
-            memory_text = ""
-            if memory_file.exists():
-                try:
-                    memory_raw = memory_file.read_text(encoding="utf-8")
-                    memory_text = re.sub(r"^---.*?---\s*", "", memory_raw, flags=re.DOTALL).strip()
-                except Exception:
-                    pass
-            topics.append(
-                {
-                    "slug": directory.name,
-                    "title": frontmatter.get("title", directory.name),
-                    "legacy_stage": frontmatter.get("stage", "unknown"),
-                    "lane": frontmatter.get("lane", ""),
-                    "question": question[:120],
-                    "memory": memory_text,
-                }
-            )
-        except Exception:
-            topics.append(
-                {
-                    "slug": directory.name,
-                    "title": directory.name,
-                    "legacy_stage": "unknown",
-                    "lane": "",
-                    "question": "",
-                    "memory": "",
-                }
-            )
-    return topics
+        legacy = _topic_metadata(directory.name, state_file)
+        existing = topics.get(directory.name, {})
+        topics[directory.name] = {
+            "topic_id": directory.name,
+            "title": existing.get("title") or legacy["title"],
+            "question": legacy.get("question") or existing.get("question", ""),
+            "lane": legacy.get("lane") or existing.get("lane", ""),
+            "legacy_stage": legacy.get("legacy_stage") or existing.get("legacy_stage", ""),
+        }
+    return [topics[key] for key in sorted(topics)]
 
 
-def main() -> int:
+def _topic_metadata(topic_id: str, path: Path) -> dict[str, str]:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        return _empty_topic(topic_id)
+    frontmatter = parse_yaml_frontmatter(text)
+    body = re.sub(r"^---.*?---\s*", "", text, flags=re.DOTALL)
+    question_match = re.search(
+        r"## Research Question\s*\r?\n(.*?)(?:\r?\n\s*\r?\n|\r?\n#|$)",
+        body,
+        re.DOTALL,
+    )
+    question = _one_line(question_match.group(1) if question_match else "", 96)
+    return {
+        "topic_id": topic_id,
+        "title": _one_line(frontmatter.get("title") or topic_id, 96),
+        "question": question,
+        "lane": _one_line(frontmatter.get("lane") or "", 32),
+        "legacy_stage": _one_line(frontmatter.get("stage") or "", 24),
+    }
+
+
+def _empty_topic(topic_id: str) -> dict[str, str]:
+    return {
+        "topic_id": topic_id,
+        "title": topic_id,
+        "question": "",
+        "lane": "",
+        "legacy_stage": "",
+    }
+
+
+def rank_topics(
+    message: str,
+    matched_signals: list[str],
+    topics: list[dict[str, str]],
+) -> list[dict[str, str | int | list[str]]]:
+    lowered = message.lower()
+    latin_terms = {
+        term
+        for term in re.findall(r"[a-z0-9_+.-]+", lowered)
+        if len(term) >= 3 and term not in {"the", "this", "that", "with", "from", "continue"}
+    }
+    ranked = []
+    for topic in topics:
+        haystack = " ".join(
+            [topic["topic_id"], topic["title"], topic["question"], topic["lane"]]
+        ).lower()
+        reasons: list[str] = []
+        score = 0
+        if topic["topic_id"].lower() in lowered or topic["title"].lower() in lowered:
+            score += 24
+            reasons.append("direct_topic_match")
+        for signal in matched_signals:
+            if signal in _GENERIC_SIGNALS:
+                continue
+            if signal.lower() in haystack:
+                score += 8
+                reasons.append(f"signal:{signal}")
+        overlaps = sorted(term for term in latin_terms if term in haystack)
+        if overlaps:
+            score += min(len(overlaps), 6) * 2
+            reasons.append("terms:" + ",".join(overlaps[:4]))
+        if score:
+            ranked.append({**topic, "score": score, "reasons": reasons})
+    ranked.sort(key=lambda item: (-int(item["score"]), str(item["topic_id"])))
+    return ranked[:MAX_CANDIDATES]
+
+
+def build_route_hint(
+    message: str,
+    matched_signals: list[str],
+    candidates: list[dict[str, str | int | list[str]]],
+) -> str:
+    base = AITP_TOPICS_ROOT.as_posix()
+    prefix = [
+        "AITP ROUTE HINT (orientation only; not evidence or claim trust).",
+        "matched_signals: " + ", ".join(matched_signals[:10]),
+        f"canonical_base: {base}",
+        "candidate_topics:",
+    ]
+    suffix = [
+        "compact_entrypoints:",
+        "- mcp__aitp__aitp_v5_codex_autoroute(base='<canonical_base>', request_summary='<request>')",
+        "- mcp__aitp__aitp_v5_codex_enter(base='<canonical_base>', topics=['<topic-id>'], request_summary='<request>')",
+        "- mcp__aitp__aitp_v5_codex_expand(base='<canonical_base>', session_id='<session-id>', expansion='context_pack' or 'record_refs')",
+        "Select one topic/session before expansion. Exact-expand typed refs before evidence, validation, or trust conclusions.",
+        "The canonical research/aitp-topics/.aitp store is authoritative; do not read or edit topic-state files directly.",
+    ]
+    candidate_lines: list[str] = []
+    for candidate in candidates:
+        reasons = candidate.get("reasons") or []
+        reason = ",".join(str(item) for item in reasons[:2])
+        line = (
+            f"- topic_id={_one_line(candidate.get('topic_id'), 80)}"
+            f" | title={_one_line(candidate.get('title'), 96)}"
+            f" | reason={_one_line(reason, 96)}"
+        )
+        question = _one_line(candidate.get("question"), 96)
+        if question:
+            line += f" | question={question}"
+        tentative = "\n".join([*prefix, *candidate_lines, line, *suffix]) + "\n"
+        if len(tentative.encode("utf-8")) > MAX_CONTEXT_BYTES:
+            break
+        candidate_lines.append(line)
+    if not candidate_lines:
+        candidate_lines.append("- none; use autoroute and ask before creating or switching topics")
+    context = "\n".join([*prefix, *candidate_lines, *suffix]) + "\n"
+    if len(context.encode("utf-8")) > MAX_CONTEXT_BYTES:
+        raise RuntimeError("fixed AITP route hint exceeds byte budget")
+    return context
+
+
+def _one_line(value: object, limit: int) -> str:
+    text = " ".join(str(value or "").split())
+    return text if len(text) <= limit else text[: limit - 3].rstrip() + "..."
+
+
+def _read_input() -> dict:
     raw = sys.stdin.read()
     if not raw.strip():
-        return 0
-
+        return {}
     try:
-        data = json.loads(raw)
+        return json.loads(raw)
     except json.JSONDecodeError:
         try:
             fixed = re.sub(r'\\([^"\\/bfnrtu])', r"\\\\\1", raw)
             fixed = re.sub(r"\\u(?![0-9a-fA-F]{4})", r"\\\\u", fixed)
-            data = json.loads(fixed)
+            return json.loads(fixed)
         except json.JSONDecodeError:
-            return 0
+            return {}
 
+
+def main() -> int:
+    data = _read_input()
     user_message = str(data.get("user_message", ""))
     if not user_message:
         return 0
-
-    msg_lower = user_message.lower()
-    matched = [keyword for keyword in AITP_KEYWORDS if keyword.lower() in msg_lower]
+    lowered = user_message.lower()
+    matched = [keyword for keyword in AITP_KEYWORDS if keyword.lower() in lowered]
     if not matched:
         return 0
-
-    topics = scan_topics()
-    topic_lines = []
-    topic_memories = []
-    for topic in topics:
-        line = (
-            f"  - slug: {topic['slug']}  |  title: {topic['title']}  |  "
-            f"legacy_stage: {topic['legacy_stage']}  |  lane: {topic['lane']}"
-        )
-        if topic["question"]:
-            line += f"\n    question: {topic['question']}"
-        topic_lines.append(line)
-        if topic.get("memory"):
-            topic_memories.append(f"### Topic: {topic['slug']}\n{topic['memory']}")
-
-    topics_block = "\n".join(topic_lines) if topic_lines else "  (no topics found)"
-    memories_block = "\n\n---\n\n".join(topic_memories) if topic_memories else ""
-
-    reminder = (
-        "AITP RESEARCH REQUEST DETECTED. Keywords matched: "
-        + ", ".join(matched)
-        + "\n\n"
-        + "EXISTING AITP TOPICS:\n"
-        + topics_block
-        + "\n\n"
-    )
-    if memories_block:
-        reminder += (
-            "TOPIC MEMORIES (MUST follow these conventions for the matched topic):\n"
-            + memories_block
-            + "\n\n"
-        )
-    reminder += (
-        "AITP V5 INSTRUCTIONS (follow exactly):\n"
-        "1. Match the user's request to ONE topic above by comparing title/question.\n"
-        "2. Do not treat legacy_stage/gate fields as v5 truth; they are orientation only.\n"
-        "3. If a v5 session id is known, call mcp__aitp__aitp_v5_codex_enter("
-        f"base='{AITP_TOPICS_ROOT.as_posix()}', session_id='<session-id>', request_summary='<user request>').\n"
-        "4. Expand through mcp__aitp__aitp_v5_codex_expand("
-        f"base='{AITP_TOPICS_ROOT.as_posix()}', session_id='<session-id>', expansion='brief' or 'relation_map') only when needed.\n"
-        "5. If only a legacy slug is known, call mcp__aitp__aitp_v5_codex_enter("
-        f"base='{AITP_TOPICS_ROOT.as_posix()}', topics=['<topic-slug>'], request_summary='<user request>') and choose a recovery_ready session before research.\n"
-        "6. If no topic matches, ask before switching to a full-kernel maintenance surface to create or migrate topic/claim/session state.\n"
-        "7. Do NOT create a duplicate topic if one already matches.\n"
-        "8. Do NOT read or edit AITP topic-state files directly with Read/Grep/Glob/Edit/MultiEdit.\n"
-        "9. Use MCP typed tools for research state; use aitp-v5 only as a CLI diagnostic/fallback.\n"
-        "10. Record durable scientific content through typed v5 records; summaries, relation maps, and hooks are orientation only.\n"
-        "11. Do not confuse root .aitp or Hakimi-local state with the canonical research/aitp-topics/.aitp store."
-    )
-
+    candidates = rank_topics(user_message, matched, scan_topics())
+    context = build_route_hint(user_message, matched, candidates)
     payload = {
         "hookSpecificOutput": {
             "hookEventName": "UserPromptSubmit",
-            "additionalContext": reminder,
+            "additionalContext": context,
         }
     }
     json.dump(payload, sys.stdout, ensure_ascii=False, indent=2)

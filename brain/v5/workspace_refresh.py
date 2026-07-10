@@ -17,6 +17,7 @@ from brain.v5.source_reconstruction_obsidian import write_source_reconstruction_
 from brain.v5.summaries import write_workspace_summary
 from brain.v5.interaction_worklist import build_interaction_recording_worklist
 from brain.v5.topic_status import write_topic_status_surfaces
+from brain.v5.topic_status_startup import write_topic_status_startup_surfaces
 from brain.v5.workspace_interaction_preview import build_workspace_interaction_preview
 
 
@@ -166,7 +167,8 @@ def refresh_workspace_startup_views(
     summary = asdict(write_workspace_summary(ws))
     workspace_interaction = build_workspace_interaction_preview(ws)
     interaction_worklist = build_interaction_recording_worklist(ws)
-    topic_status_bundle = write_topic_status_surfaces(ws, session_id=session_id)
+    topic_status_bundle = write_topic_status_startup_surfaces(ws, session_id=session_id)
+    compact_context = dict(topic_status_bundle.get("compact_context") or {})
     source_records = _merge_source_records(
         summary.get("source_records", {}),
         workspace_interaction.get("source_records", {}),
@@ -192,6 +194,7 @@ def refresh_workspace_startup_views(
         "workspace_interaction_preview": workspace_interaction,
         "interaction_recording_worklist": interaction_worklist,
         "topic_status_bundles": [topic_status_bundle],
+        "compact_context": compact_context,
         "topic_status_refresh_policy": {
             "selection": "current_session",
             "max_session_count": 1,
