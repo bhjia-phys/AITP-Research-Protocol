@@ -822,6 +822,12 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
 }
 
 
+def capability_registry_ref() -> str:
+    """Return the authority that validates this compatibility catalog."""
+
+    return "brain.v5.capability_registry:capability_specs"
+
+
 def sample_args_for_template(template: str) -> list[str]:
     from brain.v5.runtime_entrypoint_samples import sample_args_for_template as _sample_args
 

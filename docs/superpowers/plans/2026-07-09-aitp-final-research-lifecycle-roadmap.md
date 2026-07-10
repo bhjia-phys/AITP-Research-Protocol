@@ -289,8 +289,12 @@ are green without relaxing limits.
 
 **Files:**
 - Create: `brain/v5/capability_registry.py`
+- Create: `brain/v5/capability_registry_data.py`
 - Create: `brain/v5/capability_registry_contracts.py`
+- Create: `brain/v5/capability_surface_contracts.py`
+- Create: `brain/v5/mcp_capabilities.py`
 - Create: `tests/test_v5_capability_registry.py`
+- Create: `docs/superpowers/progress/2026-07-10-aitp-capability-registry.md`
 - Modify: `brain/v5/mcp_tools.py`
 - Modify: `brain/v5/public_surfaces.py`
 - Modify: `brain/v5/runtime_entrypoint_catalog.py`
@@ -304,11 +308,11 @@ are green without relaxing limits.
 - Produces: `capability_specs() -> dict[str, CapabilitySpec]`
 - Produces generated MCP/CLI/public/bridge/compact validation catalogs.
 
-- [ ] Register current capabilities before adding new lifecycle operations.
+- [x] Register current capabilities before adding new lifecycle operations.
 - [ ] Split oversized modules by existing responsibility boundaries while
   preserving public imports.
-- [ ] Keep compact Codex exposure intentionally small.
-- [ ] Make missing or duplicate host exposure a registry validation failure.
+- [x] Keep compact Codex exposure intentionally small.
+- [x] Make missing or duplicate host exposure a registry validation failure.
 - [ ] Restore all architecture tests without increasing line limits.
 - [ ] Split CI into focused lanes and record a scheduled full-suite command.
 

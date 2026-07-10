@@ -362,7 +362,9 @@ _PUBLIC_SURFACE_PURPOSES = {
 def public_surface_names() -> tuple[str, ...]:
     """Return the names of public payload surfaces with contract gates."""
 
-    return _PUBLIC_SURFACE_NAMES
+    from brain.v5.capability_surface_contracts import capability_surface_names
+
+    return tuple(dict.fromkeys((*_PUBLIC_SURFACE_NAMES, *capability_surface_names())))
 
 
 def public_surface_validator_ref() -> str:
@@ -374,6 +376,9 @@ def public_surface_validator_ref() -> str:
 def describe_public_surfaces() -> dict[str, Any]:
     """Return an auditable description of public surface contract coverage."""
 
+    from brain.v5.capability_surface_contracts import capability_surface_purposes
+
+    purposes = {**_PUBLIC_SURFACE_PURPOSES, **capability_surface_purposes()}
     return {
         "kind": "public_surface_contracts",
         "validator": public_surface_validator_ref(),
@@ -382,7 +387,7 @@ def describe_public_surfaces() -> dict[str, Any]:
             {
                 "name": name,
                 "validator": public_surface_validator_ref(),
-                "purpose": _PUBLIC_SURFACE_PURPOSES[name],
+                "purpose": purposes[name],
             }
             for name in public_surface_names()
         ],
@@ -640,7 +645,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_lightweight_record_write_plan,
     )
 
-    return {
+    validators = {
         "active_claim_focus_reconciliation": require_valid_active_claim_focus_reconciliation,
         "active_claim_rebind_confirmation": require_valid_active_claim_rebind_confirmation,
         "active_claim_rebind_proposal": require_valid_active_claim_rebind_proposal,
@@ -816,3 +821,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "lane_contract_record": require_valid_lane_contract_record,
         "hpc_cockpit": require_valid_hpc_cockpit,
     }
+    from brain.v5.capability_surface_contracts import capability_surface_validators
+
+    validators.update(capability_surface_validators())
+    return validators

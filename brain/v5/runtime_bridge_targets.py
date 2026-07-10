@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
+from brain.v5.capability_registry_data import BRIDGE_TARGET_SPECS as _BRIDGE_TARGET_SPECS
 from brain.v5.runtime_entrypoints import runtime_entrypoints
 
 
@@ -137,63 +138,6 @@ _MCP_ARGUMENT_SPECS: dict[str, dict[str, Any]] = {
         "source": "aitp_v5_build_domain_skill_shim_manifest",
     },
 }
-
-_BRIDGE_TARGET_SPECS: tuple[tuple[str, str, str, str], ...] = (
-    ("readProcessGraphSlice", "process_graph_slice", "read", "read_only"),
-    ("readMomentPolicy", "host_agnostic_moment_policy", "read", "read_only"),
-    ("readRuntimePayloadProfiles", "runtime_payload_profiles", "read", "read_only"),
-    ("readWorkspaceRecordingAudit", "workspace_recording_audit", "read", "read_only"),
-    ("classifyRecordingCandidate", "recording_candidate_classification", "read", "read_only"),
-    ("readRecordingNavigationState", "recording_navigation_state", "read", "read_only"),
-    ("expandRecordingSlot", "recording_slot_expansion", "read", "read_only"),
-    ("verifyRecordingEffect", "recording_effect_verification", "read", "read_only"),
-    ("lookupRecordRefs", "record_ref_lookup", "read", "read_only"),
-    ("readCuratedRagCorpus", "curated_rag_corpus", "read", "read_only"),
-    ("searchCuratedRagCorpus", "curated_rag_search", "read", "read_only"),
-    ("readCuratedRagChunk", "curated_rag_chunk", "read", "read_only"),
-    ("draftCuratedRagPromotion", "curated_rag_promotion_draft", "read", "read_only"),
-    ("readLiteratureSourceReviewHandoff", "literature_source_review_handoff", "read", "read_only"),
-    ("readLiteratureComparisonDraft", "literature_comparison_draft", "read", "read_only"),
-    ("readLiteratureReadingRoute", "literature_reading_route", "read", "read_only"),
-    (
-        "readLiteratureSourceExtractionCandidates",
-        "literature_source_extraction_candidates",
-        "read",
-        "read_only",
-    ),
-    ("readLiteratureExtractionReport", "literature_extraction_report", "read", "read_only"),
-    ("readLiteratureCorpusExtractionArtifact", "literature_corpus_extraction_artifact", "read", "read_only"),
-    ("readLiteratureSourceSetReadiness", "literature_source_set_readiness", "read", "read_only"),
-    ("readContextProfileTemplates", "context_profile_templates", "read", "read_only"),
-    ("readContextProfileDraft", "context_profile_draft", "read", "read_only"),
-    ("materializeDomainSkillShims", "domain_skill_shims", "write", "project_skill_shim_write"),
-    ("ingestCuratedRagCorpus", "ingest_curated_rag_corpus", "write", "curated_rag_manifest_write"),
-    ("startResearchRun", "start_research_run", "write", "typed_record_write"),
-    ("updateResearchRun", "update_research_run", "write", "typed_record_write"),
-    ("recordResearchRunEvent", "record_research_run_event", "write", "typed_record_write"),
-    ("recordExploratoryRecord", "record_exploratory_record", "write", "typed_record_write"),
-    ("registerSourceAsset", "register_source_asset", "write", "typed_record_write"),
-    ("captureSourceAssetAuto", "capture_source_asset_auto", "write", "typed_record_write"),
-    ("recordEvidence", "record_evidence", "write", "typed_record_write"),
-    ("recordToolRun", "record_tool_run", "write", "typed_record_write"),
-    ("captureToolRunAuto", "capture_tool_run_auto", "write", "typed_record_write"),
-    ("captureCodeStateAuto", "capture_code_state_auto", "write", "typed_record_write"),
-    ("attachArtifact", "attach_artifact", "write", "typed_record_write"),
-    ("attachArtifactAuto", "attach_artifact_auto", "write", "typed_record_write"),
-    ("recordReferenceLocation", "record_reference_location", "write", "typed_record_write"),
-    ("createProofObligation", "create_proof_obligation", "write", "typed_record_write"),
-    ("createValidationContract", "create_validation_contract", "write", "typed_record_write"),
-    ("recordValidationResult", "record_validation_result", "write", "typed_record_write"),
-    (
-        "recordSourceReconstructionReviewResult",
-        "record_source_reconstruction_review_result",
-        "write",
-        "typed_record_write",
-    ),
-    ("requestHumanCheckpoint", "request_human_checkpoint", "write", "typed_record_write"),
-    ("preflightTrustUpdate", "trust_preflight", "preflight", "preflight_only"),
-)
-
 
 def runtime_bridge_target_manifest() -> dict[str, Any]:
     """Return MCP-first host bridge targets derived from runtime_entrypoints()."""

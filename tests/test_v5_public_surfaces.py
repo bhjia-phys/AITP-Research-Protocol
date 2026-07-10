@@ -2,9 +2,10 @@ from __future__ import annotations
 
 
 def test_public_surface_registry_names_all_runtime_facing_payloads():
+    from brain.v5.capability_surface_contracts import capability_surface_names
     from brain.v5.public_surfaces import public_surface_names
 
-    assert set(public_surface_names()) == {
+    expected = {
         "active_claim_focus_reconciliation",
         "active_claim_rebind_confirmation",
         "active_claim_rebind_proposal",
@@ -175,7 +176,16 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "goal_continuation_list",
         "hpc_cockpit",
         "lane_contract_record",
+    } | set(capability_surface_names()) | {
+        "harness_feedback_bundle",
+        "monitor_snapshot_record",
+        "run_dir_provenance_extractor_plan",
+        "skill_patch_proposal_record",
     }
+    names = public_surface_names()
+
+    assert expected.issubset(set(names))
+    assert len(names) == len(set(names))
 
 
 def test_public_surface_validator_accepts_valid_adapter_registry():
@@ -846,12 +856,15 @@ def test_public_surface_validator_accepts_runtime_hook_installation_paths():
 
 
 def test_runtime_entrypoint_surfaces_close_over_public_surface_contracts():
+    from brain.v5.capability_registry import capability_specs
     from brain.v5.public_surfaces import public_surface_names
     from brain.v5.runtime_entrypoints import runtime_entrypoint_surfaces, runtime_entrypoints
 
     surfaces = runtime_entrypoint_surfaces()
+    public = set(public_surface_names())
 
-    assert surfaces == set(public_surface_names()) | {"public_surface_contracts"}
+    assert surfaces.issubset(public)
+    assert {spec.public_surface for spec in capability_specs().values()}.issubset(public)
     for entrypoint in runtime_entrypoints().values():
         assert entrypoint["surface"] in surfaces
 

@@ -9,6 +9,10 @@ from pathlib import Path
 from typing import Any
 
 from brain.v5.brief import build_execution_brief
+from brain.v5.capability_registry_data import (
+    CODEX_FACADE_MCP_NAMES,
+    CODEX_SUPPORT_MCP_NAMES,
+)
 from brain.v5.claim_relation_map import build_claim_relation_map
 from brain.v5.code import capture_code_state_from_git
 from brain.v5.context_pack import build_aitp_context_pack
@@ -45,27 +49,9 @@ from brain.v5.workspace_recovery_audit import build_workspace_recovery_audit, co
 from brain.v5.workspace_recording_audit import build_workspace_recording_audit
 
 
-CODEX_FACADE_TOOLS: tuple[str, ...] = (
-    "aitp_v5_codex_tool_catalog",
-    "aitp_v5_codex_autoroute",
-    "aitp_v5_codex_enter",
-    "aitp_v5_codex_expand",
-    "aitp_v5_codex_recording_step",
-    "aitp_v5_codex_record_apply",
-    "aitp_v5_codex_literature_step",
-    "aitp_v5_codex_closeout",
-)
+CODEX_FACADE_TOOLS: tuple[str, ...] = CODEX_FACADE_MCP_NAMES
 
-CODEX_SUPPORT_TOOLS: tuple[str, ...] = (
-    "aitp_v5_get_runtime_bridge_target_manifest",
-    "aitp_v5_get_runtime_payload_profiles",
-    "aitp_v5_audit_runtime_mcp_bridge_acceptance",
-    "aitp_v5_evaluate_pre_tool_policy",
-    "aitp_v5_preflight_trust_update",
-    "aitp_v5_audit_hook_installation",
-    "aitp_v5_discover_hook_install_paths",
-    "aitp_v5_report_hook_smoke_coverage",
-)
+CODEX_SUPPORT_TOOLS: tuple[str, ...] = CODEX_SUPPORT_MCP_NAMES
 
 CODEX_SURFACE_TOOL_ALLOWLIST: frozenset[str] = frozenset(CODEX_FACADE_TOOLS + CODEX_SUPPORT_TOOLS)
 

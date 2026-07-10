@@ -840,8 +840,12 @@ git commit -m "v5: bound host research context injection"
 
 **Files:**
 - Create: `brain/v5/capability_registry.py`
+- Create: `brain/v5/capability_registry_data.py`
 - Create: `brain/v5/capability_registry_contracts.py`
+- Create: `brain/v5/capability_surface_contracts.py`
+- Create: `brain/v5/mcp_capabilities.py`
 - Create: `tests/test_v5_capability_registry.py`
+- Create: `docs/superpowers/progress/2026-07-10-aitp-capability-registry.md`
 - Modify: `brain/v5/mcp_tools.py`
 - Modify: `brain/v5/public_surfaces.py`
 - Modify: `brain/v5/runtime_entrypoint_catalog.py`
@@ -853,13 +857,13 @@ git commit -m "v5: bound host research context injection"
 - Produces: `capability_specs() -> dict[str, CapabilitySpec]`
 - Produces: `audit_capability_registry() -> dict[str, Any]`
 
-- [ ] **Step 1: Write failing parity tests**
+- [x] **Step 1: Write failing parity tests**
 
 Assert every runtime entrypoint MCP name exists in `mcp_tools`, every declared
 surface exists in public surfaces, compact operations are allowlisted, and no
 operation has conflicting state effects.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 ```powershell
 python -m pytest tests\test_v5_capability_registry.py -q -p no:cacheprovider --basetemp tmp\pytest-g0-capability-red
@@ -867,19 +871,19 @@ python -m pytest tests\test_v5_capability_registry.py -q -p no:cacheprovider --b
 
 Expected: import failure for `capability_registry`.
 
-- [ ] **Step 3: Implement the registry for Gate 0 capabilities first**
+- [x] **Step 3: Implement the registry for Gate 0 capabilities first**
 
 Register runtime audit, index build/status, exact retrieval, context compile,
 and compact exact expansion. Add adapters that validate existing catalogs
 without deleting compatibility constants.
 
-- [ ] **Step 4: Expand the registry to all current public runtime operations**
+- [x] **Step 4: Expand the registry to all current public runtime operations**
 
 Use the Task 1 audit to add every current operation. Record explicit
 `compact|full|hidden` visibility and `read_only|runtime_write|kernel_write`
 state effect. Resolve each mismatch rather than suppressing it.
 
-- [ ] **Step 5: Run public/bridge/adapter parity tests**
+- [x] **Step 5: Run public/bridge/adapter parity tests**
 
 ```powershell
 python -m pytest tests\test_v5_capability_registry.py tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py tests\test_v5_runtime_mcp_bridge_acceptance.py tests\test_v5_adapters.py -q -p no:cacheprovider --basetemp tmp\pytest-g0-capability-green
@@ -887,10 +891,10 @@ python -m pytest tests\test_v5_capability_registry.py tests\test_v5_public_surfa
 
 Expected: all selected tests pass.
 
-- [ ] **Step 6: Commit Task 8**
+- [x] **Step 6: Commit Task 8**
 
 ```powershell
-git add brain/v5/capability_registry.py brain/v5/capability_registry_contracts.py brain/v5/runtime_entrypoint_catalog.py brain/v5/runtime_bridge_targets.py brain/v5/codex_facade.py tests/test_v5_capability_registry.py
+git add brain/v5/capability_registry.py brain/v5/capability_registry_data.py brain/v5/capability_registry_contracts.py brain/v5/capability_surface_contracts.py brain/v5/mcp_capabilities.py brain/v5/runtime_entrypoint_catalog.py brain/v5/runtime_bridge_targets.py brain/v5/codex_facade.py tests/test_v5_capability_registry.py tests/test_v5_public_surfaces.py docs/superpowers/progress/2026-07-10-aitp-capability-registry.md docs/superpowers/plans/2026-07-09-aitp-final-research-lifecycle-roadmap.md docs/superpowers/plans/2026-07-10-aitp-gate-0-foundation.md
 # Stage only reviewed Task 8 hunks from the already-dirty mcp_tools.py and
 # public_surfaces.py through an explicit git apply --cached patch.
 git commit -m "v5: centralize runtime capability registry"
