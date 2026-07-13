@@ -724,7 +724,7 @@ class SessionCloseoutPlan:
     can_update_claim_trust: bool = False
 ```
 
-- [ ] **Step 1: Write failing closeout tests**
+- [x] **Step 1: Write failing closeout tests**
 
 ```python
 def test_one_closeout_is_idempotent_and_has_no_trust_effect(tmp_path):
@@ -778,11 +778,11 @@ coverage/read errors, checked-family state/content tokens, dirty families,
 content-verification status, unrelated versus relevant post-closeout writes, no
 active claim, stale index, revision, and byte/token limits.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Expected: missing lifecycle/resume modules.
 
-- [ ] **Step 3: Implement closeout planning and write**
+- [x] **Step 3: Implement closeout planning and write**
 
 Derive deterministic `closeout_id` from session plus milestone id. Require the
 current session/focus refs and a coverage snapshot. Preserve explicit can-say,
@@ -792,7 +792,7 @@ valid boundary class; unsupported items move to `unverified_notes` rather than
 the model-facing can-say lane. The writer cannot call evidence,
 validation, memory promotion, or trust writers.
 
-- [ ] **Step 4: Implement resume compilation**
+- [x] **Step 4: Implement resume compilation**
 
 Read the latest closeout through indexed metadata plus exact expansion, merge
 only current focus and process state, and emit coverage/errors/expansion refs.
@@ -803,19 +803,43 @@ required family does. Fallback to M0 context when no closeout exists. Never
 persist the card. The resume card is exactly the `startup_orientation` level;
 it cannot embed a `normal_research` slice or full Skill body.
 
-- [ ] **Step 5: Make all startup surfaces consume the same resume boundary**
+- [x] **Step 5: Make all startup surfaces consume the same resume boundary**
 
 `topic_status`, `write_topic_status_startup_surfaces`, workspace refresh, and
 `session_start.generated.md` call the same resume/context function. Delete no
 existing file names. Add a characterization test proving byte-identical compact
 boundary fields across all four outputs.
 
-- [ ] **Step 6: Run closeout/startup regressions**
+- [x] **Step 6: Run closeout/startup regressions**
 
 Run session lifecycle, quiet checkpoint, closeout completeness, topic status,
 workspace refresh, context pack/compiler, and Codex facade tests.
 
-- [ ] **Step 7: Commit Task 3**
+Implementation evidence (2026-07-13):
+
+- Initial lifecycle RED produced eight expected failures for the missing
+  closeout/resume modules. Closeout planning/write then passed two focused
+  tests; resume selection, coverage, stale-family, index-bypass, fallback, and
+  revision behavior passed seven focused tests before startup integration.
+- Closeout writes use deterministic session/milestone ids and
+  `RecordRepository` `create_or_idempotent`; unsupported model-facing
+  boundaries are demoted to unverified notes, unresolved exact refs and
+  incomplete scope block persistence, and claim bytes remain unchanged.
+- One derived resume compiler now serves full topic status, lightweight startup,
+  workspace refresh, and `session_start.generated.md`. All four expose the same
+  canonical `resume_boundary_json`; the compatibility compact boundary remains
+  orientation-only and cannot claim an exhaustive absence result.
+- Self-review RED reproduced two additional fail-closed gaps: an unresolved
+  focus objective omitted by the request, and orientation coverage incorrectly
+  exposing `can_claim_no_result=true`. Both focused tests pass after repair.
+- Final lifecycle/status/context/closeout/architecture plus M0 query-index,
+  concurrency, repository, envelope, and retrieval regression: 188 passed in
+  39.79 seconds. All touched v5 source modules remain below 500 lines.
+- Protected user-work diff hashes remained
+  `f4651e2355ca5e394bf2f96fed8b76b209969055` and
+  `3c0ca5a7b2ed30e0f32d43d3d1aa0e83330823a1`.
+
+- [x] **Step 7: Commit Task 3**
 
 Commit message: `v5: persist session closeout and compile resume`.
 

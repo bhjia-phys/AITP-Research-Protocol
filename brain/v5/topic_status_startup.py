@@ -7,13 +7,14 @@ from pathlib import Path
 from typing import Any
 
 from brain.v5.claim_relation_map import empty_claim_relation_map, render_claim_relation_map_markdown
-from brain.v5.compact_context_boundary import (
-    compact_context_boundary,
-    render_compact_context_section,
-)
-from brain.v5.context_pack import build_aitp_context_pack
+from brain.v5.compact_context_boundary import render_compact_context_section
 from brain.v5.paths import WorkspacePaths
 from brain.v5.recovery_session import recover_session_binding_for_read
+from brain.v5.session_resume import (
+    build_session_resume_card,
+    compact_context_from_resume,
+    render_resume_boundary_section,
+)
 
 
 def write_topic_status_startup_surfaces(
@@ -25,9 +26,9 @@ def write_topic_status_startup_surfaces(
 
     recovered = recover_session_binding_for_read(ws, session_id)
     session = recovered.session
-    pack = build_aitp_context_pack(ws, session.session_id, max_lines=45, candidate_limit=3)
-    compact = compact_context_boundary(pack)
-    boundary = pack.get("current_boundary") or {}
+    resume_card = build_session_resume_card(ws, session.session_id)
+    compact = compact_context_from_resume(resume_card)
+    boundary = resume_card.get("current_boundary") or {}
     relation_map = empty_claim_relation_map(
         topic_id=session.topic_id,
         session_id=session.session_id,
@@ -58,7 +59,7 @@ def write_topic_status_startup_surfaces(
             },
         }
     )
-    topic_state = _topic_state(session, boundary, relation_map, compact)
+    topic_state = _topic_state(session, boundary, relation_map, compact, resume_card)
     runtime_dir = ws.topic_dir(session.topic_id) / "runtime"
     runtime_dir.mkdir(parents=True, exist_ok=True)
     files = _files(runtime_dir)
@@ -82,6 +83,9 @@ def write_topic_status_startup_surfaces(
         "files": files,
         "topic_state": topic_state,
         "compact_context": compact,
+        "resume_card": resume_card,
+        "resume_boundary": resume_card["resume_boundary"],
+        "resume_boundary_json": resume_card["resume_boundary_json"],
         "source_records": {
             "topics": [session.topic_id],
             "sessions": [session.session_id],
@@ -97,7 +101,7 @@ def write_topic_status_startup_surfaces(
     }
 
 
-def _topic_state(session, boundary, relation_map, compact) -> dict[str, Any]:
+def _topic_state(session, boundary, relation_map, compact, resume_card) -> dict[str, Any]:
     return {
         "kind": "topic_state",
         "topic_id": session.topic_id,
@@ -123,6 +127,8 @@ def _topic_state(session, boundary, relation_map, compact) -> dict[str, Any]:
         "run_iterations": {"items": []},
         "lane_exemplars": {"items": []},
         "compact_context": compact,
+        "resume_boundary": resume_card["resume_boundary"],
+        "resume_boundary_json": resume_card["resume_boundary_json"],
         "summary_inputs_trusted": False,
         "can_update_claim_trust": False,
     }
@@ -169,6 +175,7 @@ def _session_start(topic_state: dict[str, Any]) -> str:
         "# Session Start\n\n"
         f"Topic: `{topic_state['topic_id']}`\n\n"
         f"Active claim: `{topic_state['active_claim_id']}`\n\n"
+        + render_resume_boundary_section(topic_state["resume_boundary"])
         + render_compact_context_section(topic_state["compact_context"])
         + "Do not update claim trust from this orientation surface.\n"
     )

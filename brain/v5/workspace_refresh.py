@@ -169,6 +169,8 @@ def refresh_workspace_startup_views(
     interaction_worklist = build_interaction_recording_worklist(ws)
     topic_status_bundle = write_topic_status_startup_surfaces(ws, session_id=session_id)
     compact_context = dict(topic_status_bundle.get("compact_context") or {})
+    resume_boundary = dict(topic_status_bundle.get("resume_boundary") or {})
+    resume_boundary_json = str(topic_status_bundle.get("resume_boundary_json") or "")
     source_records = _merge_source_records(
         summary.get("source_records", {}),
         workspace_interaction.get("source_records", {}),
@@ -195,6 +197,8 @@ def refresh_workspace_startup_views(
         "interaction_recording_worklist": interaction_worklist,
         "topic_status_bundles": [topic_status_bundle],
         "compact_context": compact_context,
+        "resume_boundary": resume_boundary,
+        "resume_boundary_json": resume_boundary_json,
         "topic_status_refresh_policy": {
             "selection": "current_session",
             "max_session_count": 1,

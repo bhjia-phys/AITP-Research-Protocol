@@ -8,27 +8,33 @@ from typing import Any
 
 from brain.v5.brief import build_execution_brief
 from brain.v5.claim_relation_map import compact_claim_relation_map, render_claim_relation_map_markdown
-from brain.v5.compact_context_boundary import (
-    compact_context_boundary,
-    render_compact_context_section,
-)
-from brain.v5.context_pack import build_aitp_context_pack
+from brain.v5.compact_context_boundary import render_compact_context_section
 from brain.v5.evidence import list_evidence_for_claim
 from brain.v5.paths import WorkspacePaths
+from brain.v5.session_resume import (
+    build_session_resume_card,
+    compact_context_from_resume,
+    render_resume_boundary_section,
+)
 
 
 def write_topic_status_surfaces(ws: WorkspacePaths, *, session_id: str) -> dict[str, Any]:
     """Write topic status files that explain the current route without chat history."""
 
     brief = build_execution_brief(ws, session_id)
-    context_pack = build_aitp_context_pack(ws, session_id, max_lines=45, candidate_limit=3)
-    compact_context = compact_context_boundary(context_pack)
+    resume_card = build_session_resume_card(ws, session_id)
+    compact_context = compact_context_from_resume(resume_card)
     session = brief["session"]
     topic_id = session["topic_id"]
     runtime_dir = ws.topic_dir(topic_id) / "runtime"
     runtime_dir.mkdir(parents=True, exist_ok=True)
 
-    topic_state = _topic_state(ws, brief, compact_context=compact_context)
+    topic_state = _topic_state(
+        ws,
+        brief,
+        compact_context=compact_context,
+        resume_card=resume_card,
+    )
     files = {
         "topic_state": str(runtime_dir / "topic_state.json"),
         "topic_dashboard": str(runtime_dir / "topic_dashboard.md"),
@@ -53,6 +59,9 @@ def write_topic_status_surfaces(ws: WorkspacePaths, *, session_id: str) -> dict[
         "files": files,
         "topic_state": topic_state,
         "compact_context": compact_context,
+        "resume_card": resume_card,
+        "resume_boundary": resume_card["resume_boundary"],
+        "resume_boundary_json": resume_card["resume_boundary_json"],
         "source_records": _source_records(topic_state),
         "derived_from": "execution_brief",
         "truth_source": False,
@@ -121,6 +130,7 @@ def _topic_state(
     brief: dict[str, Any],
     *,
     compact_context: dict[str, Any],
+    resume_card: dict[str, Any],
 ) -> dict[str, Any]:
     session = brief["session"]
     focus = brief["current_focus"]
@@ -153,6 +163,8 @@ def _topic_state(
         "run_iterations": known_context.get("run_iterations", {}),
         "lane_exemplars": known_context.get("lane_exemplars", {}),
         "compact_context": compact_context,
+        "resume_boundary": resume_card["resume_boundary"],
+        "resume_boundary_json": resume_card["resume_boundary_json"],
         "summary_inputs_trusted": False,
         "can_update_claim_trust": False,
     }
@@ -236,6 +248,7 @@ def _session_start(topic_state: dict[str, Any]) -> str:
         _claim_relation_map_section(topic_state.get("claim_relation_map") or {}),
         _strategy_rules_section(topic_state.get("strategy_memory") or {}),
         _lane_exemplars_section(topic_state.get("lane_exemplars") or {}),
+        render_resume_boundary_section(topic_state.get("resume_boundary") or {}),
         render_compact_context_section(topic_state.get("compact_context") or {}),
     ]
     if checkpoint.get("active"):
