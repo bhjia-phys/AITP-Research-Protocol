@@ -11,6 +11,14 @@ from brain.v5.runtime_audit import build_runtime_capability_audit
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+M1_LIFECYCLE_FAMILIES = {
+    "research_programs": ("orientation_only_record", "reviewed"),
+    "session_focus_sets": ("process_record", "reviewed"),
+    "cross_topic_relations": ("orientation_only_record", "reviewed"),
+    "session_closeouts": ("process_record", "bounded_observation"),
+    "recall_audits": ("process_record", "bounded_observation"),
+    "recording_candidate_batches": ("process_record", "bounded_observation"),
+}
 
 
 def test_every_writable_family_has_path_ref_and_inventory_contract():
@@ -39,7 +47,7 @@ def test_record_family_registry_contract_is_self_consistent():
 
     assert payload["ok"] is True
     assert payload["errors"] == []
-    assert payload["registry_family_count"] == 42
+    assert payload["registry_family_count"] == 48
     assert payload["special_family_count"] == 4
     assert payload["truth_source"] == "record_family_specs"
     assert payload["can_update_kernel_state"] is False
@@ -52,6 +60,21 @@ def test_record_family_registry_contract_is_self_consistent():
     assert "id" in record_family_specs()["claims"].legacy_id_fields
     assert "reference_location_id" in record_family_specs()["reference_locations"].legacy_id_fields
     assert "validation_result_id" in record_family_specs()["validation_results"].legacy_id_fields
+
+
+def test_m1_lifecycle_families_are_trust_neutral_and_exact_expandable():
+    specs = record_family_specs()
+
+    for family, (record_role, auto_write_policy) in M1_LIFECYCLE_FAMILIES.items():
+        spec = specs[family]
+        assert spec.record_class is not None
+        assert spec.trust_effect == "none"
+        assert spec.lifecycle_policy == "append_only"
+        assert spec.record_role == record_role
+        assert spec.auto_write_policy == auto_write_policy
+        assert {"exact_ref", "inventory", "query_index", "context_compiler"} <= set(
+            spec.participates_in
+        )
 
 
 def test_record_family_contract_rejects_incomplete_query_and_surface_metadata():

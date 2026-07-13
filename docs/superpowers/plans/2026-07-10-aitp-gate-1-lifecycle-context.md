@@ -318,7 +318,7 @@ Commit message: `v5: add incremental query index overlay`.
 - Produces: `CloseoutBoundaryItem`
 - Produces exact-ref families `research_programs`, `session_focus_sets`, `cross_topic_relations`, `session_closeouts`, `recall_audits`, and `recording_candidate_batches`.
 
-- [ ] **Step 1: Write the failing model and family tests**
+- [x] **Step 1: Write the failing model and family tests**
 
 ```python
 def test_gate1_families_are_trust_neutral_and_exact_expandable():
@@ -346,7 +346,7 @@ def test_cross_topic_relation_forbids_claim_trust_transfer():
     assert record.can_update_claim_trust is False
 ```
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run:
 
@@ -356,7 +356,7 @@ python -m pytest tests\test_v5_lifecycle_models.py tests\test_v5_record_family_r
 
 Expected: imports/family assertions fail because M1 models are absent.
 
-- [ ] **Step 3: Implement focused dataclasses**
+- [x] **Step 3: Implement focused dataclasses**
 
 Use these required identity and boundary fields:
 
@@ -524,13 +524,18 @@ class RecordingCandidateBatchRecord:
 Use `default_factory` for every collection. A resume card remains a derived
 dictionary and is not a canonical dataclass.
 
-- [ ] **Step 4: Register all six families**
+Implementation note: every persisted trust-authority field is validated at
+construction and readback. `SessionCloseoutRecord` locally materializes its
+nested boundary mappings as `CloseoutBoundaryItem`; the generic legacy
+materializer remains unchanged.
+
+- [x] **Step 4: Register all six families**
 
 Add `_REGISTRY_ROWS`, aliases, ref kinds, process/orientation roles, append-only
 families, bounded auto-write policy, and surfaces. Re-export the classes from
 `models.py` after the compatibility shards load.
 
-- [ ] **Step 5: Run GREEN and architecture checks**
+- [x] **Step 5: Run GREEN and architecture checks**
 
 Run:
 
@@ -538,7 +543,7 @@ Run:
 python -m pytest tests\test_v5_lifecycle_models.py tests\test_v5_record_family_registry.py tests\test_v5_record_envelope.py tests\test_v5_query_index.py tests\test_v5_architecture_boundaries.py -q -p no:cacheprovider --basetemp "$env:TEMP\aitp-g1-models-green"
 ```
 
-- [ ] **Step 6: Commit Task 1**
+- [x] **Step 6: Commit Task 1**
 
 Commit message: `v5: add M1 lifecycle record families`.
 

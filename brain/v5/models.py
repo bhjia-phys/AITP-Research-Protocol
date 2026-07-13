@@ -13,3 +13,13 @@ _load_module_shards(
     ),
 )
 del _load_module_shards
+
+from brain.v5.lifecycle_models import (  # noqa: E402 - compatibility shards load first.
+    CloseoutBoundaryItem,
+    CrossTopicRelationRecord,
+    RecallAuditRecord,
+    RecordingCandidateBatchRecord,
+    ResearchProgramRecord,
+    SessionCloseoutRecord,
+    SessionFocusSetRecord,
+)
