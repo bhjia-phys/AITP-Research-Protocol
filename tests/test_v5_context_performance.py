@@ -17,6 +17,8 @@ def test_versioned_10000_record_context_latency(tmp_path):
     from brain.v5.context_pack import build_aitp_context_pack
     from brain.v5.models import ClaimRecord
     from brain.v5.query_index import build_query_index
+    from brain.v5.record_envelope import RecordActor
+    from brain.v5.record_repository import RecordRepository
     from brain.v5.research_retrieval import exact_expand
     from brain.v5.research_timeline import build_research_timeline
     from brain.v5.store import write_record
@@ -71,6 +73,35 @@ def test_versioned_10000_record_context_latency(tmp_path):
         lambda: exact_expand(ws, [claim_ref], limit=10),
         repetitions=10,
     )
+    repository = RecordRepository(
+        ws,
+        actor=RecordActor(
+            actor_type="model",
+            actor_id="performance-fixture",
+            host="pytest",
+        ),
+    )
+    write_values = []
+    write_results = []
+    for write_index in range(5):
+        started = perf_counter()
+        write_results.append(
+            repository.write(
+                "claims",
+                ClaimRecord(
+                    claim_id=f"claim-performance-write-{write_index:03d}",
+                    topic_id=config["active_topic_id"],
+                    statement="Versioned fixture write-through latency probe.",
+                    evidence_profile="performance_fixture",
+                    confidence_state="candidate",
+                    active_uncertainty=(
+                        "Synthetic fixture records do not support scientific conclusions."
+                    ),
+                ),
+                body="# Write-through latency probe\n",
+            )
+        )
+        write_values.append(perf_counter() - started)
 
     metrics = {
         "fixture_version": config["fixture_version"],
@@ -80,6 +111,7 @@ def test_versioned_10000_record_context_latency(tmp_path):
         "warm_minimal_p95_seconds": _p95(minimal_values[1:]),
         "warm_timeline_p95_seconds": _p95(timeline_values[1:]),
         "exact_ref_p95_seconds": _p95(exact_values),
+        "write_through_p95_seconds": _p95(write_values),
         "context_bytes": pack["byte_count"],
         "context_tokens": pack["estimated_tokens"],
     }
@@ -89,6 +121,9 @@ def test_versioned_10000_record_context_latency(tmp_path):
     assert metrics["warm_minimal_p95_seconds"] < 1.0
     assert metrics["warm_timeline_p95_seconds"] < 2.0
     assert metrics["exact_ref_p95_seconds"] < 0.25
+    assert metrics["write_through_p95_seconds"] < 0.1
+    assert all(result.status == "created" for result in write_results)
+    assert all(result.index_projection.status == "projected" for result in write_results)
     assert pack["byte_count"] <= pack["context_budget"]["max_bytes"]
     assert pack["estimated_tokens"] <= pack["context_budget"]["max_tokens"]
 

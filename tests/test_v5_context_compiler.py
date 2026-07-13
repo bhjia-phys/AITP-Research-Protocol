@@ -64,6 +64,7 @@ def test_context_compiler_uses_one_query_plan_and_enforces_budgets(tmp_path):
     bundle = compile_research_context(ws, request, query_fn=counting_query)
 
     assert len(calls) == 1
+    assert calls[0].verification_mode == "orientation"
     assert bundle.topic_id == "qg"
     assert bundle.current_boundary["claim_id"] == claim.claim_id
     assert bundle.byte_count <= request.max_bytes
@@ -476,7 +477,9 @@ def test_context_pack_uses_compiler_without_legacy_recursive_builders(tmp_path, 
     )
 
     assert pack["relevant_claims"][0]["claim_id"] == claim.claim_id
-    assert pack["retrieval_coverage"]["exhaustive"] is True
+    assert pack["retrieval_coverage"]["scope_state_fresh"] is True
+    assert pack["retrieval_coverage"]["scope_content_verified"] is False
+    assert pack["retrieval_coverage"]["exhaustive"] is False
     assert pack["record_refs"]
     assert pack["expand"]["record_refs"]["surface"] == "record_refs"
     assert "query_index" in pack["source_records"]["derived_surfaces"]
@@ -513,11 +516,14 @@ def test_indexed_topic_snapshot_uses_one_query_and_isolates_topics(tmp_path):
     )
 
     assert len(calls) == 1
+    assert calls[0].verification_mode == "orientation"
     claim_ids = {record.claim_id for record in snapshot.records_by_family["claims"]}
     assert claim.claim_id in claim_ids
     assert other.claim_id not in claim_ids
     assert snapshot.index_status == "fresh"
-    assert snapshot.coverage["exhaustive"] is True
+    assert snapshot.coverage["scope_state_fresh"] is True
+    assert snapshot.coverage["scope_content_verified"] is False
+    assert snapshot.coverage["exhaustive"] is False
 
 
 def test_objective_graph_uses_indexed_snapshot_not_family_scans(tmp_path, monkeypatch):
@@ -533,7 +539,9 @@ def test_objective_graph_uses_indexed_snapshot_not_family_scans(tmp_path, monkey
     payload = objective_graph.build_objective_graph(ws, "session-qg")
 
     assert payload["claims"][0]["claim_id"] == claim.claim_id
-    assert payload["retrieval_coverage"]["exhaustive"] is True
+    assert payload["retrieval_coverage"]["scope_state_fresh"] is True
+    assert payload["retrieval_coverage"]["scope_content_verified"] is False
+    assert payload["retrieval_coverage"]["exhaustive"] is False
     assert payload["source_index_generation"] >= 1
 
 
@@ -561,7 +569,9 @@ def test_relation_map_uses_indexed_registry_projection(tmp_path, monkeypatch):
 
     assert payload["claim_id"] == claim.claim_id
     assert payload["latest_claim_status"]["status_id"] == "status-qg"
-    assert payload["retrieval_coverage"]["exhaustive"] is True
+    assert payload["retrieval_coverage"]["scope_state_fresh"] is True
+    assert payload["retrieval_coverage"]["scope_content_verified"] is False
+    assert payload["retrieval_coverage"]["exhaustive"] is False
     assert payload["source_index_generation"] >= 1
 
 
@@ -596,7 +606,9 @@ def test_research_timeline_uses_indexed_snapshot_not_directory_scans(tmp_path, m
     payload = research_timeline.build_research_timeline(ws, "session-qg")
 
     assert any(event["record_ref"] == "claim_status:status-qg" for event in payload["events"])
-    assert payload["retrieval_coverage"]["exhaustive"] is True
+    assert payload["retrieval_coverage"]["scope_state_fresh"] is True
+    assert payload["retrieval_coverage"]["scope_content_verified"] is False
+    assert payload["retrieval_coverage"]["exhaustive"] is False
     assert payload["source_index_generation"] >= 1
 
 
@@ -618,7 +630,9 @@ def test_distillation_uses_shared_snapshot_without_execution_brief(tmp_path, mon
 
     assert payload["active_claim_id"] == claim.claim_id
     assert payload["candidates"]
-    assert payload["retrieval_coverage"]["exhaustive"] is True
+    assert payload["retrieval_coverage"]["scope_state_fresh"] is True
+    assert payload["retrieval_coverage"]["scope_content_verified"] is False
+    assert payload["retrieval_coverage"]["exhaustive"] is False
     assert payload["source_index_generation"] >= 1
 
 

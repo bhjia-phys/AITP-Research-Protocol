@@ -180,6 +180,7 @@ def compile_research_context(
             topic_ids=(topic_id,),
             families=tuple(dict.fromkeys(request.families)),
             limit=request.record_limit,
+            verification_mode="orientation",
         ),
     )
 

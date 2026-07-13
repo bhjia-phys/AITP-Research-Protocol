@@ -47,10 +47,19 @@
 | File | Responsibility |
 |---|---|
 | `brain/v5/lifecycle_models.py` | M1 canonical process dataclasses. |
-| `brain/v5/query_index_generation.py` | Immutable generation preparation, v1/v2 manifest loading, and serialized publication. |
+| `brain/v5/query_index.py` | Strong full build, v1/v2 read compatibility, and the v3 immutable root manifest. |
+| `brain/v5/query_index_generation.py` | Immutable generation preparation and serialized publication. |
 | `brain/v5/query_index_locking.py` | Ranked OS advisory locks, explicit leases, inversion checks, and owner-death recovery. |
-| `brain/v5/query_index_delta.py` | Atomic derived delta rows, overlay, repair, and compaction. |
+| `brain/v5/query_index_accumulator.py` | Rebuildable dual-hash family accumulator with O(1) record replacement. |
+| `brain/v5/query_index_documents.py` | Deterministic document, lexical, and hashing primitives. |
+| `brain/v5/query_index_state.py` | Fast metadata-only family state snapshots for orientation. |
+| `brain/v5/query_index_delta.py` | Write-through projection facade, dirty marking, and compaction entrypoint. |
 | `brain/v5/query_index_delta_contracts.py` | Delta lineage and scoped-freshness contracts. |
+| `brain/v5/query_index_delta_storage.py` | Atomic delta manifest storage and base-lineage validation. |
+| `brain/v5/query_index_snapshot.py` | Coherent root/delta reads, overlay, and scoped freshness. |
+| `brain/v5/query_index_delta_repair.py` | Strong full-family repair and the only dirty-state clearing path. |
+| `brain/v5/query_index_family_scan.py` | Independent strong canonical family reconstruction. |
+| `brain/v5/query_index_fallback.py` | Explicit bounded single-family canonical fallback. |
 | `brain/v5/research_scope.py` | Program, focus-set, cross-topic-relation writes and scope resolution. |
 | `brain/v5/research_scope_contracts.py` | Scope/ref/transfer-policy validation. |
 | `brain/v5/session_lifecycle.py` | Closeout plan and canonical closeout write. |
@@ -70,8 +79,17 @@
 - Create: `brain/v5/query_index_locking.py`
 - Create: `brain/v5/query_index_delta.py`
 - Create: `brain/v5/query_index_delta_contracts.py`
+- Create: `brain/v5/query_index_accumulator.py`
+- Create: `brain/v5/query_index_documents.py`
+- Create: `brain/v5/query_index_state.py`
+- Create: `brain/v5/query_index_delta_storage.py`
+- Create: `brain/v5/query_index_snapshot.py`
+- Create: `brain/v5/query_index_delta_repair.py`
+- Create: `brain/v5/query_index_family_scan.py`
+- Create: `brain/v5/query_index_fallback.py`
 - Create: `tests/test_v5_query_index_delta.py`
 - Create: `tests/test_v5_query_index_concurrency.py`
+- Create: `tests/test_v5_query_index_accumulator.py`
 - Modify: `brain/v5/query_index.py`
 - Modify: `brain/v5/query_index_contracts.py`
 - Modify: `brain/v5/research_retrieval.py`
@@ -80,9 +98,10 @@
 - Modify: `tests/test_v5_query_index.py`
 - Modify: `tests/test_v5_research_retrieval.py`
 - Modify: `tests/test_v5_record_repository.py`
+- Modify: `tests/test_v5_context_performance.py`
 
 **Interfaces:**
-- Produces: `IndexRootManifestV2`, `IndexDeltaEntry`, `IndexDeltaManifest`,
+- Produces: v3 `IndexManifest`, `IndexDeltaEntry`, `IndexDeltaManifest`,
   `DirtyFamilyState`, `IndexProjectionOutcome`, `EffectiveIndexSnapshot`, and
   `ScopedIndexFreshness`.
 - Produces: `IndexBuildLease` and
@@ -97,7 +116,7 @@
   `load_effective_query_index(ws)`, `repair_query_delta(ws, families)`, and
   `compact_query_delta(ws)`.
 
-- [ ] **Step 1: Write failing write-through and scoped-freshness tests**
+- [x] **Step 1: Write failing write-through and scoped-freshness tests**
 
 Use deterministic `threading.Event` barriers and named failpoints, never sleeps,
 to cover create, revision, idempotent repeat, corrupt delta, deterministic
@@ -148,22 +167,23 @@ Also prove an out-of-band write without a delta makes only the affected family
 stale, an unscoped query becomes globally stale, and metadata-preserving edits
 cannot authorize exhaustive language without a new strong content check.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Expected: missing generation/delta modules, manifest discriminators, projection
 outcomes, ranked locks, coherent snapshot reads, and scoped coverage fields.
 
-- [ ] **Step 3: Add ranked locks and a discriminated v1/v2 manifest loader**
+- [x] **Step 3: Add ranked locks and a discriminated v1/v2/v3 manifest loader**
 
-Add `manifest_kind="query_index_root"` and `schema_version=2` to the root
+Add `manifest_kind="query_index_root"` and `schema_version=3` to the root
 pointer. Its immutable base descriptor defines `base_content_hash` exactly as
 SHA-256 over canonical JSON containing schema version, canonical watermark,
-per-family content watermarks, component hashes, record/family counts, and
-malformed/family counts; generation id and `built_at` are excluded. An absent
-discriminator is parsed only as the M0 legacy single-generation shape.
-Legacy root-level files remain readable through a virtual base descriptor, but
-delta projection returns `migration_required`, preserves canonical success,
-and cannot claim fresh until a successful v2 rebuild.
+per-family content watermarks and accumulator states, component hashes,
+record/family counts, and malformed/family counts; generation id and `built_at`
+are excluded. An absent discriminator is parsed only as the M0 legacy
+single-generation shape. Schema-v1 and schema-v2 roots remain readable for
+orientation and migration, but delta projection returns `migration_required`,
+preserves canonical success, and cannot claim fresh until a successful v3
+rebuild.
 
 Implement ranked locks with the fixed order
 `base-build -> canonical-mutation -> canonical-record -> delta-manifest`.
@@ -178,7 +198,7 @@ reacquire it; public projector/build facades acquire a lease only when one was
 not supplied. `__exit__` releases locks and records any unpublished generation
 as removable derived garbage.
 
-- [ ] **Step 4: Publish only content-proven immutable generations**
+- [x] **Step 4: Publish only content-proven immutable generations**
 
 Persist state tokens and strong content watermarks per family. Write components
 and an immutable generation descriptor beneath an unpublished
@@ -189,25 +209,29 @@ malformed path/byte hashes in all three values. Atomically replace only the
 small root pointer after that proof. A rejected/interrupted build leaves an
 unreferenced generation that readers ignore and repair may remove. All full
 build and compaction callers use the lease's one publication primitive; there
-is no second unsafe standalone path. Every v2 root publication also acquires the
+is no second unsafe standalone path. Every v3 root publication also acquires the
 delta lock, revalidates its snapshot, and publishes a delta manifest bound to
 the new base. A content-proven base may absorb and clear pre-snapshot rows and
 dirty markers; hash-changed later rows are retained. Normal return is therefore
 coherent even when the old base had a nonempty delta. Interruption between root
 and delta replacement remains fail-closed as an explicit lineage mismatch.
 
-- [ ] **Step 5: Implement continuity-preserving write-through projection**
+- [x] **Step 5: Implement continuity-preserving write-through projection**
 
 After a successful create or revision, project the exact canonical ref into a
 latest-row file keyed by `sha256(record_ref)`, then atomically advance a delta
 manifest that binds the root base generation and base-manifest content hash.
 The manifest carries a monotonically increasing delta generation, per-family
-state/content tokens, a predecessor chain token, durable `dirty_families`, and
-the content hash of every referenced delta row. Advance a clean family only
-when the manifest's effective predecessor matches the canonical predecessor
-captured before the write. A gap, corrupt/missing row, base mismatch, or failed
-projection marks that family dirty; a later successful row may be retained but
-cannot clear the marker or advance exhaustive freshness.
+state/content tokens, rebuildable family accumulator states, a predecessor chain
+token, durable `dirty_families`, and the content hash of every referenced delta
+row. `RecordRepository` captures both the effective family predecessor
+watermark and the previous exact-record content hash before commit. A clean
+family advances by removing that predecessor pair and adding the committed pair
+in O(1), without rescanning canonical family content. Advance only when the
+manifest's effective predecessor matches the captured predecessor. A gap,
+corrupt/missing row, base mismatch, missing accumulator, or failed projection
+marks that family dirty; a later successful row may be retained but cannot clear
+the marker or advance exhaustive freshness.
 
 Idempotent writes create no duplicate row and may restore a missing row only
 while continuity is intact; a dirty family requires full family repair.
@@ -223,7 +247,7 @@ predecessor to the locked projector helper. Standalone projection without a
 lease acquires one and can only prove current continuity or mark/repair dirty,
 so it cannot self-deadlock or invent a missing predecessor.
 
-- [ ] **Step 6: Add coherent reads, strong scoped freshness, and race-safe repair**
+- [x] **Step 6: Add coherent reads, strong scoped freshness, and race-safe repair**
 
 Overlay replaces base rows by `record_ref`, preserves deterministic ranking,
 and reports base/delta lineage. A reader hashes the root pointer, validates the
@@ -251,7 +275,7 @@ generation/base CAS before publication. It never publishes a previously read
 row after a revision and is the only delta operation allowed to clear a dirty
 family.
 
-- [ ] **Step 7: Compact without losing writes or masking gaps**
+- [x] **Step 7: Compact without losing writes or masking gaps**
 
 Compaction snapshots the current delta, builds and verifies an unpublished full
 generation under `base-build` and the canonical snapshot lock, and rejects
@@ -264,13 +288,18 @@ crash before root swap leaves the old base authoritative; a crash after it
 leaves either a valid rebased delta or a base-lineage mismatch that public reads
 report as stale, never a silently dropped write.
 
-- [ ] **Step 8: Run M0 retrieval/repository/context regressions**
+- [x] **Step 8: Run M0 retrieval/repository/context regressions**
 
 Run the new tests plus M0 query index, retrieval, repository, context,
 architecture, and performance tests. Assert normal write-through remains under
 100 ms on the versioned fixture and warm scoped query remains under one second.
 
-- [ ] **Step 9: Commit Task 0**
+Acceptance evidence on 2026-07-13, using a fresh disposable 10,000-record Temp
+fixture: cold compact context 0.937 s, warm compact context p95 0.095 s, warm
+timeline p95 0.605 s, exact-ref p95 0.0033 s, and five repository write-through
+operations p95 0.061 s. The opt-in performance test now enforces all thresholds.
+
+- [x] **Step 9: Commit Task 0**
 
 Commit message: `v5: add incremental query index overlay`.
 

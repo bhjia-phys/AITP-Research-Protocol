@@ -4,52 +4,42 @@ from __future__ import annotations
 
 import hashlib
 import json
-import re
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from brain.v5.legacy_record_materialization import materialize_record_class
 from brain.v5.markdown import read_md, write_text_atomic
 from brain.v5.paths import WorkspacePaths
+from brain.v5.query_index_accumulator import (
+    content_accumulator_from_pairs,
+    content_accumulator_watermark,
+)
+from brain.v5.query_index_documents import (
+    _document_row,
+    _hash_json,
+    _hash_text,
+    _json_safe,
+    _lexical_index,
+    _project_tool_run_supersession,
+    _relative_path,
+    _typed_materialization_status,
+    lexical_terms,
+)
 from brain.v5.record_envelope import read_envelope_compat
 from brain.v5.record_family_registry import record_family_specs
 from brain.v5.record_repository import record_family_paths
-
-
-_LATIN_TOKEN_RE = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.+-]*")
-_CJK_TOKEN_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]+")
-INDEX_SCHEMA_VERSION = 2
-_CONTEXT_SUMMARY_FIELDS = (
-    "active_uncertainty",
-    "artifact_type",
-    "claim_status",
-    "confidence_state",
-    "created_at",
-    "event_type",
-    "evidence_status",
-    "failure_modes",
-    "lifecycle_status",
-    "maturity_level",
-    "next_action",
-    "objective",
-    "outputs",
-    "phase",
-    "pivot_reason",
-    "research_question",
-    "risk",
-    "scope",
-    "statement",
-    "summary",
-    "superseded_by",
-    "supersedes_run_id",
-    "timestamp",
-    "tool_family",
-    "tool_name",
-    "updated_at",
-    "validation_status",
+from brain.v5.query_index_locking import acquire_index_build_lease, acquire_ranked_lock
+from brain.v5.query_index_generation import (
+    generation_component_files,
+    load_generation_descriptor,
+    next_generation_number,
+    write_immutable_generation,
 )
+from brain.v5.query_index_state import current_family_state_snapshot
+
+
+INDEX_SCHEMA_VERSION = 3
 
 
 class IndexIntegrityError(RuntimeError):
@@ -76,7 +66,15 @@ class IndexManifest:
     issues_hash: str
     document_file: str = "record_documents.json"
     lexical_file: str = "lexical_index.json"
+    issues_file: str = "issues.json"
     index_schema_version: int = 1
+    family_state_tokens: dict[str, str] = field(default_factory=dict)
+    family_content_watermarks: dict[str, str] = field(default_factory=dict)
+    family_content_accumulators: dict[str, dict[str, Any]] = field(default_factory=dict)
+    base_content_hash: str = ""
+    manifest_kind: str = ""
+    schema_version: int = 1
+    generation_manifest_file: str = ""
 
 
 @dataclass(frozen=True)
@@ -109,29 +107,47 @@ class LoadedQueryIndex:
 def build_query_index(ws: WorkspacePaths) -> IndexBuildReport:
     """Build disposable sorted metadata and lexical indexes from canonical files."""
 
+    with acquire_index_build_lease(ws, reason="full-query-index-build"):
+        return _build_query_index_locked(ws)
+
+
+def _build_query_index_locked(ws: WorkspacePaths) -> IndexBuildReport:
+    """Build and publish while the caller owns base and mutation leases."""
+
     state_token_before = canonical_state_token(ws)
     specs = record_family_specs()
+    canonical_content_before = {
+        family: current_family_content_watermark(ws, family)
+        for family in sorted(specs)
+    }
+    _run_failpoint("after_canonical_before")
     documents: list[dict[str, Any]] = []
     issues: list[IndexBuildIssue] = []
     canonical_pairs: list[list[str]] = []
     checked_count = 0
     family_counts: dict[str, int] = {}
+    family_pairs: dict[str, list[list[str]]] = {family: [] for family in specs}
+    family_state_rows: dict[str, list[list[Any]]] = {family: [] for family in specs}
 
     for family, spec in sorted(specs.items()):
         paths, _storage_exists = record_family_paths(ws, spec)
         for path in paths:
             checked_count += 1
+            stat = path.stat()
+            family_state_rows[family].append(
+                [_relative_path(ws, path), stat.st_size, stat.st_mtime_ns]
+            )
             try:
                 frontmatter, body = read_md(path)
                 envelope = read_envelope_compat(frontmatter, spec, path, body=body)
                 document = _document_row(ws, spec, frontmatter, body, envelope, path)
             except Exception as exc:  # noqa: BLE001 - derived coverage must retain every issue.
-                canonical_pairs.append(
-                    [
-                        f"malformed:{family}:{_relative_path(ws, path)}",
-                        hashlib.sha256(path.read_bytes()).hexdigest(),
-                    ]
-                )
+                pair = [
+                    f"malformed:{family}:{_relative_path(ws, path)}",
+                    hashlib.sha256(path.read_bytes()).hexdigest(),
+                ]
+                canonical_pairs.append(pair)
+                family_pairs[family].append(pair)
                 issues.append(
                     IndexBuildIssue(
                         family=family,
@@ -142,7 +158,9 @@ def build_query_index(ws: WorkspacePaths) -> IndexBuildReport:
                 )
                 continue
             documents.append(document)
-            canonical_pairs.append([document["record_ref"], document["record_content_hash"]])
+            pair = [document["record_ref"], document["record_content_hash"]]
+            canonical_pairs.append(pair)
+            family_pairs[family].append(pair)
             family_counts[family] = family_counts.get(family, 0) + 1
 
     _project_tool_run_supersession(documents)
@@ -155,6 +173,35 @@ def build_query_index(ws: WorkspacePaths) -> IndexBuildReport:
     malformed_family_counts: dict[str, int] = {}
     for issue in issues:
         malformed_family_counts[issue.family] = malformed_family_counts.get(issue.family, 0) + 1
+    family_content_accumulators = {
+        family: content_accumulator_from_pairs(family_pairs[family])
+        for family in sorted(specs)
+    }
+    family_content_watermarks = {
+        family: content_accumulator_watermark(family_content_accumulators[family])
+        for family in sorted(specs)
+    }
+    family_state_tokens = {
+        family: _hash_json(sorted(family_state_rows[family])) for family in sorted(specs)
+    }
+    canonical_content_after = {
+        family: current_family_content_watermark(ws, family)
+        for family in sorted(specs)
+    }
+    changed_content_families = tuple(
+        family
+        for family in sorted(specs)
+        if not (
+            canonical_content_before[family]
+            == family_content_watermarks[family]
+            == canonical_content_after[family]
+        )
+    )
+    if changed_content_families:
+        raise IndexSnapshotChangedError(
+            "strong canonical content changed while query index was built: "
+            + ", ".join(changed_content_families)
+        )
     document_text = json.dumps(documents, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
     lexical_text = json.dumps(lexical, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
     issues_text = json.dumps(issue_rows, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
@@ -163,11 +210,18 @@ def build_query_index(ws: WorkspacePaths) -> IndexBuildReport:
     issues_hash = _hash_text(issues_text)
     content_hash = _hash_json(
         {
+            "schema_version": 3,
             "index_schema_version": INDEX_SCHEMA_VERSION,
             "canonical_watermark": watermark,
+            "family_content_watermarks": family_content_watermarks,
+            "family_content_accumulators": family_content_accumulators,
             "document_hash": document_hash,
             "lexical_hash": lexical_hash,
             "issues_hash": issues_hash,
+            "record_count": len(documents),
+            "family_counts": dict(sorted(family_counts.items())),
+            "malformed_count": len(issues),
+            "malformed_family_counts": dict(sorted(malformed_family_counts.items())),
         }
     )
     state_token_after = canonical_state_token(ws)
@@ -175,7 +229,8 @@ def build_query_index(ws: WorkspacePaths) -> IndexBuildReport:
         raise IndexSnapshotChangedError(
             "canonical state changed while query index was built; retry after writes quiesce"
         )
-    generation = _next_generation(ws)
+    generation = next_generation_number(ws, _published_generation(ws))
+    generation_files = generation_component_files(generation)
     manifest = IndexManifest(
         generation=generation,
         canonical_watermark=watermark,
@@ -190,24 +245,33 @@ def build_query_index(ws: WorkspacePaths) -> IndexBuildReport:
         lexical_hash=lexical_hash,
         issues_hash=issues_hash,
         index_schema_version=INDEX_SCHEMA_VERSION,
+        family_state_tokens=family_state_tokens,
+        family_content_watermarks=family_content_watermarks,
+        family_content_accumulators=family_content_accumulators,
+        base_content_hash=content_hash,
+        manifest_kind="query_index_root",
+        schema_version=3,
+        **generation_files,
     )
     index_dir = ws.root / "indexes"
-    write_text_atomic(
-        index_dir / manifest.document_file,
-        document_text,
+    manifest_payload = asdict(manifest)
+    write_immutable_generation(
+        ws,
+        manifest_payload=manifest_payload,
+        document_text=document_text,
+        lexical_text=lexical_text,
+        issues_text=issues_text,
     )
-    write_text_atomic(
-        index_dir / manifest.lexical_file,
-        lexical_text,
-    )
-    write_text_atomic(
-        index_dir / "manifest.json",
-        json.dumps(asdict(manifest), ensure_ascii=False, sort_keys=True, indent=2) + "\n",
-    )
-    write_text_atomic(
-        index_dir / "issues.json",
-        issues_text,
-    )
+    _run_failpoint("after_generation_components")
+    with acquire_ranked_lock(ws, "delta-manifest"):
+        _run_failpoint("before_root_replace")
+        write_text_atomic(
+            index_dir / "manifest.json",
+            json.dumps(manifest_payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+        )
+        _run_failpoint("after_root_replace")
+        _run_failpoint("before_delta_rebase")
+        _reset_delta_after_full_build(ws, manifest, lock_held=True)
     return IndexBuildReport(
         manifest=manifest,
         checked_count=checked_count,
@@ -222,12 +286,19 @@ def load_query_index(ws: WorkspacePaths) -> LoadedQueryIndex:
 
     index_dir = ws.root / "indexes"
     manifest_data = _load_json(index_dir / "manifest.json")
-    manifest_data.setdefault("malformed_family_counts", {})
-    manifest_data.setdefault("index_schema_version", 1)
+    _apply_manifest_defaults(manifest_data)
     manifest = IndexManifest(**manifest_data)
+    if (
+        manifest.manifest_kind == "query_index_root"
+        and manifest.schema_version >= 2
+        and manifest.generation_manifest_file
+    ):
+        descriptor = load_generation_descriptor(ws, manifest.generation_manifest_file)
+        if descriptor != manifest_data:
+            raise IndexIntegrityError("generation descriptor does not match query index root")
     document_text = (index_dir / manifest.document_file).read_text(encoding="utf-8")
     lexical_text = (index_dir / manifest.lexical_file).read_text(encoding="utf-8")
-    issues_text = (index_dir / "issues.json").read_text(encoding="utf-8")
+    issues_text = (index_dir / manifest.issues_file).read_text(encoding="utf-8")
     component_hashes = {
         "document_hash": _hash_text(document_text),
         "lexical_hash": _hash_text(lexical_text),
@@ -238,12 +309,7 @@ def load_query_index(ws: WorkspacePaths) -> LoadedQueryIndex:
         "lexical_hash": manifest.lexical_hash,
         "issues_hash": manifest.issues_hash,
     }
-    hash_basis = {
-        "canonical_watermark": manifest.canonical_watermark,
-        **component_hashes,
-    }
-    if manifest.index_schema_version >= 2:
-        hash_basis["index_schema_version"] = manifest.index_schema_version
+    hash_basis = _manifest_hash_basis(manifest, component_hashes)
     actual_hash = _hash_json(hash_basis)
     if component_hashes != expected_components or actual_hash != manifest.content_hash:
         raise IndexIntegrityError("manifest content hash does not match derived index files")
@@ -262,18 +328,20 @@ def load_query_manifest(ws: WorkspacePaths) -> IndexManifest:
     """Load only the small manifest for exact-read freshness and coverage checks."""
 
     manifest_data = _load_json(ws.root / "indexes" / "manifest.json")
-    manifest_data.setdefault("malformed_family_counts", {})
-    manifest_data.setdefault("index_schema_version", 1)
+    _apply_manifest_defaults(manifest_data)
     return IndexManifest(**manifest_data)
 
 
 def query_index_is_fresh(ws: WorkspacePaths, manifest: IndexManifest) -> bool:
     """Require both canonical-state and index-algorithm freshness."""
 
-    return (
-        manifest.index_schema_version == INDEX_SCHEMA_VERSION
-        and canonical_state_token(ws) == manifest.canonical_state_token
-    )
+    if manifest.index_schema_version != INDEX_SCHEMA_VERSION:
+        return False
+    if manifest.manifest_kind == "query_index_root" and manifest.schema_version >= 2:
+        from brain.v5.query_index_delta import global_index_state_is_fresh
+
+        return global_index_state_is_fresh(ws, manifest)
+    return canonical_state_token(ws) == manifest.canonical_state_token
 
 
 def current_canonical_watermark(ws: WorkspacePaths) -> str:
@@ -306,131 +374,103 @@ def canonical_state_token(ws: WorkspacePaths) -> str:
     return _hash_json(rows)
 
 
-def _document_row(ws, spec, frontmatter, body, envelope, path):
-    topic_id = str(frontmatter.get("topic_id") or frontmatter.get("topic") or "")
-    lifecycle = str(frontmatter.get("lifecycle_status") or frontmatter.get("status") or "")
-    searchable = json.dumps(_json_safe(frontmatter), ensure_ascii=False, sort_keys=True)
-    return {
-        "record_ref": f"{spec.ref_kind}:{envelope.record_id}",
-        "record_id": envelope.record_id,
-        "family": envelope.record_family,
-        "kind": str(frontmatter.get("kind") or ""),
-        "topic_id": topic_id,
-        "claim_id": str(frontmatter.get("claim_id") or ""),
-        "session_id": envelope.session_id,
-        "program_id": envelope.program_id,
-        "scope_refs": list(envelope.scope_refs),
-        "source_record_refs": list(envelope.source_record_refs),
-        "status": str(frontmatter.get("status") or ""),
-        "lifecycle_status": lifecycle,
-        "title": str(frontmatter.get("title") or frontmatter.get("statement") or ""),
-        "record_content_hash": envelope.content_hash,
-        "typed_materialization_status": _typed_materialization_status(frontmatter, spec),
-        "relative_path": _relative_path(ws, path),
-        "summary_fields": {
-            key: _json_safe(frontmatter[key])
-            for key in _CONTEXT_SUMMARY_FIELDS
-            if key in frontmatter and frontmatter[key] not in (None, "", [], {})
-        },
-        "search_text": f"{searchable}\n{body}".strip(),
-    }
+def current_family_state_token(ws: WorkspacePaths, family: str) -> str:
+    """Return the cheap state token for one canonical record family."""
+
+    return current_family_state_snapshot(ws, family).token
 
 
-def _project_tool_run_supersession(documents: list[dict[str, Any]]) -> None:
-    successors: dict[str, list[str]] = {}
-    for document in documents:
-        if document.get("family") != "tool_runs":
+def current_family_content_watermark(ws: WorkspacePaths, family: str) -> str:
+    """Hash canonical content for one family, including malformed bytes."""
+
+    return content_accumulator_watermark(
+        current_family_content_accumulator(ws, family)
+    )
+
+
+def current_family_content_accumulator(
+    ws: WorkspacePaths,
+    family: str,
+) -> dict[str, int | str]:
+    """Rebuild one family accumulator directly from canonical content."""
+
+    spec = record_family_specs()[family]
+    paths, _storage_exists = record_family_paths(ws, spec)
+    pairs: list[list[str]] = []
+    for path in paths:
+        try:
+            frontmatter, body = read_md(path)
+            envelope = read_envelope_compat(frontmatter, spec, path, body=body)
+        except Exception:  # noqa: BLE001 - malformed bytes remain part of coverage.
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            pairs.append([f"malformed:{family}:{_relative_path(ws, path)}", digest])
             continue
-        summary = document.get("summary_fields") or {}
-        prior_id = str(summary.get("supersedes_run_id") or "").strip()
-        if prior_id:
-            successors.setdefault(prior_id, []).append(str(document.get("record_id") or ""))
-    for document in documents:
-        if document.get("family") != "tool_runs":
-            continue
-        successor_ids = sorted(item for item in successors.get(document.get("record_id"), []) if item)
-        if successor_ids:
-            document["summary_fields"]["superseded_by"] = successor_ids[0]
+        pairs.append([f"{spec.ref_kind}:{envelope.record_id}", envelope.content_hash])
+    return content_accumulator_from_pairs(pairs)
 
 
-def _lexical_index(documents):
-    postings: dict[str, set[int]] = {}
-    for row in documents:
-        for term in lexical_terms(row["search_text"]):
-            postings.setdefault(term, set()).add(row["doc_id"])
-    return {term: sorted(refs) for term, refs in sorted(postings.items())}
-
-
-def lexical_terms(text: str) -> tuple[str, ...]:
-    """Tokenize Latin identifiers and bounded CJK n-grams deterministically."""
-
-    lowered = str(text or "").lower()
-    latin_tokens = set(_LATIN_TOKEN_RE.findall(lowered))
-    terms = set(latin_tokens)
-    for token in latin_tokens:
-        terms.update(
-            part
-            for part in re.split(r"[._+\-]+", token)
-            if len(part) >= 2
-        )
-    for match in _CJK_TOKEN_RE.findall(lowered):
-        sequence = match[:128]
-        terms.add(sequence)
-        for width in range(2, min(4, len(sequence)) + 1):
-            terms.update(
-                sequence[index : index + width]
-                for index in range(len(sequence) - width + 1)
-            )
-    return tuple(sorted(term for term in terms if term))
-
-
-def _typed_materialization_status(frontmatter, spec) -> str:
-    if spec.record_class is None:
-        return "not_applicable"
-    try:
-        materialize_record_class(
-            frontmatter,
-            spec.record_class,
-            id_field=spec.id_field,
-            legacy_id_fields=spec.legacy_id_fields,
-        )
-    except (TypeError, ValueError):
-        return "unavailable"
-    return "ready"
-
-
-def _next_generation(ws: WorkspacePaths) -> int:
+def _published_generation(ws: WorkspacePaths) -> int:
     path = ws.root / "indexes" / "manifest.json"
     if not path.exists():
-        return 1
+        return 0
     try:
-        return int(_load_json(path).get("generation", 0)) + 1
+        return int(_load_json(path).get("generation", 0))
     except (OSError, ValueError, TypeError, json.JSONDecodeError):
-        return 1
-
-
-def _relative_path(ws: WorkspacePaths, path: Path) -> str:
-    return path.relative_to(ws.root).as_posix()
-
-
-def _json_safe(value: Any) -> Any:
-    if isinstance(value, dict):
-        return {str(key): _json_safe(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple, set, frozenset)):
-        return [_json_safe(item) for item in value]
-    if value is None or isinstance(value, (str, int, float, bool)):
-        return value
-    return str(value)
-
-
-def _hash_json(value: Any) -> str:
-    raw = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
-
-
-def _hash_text(value: str) -> str:
-    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+        return 0
 
 
 def _load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _apply_manifest_defaults(manifest_data: dict[str, Any]) -> None:
+    manifest_data.setdefault("malformed_family_counts", {})
+    manifest_data.setdefault("index_schema_version", 1)
+    manifest_data.setdefault("issues_file", "issues.json")
+    manifest_data.setdefault("family_state_tokens", {})
+    manifest_data.setdefault("family_content_watermarks", {})
+    manifest_data.setdefault("family_content_accumulators", {})
+    manifest_data.setdefault("base_content_hash", manifest_data.get("content_hash", ""))
+    manifest_data.setdefault("manifest_kind", "")
+    manifest_data.setdefault("schema_version", 1)
+    manifest_data.setdefault("generation_manifest_file", "")
+
+
+def _manifest_hash_basis(
+    manifest: IndexManifest,
+    component_hashes: dict[str, str],
+) -> dict[str, Any]:
+    if manifest.manifest_kind == "query_index_root" and manifest.schema_version >= 2:
+        basis = {
+            "schema_version": manifest.schema_version,
+            "index_schema_version": manifest.index_schema_version,
+            "canonical_watermark": manifest.canonical_watermark,
+            "family_content_watermarks": manifest.family_content_watermarks,
+            **component_hashes,
+            "record_count": manifest.record_count,
+            "family_counts": manifest.family_counts,
+            "malformed_count": manifest.malformed_count,
+            "malformed_family_counts": manifest.malformed_family_counts,
+        }
+        if manifest.schema_version >= 3:
+            basis["family_content_accumulators"] = manifest.family_content_accumulators
+        return basis
+    basis = {"canonical_watermark": manifest.canonical_watermark, **component_hashes}
+    if manifest.index_schema_version >= 2:
+        basis["index_schema_version"] = manifest.index_schema_version
+    return basis
+
+
+def _reset_delta_after_full_build(
+    ws: WorkspacePaths,
+    manifest: IndexManifest,
+    *,
+    lock_held: bool = False,
+) -> None:
+    from brain.v5.query_index_delta import reset_query_delta_for_base
+
+    reset_query_delta_for_base(ws, manifest, lock_held=lock_held)
+
+
+def _run_failpoint(_name: str) -> None:
+    """Named no-op seam for deterministic publication interruption tests."""

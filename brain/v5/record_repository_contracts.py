@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 
 from brain.v5.record_repository import RecordReadReport, WriteResult
+from brain.v5.query_index_delta_contracts import validate_projection_outcome
 
 
 _HASH_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -27,6 +28,7 @@ def validate_write_result(result: WriteResult) -> tuple[str, ...]:
         errors.append("revision must be a positive integer")
     if result.status == "revised" and not result.archive_path:
         errors.append("revised results require archive_path")
+    errors.extend(validate_projection_outcome(result.index_projection))
     return tuple(errors)
 
 

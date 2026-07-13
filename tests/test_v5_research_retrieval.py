@@ -3,7 +3,7 @@ from brain.v5.models import ClaimRecord
 from brain.v5.paths import WorkspacePaths
 from brain.v5.query_index import build_query_index
 from brain.v5.query_index_contracts import validate_index_build_report
-from brain.v5.research_retrieval import ResearchQuery, query_records
+from brain.v5.research_retrieval import ResearchQuery, exact_expand, query_records
 from brain.v5.retrieval_audit import build_retrieval_audit
 from brain.v5.store import write_record
 
@@ -142,3 +142,49 @@ def test_retrieval_can_claim_scoped_no_result_when_unchecked_family_has_errors(t
     assert "tool_runs" in scoped.coverage.unchecked_families
     assert global_query.coverage.exhaustive is False
     assert global_query.coverage.can_claim_no_result is False
+
+
+def test_orientation_query_is_state_fresh_but_never_exhaustive(tmp_path):
+    ws = WorkspacePaths(tmp_path)
+    ws.ensure_layout()
+    _write_claim(ws, "c1", "qsgw", "orientation fixture")
+    build_query_index(ws)
+
+    result = query_records(
+        ws,
+        ResearchQuery(
+            text="absent",
+            families=("claims",),
+            verification_mode="orientation",
+        ),
+    )
+
+    assert result.index_status == "fresh"
+    assert result.coverage.scope_state_fresh is True
+    assert result.coverage.scope_content_verified is False
+    assert result.coverage.scope_fresh is True
+    assert result.coverage.exhaustive is False
+    assert result.coverage.can_claim_no_result is False
+
+
+def test_exact_expand_does_not_verify_the_global_query_index(tmp_path, monkeypatch):
+    import brain.v5.research_retrieval as research_retrieval
+
+    ws = WorkspacePaths(tmp_path)
+    ws.ensure_layout()
+    _write_claim(ws, "c1", "qsgw", "exact expansion fixture")
+    build_query_index(ws)
+
+    def reject_global_freshness(*_args, **_kwargs):
+        raise AssertionError("exact canonical expansion must not verify the global index")
+
+    monkeypatch.setattr(
+        research_retrieval,
+        "query_index_is_fresh",
+        reject_global_freshness,
+    )
+
+    result = exact_expand(ws, ["claim:c1"], limit=10)
+
+    assert [item.record_ref for item in result.items] == ["claim:c1"]
+    assert result.index_status == "fresh"

@@ -1,8 +1,6 @@
 from dataclasses import replace
 from concurrent.futures import ThreadPoolExecutor
-import os
 from pathlib import Path
-import time
 
 import pytest
 
@@ -378,7 +376,9 @@ def test_repository_compare_and_swap_is_checked_before_idempotent_return(tmp_pat
         )
 
 
-def test_repository_cleans_stale_lock_only_when_policy_allows(tmp_path):
+def test_repository_treats_persistent_lock_file_as_identity_not_ownership(tmp_path):
+    from brain.v5.query_index_locking import acquire_ranked_lock
+
     repo = _repository(tmp_path)
     lock = (
         tmp_path
@@ -389,9 +389,7 @@ def test_repository_cleans_stale_lock_only_when_policy_allows(tmp_path):
         / f"{CLAIM.claim_id}.lock"
     )
     lock.parent.mkdir(parents=True, exist_ok=True)
-    lock.write_text("stale\n", encoding="utf-8")
-    old = time.time() - 60
-    os.utime(lock, (old, old))
+    lock.write_text("persistent lock identity\n", encoding="utf-8")
 
     result = repo.write(
         "claims",
@@ -401,17 +399,23 @@ def test_repository_cleans_stale_lock_only_when_policy_allows(tmp_path):
     )
 
     assert result.status == "created"
-    assert not lock.exists()
-
-    lock.write_text("fresh\n", encoding="utf-8")
-    with pytest.raises(RecordLockError, match="already held"):
-        repo.write(
-            "claims",
-            CLAIM,
-            policy=WritePolicy(lock_timeout_seconds=0.01, stale_lock_after_seconds=60),
-        )
     assert lock.exists()
-    lock.unlink()
+
+    with acquire_ranked_lock(
+        repo.ws,
+        "canonical-record",
+        timeout_seconds=1,
+        lock_path=lock,
+    ):
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            blocked = executor.submit(
+                repo.write,
+                "claims",
+                CLAIM,
+                policy=WritePolicy(lock_timeout_seconds=0.01),
+            )
+            with pytest.raises(RecordLockError, match="already held"):
+                blocked.result(timeout=5)
 
 
 def test_repository_concurrent_same_content_creation_is_idempotent(tmp_path):
@@ -467,24 +471,16 @@ def test_repository_results_satisfy_trust_neutral_contracts(tmp_path):
 
 
 def test_record_lock_closes_its_descriptor_once(tmp_path, monkeypatch):
-    import brain.v5.record_repository as repository_module
+    import brain.v5.query_index_locking as locking_module
 
     closed_descriptors = []
+    original_close = locking_module.os.close
 
-    class TrackingOS:
-        O_CREAT = os.O_CREAT
-        O_EXCL = os.O_EXCL
-        O_WRONLY = os.O_WRONLY
-        open = staticmethod(os.open)
-        write = staticmethod(os.write)
-        getpid = staticmethod(os.getpid)
+    def tracking_close(descriptor):
+        closed_descriptors.append(descriptor)
+        original_close(descriptor)
 
-        @staticmethod
-        def close(descriptor):
-            closed_descriptors.append(descriptor)
-            os.close(descriptor)
-
-    monkeypatch.setattr(repository_module, "os", TrackingOS)
+    monkeypatch.setattr(locking_module.os, "close", tracking_close)
     repo = _repository(tmp_path)
 
     with repo.lock_record("claims", "claim-lock-close-once"):

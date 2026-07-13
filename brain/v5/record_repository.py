@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-import os
-import time
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass, is_dataclass
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Iterator, Mapping
 
-from brain.v5.legacy_record_materialization import materialize_record_class
 from brain.v5.markdown import read_md, write_md, write_text_atomic
 from brain.v5.paths import WorkspacePaths
 from brain.v5.record_envelope import (
@@ -23,10 +20,25 @@ from brain.v5.record_family_registry import (
     record_family_specs,
     spec_for_family,
 )
+from brain.v5.query_index_delta_contracts import IndexProjectionOutcome
+from brain.v5.query_index_locking import (
+    LockTimeoutError,
+    acquire_canonical_mutation_lease,
+    acquire_ranked_lock,
+    active_canonical_mutation_lease,
+)
 from brain.v5.record_path_safety import (
     record_lock_path as _record_lock_path,
     record_path as _record_path,
     validate_record_id as _validate_record_id,
+)
+from brain.v5.record_repository_payloads import (
+    _frontmatter,
+    _materialize_record,
+    _persisted_frontmatter,
+    _positive_revision,
+    _string_list,
+    _validate_payload_schema,
 )
 
 
@@ -63,6 +75,7 @@ class WriteResult:
     previous_hash: str = ""
     revision: int = 1
     archive_path: str = ""
+    index_projection: IndexProjectionOutcome = field(default_factory=IndexProjectionOutcome)
 
 
 @dataclass(frozen=True)
@@ -123,76 +136,179 @@ class RecordRepository:
         )
         path = _record_path(self.ws, spec, envelope.record_id)
         record_ref = f"{spec.ref_kind}:{envelope.record_id}"
-
-        with self._record_lock(spec, envelope.record_id, policy):
-            if path.exists():
-                stored, stored_body = read_md(path)
-                previous_hash = _stored_content_hash(stored, stored_body)
-                if policy.expected_hash and policy.expected_hash != previous_hash:
-                    raise RecordCompareAndSwapError(
-                        f"expected hash does not match current record {envelope.record_id}"
-                    )
-                if policy.mode == "revision" and not policy.expected_hash:
-                    raise RecordCompareAndSwapError(
-                        f"expected hash is required to revise record {envelope.record_id}"
-                    )
-                if previous_hash == envelope.content_hash:
-                    return WriteResult(
-                        status="unchanged",
-                        record_ref=record_ref,
-                        path=str(path),
-                        content_hash=envelope.content_hash,
-                        previous_hash=previous_hash,
-                        revision=_positive_revision(stored.get("revision")),
-                    )
-                if policy.mode == "revision":
-                    archive_path = (
-                        self.ws.root
-                        / "revisions"
-                        / family
-                        / envelope.record_id
-                        / f"{previous_hash}.md"
-                    )
-                    write_text_atomic(archive_path, path.read_text(encoding="utf-8"))
-                    revision = _positive_revision(stored.get("revision")) + 1
-                    supersedes = [
-                        f"{record_ref}@sha256:{previous_hash}",
-                        *_string_list(frontmatter.get("supersedes")),
-                    ]
-                    persisted = _persisted_frontmatter(
-                        frontmatter,
-                        envelope,
-                        revision=revision,
-                        supersedes=supersedes,
-                    )
-                    write_md(path, persisted, body)
-                    return WriteResult(
-                        status="revised",
-                        record_ref=record_ref,
-                        path=str(path),
-                        content_hash=envelope.content_hash,
-                        previous_hash=previous_hash,
-                        revision=revision,
-                        archive_path=str(archive_path),
-                    )
-                raise RecordCollisionError(
-                    f"record id {envelope.record_id} already exists with different content"
-                )
-
-            if policy.mode == "revision" or policy.expected_hash:
-                raise RecordCompareAndSwapError(
-                    f"expected hash cannot revise missing record {envelope.record_id}"
-                )
-
-            persisted = _persisted_frontmatter(frontmatter, envelope)
-            write_md(path, persisted, body)
-            return WriteResult(
-                status="created",
+        active_lease = active_canonical_mutation_lease(self.ws)
+        if active_lease is not None:
+            active_lease.assert_active(self.ws)
+            return self._write_under_mutation(
+                family=family,
+                spec=spec,
+                envelope=envelope,
+                frontmatter=frontmatter,
+                body=body,
+                policy=policy,
+                path=path,
                 record_ref=record_ref,
-                path=str(path),
-                content_hash=envelope.content_hash,
-                revision=1,
             )
+        with acquire_canonical_mutation_lease(
+            self.ws,
+            timeout_seconds=policy.lock_timeout_seconds,
+        ):
+            return self._write_under_mutation(
+                family=family,
+                spec=spec,
+                envelope=envelope,
+                frontmatter=frontmatter,
+                body=body,
+                policy=policy,
+                path=path,
+                record_ref=record_ref,
+            )
+
+    def _write_under_mutation(
+        self,
+        *,
+        family: str,
+        spec: RecordFamilySpec,
+        envelope: Any,
+        frontmatter: dict[str, Any],
+        body: str,
+        policy: WritePolicy,
+        path: Path,
+        record_ref: str,
+    ) -> WriteResult:
+        predecessor_content_watermark = _family_content_watermark_if_indexed(
+            self.ws,
+            family,
+        )
+        with self._record_lock(spec, envelope.record_id, policy):
+            result = self._write_canonical_locked(
+                family=family,
+                envelope=envelope,
+                frontmatter=frontmatter,
+                body=body,
+                policy=policy,
+                path=path,
+                record_ref=record_ref,
+            )
+        return self._project_write_result(
+            family,
+            result,
+            predecessor_content_watermark=predecessor_content_watermark,
+        )
+
+    def _write_canonical_locked(
+        self,
+        *,
+        family: str,
+        envelope: Any,
+        frontmatter: dict[str, Any],
+        body: str,
+        policy: WritePolicy,
+        path: Path,
+        record_ref: str,
+    ) -> WriteResult:
+        if path.exists():
+            stored, stored_body = read_md(path)
+            previous_hash = _stored_content_hash(stored, stored_body)
+            if policy.expected_hash and policy.expected_hash != previous_hash:
+                raise RecordCompareAndSwapError(
+                    f"expected hash does not match current record {envelope.record_id}"
+                )
+            if policy.mode == "revision" and not policy.expected_hash:
+                raise RecordCompareAndSwapError(
+                    f"expected hash is required to revise record {envelope.record_id}"
+                )
+            if previous_hash == envelope.content_hash:
+                return WriteResult(
+                    status="unchanged",
+                    record_ref=record_ref,
+                    path=str(path),
+                    content_hash=envelope.content_hash,
+                    previous_hash=previous_hash,
+                    revision=_positive_revision(stored.get("revision")),
+                )
+            if policy.mode == "revision":
+                archive_path = (
+                    self.ws.root
+                    / "revisions"
+                    / family
+                    / envelope.record_id
+                    / f"{previous_hash}.md"
+                )
+                write_text_atomic(archive_path, path.read_text(encoding="utf-8"))
+                revision = _positive_revision(stored.get("revision")) + 1
+                supersedes = [
+                    f"{record_ref}@sha256:{previous_hash}",
+                    *_string_list(frontmatter.get("supersedes")),
+                ]
+                persisted = _persisted_frontmatter(
+                    frontmatter,
+                    envelope,
+                    revision=revision,
+                    supersedes=supersedes,
+                )
+                write_md(path, persisted, body)
+                return WriteResult(
+                    status="revised",
+                    record_ref=record_ref,
+                    path=str(path),
+                    content_hash=envelope.content_hash,
+                    previous_hash=previous_hash,
+                    revision=revision,
+                    archive_path=str(archive_path),
+                )
+            raise RecordCollisionError(
+                f"record id {envelope.record_id} already exists with different content"
+            )
+
+        if policy.mode == "revision" or policy.expected_hash:
+            raise RecordCompareAndSwapError(
+                f"expected hash cannot revise missing record {envelope.record_id}"
+            )
+
+        persisted = _persisted_frontmatter(frontmatter, envelope)
+        write_md(path, persisted, body)
+        return WriteResult(
+            status="created",
+            record_ref=record_ref,
+            path=str(path),
+            content_hash=envelope.content_hash,
+            revision=1,
+        )
+
+    def _project_write_result(
+        self,
+        family: str,
+        result: WriteResult,
+        *,
+        predecessor_content_watermark: str,
+    ) -> WriteResult:
+        from brain.v5.query_index_delta import mark_query_delta_dirty, project_record_delta
+
+        try:
+            outcome = project_record_delta(
+                self.ws,
+                result.record_ref,
+                predecessor_content_watermark=predecessor_content_watermark,
+                predecessor_record_content_hash=result.previous_hash,
+            )
+        except Exception as exc:  # noqa: BLE001 - canonical success must survive projection failure.
+            reason = f"{type(exc).__name__}: {exc}"
+            try:
+                outcome = mark_query_delta_dirty(
+                    self.ws,
+                    family,
+                    reason=reason,
+                    predecessor_content_watermark=predecessor_content_watermark,
+                )
+            except Exception as dirty_exc:  # noqa: BLE001 - surface both derived failures.
+                outcome = IndexProjectionOutcome(
+                    status="dirty",
+                    dirty_families=(family,),
+                    diagnostics=(reason, f"dirty marker failed: {type(dirty_exc).__name__}: {dirty_exc}"),
+                    repair_required=True,
+                )
+        return replace(result, index_projection=outcome)
 
     def list(self, family: str) -> RecordReadReport:
         """Read every record in a family and report every malformed path."""
@@ -289,7 +405,17 @@ class RecordRepository:
         """Serialize a domain transition around one canonical record identity."""
 
         spec = spec_for_family(family)
-        with self._record_lock(spec, record_id, policy or WritePolicy()):
+        write_policy = policy or WritePolicy()
+        _record_lock_path(self.ws, spec, record_id)
+        active_lease = active_canonical_mutation_lease(self.ws)
+        if active_lease is not None:
+            active_lease.assert_active(self.ws)
+            yield
+            return
+        with acquire_canonical_mutation_lease(
+            self.ws,
+            timeout_seconds=write_policy.lock_timeout_seconds,
+        ):
             yield
 
     @contextmanager
@@ -300,63 +426,16 @@ class RecordRepository:
         policy: WritePolicy,
     ) -> Iterator[None]:
         lock_path = _record_lock_path(self.ws, spec, record_id)
-        lock_path.parent.mkdir(parents=True, exist_ok=True)
-        deadline = time.monotonic() + max(0.0, policy.lock_timeout_seconds)
-        while True:
-            try:
-                descriptor = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-                break
-            except FileExistsError as exc:
-                if _remove_stale_lock(lock_path, policy.stale_lock_after_seconds):
-                    continue
-                if time.monotonic() >= deadline:
-                    raise RecordLockError(f"record lock is already held: {lock_path}") from exc
-                time.sleep(0.01)
         try:
-            os.write(descriptor, f"pid={os.getpid()}\n".encode("ascii"))
-            os.close(descriptor)
-            descriptor = None
-            yield
-        finally:
-            if descriptor is not None:
-                try:
-                    os.close(descriptor)
-                except OSError:
-                    pass
-            lock_path.unlink(missing_ok=True)
-
-
-def _frontmatter(record: Any) -> dict[str, Any]:
-    if is_dataclass(record):
-        return asdict(record)
-    if isinstance(record, Mapping):
-        return dict(record)
-    raise TypeError("record must be a dataclass or mapping")
-
-
-def _persisted_frontmatter(
-    frontmatter: Mapping[str, Any],
-    envelope: Any,
-    *,
-    revision: int = 1,
-    supersedes: list[str] | None = None,
-) -> dict[str, Any]:
-    persisted = dict(frontmatter)
-    persisted.update(
-        {
-            "record_id": envelope.record_id,
-            "record_family": envelope.record_family,
-            "schema_version": envelope.schema_version,
-            "created_at": envelope.created_at,
-            "created_by": asdict(envelope.created_by),
-            "record_content_hash": envelope.content_hash,
-            "revision": revision,
-            "lifecycle_status": envelope.lifecycle_status,
-            "supersedes": list(supersedes or envelope.supersedes),
-            "trust_effect": envelope.trust_effect,
-        }
-    )
-    return persisted
+            with acquire_ranked_lock(
+                self.ws,
+                "canonical-record",
+                timeout_seconds=policy.lock_timeout_seconds,
+                lock_path=lock_path,
+            ):
+                yield
+        except LockTimeoutError as exc:
+            raise RecordLockError(f"record lock is already held: {lock_path}") from exc
 
 
 def _stored_content_hash(frontmatter: Mapping[str, Any], body: str) -> str:
@@ -367,60 +446,13 @@ def _stored_content_hash(frontmatter: Mapping[str, Any], body: str) -> str:
     return declared or actual
 
 
-def _positive_revision(value: Any) -> int:
-    if isinstance(value, bool):
-        return 1
-    if isinstance(value, int) and value > 0:
-        return value
-    if isinstance(value, str) and value.isdigit() and int(value) > 0:
-        return int(value)
-    return 1
-
-
-def _string_list(value: Any) -> list[str]:
-    if value is None:
-        return []
-    items = value if isinstance(value, (list, tuple, set, frozenset)) else [value]
-    return [str(item).strip() for item in items if str(item).strip()]
-
-
-def _remove_stale_lock(lock_path: Path, stale_after_seconds: float) -> bool:
-    if stale_after_seconds <= 0:
-        return False
+def _family_content_watermark_if_indexed(ws: WorkspacePaths, family: str) -> str:
     try:
-        age = time.time() - lock_path.stat().st_mtime
-        if age < stale_after_seconds:
-            return False
-        lock_path.unlink()
-        return True
-    except FileNotFoundError:
-        return True
+        from brain.v5.query_index_delta_storage import effective_family_content_watermark
 
-
-def _materialize_record(
-    frontmatter: Mapping[str, Any],
-    spec: RecordFamilySpec,
-    *,
-    allow_legacy: bool = True,
-) -> Any:
-    if spec.record_class is None:
-        return dict(frontmatter)
-    return materialize_record_class(
-        frontmatter,
-        spec.record_class,
-        id_field=spec.id_field,
-        legacy_id_fields=spec.legacy_id_fields,
-        allow_legacy=allow_legacy,
-    )
-
-
-def _validate_payload_schema(frontmatter: Mapping[str, Any], spec: RecordFamilySpec) -> None:
-    kind = str(frontmatter.get("kind") or "").strip()
-    if kind and kind != spec.record_kind:
-        raise ValueError(
-            f"record kind {kind!r} does not match family {spec.family!r}"
-        )
-    _materialize_record(frontmatter, spec, allow_legacy=False)
+        return effective_family_content_watermark(ws, family)
+    except Exception:  # noqa: BLE001 - derived failure cannot block canonical truth.
+        return ""
 
 
 def _spec_for_ref_kind(kind: str) -> RecordFamilySpec | None:

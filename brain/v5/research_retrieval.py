@@ -2,17 +2,27 @@
 
 from __future__ import annotations
 
+import json
 import math
 from dataclasses import asdict, dataclass, is_dataclass
 from typing import Any
 
 from brain.v5.paths import WorkspacePaths
 from brain.v5.query_index import (
+    IndexIntegrityError,
+    IndexManifest,
     lexical_terms,
     load_query_index,
     load_query_manifest,
     query_index_is_fresh,
 )
+from brain.v5.query_index_delta import (
+    load_effective_query_index,
+    scoped_index_freshness,
+    scoped_index_orientation,
+)
+from brain.v5.query_index_delta_contracts import EffectiveIndexSnapshot
+from brain.v5.query_index_fallback import strict_family_fallback
 from brain.v5.record_envelope import RecordActor
 from brain.v5.record_repository import RecordRepository
 from brain.v5.record_family_registry import record_family_specs
@@ -27,6 +37,9 @@ class ResearchQuery:
     statuses: tuple[str, ...] = ()
     offset: int = 0
     limit: int = 20
+    allow_family_fallback: bool = False
+    fallback_max_records: int = 500
+    verification_mode: str = "strong"
 
 
 @dataclass(frozen=True)
@@ -37,6 +50,14 @@ class RetrievalCoverage:
     unchecked_families: tuple[str, ...]
     malformed_count: int
     reason: str
+    scope_state_fresh: bool = False
+    scope_content_verified: bool = False
+    scope_fresh: bool = False
+    global_fresh: bool = False
+    dirty_families: tuple[str, ...] = ()
+    checked_paths: tuple[str, ...] = ()
+    fallback_used: bool = False
+    read_errors: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -71,9 +92,10 @@ def query_records(ws: WorkspacePaths, query: ResearchQuery) -> RetrievalResult:
 
     if query.offset < 0 or query.limit < 1:
         raise ValueError("offset must be non-negative and limit must be positive")
-    index = load_query_index(ws)
-    fresh = query_index_is_fresh(ws, index.manifest)
-    index_status = "fresh" if fresh else "stale"
+    if query.allow_family_fallback and query.fallback_max_records < 1:
+        raise ValueError("fallback_max_records must be positive")
+    if query.verification_mode not in {"strong", "orientation"}:
+        raise ValueError("verification_mode must be strong or orientation")
     selected_families = tuple(sorted(set(query.families)))
     all_families = tuple(sorted(record_family_specs()))
     checked_set = set(selected_families)
@@ -82,12 +104,61 @@ def query_records(ws: WorkspacePaths, query: ResearchQuery) -> RetrievalResult:
     )
     checked_families = tuple(sorted(checked_set)) or all_families
     unchecked = tuple(family for family in all_families if family not in checked_families)
-    malformed_count = sum(
-        index.manifest.malformed_family_counts.get(family, 0) for family in checked_families
+    try:
+        index = load_effective_query_index(
+            ws,
+            allow_cached=query.verification_mode == "orientation",
+        )
+    except (IndexIntegrityError, OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+        index = _fail_closed_index_snapshot(ws, all_families, exc)
+    freshness = (
+        scoped_index_freshness(ws, index, checked_families)
+        if query.verification_mode == "strong"
+        else scoped_index_orientation(ws, index, checked_families)
     )
-    exhaustive = fresh and malformed_count == 0
-    if not fresh:
+    fresh = freshness.scope_fresh
+    fallback_used = False
+    scope_state_fresh = freshness.scope_state_fresh
+    scope_content_verified = freshness.scope_content_verified
+    scope_fresh = freshness.scope_fresh
+    checked_paths = freshness.checked_paths
+    read_errors = freshness.diagnostics
+    if not fresh and query.allow_family_fallback and len(checked_families) == 1:
+        fallback = strict_family_fallback(
+            ws,
+            index,
+            checked_families[0],
+            max_records=query.fallback_max_records,
+        )
+        if fallback.used and fallback.snapshot is not None:
+            index = fallback.snapshot
+            fallback_used = True
+            fresh = fallback.content_verified
+            scope_state_fresh = fallback.content_verified
+            scope_content_verified = fallback.content_verified
+            scope_fresh = fallback.content_verified
+            checked_paths = fallback.checked_paths
+            read_errors = fallback.diagnostics
+        else:
+            read_errors = tuple(dict.fromkeys([*read_errors, *fallback.diagnostics]))
+    index_status = "fresh" if fresh else "stale"
+    malformed_count = sum(
+        index.malformed_family_counts.get(family, 0) for family in checked_families
+    )
+    exhaustive = (
+        fresh
+        and scope_content_verified
+        and malformed_count == 0
+        and not read_errors
+    )
+    if fallback_used and exhaustive:
+        reason = "bounded canonical single-family fallback exhaustively covers the requested scope"
+    elif fallback_used:
+        reason = "bounded canonical single-family fallback has malformed or read-error coverage"
+    elif not fresh:
         reason = "stale coverage forbids absolute no-result language"
+    elif query.verification_mode == "orientation":
+        reason = "orientation state is current but strong canonical content was not checked"
     elif malformed_count:
         reason = "read errors in the requested scope forbid absolute no-result language"
     elif unchecked:
@@ -101,6 +172,14 @@ def query_records(ws: WorkspacePaths, query: ResearchQuery) -> RetrievalResult:
         unchecked_families=unchecked,
         malformed_count=malformed_count,
         reason=reason,
+        scope_state_fresh=scope_state_fresh,
+        scope_content_verified=scope_content_verified,
+        scope_fresh=scope_fresh,
+        global_fresh=freshness.global_fresh,
+        dirty_families=freshness.dirty_families,
+        checked_paths=checked_paths,
+        fallback_used=fallback_used,
+        read_errors=read_errors,
     )
 
     items_by_ref: dict[str, RetrievalItem] = {}
@@ -182,7 +261,6 @@ def exact_expand(
     requested = tuple(dict.fromkeys(str(ref).strip() for ref in refs if str(ref).strip()))
     page_refs = requested[:limit]
     manifest = load_query_manifest(ws)
-    fresh = query_index_is_fresh(ws, manifest)
     repository = RecordRepository(
         ws,
         actor=RecordActor(actor_type="migration", actor_id="retrieval-read", host="retrieval"),
@@ -206,6 +284,7 @@ def exact_expand(
     )
     all_families = tuple(sorted(record_family_specs()))
     unchecked = tuple(family for family in all_families if family not in checked)
+    fresh = len(items) == len(page_refs)
     malformed_count = sum(manifest.malformed_family_counts.get(family, 0) for family in checked)
     exhaustive = fresh and malformed_count == 0 and not excluded
     if not fresh:
@@ -221,6 +300,10 @@ def exact_expand(
         unchecked_families=unchecked,
         malformed_count=malformed_count,
         reason=reason,
+        scope_state_fresh=fresh,
+        scope_content_verified=fresh,
+        scope_fresh=fresh,
+        global_fresh=fresh,
     )
     next_offset = limit if len(requested) > limit else None
     return RetrievalResult(
@@ -301,3 +384,55 @@ def _family_for_ref(ref: str) -> str:
         if kind in {alias.replace("-", "_") for alias in spec.exact_ref_aliases}:
             return family
     return ""
+
+
+def _fail_closed_index_snapshot(
+    ws: WorkspacePaths,
+    all_families: tuple[str, ...],
+    error: Exception,
+) -> EffectiveIndexSnapshot:
+    diagnostic = f"{type(error).__name__}: {error}"
+    try:
+        base = load_query_index(ws)
+        return EffectiveIndexSnapshot(
+            manifest=base.manifest,
+            documents=base.documents,
+            lexical_terms=base.lexical_terms,
+            record_refs=base.record_refs,
+            family_state_tokens=dict(base.manifest.family_state_tokens),
+            family_content_watermarks=dict(base.manifest.family_content_watermarks),
+            family_content_accumulators=dict(base.manifest.family_content_accumulators),
+            malformed_family_counts=dict(base.manifest.malformed_family_counts),
+            dirty_families=all_families,
+            read_errors=(diagnostic,),
+        )
+    except (IndexIntegrityError, OSError, ValueError, TypeError, KeyError, json.JSONDecodeError):
+        try:
+            manifest = load_query_manifest(ws)
+        except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError):
+            manifest = IndexManifest(
+                generation=0,
+                canonical_watermark="",
+                canonical_state_token="",
+                content_hash="",
+                record_count=0,
+                family_counts={},
+                malformed_count=0,
+                malformed_family_counts={},
+                built_at="",
+                document_hash="",
+                lexical_hash="",
+                issues_hash="",
+            )
+        return EffectiveIndexSnapshot(
+            manifest=manifest,
+            documents=(),
+            lexical_terms={},
+            record_refs=(),
+            family_state_tokens=dict(manifest.family_state_tokens),
+            family_content_watermarks=dict(manifest.family_content_watermarks),
+            family_content_accumulators=dict(manifest.family_content_accumulators),
+            malformed_family_counts=dict(manifest.malformed_family_counts),
+            dirty_families=all_families,
+            read_errors=(diagnostic,),
+        )

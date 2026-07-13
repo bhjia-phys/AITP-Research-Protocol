@@ -94,6 +94,7 @@ def load_indexed_topic_snapshot(
             topic_ids=(topic_id,),
             families=tuple(dict.fromkeys(str(family) for family in families)),
             limit=int(max_records),
+            verification_mode="orientation",
         ),
     )
 

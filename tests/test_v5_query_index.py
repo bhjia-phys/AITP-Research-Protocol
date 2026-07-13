@@ -71,6 +71,10 @@ def test_query_index_is_deterministic_across_insertion_order(tmp_path):
     assert right_loaded.record_refs == left_loaded.record_refs
     assert left_report.indexed_count == 2
     assert left_report.malformed_count == 0
+    for field_name in ("document_file", "lexical_file", "issues_file"):
+        left_path = left.root / "indexes" / getattr(left_report.manifest, field_name)
+        right_path = right.root / "indexes" / getattr(right_report.manifest, field_name)
+        assert left_path.read_bytes() == right_path.read_bytes()
 
 
 def test_query_index_refuses_to_publish_a_concurrent_canonical_snapshot(tmp_path, monkeypatch):
@@ -169,6 +173,35 @@ def test_query_index_watermark_accounts_for_malformed_canonical_files(tmp_path):
 
     assert report.malformed_count == 1
     assert report.manifest.canonical_watermark == current_canonical_watermark(ws)
+
+
+def test_registry_family_state_token_uses_directory_entries_and_precomputed_paths(
+    tmp_path,
+    monkeypatch,
+):
+    from pathlib import Path
+
+    import brain.v5.query_index_state as query_index_state
+    from brain.v5.query_index import current_family_state_token
+
+    ws = _seed_index_workspace(tmp_path, ["claim", "source"])
+    report = build_query_index(ws)
+    original_stat = Path.stat
+
+    def reject_claim_path_stat(path, *args, **kwargs):
+        if path.parent == ws.registry_dir("claims"):
+            raise AssertionError("registry state scan used one Path.stat call per record")
+        return original_stat(path, *args, **kwargs)
+
+    def reject_relative_path(*_args, **_kwargs):
+        raise AssertionError("registry state scan resolved one relative Path per record")
+
+    monkeypatch.setattr(Path, "stat", reject_claim_path_stat)
+    monkeypatch.setattr(query_index_state, "_relative_path", reject_relative_path)
+
+    assert current_family_state_token(ws, "claims") == report.manifest.family_state_tokens["claims"]
+
+
 def test_lexical_terms_preserve_identifiers_and_add_natural_language_components():
     from brain.v5.query_index import lexical_terms
 

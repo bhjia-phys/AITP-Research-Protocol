@@ -111,7 +111,11 @@ def test_topic_status_and_startup_refresh_share_compact_context_boundary(tmp_pat
     assert topic_status["compact_context"] == startup["compact_context"]
     assert startup["compact_context"] == startup["topic_status_bundles"][0]["compact_context"]
     assert startup["compact_context"]["fingerprint"]
-    assert startup["compact_context"]["retrieval_coverage"]["exhaustive"] is True
+    coverage = startup["compact_context"]["retrieval_coverage"]
+    assert coverage["scope_state_fresh"] is True
+    assert coverage["scope_content_verified"] is False
+    assert coverage["exhaustive"] is False
+    assert coverage["can_claim_no_result"] is False
     assert startup["compact_context"]["orientation_only"] is True
     assert startup["compact_context"]["can_update_kernel_state"] is False
     assert startup["compact_context"]["can_update_claim_trust"] is False
