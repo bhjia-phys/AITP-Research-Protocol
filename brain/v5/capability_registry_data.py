@@ -229,20 +229,48 @@ CODEX_FACADE_MCP_NAMES = (
 )
 
 CODEX_SUPPORT_MCP_NAMES = (
+    "aitp_v5_evaluate_pre_tool_policy",
+    "aitp_v5_preflight_trust_update",
+)
+
+CODEX_MAINTENANCE_MCP_NAMES = (
     "aitp_v5_get_runtime_bridge_target_manifest",
     "aitp_v5_get_runtime_payload_profiles",
     "aitp_v5_audit_runtime_mcp_bridge_acceptance",
-    "aitp_v5_evaluate_pre_tool_policy",
-    "aitp_v5_preflight_trust_update",
     "aitp_v5_audit_hook_installation",
     "aitp_v5_discover_hook_install_paths",
     "aitp_v5_report_hook_smoke_coverage",
 )
 
+CODEX_MAINTENANCE_CLI_ROUTES = {
+    "aitp_v5_get_runtime_bridge_target_manifest": "aitp-v5 adapter bridge-targets",
+    "aitp_v5_get_runtime_payload_profiles": "aitp-v5 adapter payload-profiles",
+    "aitp_v5_audit_runtime_mcp_bridge_acceptance": "aitp-v5 adapter bridge-acceptance",
+    "aitp_v5_audit_hook_installation": "aitp-v5 adapter install-audit <runtime> <args>",
+    "aitp_v5_discover_hook_install_paths": "aitp-v5 adapter install-paths",
+    "aitp_v5_report_hook_smoke_coverage": "aitp-v5 adapter smoke-coverage",
+}
+
 COMPACT_MCP_NAMES = frozenset(CODEX_FACADE_MCP_NAMES + CODEX_SUPPORT_MCP_NAMES)
+
+COMPACT_SOFT_DEPRECATION_BY_MCP = {
+    name: {
+        "lifecycle_status": "soft_deprecated_from_compact",
+        "compatibility_window": "one_release",
+        "decision_date": "2026-07-12",
+        "warning": (
+            "This maintenance tool was removed from compact; use full MCP or CLI "
+            "during the one-release compatibility window."
+        ),
+        "cli_route": CODEX_MAINTENANCE_CLI_ROUTES[name],
+        "removal_condition": "after_vertical_acceptance_and_caller_review",
+    }
+    for name in CODEX_MAINTENANCE_MCP_NAMES
+}
 
 # operation, MCP name, CLI route, public surface, state effect, visibility
 MCP_ONLY_CAPABILITIES = (
+    ("apply_project_skill", "aitp_v5_apply_project_skill", None, "skill_patch_proposal_record", "kernel_write", "full"),
     ("apply_rehome_plan", "aitp_v5_apply_rehome_plan", None, "lifecycle_event_record", "kernel_write", "full"),
     ("assess_risk", "aitp_v5_assess_risk", None, "risk_assessment", "read_only", "full"),
     ("audit_record_routing", "aitp_v5_audit_record_routing", None, "record_routing_audit", "read_only", "full"),
@@ -263,12 +291,14 @@ MCP_ONLY_CAPABILITIES = (
     ("curated_legacy_topics", "aitp_v5_list_curated_legacy_topics", None, "curated_legacy_topic_catalog", "read_only", "full"),
     ("migrate_curated_legacy_topic", "aitp_v5_migrate_curated_legacy_topic_to_v5", None, "legacy_migration_result", "kernel_write", "full"),
     ("run_dir_provenance_extractor_plan", "aitp_v5_plan_run_dir_provenance_extractor", None, "run_dir_provenance_extractor_plan", "read_only", "full"),
-    ("capability_registry", "aitp_v5_get_capability_registry", None, "capability_registry_audit", "read_only", "full"),
-    ("runtime_capability_audit", "aitp_v5_get_runtime_capability_audit", None, "runtime_capability_audit", "read_only", "full"),
-    ("query_index_build", "aitp_v5_build_query_index", None, "query_index_build_report", "runtime_write", "full"),
-    ("query_index_status", "aitp_v5_get_query_index_status", None, "query_index_status", "read_only", "full"),
-    ("exact_record_expansion", "aitp_v5_exact_expand_records", None, "research_retrieval_result", "read_only", "full"),
-    ("research_context_compile", "aitp_v5_compile_research_context", None, "research_context_bundle", "read_only", "full"),
+    ("capability_registry", "aitp_v5_get_capability_registry", "aitp-v5 context capability-audit", "capability_registry_audit", "read_only", "full"),
+    ("runtime_capability_audit", "aitp_v5_get_runtime_capability_audit", "aitp-v5 context runtime-audit", "runtime_capability_audit", "read_only", "full"),
+    ("query_index_build", "aitp_v5_build_query_index", "aitp-v5 query index-build", "query_index_build_report", "runtime_write", "full"),
+    ("query_index_status", "aitp_v5_get_query_index_status", "aitp-v5 query index-status", "query_index_status", "read_only", "full"),
+    ("exact_record_expansion", "aitp_v5_exact_expand_records", "aitp-v5 query exact --ref claim:c1", "research_retrieval_result", "read_only", "full"),
+    ("research_context_compile", "aitp_v5_compile_research_context", "aitp-v5 context compile <session-id>", "research_context_bundle", "read_only", "full"),
+    ("propose_detected_procedural_skill", "aitp_v5_propose_detected_procedural_skill", None, "skill_patch_proposal_record", "kernel_write", "full"),
+    ("request_skill_install_review", "aitp_v5_request_skill_install_review", None, "human_checkpoint_record", "kernel_write", "full"),
 )
 
 # Independently shipped extensions are registered only when their MCP wrapper

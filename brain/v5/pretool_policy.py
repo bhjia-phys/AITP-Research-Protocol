@@ -14,6 +14,7 @@ from brain.v5.models import (
     ValidationContractRecord,
     ValidationResultRecord,
 )
+from brain.v5.human_approval import checkpoint_can_authorize_trust
 from brain.v5.policy import PolicyDecision, evaluate_policy
 from brain.v5.store import list_records
 from brain.v5.workspace import get_claim, get_session_binding
@@ -274,6 +275,7 @@ def _approved_checkpoint_for_claim(ws, claim_id: str, checkpoint_id: str) -> boo
         and record.claim_id == claim_id
         and record.status == "decided"
         and record.decision == "approve"
+        and checkpoint_can_authorize_trust(record)
         for record in records
     )
 
@@ -289,6 +291,7 @@ def _approved_failure_mode_review_checkpoint_for_claim(ws, claim_id: str, checkp
         and record.requested_by == "failure_mode_review_packet"
         and record.status == "decided"
         and record.decision == "approve_failure_mode_review"
+        and checkpoint_can_authorize_trust(record)
         for record in records
     )
 

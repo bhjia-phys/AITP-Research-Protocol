@@ -7,7 +7,7 @@ from typing import Any
 from brain.v5.curated_rag_corpus import read_curated_rag_chunk
 from brain.v5.models import ReferenceLocationRecord
 from brain.v5.record_refs import lookup_record_refs
-from brain.v5.store import list_valid_records
+from brain.v5.store import list_records
 from brain.v5.workspace import get_session_binding
 
 
@@ -166,7 +166,7 @@ def build_literature_corpus_extraction_artifact(
 def _reference_location_items(ws, location_ids: list[str]) -> list[dict[str, Any]]:
     records = {
         record.location_id: record
-        for record in list_valid_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord)
+        for record in list_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord)
     }
     return [
         _reference_location_item(records.get(_location_id(location_ref)), original_ref=location_ref)

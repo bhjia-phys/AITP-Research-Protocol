@@ -119,6 +119,26 @@ def test_agent_facing_templates_do_not_teach_legacy_active_wiring():
     assert "AITP MCP tools are available as `aitp_*`" not in opencode
     assert "aitp_get_execution_brief(topics_root=" not in opencode
 
+    opencode_reference = _read("adapters/opencode/SKILL.md")
+    assert "brain/v5/native_mcp.py" in opencode_reference
+    assert "aitp_v5_get_execution_brief" in opencode_reference
+    assert "aitp_v5_*" in opencode_reference
+    assert "brain/mcp_server.py" not in opencode_reference
+    assert "before normal `L0" not in opencode_reference
+
+    for relative_path in (
+        "adapters/codex/SKILL.md",
+        "adapters/claude-code/SKILL.md",
+        "adapters/opencode/SKILL.md",
+        "adapters/openclaw/SKILL.md",
+    ):
+        adapter_reference = _read(relative_path)
+        assert "aitp_v5_" in adapter_reference
+        assert "brain/mcp_server.py" not in adapter_reference
+        assert "Stage flow (v4.0)" not in adapter_reference
+        assert "aitp_bootstrap_topic" not in adapter_reference
+        assert "aitp_submit_candidate" not in adapter_reference
+
     setup = _read("deploy/templates/claude-code/aitp-mcp-setup.md")
     assert "brain/v5/native_mcp.py" in setup
     assert "aitp-pm.py doctor" in setup

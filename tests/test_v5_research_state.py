@@ -79,6 +79,7 @@ def test_research_state_records_bounded_fisherd_evidence_without_trust_promotion
     assert payload["artifact"]["metadata"]["sha256"]
     assert payload["artifact"]["metadata"]["remote_root"].endswith("20260531-spectral-commutant")
     assert payload["tool_run"]["evidence_status"] == "supports"
+    assert payload["tool_run"]["supersedes"] == payload["tool_run"]["supersedes_run_id"]
     assert payload["evidence"]["supports_outputs"] == ["finite_L_H4_motif_formula_check_L10_L12"]
     assert payload["claim_status"]["maturity_level"] == "finite-size evidence"
     assert payload["claim_status"]["can_update_claim_trust"] is False

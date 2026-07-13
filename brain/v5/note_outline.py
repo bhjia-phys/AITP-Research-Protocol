@@ -23,7 +23,7 @@ from brain.v5.objective_graph import build_objective_graph
 from brain.v5.paths import WorkspacePaths
 from brain.v5.recovery_session import recover_session_binding_for_read
 from brain.v5.research_distillation import build_research_distillation_candidates
-from brain.v5.store import list_valid_records
+from brain.v5.store import list_records
 
 
 def compile_note_outline(
@@ -99,21 +99,21 @@ def compile_note_outline(
 
 def _topic_records(ws: WorkspacePaths, topic_id: str) -> dict[str, list[Any]]:
     return {
-        "claims": _topic_filter(list_valid_records(ws.registry_dir("claims"), ClaimRecord), topic_id),
-        "claim_statuses": _topic_filter(list_valid_records(ws.registry_dir("claim_statuses"), ClaimStatusRecord), topic_id),
-        "proof_obligations": _topic_filter(list_valid_records(ws.registry_dir("proof_obligations"), ProofObligationRecord), topic_id),
+        "claims": _topic_filter(list_records(ws.registry_dir("claims"), ClaimRecord), topic_id),
+        "claim_statuses": _topic_filter(list_records(ws.registry_dir("claim_statuses"), ClaimStatusRecord), topic_id),
+        "proof_obligations": _topic_filter(list_records(ws.registry_dir("proof_obligations"), ProofObligationRecord), topic_id),
         "authorities": list_authorities_for_topic(ws, topic_id),
-        "physics_objects": _topic_filter(list_valid_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord), topic_id),
-        "object_relations": _topic_filter(list_valid_records(ws.registry_dir("object_relations"), ObjectRelationRecord), topic_id),
+        "physics_objects": _topic_filter(list_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord), topic_id),
+        "object_relations": _topic_filter(list_records(ws.registry_dir("object_relations"), ObjectRelationRecord), topic_id),
         "sensemaking_reports": _topic_filter(
-            list_valid_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord),
+            list_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord),
             topic_id,
         ),
-        "source_assets": _topic_filter(list_valid_records(ws.registry_dir("source_assets"), SourceAssetRecord), topic_id),
-        "artifacts": _topic_filter(list_valid_records(ws.registry_dir("artifacts"), ArtifactRecord), topic_id),
-        "tool_runs": _topic_filter(list_valid_records(ws.registry_dir("tool_runs"), ToolRunRecord), topic_id),
-        "evidence": _topic_filter(list_valid_records(ws.registry_dir("evidence"), EvidenceRecord), topic_id),
-        "validation_results": _topic_filter(list_valid_records(ws.registry_dir("validation_results"), ValidationResultRecord), topic_id),
+        "source_assets": _topic_filter(list_records(ws.registry_dir("source_assets"), SourceAssetRecord), topic_id),
+        "artifacts": _topic_filter(list_records(ws.registry_dir("artifacts"), ArtifactRecord), topic_id),
+        "tool_runs": _topic_filter(list_records(ws.registry_dir("tool_runs"), ToolRunRecord), topic_id),
+        "evidence": _topic_filter(list_records(ws.registry_dir("evidence"), EvidenceRecord), topic_id),
+        "validation_results": _topic_filter(list_records(ws.registry_dir("validation_results"), ValidationResultRecord), topic_id),
     }
 
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import json
+from pathlib import Path
 import subprocess
 
 
@@ -499,7 +500,11 @@ def test_cli_summary_session_validates_payload_before_return(tmp_path, monkeypat
 def test_cli_does_not_import_legacy_mcp_monolith():
     import brain.v5.cli as cli
 
-    source = inspect.getsource(cli)
+    module_path = Path(cli.__file__).resolve()
+    shard_root = module_path.parent / "_compat_shards" / "cli"
+    source = inspect.getsource(cli) + "\n" + "\n".join(
+        path.read_text(encoding="utf-8") for path in sorted(shard_root.glob("part_*.py"))
+    )
 
     assert "require_valid_public_surface" in source
     assert "require_valid_adapter_packet" not in source

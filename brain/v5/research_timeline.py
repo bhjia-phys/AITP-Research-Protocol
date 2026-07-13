@@ -178,6 +178,12 @@ def _timeline_events_from_snapshot(
         family: (cls, id_attr, kind, summary_fields)
         for family, cls, id_attr, kind, summary_fields in _RECORD_SPECS
     }
+    superseded_tool_run_ids = {
+        indexed.record.supersedes_run_id
+        for indexed in snapshot.indexed_records
+        if isinstance(indexed.record, ToolRunRecord)
+        and indexed.record.supersedes_run_id
+    }
     events: list[dict[str, Any]] = []
     for indexed in snapshot.indexed_records:
         spec = specs.get(indexed.family)
@@ -195,7 +201,10 @@ def _timeline_events_from_snapshot(
         status = _record_status(record)
         lifecycle = str(getattr(record, "lifecycle_status", "") or "")
         text = _record_text(record, summary_fields)
-        if str(getattr(record, "superseded_by", "") or "").strip():
+        if (
+            record_id in superseded_tool_run_ids
+            or str(getattr(record, "superseded_by", "") or "").strip()
+        ):
             classification = "superseded_or_duplicate_route"
         elif relation_buckets.get(record_id):
             classification = relation_buckets[record_id]

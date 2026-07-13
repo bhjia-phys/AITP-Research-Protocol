@@ -8,7 +8,8 @@ from typing import Any
 from brain.v5.ids import prefixed_id
 from brain.v5.models import ExploratoryRecord
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import write_record
+from brain.v5.record_envelope import RecordActor
+from brain.v5.record_repository import RecordRepository
 
 
 EXPLORATION_TYPES = {
@@ -98,8 +99,15 @@ def record_exploratory_record(
         human_steering=human_steering,
         metadata=metadata or {},
     )
-    write_record(
-        ws.registry_dir("exploratory_records") / f"{record_id}.md",
+    RecordRepository(
+        ws,
+        actor=RecordActor(
+            actor_type="tool",
+            actor_id="record_exploratory_record",
+            host="aitp-v5",
+        ),
+    ).write(
+        "exploratory_records",
         record,
         body=_body(record),
     )

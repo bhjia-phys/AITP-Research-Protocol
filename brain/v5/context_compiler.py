@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import re
 from dataclasses import asdict, dataclass, is_dataclass
 from typing import Any, Callable, Mapping
@@ -12,6 +11,7 @@ from brain.v5.indexed_topic_snapshot import (
     IndexedTopicSnapshot,
     load_indexed_topic_snapshot,
 )
+from brain.v5.context_selection import candidate_not_shown, select_candidate_summaries
 from brain.v5.paths import WorkspacePaths
 from brain.v5.query_index import build_query_index
 from brain.v5.record_envelope import RecordActor
@@ -26,6 +26,7 @@ _DEFAULT_CONTEXT_FAMILIES = (
     "claims",
     "code_states",
     "evidence",
+    "exploratory_records",
     "object_relations",
     "physics_objects",
     "proof_obligations",
@@ -74,7 +75,7 @@ class ContextRequest:
     families: tuple[str, ...] = _DEFAULT_CONTEXT_FAMILIES
     max_tokens: int = 1200
     max_bytes: int = 6000
-    record_limit: int = 80
+    record_limit: int = 160
     candidate_limit: int = 12
 
     def __post_init__(self) -> None:
@@ -102,9 +103,16 @@ class ContextBundle:
     expansion: dict[str, Any]
     coverage: dict[str, Any]
     read_errors: tuple[str, ...]
+    not_found_refs: tuple[str, ...]
+    not_checked_families: tuple[str, ...]
     index_status: str
     source_index_generation: int
     total_candidates: int
+    not_shown_count: int
+    not_shown_reason: tuple[str, ...]
+    partial: bool
+    retrieval_truncated: bool
+    render_truncated: bool
     truncated: bool
     can_claim_no_prior_result: bool
     requires_exact_expansion_before_trust_conclusions: bool
@@ -185,14 +193,27 @@ def compile_research_context(
     process_refs = tuple(
         item.record_ref for item in result.items if item.family in _PROCESS_FAMILIES
     )[:12]
+    anchor_refs = {f"session:{request.session_id}", f"topic:{topic_id}"}
     all_candidate_summaries = [
-        _candidate_summary(item.record_ref, item.family, item.record)
-        for item in result.items
-        if item.record_ref not in {f"session:{request.session_id}", f"topic:{topic_id}"}
+        _candidate_summary(item, retrieval_rank=rank)
+        for rank, item in enumerate(result.items)
+        if item.record_ref not in anchor_refs
     ]
-    all_candidate_summaries.sort(key=_candidate_priority)
-    candidate_summaries = tuple(all_candidate_summaries[: request.candidate_limit])
+    candidate_summaries = select_candidate_summaries(
+        all_candidate_summaries,
+        limit=request.candidate_limit,
+    )
+    matched_anchor_count = len(anchor_refs.difference(result.excluded_candidates))
+    not_shown_count, not_shown_reason = candidate_not_shown(
+        total_count=result.total_count,
+        shown_anchor_count=matched_anchor_count,
+        page_candidate_count=len(all_candidate_summaries),
+        selected_count=len(candidate_summaries),
+        retrieval_truncated=result.truncated,
+    )
     read_errors = _read_errors(result)
+    not_found_refs = tuple(result.excluded_candidates)
+    not_checked_families = tuple(result.coverage.unchecked_families)
     coverage = asdict(result.coverage)
     expansion = {
         "surface": "record_refs",
@@ -211,6 +232,10 @@ def compile_research_context(
         coverage=coverage,
         index_status=result.index_status,
         read_errors=read_errors,
+        not_found_refs=not_found_refs,
+        not_checked_families=not_checked_families,
+        not_shown_count=not_shown_count,
+        not_shown_reason=not_shown_reason,
         record_refs=record_refs,
     )
     markdown, budget_truncated = _bounded_markdown(
@@ -219,11 +244,21 @@ def compile_research_context(
         max_tokens=request.max_tokens,
     )
     truncated = bool(result.truncated or budget_truncated)
+    partial = bool(
+        result.index_status != "fresh"
+        or not result.coverage.exhaustive
+        or not_found_refs
+        or not_checked_families
+        or read_errors
+        or truncated
+        or not_shown_count
+    )
     can_claim_no_prior_result = bool(
         result.total_count == 0
         and result.coverage.can_claim_no_result
         and not truncated
         and not read_errors
+        and not not_found_refs
     )
     return ContextBundle(
         session_id=request.session_id,
@@ -236,9 +271,16 @@ def compile_research_context(
         expansion=expansion,
         coverage=coverage,
         read_errors=read_errors,
+        not_found_refs=not_found_refs,
+        not_checked_families=not_checked_families,
         index_status=result.index_status,
         source_index_generation=_index_generation(result),
         total_candidates=result.total_count,
+        not_shown_count=not_shown_count,
+        not_shown_reason=not_shown_reason,
+        partial=partial,
+        retrieval_truncated=bool(result.truncated),
+        render_truncated=budget_truncated,
         truncated=truncated,
         can_claim_no_prior_result=can_claim_no_prior_result,
         requires_exact_expansion_before_trust_conclusions=True,
@@ -317,53 +359,47 @@ def _boundary(claim_item: Any) -> dict[str, Any]:
     }
 
 
-def _candidate_summary(record_ref: str, family: str, record: Mapping[str, Any]) -> dict[str, Any]:
+def _candidate_summary(item: Any, *, retrieval_rank: int) -> dict[str, Any]:
+    record = item.record
     summary_fields = record.get("summary_fields")
     selected = dict(summary_fields) if isinstance(summary_fields, Mapping) else {}
-    status = str(
-        record.get("status")
-        or record.get("lifecycle_status")
-        or selected.get("evidence_status")
-        or selected.get("claim_status")
-        or selected.get("validation_status")
-        or ""
-    )
+    if item.family == "claims":
+        status_value = (
+            record.get("confidence_state")
+            or selected.get("confidence_state")
+            or selected.get("claim_status")
+            or record.get("status")
+            or record.get("lifecycle_status")
+        )
+    else:
+        status_value = (
+            record.get("status")
+            or record.get("lifecycle_status")
+            or selected.get("evidence_status")
+            or selected.get("claim_status")
+            or selected.get("validation_status")
+        )
+    status = str(status_value or "unknown")
     return {
-        "record_ref": record_ref,
-        "family": family,
+        "record_ref": item.record_ref,
+        "family": item.family,
         "claim_id": str(record.get("claim_id") or ""),
         "title": str(record.get("title") or record.get("statement") or ""),
         "status": status,
         "summary_fields": selected,
         "typed_materialization_status": str(record.get("typed_materialization_status") or ""),
+        "retrieval_rank": retrieval_rank,
+        "retrieval_score": item.total_score,
+        "exact_score": item.exact_score,
+        "lexical_score": item.lexical_score,
+        "process_family": item.family in _PROCESS_FAMILIES,
         "requires_exact_expansion": True,
         "orientation_only": True,
     }
 
 
-def _candidate_priority(candidate: Mapping[str, Any]) -> tuple[int, str]:
-    selected = candidate.get("summary_fields")
-    fields = selected if isinstance(selected, Mapping) else {}
-    status = str(candidate.get("status") or fields.get("evidence_status") or "").lower()
-    text = json.dumps(fields, ensure_ascii=False, sort_keys=True).lower()
-    failed = bool(
-        status in {"failed", "fail", "negative", "invalid", "contradicted", "superseded"}
-        or fields.get("superseded_by")
-        or any(marker in text for marker in ("does not test", "runtime failure", "wrong route"))
-    )
-    if failed:
-        rank = 0
-    elif candidate.get("family") == "claims":
-        rank = 1
-    elif candidate.get("family") in _PROCESS_FAMILIES:
-        rank = 2
-    else:
-        rank = 3
-    return rank, str(candidate.get("record_ref") or "")
-
-
 def _read_errors(result: RetrievalResult) -> tuple[str, ...]:
-    errors = [f"unresolved_exact_ref:{ref}" for ref in result.excluded_candidates]
+    errors: list[str] = []
     if result.coverage.malformed_count:
         errors.append(f"malformed_records_in_scope:{result.coverage.malformed_count}")
     return tuple(errors)
@@ -379,6 +415,10 @@ def _context_lines(
     coverage: Mapping[str, Any],
     index_status: str,
     read_errors: tuple[str, ...],
+    not_found_refs: tuple[str, ...],
+    not_checked_families: tuple[str, ...],
+    not_shown_count: int,
+    not_shown_reason: tuple[str, ...],
     record_refs: tuple[str, ...],
 ) -> list[str]:
     lines = [
@@ -406,6 +446,15 @@ def _context_lines(
         lines.append("Active claim: unavailable in bounded result; expand the session and claim refs.")
     if read_errors:
         lines.append(f"Read diagnostics: {'; '.join(read_errors)}")
+    if not_found_refs:
+        lines.append(f"Not-found exact refs: {', '.join(not_found_refs)}")
+    if not_checked_families:
+        lines.append(f"Not-checked families: {', '.join(not_checked_families)}")
+    lines.append(
+        "Candidate selection: "
+        f"shown={len(candidate_summaries)}; not_shown={not_shown_count}; "
+        f"reason={'+'.join(not_shown_reason) or 'none'}."
+    )
     if candidate_summaries:
         lines.append("Candidate records:")
         for candidate in candidate_summaries:

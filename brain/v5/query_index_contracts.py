@@ -15,6 +15,8 @@ def validate_index_build_report(report: IndexBuildReport) -> tuple[str, ...]:
     manifest = report.manifest
     if manifest.generation < 1:
         errors.append("generation must be positive")
+    if manifest.index_schema_version < 1:
+        errors.append("index_schema_version must be positive")
     for name, value in (
         ("canonical_watermark", manifest.canonical_watermark),
         ("canonical_state_token", manifest.canonical_state_token),

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from brain.v5.context_compiler import ContextBundle, estimate_context_tokens
+from brain.v5.context_selection import NOT_SHOWN_REASON_CODES
 
 
 def validate_context_bundle(bundle: ContextBundle) -> tuple[str, ...]:
@@ -25,6 +26,27 @@ def validate_context_bundle(bundle: ContextBundle) -> tuple[str, ...]:
         errors.append("estimated_tokens exceeds max_tokens")
     if len(bundle.record_refs) > 200:
         errors.append("record_refs must remain bounded")
+    if not isinstance(bundle.not_shown_count, int) or isinstance(bundle.not_shown_count, bool) or bundle.not_shown_count < 0:
+        errors.append("not_shown_count must be a non-negative integer")
+    unknown_reasons = set(bundle.not_shown_reason) - set(NOT_SHOWN_REASON_CODES)
+    if unknown_reasons:
+        errors.append(f"not_shown_reason contains unknown codes: {sorted(unknown_reasons)}")
+    if bundle.not_shown_count == 0 and bundle.not_shown_reason:
+        errors.append("not_shown_reason must be empty when not_shown_count is zero")
+    if bundle.not_shown_count > 0 and not bundle.not_shown_reason:
+        errors.append("not_shown_reason is required when candidates are omitted")
+    for label, value in (
+        ("partial", bundle.partial),
+        ("retrieval_truncated", bundle.retrieval_truncated),
+        ("render_truncated", bundle.render_truncated),
+        ("truncated", bundle.truncated),
+    ):
+        if not isinstance(value, bool):
+            errors.append(f"{label} must be a boolean")
+    if bundle.truncated != (bundle.retrieval_truncated or bundle.render_truncated):
+        errors.append("truncated must combine retrieval_truncated and render_truncated")
+    if bundle.not_found_refs and bundle.can_claim_no_prior_result:
+        errors.append("not-found exact refs forbid a no-prior-result claim")
 
     coverage = bundle.coverage
     for key in (

@@ -11,16 +11,23 @@ from brain.v5.interaction import resolve_interaction_profile
 from brain.v5.interaction_preview import _heavier_triggers, _recording_decision
 from brain.v5.models import ClaimRecord, CodeStateRecord, EvidenceRecord, SessionBinding
 from brain.v5.risk import action_budget_for_level, assess_claim_risk
-from brain.v5.store import list_records, list_valid_records
+from brain.v5.store import list_valid_records
 
 
 def build_workspace_interaction_preview(ws) -> dict[str, Any]:
     """Summarize per-session interaction previews without mutating kernel state."""
 
-    sessions = list_records(ws.root / "runtime" / "sessions", SessionBinding)
-    claims = {claim.claim_id: claim for claim in list_records(ws.registry_dir("claims"), ClaimRecord)}
-    evidence = _group_by_claim(list_valid_records(ws.registry_dir("evidence"), EvidenceRecord))
-    code_states = list_valid_records(ws.registry_dir("code_states"), CodeStateRecord)
+    sessions = _legacy_preview_records(ws.root / "runtime" / "sessions", SessionBinding)
+    claims = {
+        claim.claim_id: claim
+        for claim in _legacy_preview_records(ws.registry_dir("claims"), ClaimRecord)
+    }
+    evidence = _group_by_claim(
+        _legacy_preview_records(ws.registry_dir("evidence"), EvidenceRecord)
+    )
+    code_states = _legacy_preview_records(
+        ws.registry_dir("code_states"), CodeStateRecord
+    )
     items = [_item_for_session(session, claims, evidence, code_states) for session in sessions]
     mode_counts = Counter(item["recording_mode"] for item in items)
     source_records = {
@@ -43,6 +50,14 @@ def build_workspace_interaction_preview(ws) -> dict[str, Any]:
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
     }
+
+
+def _legacy_preview_records(directory, record_class):
+    return list_valid_records(
+        directory,
+        record_class,
+        operation="workspace_interaction_preview_legacy_records",
+    )
 
 
 def _item_for_session(

@@ -2049,7 +2049,42 @@ def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(
     assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
 
 
+def test_passed_legacy_semantic_review_requires_human_checkpoint(tmp_path):
+    import pytest
+
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.models import ClaimRecord
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="Migrated canonical claim.",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Human semantic approval is required.",
+        ),
+    )
+
+    with pytest.raises(ValueError, match="passed legacy semantic review requires"):
+        record_legacy_semantic_review_result(
+            ws,
+            migration_dir=run,
+            topic="canonical-topic",
+            status="passed",
+            summary="The typed claim and legacy source were reviewed.",
+            active_claim_id="claim-canonical",
+            reviewed_typed_refs=["claim-canonical"],
+        )
+
+
 def test_legacy_semantic_review_worklist_allows_passed_review_to_resolve_active_claim_divergence(tmp_path):
+    from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
     from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
     from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
     from brain.v5.legacy_semantic_review_worklist import _work_item, build_legacy_semantic_review_worklist
@@ -2201,6 +2236,22 @@ def test_legacy_semantic_review_worklist_allows_passed_review_to_resolve_active_
     before_item = next(item for item in before["items"] if item["topic"] == "canonical-topic")
     assert "active_claim_divergence_requires_review" in before_item["pass_readiness"]["blockers"]
 
+    checkpoint = request_human_checkpoint(
+        ws,
+        topic_id="canonical-topic",
+        claim_id="claim-live",
+        reason="Approve the completed legacy semantic review.",
+        requested_by="legacy_semantic_review",
+        options=["approve_semantic_review"],
+    )
+    decide_human_checkpoint(
+        ws,
+        checkpoint_id=checkpoint.checkpoint_id,
+        decision="approve_semantic_review",
+        rationale="The reviewed sources and active-claim boundary are explicit.",
+        decided_by="human",
+    )
+
     review = record_legacy_semantic_review_result(
         ws,
         migration_dir=run,
@@ -2222,6 +2273,7 @@ def test_legacy_semantic_review_worklist_allows_passed_review_to_resolve_active_
             "evidence-canonical-reconstruction",
         ],
         evidence_refs=["evidence-live-boundary"],
+        checkpoint_id=checkpoint.checkpoint_id,
     )
 
     manifest = build_legacy_semantic_review_manifest(ws, migration_dir=run)

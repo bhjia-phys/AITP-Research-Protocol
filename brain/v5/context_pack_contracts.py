@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from brain.v5.context_compiler import estimate_context_tokens
+from brain.v5.context_selection import NOT_SHOWN_REASON_CODES
 from brain.v5.contracts import (
     ContractError,
     ContractResult,
@@ -37,6 +38,9 @@ def validate_aitp_context_pack(payload: dict[str, Any], *, path: str = "aitp_con
         "recent_relevant_artifacts",
         "context_lines",
         "read_errors",
+        "not_found_refs",
+        "not_checked_families",
+        "not_shown_reason",
         "warnings",
     ):
         _require_list(payload.get(key), f"{path}.{key}", result)
@@ -62,6 +66,7 @@ def validate_aitp_context_pack(payload: dict[str, Any], *, path: str = "aitp_con
     _require_list(payload.get("record_refs"), f"{path}.record_refs", result)
     _validate_compiled_budget(payload, path, result)
     _validate_retrieval_coverage(payload, path, result)
+    _validate_recall_selection(payload, path, result)
     _validate_distillation_status(payload.get("distillation_status"), f"{path}.distillation_status", result)
     _validate_task_profile(payload.get("task_profile"), f"{path}.task_profile", result)
     _validate_profile_template_hint(payload.get("profile_template_hint"), f"{path}.profile_template_hint", result)
@@ -144,6 +149,41 @@ def _validate_retrieval_coverage(payload: dict[str, Any], path: str, result: Con
         )
 
 
+def _validate_recall_selection(payload: dict[str, Any], path: str, result: ContractResult) -> None:
+    count = payload.get("not_shown_count")
+    reasons = payload.get("not_shown_reason")
+    if not isinstance(count, int) or isinstance(count, bool) or count < 0:
+        result.add(f"{path}.not_shown_count", "must be a non-negative integer")
+    if isinstance(reasons, list):
+        unknown = set(reasons) - set(NOT_SHOWN_REASON_CODES)
+        if unknown:
+            result.add(f"{path}.not_shown_reason", f"contains unknown codes: {sorted(unknown)}")
+        if count == 0 and reasons:
+            result.add(f"{path}.not_shown_reason", "must be empty when count is zero")
+        if isinstance(count, int) and count > 0 and not reasons:
+            result.add(f"{path}.not_shown_reason", "is required when candidates are omitted")
+    for key in ("partial", "retrieval_truncated", "render_truncated", "truncated"):
+        if not isinstance(payload.get(key), bool):
+            result.add(f"{path}.{key}", "must be a boolean")
+    if isinstance(payload.get("truncated"), bool) and payload.get("truncated") != bool(
+        payload.get("retrieval_truncated") or payload.get("render_truncated")
+    ):
+        result.add(
+            f"{path}.truncated",
+            "must combine retrieval_truncated and render_truncated",
+        )
+    partial_signal = bool(
+        payload.get("index_status") != "fresh"
+        or payload.get("not_found_refs")
+        or payload.get("not_checked_families")
+        or payload.get("read_errors")
+        or payload.get("truncated")
+        or (isinstance(count, int) and count > 0)
+    )
+    if partial_signal and payload.get("partial") is not True:
+        result.add(f"{path}.partial", "must be true when recall or selection is partial")
+
+
 def require_valid_aitp_context_pack(payload: dict[str, Any]) -> dict[str, Any]:
     result = validate_aitp_context_pack(payload)
     if not result.ok:
@@ -163,6 +203,15 @@ def _validate_distillation_status(payload: Any, path: str, result: ContractResul
             continue
         for key in ("candidate_id", "candidate_kind", "distillation_state", "trust_boundary"):
             _require_nonempty_str(candidate, key, f"{path}.top_candidates[{index}]", result)
+        for key in ("family", "status"):
+            _require_nonempty_str(candidate, key, f"{path}.top_candidates[{index}]", result)
+        for key in ("retrieval_rank", "retrieval_score", "exact_score", "lexical_score"):
+            value = candidate.get(key)
+            if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                result.add(
+                    f"{path}.top_candidates[{index}].{key}",
+                    "must be a non-negative integer",
+                )
         for key, expected in (
             ("can_materialize_without_human_review", False),
             ("can_promote_claim_trust", False),

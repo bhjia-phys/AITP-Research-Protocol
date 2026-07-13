@@ -5,10 +5,11 @@ from __future__ import annotations
 import os
 import time
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass, fields, is_dataclass
+from dataclasses import asdict, dataclass, is_dataclass
 from pathlib import Path
 from typing import Any, Iterator, Mapping
 
+from brain.v5.legacy_record_materialization import materialize_record_class
 from brain.v5.markdown import read_md, write_md, write_text_atomic
 from brain.v5.paths import WorkspacePaths
 from brain.v5.record_envelope import (
@@ -21,6 +22,11 @@ from brain.v5.record_family_registry import (
     RecordFamilySpec,
     record_family_specs,
     spec_for_family,
+)
+from brain.v5.record_path_safety import (
+    record_lock_path as _record_lock_path,
+    record_path as _record_path,
+    validate_record_id as _validate_record_id,
 )
 
 
@@ -230,6 +236,10 @@ class RecordRepository:
         spec = _spec_for_ref_kind(kind)
         if spec is None:
             return RecordReadResult(status="unsupported_ref", record_ref=record_ref, path="")
+        try:
+            _validate_record_id(record_id)
+        except ValueError:
+            return RecordReadResult(status="malformed_ref", record_ref=record_ref, path="")
         path = _record_path(self.ws, spec, record_id)
         if not path.exists():
             return RecordReadResult(
@@ -269,13 +279,27 @@ class RecordRepository:
         )
 
     @contextmanager
+    def lock_record(
+        self,
+        family: str,
+        record_id: str,
+        *,
+        policy: WritePolicy | None = None,
+    ) -> Iterator[None]:
+        """Serialize a domain transition around one canonical record identity."""
+
+        spec = spec_for_family(family)
+        with self._record_lock(spec, record_id, policy or WritePolicy()):
+            yield
+
+    @contextmanager
     def _record_lock(
         self,
         spec: RecordFamilySpec,
         record_id: str,
         policy: WritePolicy,
     ) -> Iterator[None]:
-        lock_path = self.ws.root / "runtime" / "locks" / spec.family / f"{record_id}.lock"
+        lock_path = _record_lock_path(self.ws, spec, record_id)
         lock_path.parent.mkdir(parents=True, exist_ok=True)
         deadline = time.monotonic() + max(0.0, policy.lock_timeout_seconds)
         while True:
@@ -291,12 +315,14 @@ class RecordRepository:
         try:
             os.write(descriptor, f"pid={os.getpid()}\n".encode("ascii"))
             os.close(descriptor)
+            descriptor = None
             yield
         finally:
-            try:
-                os.close(descriptor)
-            except OSError:
-                pass
+            if descriptor is not None:
+                try:
+                    os.close(descriptor)
+                except OSError:
+                    pass
             lock_path.unlink(missing_ok=True)
 
 
@@ -371,19 +397,21 @@ def _remove_stale_lock(lock_path: Path, stale_after_seconds: float) -> bool:
         return True
 
 
-def _materialize_record(frontmatter: Mapping[str, Any], spec: RecordFamilySpec) -> Any:
+def _materialize_record(
+    frontmatter: Mapping[str, Any],
+    spec: RecordFamilySpec,
+    *,
+    allow_legacy: bool = True,
+) -> Any:
     if spec.record_class is None:
         return dict(frontmatter)
-    values = dict(frontmatter)
-    if spec.id_field not in values:
-        for legacy_field in spec.legacy_id_fields:
-            if values.get(legacy_field):
-                values[spec.id_field] = values[legacy_field]
-                break
-    if "topic_id" not in values and values.get("topic"):
-        values["topic_id"] = values["topic"]
-    allowed = {field.name for field in fields(spec.record_class)}
-    return spec.record_class(**{key: value for key, value in values.items() if key in allowed})
+    return materialize_record_class(
+        frontmatter,
+        spec.record_class,
+        id_field=spec.id_field,
+        legacy_id_fields=spec.legacy_id_fields,
+        allow_legacy=allow_legacy,
+    )
 
 
 def _validate_payload_schema(frontmatter: Mapping[str, Any], spec: RecordFamilySpec) -> None:
@@ -392,7 +420,7 @@ def _validate_payload_schema(frontmatter: Mapping[str, Any], spec: RecordFamilyS
         raise ValueError(
             f"record kind {kind!r} does not match family {spec.family!r}"
         )
-    _materialize_record(frontmatter, spec)
+    _materialize_record(frontmatter, spec, allow_legacy=False)
 
 
 def _spec_for_ref_kind(kind: str) -> RecordFamilySpec | None:
@@ -402,20 +430,6 @@ def _spec_for_ref_kind(kind: str) -> RecordFamilySpec | None:
         if normalized in aliases:
             return spec
     return None
-
-
-def _record_path(ws: WorkspacePaths, spec: RecordFamilySpec, record_id: str) -> Path:
-    if spec.is_registry_family:
-        return ws.root / spec.relative_dir / f"{record_id}.md"
-    if spec.family == "contexts":
-        return ws.context_dir(record_id) / "context.md"
-    if spec.family == "topics":
-        return ws.topic_dir(record_id) / "topic.md"
-    if spec.family == "sessions":
-        return ws.session_path(record_id)
-    if spec.family == "memory_entries":
-        return ws.root / "memory" / "l2" / "entries" / f"{record_id}.md"
-    raise ValueError(f"unsupported special record family: {spec.family}")
 
 
 def record_family_paths(

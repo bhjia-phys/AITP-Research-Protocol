@@ -1,0 +1,65 @@
+name: AITP v5 test lanes
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "17 18 * * 0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'schedule' }}
+
+jobs:
+  m0-fast:
+    if: github.event_name != 'schedule'
+    runs-on: windows-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [foundation, compatibility, v5-verticals, legacy-compat]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: python -m pip install -r requirements-test.txt
+      - name: Run ${{ matrix.lane }} lane
+        run: python scripts/run_v5_test_lanes.py ${{ matrix.lane }} --basetemp "${{ runner.temp }}\aitp-${{ matrix.lane }}"
+
+  slow-adapter:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: python -m pip install -r requirements-test.txt
+      - name: Run slow adapter lane
+        run: python scripts/run_v5_test_lanes.py slow-adapter --basetemp "${{ runner.temp }}\aitp-slow-adapter"
+
+  scheduled-full-suite:
+    if: github.event_name == 'schedule'
+    runs-on: windows-latest
+    timeout-minutes: 120
+    env:
+      AITP_RUN_PERFORMANCE: "1"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: python -m pip install -r requirements-test.txt
+      - name: Run full suite
+        run: python scripts/run_v5_test_lanes.py full --basetemp "${{ runner.temp }}\aitp-full"

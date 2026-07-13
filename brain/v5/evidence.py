@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass
 from typing import Any
 
 from brain.v5.ids import prefixed_id, short_hash
 from brain.v5.models import ArtifactRecord, EvidenceRecord
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import read_record, write_record
+from brain.v5.record_envelope import RecordActor
+from brain.v5.record_repository import RecordCollisionError, RecordRepository
+from brain.v5.store import read_record
 
 
 @dataclass
@@ -34,6 +38,7 @@ def record_artifact_ref(
     normalized_size = _normalize_size_bytes(size_bytes)
     suffix = short_hash(f"{topic_id}:{claim_id}:{artifact_type}:{uri}", 10)
     artifact_id = f"artifact-{artifact_type}-{suffix}"
+    normalized_metadata = metadata or {}
     record = ArtifactRecord(
         artifact_id=artifact_id,
         topic_id=topic_id,
@@ -42,14 +47,44 @@ def record_artifact_ref(
         uri=uri,
         summary=summary,
         size_bytes=normalized_size,
-        metadata=metadata or {},
+        metadata=normalized_metadata,
     )
-    write_record(
-        ws.registry_dir("artifacts") / f"{artifact_id}.md",
-        record,
-        body=f"# Artifact\n\n{summary}\n\nURI: `{uri}`\n",
-    )
+    repository = _repository(ws, actor_id="record_artifact_ref")
+    current = repository.read(f"artifact:{artifact_id}")
+    if current.status == "found" and isinstance(current.record, ArtifactRecord):
+        _require_compatible_artifact_observation(current.record, record)
+        return current.record
+    try:
+        repository.write(
+            "artifacts",
+            record,
+            body=f"# Artifact\n\n{summary}\n\nURI: `{uri}`\n",
+        )
+    except RecordCollisionError:
+        raced = repository.read(f"artifact:{artifact_id}")
+        if raced.status != "found" or not isinstance(raced.record, ArtifactRecord):
+            raise
+        _require_compatible_artifact_observation(raced.record, record)
+        return raced.record
     return record
+
+
+def _require_compatible_artifact_observation(
+    existing: ArtifactRecord,
+    incoming: ArtifactRecord,
+) -> None:
+    existing_size = _normalize_size_bytes(existing.size_bytes)
+    incoming_size = _normalize_size_bytes(incoming.size_bytes)
+    existing_hash = str(existing.metadata.get("sha256") or "").strip().lower()
+    incoming_hash = str(incoming.metadata.get("sha256") or "").strip().lower()
+    if existing_hash and incoming_hash and existing_hash != incoming_hash:
+        raise ValueError(
+            f"artifact identity {existing.artifact_id} has conflicting sha256 observations"
+        )
+    if existing_size > 0 and incoming_size > 0 and existing_size != incoming_size:
+        raise ValueError(
+            f"artifact identity {existing.artifact_id} has conflicting size_bytes observations"
+        )
 
 
 def _normalize_size_bytes(value: Any) -> int:
@@ -81,7 +116,32 @@ def record_evidence(
 ) -> EvidenceRecord:
     """Record claim-local evidence that may satisfy action-budget outputs."""
 
-    evidence_id = prefixed_id("evidence", f"{topic_id}:{claim_id}:{evidence_type}:{summary}", max_slug=64)
+    identity_payload = {
+        "topic_id": topic_id,
+        "claim_id": claim_id,
+        "evidence_type": evidence_type,
+        "status": status,
+        "summary": summary,
+        "supports_outputs": supports_outputs or [],
+        "source_refs": source_refs or [],
+        "tool_run_ids": tool_run_ids or [],
+        "validation_result_ids": validation_result_ids or [],
+        "artifact_ids": artifact_ids or [],
+        "body": body or "",
+    }
+    identity_hash = hashlib.sha256(
+        json.dumps(
+            identity_payload,
+            ensure_ascii=True,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()[:12]
+    evidence_id = prefixed_id(
+        "evidence",
+        f"{topic_id}:{claim_id}:{evidence_type}:{summary}:{identity_hash}",
+        max_slug=64,
+    )
     record = EvidenceRecord(
         evidence_id=evidence_id,
         topic_id=topic_id,
@@ -95,8 +155,8 @@ def record_evidence(
         validation_result_ids=validation_result_ids or [],
         artifact_ids=artifact_ids or [],
     )
-    write_record(
-        ws.registry_dir("evidence") / f"{evidence_id}.md",
+    _repository(ws, actor_id="record_evidence").write(
+        "evidence",
         record,
         body=body if body is not None else f"# Evidence\n\n{summary}\n",
     )
@@ -104,20 +164,24 @@ def record_evidence(
 
 
 def list_evidence_for_claim(ws: WorkspacePaths, claim_id: str) -> list[EvidenceRecord]:
-    """Return evidence records linked to a claim."""
+    """Return claim evidence, failing visibly on malformed canonical records."""
 
     root = ws.registry_dir("evidence")
     if not root.exists():
         return []
     records: list[tuple[int, str, EvidenceRecord]] = []
     for path in root.glob("*.md"):
-        try:
-            evidence = read_record(path, EvidenceRecord)
-        except (TypeError, ValueError):
-            continue
+        evidence = read_record(path, EvidenceRecord)
         if evidence.claim_id == claim_id:
             records.append((path.stat().st_mtime_ns, path.name, evidence))
     return [evidence for _, _, evidence in sorted(records)]
+
+
+def _repository(ws: WorkspacePaths, *, actor_id: str) -> RecordRepository:
+    return RecordRepository(
+        ws,
+        actor=RecordActor(actor_type="tool", actor_id=actor_id, host="aitp"),
+    )
 
 
 def required_output_coverage(

@@ -141,6 +141,9 @@ _LEGACY_ID_FIELDS = {
     "reference_locations": ("reference_location_id",),
     "validation_results": ("validation_result_id",),
 }
+_SCHEMA_VERSIONS = {
+    "checkpoints": "v2",
+}
 
 _LIFECYCLE_FAMILIES = {"claims", "evidence"}
 _APPEND_ONLY_FAMILIES = {
@@ -244,6 +247,7 @@ def _registry_spec(
         id_field=id_field,
         ref_kind=ref_kind,
         relative_dir=f"registry/{family}",
+        schema_version=_SCHEMA_VERSIONS.get(family, "v1"),
         trust_effect=_trust_effect(family),
         legacy_id_fields=_legacy_id_fields(family),
         exact_ref_aliases=_aliases(family, kind, ref_kind),
@@ -278,6 +282,7 @@ def _special_spec(
         id_field=id_field,
         ref_kind=ref_kind,
         relative_dir=relative_dir,
+        schema_version=_SCHEMA_VERSIONS.get(family, "v1"),
         trust_effect=_trust_effect(family),
         legacy_id_fields=_legacy_id_fields(family),
         exact_ref_aliases=_aliases(family, kind, ref_kind),

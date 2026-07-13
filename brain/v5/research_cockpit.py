@@ -82,6 +82,9 @@ def build_research_cockpit_manifest(
         else {}
     )
     references, reference_errors = _safe_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord)
+    _evidence, evidence_errors = _safe_records(
+        ws.registry_dir("evidence"), EvidenceRecord
+    )
     learning_gaps = _learning_gaps(coverage)
     reading_queue = _reading_queue(references, learning_gaps)
     operator_queue = _operator_queue(topic_status_bundles)
@@ -93,8 +96,15 @@ def build_research_cockpit_manifest(
     return {
         "kind": "research_cockpit_manifest",
         "manifest_version": _MANIFEST_VERSION,
-        "degraded_mode": bool(refresh.get("degraded_mode", False) or reference_errors),
-        "read_errors": _read_errors(refresh, extra_errors=reference_errors),
+        "degraded_mode": bool(
+            refresh.get("degraded_mode", False)
+            or reference_errors
+            or evidence_errors
+        ),
+        "read_errors": _read_errors(
+            refresh,
+            extra_errors=[*reference_errors, *evidence_errors],
+        ),
         "workspace_summary": _workspace_summary(refresh),
         "today_queue": today_queue,
         "operator_queue": operator_queue,
@@ -342,7 +352,15 @@ def _safe_records(directory: Path, cls: type) -> tuple[list[Any], list[dict[str,
     errors: list[dict[str, str]] = []
     for path in sorted(directory.glob("*.md")):
         try:
-            records.append(read_record(path, cls))
+            record = read_record(path, cls)
+            records.append(record)
+            if cls is EvidenceRecord and not str(record.claim_id).strip():
+                errors.append(
+                    _format_error(
+                        str(path),
+                        ValueError("legacy EvidenceRecord is missing required claim_id"),
+                    )
+                )
         except Exception as exc:  # noqa: BLE001 - collect malformed legacy records for manifest diagnostics.
             errors.append(_format_error(str(path), exc))
     return records, errors

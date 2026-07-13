@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict
 
 from brain.v5.contracts import ContractError
+from brain.v5.human_approval import checkpoint_can_authorize_trust
 from brain.v5.ids import prefixed_id
 from brain.v5.models import (
     EvidenceRecord,
@@ -16,7 +17,9 @@ from brain.v5.models import (
     ValidationResultRecord,
 )
 from brain.v5.record_contracts import require_valid_memory_entry_record, require_valid_promotion_packet_record
-from brain.v5.store import list_records, read_record, write_record
+from brain.v5.record_envelope import RecordActor, canonical_record_hash
+from brain.v5.record_repository import RecordRepository, WritePolicy
+from brain.v5.store import list_records, read_record
 from brain.v5.workspace import WorkspacePaths, get_claim
 
 
@@ -112,7 +115,11 @@ def create_promotion_packet(
         failure_mode_review_result_id=failure_mode_review_result_id,
     )
     _require_valid_promotion_packet(packet)
-    write_record(ws.registry_dir("promotion_packets") / f"{packet_id}.md", packet)
+    _repository(ws, actor_id="create_promotion_packet").write(
+        "promotion_packets",
+        packet,
+        body=f"# Promotion Packet\n\nClaim: `{claim_id}`\n",
+    )
     return packet
 
 
@@ -125,12 +132,74 @@ def apply_promotion_packet(
     if not checkpoint_id:
         raise ValueError("approved human checkpoint is required to apply a promotion packet")
 
-    packet_path = ws.registry_dir("promotion_packets") / f"{packet_id}.md"
-    packet = read_record(packet_path, PromotionPacketRecord)
-    _require_valid_promotion_packet(packet)
+    repository = _repository(ws, actor_id="apply_promotion_packet")
+    # This transition lock is distinct from the packet's own repository lock.
+    with repository.lock_record("promotion_packets", f"{packet_id}-application"):
+        packet_read = repository.read(f"promotion_packet:{packet_id}")
+        if packet_read.status != "found" or not isinstance(
+            packet_read.record, PromotionPacketRecord
+        ):
+            raise ValueError(f"promotion packet not found or malformed: {packet_id}")
+        packet = packet_read.record
+        _require_valid_promotion_packet(packet)
+        _validate_promotion_basis(ws, packet)
 
-    if packet.status == "promoted":
-        raise ValueError("promotion packet is already promoted")
+        checkpoint_read = repository.read(f"human_checkpoint:{checkpoint_id}")
+        if checkpoint_read.status != "found" or not isinstance(
+            checkpoint_read.record, HumanCheckpointRecord
+        ):
+            raise ValueError(f"approved human checkpoint not found or malformed: {checkpoint_id}")
+        checkpoint = checkpoint_read.record
+        _require_approved_promotion_checkpoint(packet, checkpoint)
+
+        claim = get_claim(ws, packet.claim_id)
+        entry = _memory_entry_for_packet(packet, checkpoint_id, claim.statement)
+        entry_read = repository.read(f"memory_entry:{entry.entry_id}")
+
+        if packet.status == "promoted":
+            if packet.human_checkpoint_id != checkpoint_id:
+                raise ValueError("promotion packet is already promoted by a different checkpoint")
+            if entry_read.status == "found":
+                if not isinstance(entry_read.record, MemoryEntryRecord) or asdict(
+                    entry_read.record
+                ) != asdict(entry):
+                    raise ValueError("promoted packet has a conflicting memory entry")
+                raise ValueError("promotion packet is already promoted")
+            if entry_read.status != "not_found":
+                raise ValueError("promoted packet memory entry is malformed")
+            repository.write(
+                "memory_entries",
+                entry,
+                body=f"# Memory Entry\n\nSource packet: `{packet_id}`\n",
+            )
+            return entry
+
+        if entry_read.status != "not_found":
+            raise ValueError("unpromoted packet already has a canonical memory entry")
+
+        packet.status = "promoted"
+        packet.human_checkpoint_id = checkpoint_id
+        _require_valid_promotion_packet(packet)
+        repository.write(
+            "promotion_packets",
+            packet,
+            body=packet_read.body,
+            policy=WritePolicy(
+                mode="revision",
+                expected_hash=_read_content_hash(packet_read.frontmatter, packet_read.body),
+            ),
+        )
+        # The packet is the authorization commit. If materialization is
+        # interrupted, a retry enters the recovery branch above.
+        repository.write(
+            "memory_entries",
+            entry,
+            body=f"# Memory Entry\n\nSource packet: `{packet_id}`\n",
+        )
+        return entry
+
+
+def _validate_promotion_basis(ws: WorkspacePaths, packet: PromotionPacketRecord) -> None:
     if not packet.scope:
         raise ValueError("promotion packet scope must not be empty")
     if not packet.evidence_refs:
@@ -152,46 +221,66 @@ def apply_promotion_packet(
             result_id=packet.failure_mode_review_result_id,
         )
 
-    chk_path = ws.registry_dir("checkpoints") / f"{checkpoint_id}.md"
-    checkpoint = read_record(chk_path, HumanCheckpointRecord)
 
+def _require_approved_promotion_checkpoint(
+    packet: PromotionPacketRecord,
+    checkpoint: HumanCheckpointRecord,
+) -> None:
     if checkpoint.topic_id != packet.topic_id or checkpoint.claim_id != packet.claim_id:
-        raise ValueError("approved human checkpoint must belong to the same topic and claim as the promotion packet")
+        raise ValueError(
+            "approved human checkpoint must belong to the same topic and claim as the promotion packet"
+        )
     if checkpoint.status != "decided":
-        raise ValueError("approved human checkpoint is required — checkpoint not decided")
+        raise ValueError("approved human checkpoint is required - checkpoint not decided")
     if checkpoint.decision != "approve":
-        raise ValueError(f"approved human checkpoint is required — decision was {checkpoint.decision!r}")
+        raise ValueError(
+            f"approved human checkpoint is required - decision was {checkpoint.decision!r}"
+        )
+    if not checkpoint_can_authorize_trust(checkpoint):
+        raise ValueError(
+            "approved human checkpoint requires a host-verified human approval receipt"
+        )
 
-    claim = get_claim(ws, packet.claim_id)
 
-    entry_id = prefixed_id("memory", packet_id)
+def _memory_entry_for_packet(
+    packet: PromotionPacketRecord,
+    checkpoint_id: str,
+    statement: str,
+) -> MemoryEntryRecord:
     entry = MemoryEntryRecord(
-        entry_id=entry_id,
+        entry_id=prefixed_id("memory", packet.packet_id),
         topic_id=packet.topic_id,
         source_claim_id=packet.claim_id,
         source_topic_id=packet.topic_id,
-        statement=claim.statement,
+        statement=statement,
         memory_kind=packet.proposed_memory_kind,
         scope=packet.scope,
         evidence_refs=list(packet.evidence_refs),
         validation_result_ids=list(packet.validation_result_ids),
         non_claims=list(packet.non_claims),
         known_failure_modes=list(packet.known_failure_modes),
-        source_packet_id=packet_id,
+        source_packet_id=packet.packet_id,
         human_checkpoint_id=checkpoint_id,
         failure_mode_review_checkpoint_id=packet.failure_mode_review_checkpoint_id,
         failure_mode_review_result_id=packet.failure_mode_review_result_id,
         status="active",
     )
     _require_valid_memory_entry(entry)
-    write_record(ws.root / "memory" / "l2" / "entries" / f"{entry_id}.md", entry)
-
-    packet.status = "promoted"
-    packet.human_checkpoint_id = checkpoint_id
-    _require_valid_promotion_packet(packet)
-    write_record(packet_path, packet)
-
     return entry
+
+
+def _read_content_hash(frontmatter: dict | None, body: str) -> str:
+    payload = frontmatter or {}
+    return str(payload.get("record_content_hash") or "") or canonical_record_hash(
+        payload, body
+    )
+
+
+def _repository(ws: WorkspacePaths, *, actor_id: str) -> RecordRepository:
+    return RecordRepository(
+        ws,
+        actor=RecordActor(actor_type="tool", actor_id=actor_id, host="aitp"),
+    )
 
 
 def list_memory_entries_for_claim(ws: WorkspacePaths, claim_id: str) -> list[MemoryEntryRecord]:
@@ -327,6 +416,8 @@ def _resolve_approved_failure_mode_review_checkpoint(
         raise ValueError("failure-mode review checkpoint must belong to the same claim")
     if checkpoint.status != "decided" or checkpoint.decision != "approve_failure_mode_review":
         raise ValueError("promotion packet requires an approved failure-mode review checkpoint")
+    if not checkpoint_can_authorize_trust(checkpoint):
+        raise ValueError("promotion packet requires a host-verified failure-mode review checkpoint")
     return checkpoint
 
 

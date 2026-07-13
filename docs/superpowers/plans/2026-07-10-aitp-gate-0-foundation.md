@@ -1,4 +1,4 @@
-# AITP Gate 0 Foundation Implementation Plan
+# AITP M0 Foundation Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -12,14 +12,17 @@
 
 - Run each production-code step only after its named failing test has failed for the expected reason.
 - Do not edit or revert the existing uncommitted Harness Feedback files unless a task explicitly names them.
-- Do not rewrite the real canonical topic store during Gate 0.
+- Do not rewrite the real canonical topic store during M0.
+- Treat `brain/v5/native_mcp.py` as the production runtime. Legacy L0-L4
+  candidate, stage, promotion, and graph writes are archived, non-blocking
+  behavior; preserve only read, migration, rollback, and default write guards.
 - Do not increase architecture-test line limits.
 - Preserve current imports through compatibility re-exports.
 - Canonical Markdown remains authoritative; all indexes are derived and disposable.
 - A malformed canonical record is reported, not silently converted into absence.
 - Use the bundled workspace Python and an explicit writable `--basetemp` when the default environment cannot run pytest.
 - Commit only files owned by the current task.
-- For a shared file that was already dirty before Gate 0, stage only the current
+- For a shared file that was already dirty before M0, stage only the current
   task's hunks through an explicit cached patch; never stage the pre-existing
   working-tree diff.
 
@@ -671,7 +674,7 @@ pagination, truncation, malformed-record propagation, and excluded candidates.
 
 Keep ranking transparent: exact score, lexical score, scope filter, lifecycle
 filter, and stable tie-break id. `retrieval_audit.py` creates a trust-neutral
-persistable payload but does not write it during Gate 0.
+persistable payload but does not write it during M0.
 
 - [x] **Step 8: Run query tests and a real-store read-only benchmark**
 
@@ -871,7 +874,7 @@ python -m pytest tests\test_v5_capability_registry.py -q -p no:cacheprovider --b
 
 Expected: import failure for `capability_registry`.
 
-- [x] **Step 3: Implement the registry for Gate 0 capabilities first**
+- [x] **Step 3: Implement the registry for M0 capabilities first**
 
 Register runtime audit, index build/status, exact retrieval, context compile,
 and compact exact expansion. Add adapters that validate existing catalogs
@@ -900,15 +903,15 @@ git add brain/v5/capability_registry.py brain/v5/capability_registry_data.py bra
 git commit -m "v5: centralize runtime capability registry"
 ```
 
-## Task 9: Restore Module Boundaries And Gate 0 Release Audit
+## Task 9: Restore Module Boundaries And M0 Release Audit
 
 **Files:**
 - Create: `brain/v5/mcp_query.py`
 - Create: `brain/v5/mcp_context.py`
 - Create: `brain/v5/cli_query.py`
 - Create: `brain/v5/cli_context.py`
-- Create: `tests/test_v5_gate0_release.py`
-- Create: `docs/superpowers/progress/2026-07-10-aitp-gate-0-release-audit.md`
+- Create: `tests/test_v5_m0_release.py`
+- Create: `docs/superpowers/progress/2026-07-10-aitp-m0-release-audit.md`
 - Modify: `brain/v5/mcp_tools.py`
 - Modify: `brain/v5/process_graph.py`
 - Modify: `brain/v5/codex_facade.py`
@@ -918,9 +921,9 @@ git commit -m "v5: centralize runtime capability registry"
 - Modify: `tests/test_v5_architecture_boundaries.py`
 
 **Interfaces:**
-- Produces focused compatibility modules and a Gate 0 release audit.
+- Produces focused compatibility modules and an M0 release audit.
 
-- [ ] **Step 1: Capture current architecture failures as the RED baseline**
+- [x] **Step 1: Capture current architecture failures as the RED baseline**
 
 Run:
 
@@ -929,22 +932,22 @@ python -m pytest tests\test_v5_architecture_boundaries.py -q -p no:cacheprovider
 ```
 
 Expected: the test reports the exact oversized modules. Save the list in the
-Gate 0 progress audit.
+M0 progress audit.
 
-- [ ] **Step 2: Split Gate 0 MCP and CLI responsibilities**
+- [x] **Step 2: Split M0 MCP and CLI responsibilities**
 
 Move query/index wrappers to `mcp_query.py`, context wrappers to
 `mcp_context.py`, query CLI dispatch to `cli_query.py`, and context dispatch to
 `cli_context.py`. Re-export public wrapper names so native MCP discovery remains
 stable.
 
-- [ ] **Step 3: Split process-graph, facade, model, and surface responsibilities**
+- [x] **Step 3: Split process-graph, facade, model, and surface responsibilities**
 
 Use the architecture failure list and CapabilitySpec dependencies to extract
 focused loaders/renderers/contracts. Each extraction must have a characterization
 test before moving code and must preserve existing public imports.
 
-- [ ] **Step 4: Run architecture and broad Gate 0 tests after each extraction**
+- [x] **Step 4: Run architecture and broad M0 tests after each extraction**
 
 ```powershell
 python -m pytest tests\test_v5_architecture_boundaries.py tests\test_v5_runtime_audit.py tests\test_v5_record_family_registry.py tests\test_v5_record_repository.py tests\test_v5_query_index.py tests\test_v5_context_compiler.py tests\test_v5_capability_registry.py -q -p no:cacheprovider --basetemp tmp\pytest-g0-architecture-green
@@ -952,7 +955,7 @@ python -m pytest tests\test_v5_architecture_boundaries.py tests\test_v5_runtime_
 
 Expected: all selected tests pass without changed size limits.
 
-- [ ] **Step 5: Run the Gate 0 compatibility matrix**
+- [x] **Step 5: Run the M0 compatibility matrix**
 
 Add current record refs, workspace inventory, context pack, relation map,
 timeline, Codex facade, public surface, runtime entrypoint, bridge, adapter,
@@ -983,23 +986,82 @@ Expected: no whitespace errors and successful compilation.
 - [ ] **Step 9: Commit Task 9**
 
 ```powershell
-git add brain/v5/mcp_query.py brain/v5/mcp_context.py brain/v5/cli_query.py brain/v5/cli_context.py tests/test_v5_gate0_release.py docs/superpowers/progress/2026-07-10-aitp-gate-0-release-audit.md docs/superpowers/plans/2026-07-10-aitp-gate-0-foundation.md
-git commit -m "v5: complete Gate 0 research-memory foundation"
+git add brain/v5/mcp_query.py brain/v5/mcp_context.py brain/v5/cli_query.py brain/v5/cli_context.py tests/test_v5_m0_release.py docs/superpowers/progress/2026-07-10-aitp-m0-release-audit.md docs/superpowers/plans/2026-07-10-aitp-gate-0-foundation.md
+git commit -m "v5: complete M0 research-memory foundation"
 ```
 
-## Gate 0 Completion Checklist
+## Task 10: V5 Release Isolation And Legacy Compatibility Closure
 
-- [ ] Runtime audit covers every source, hook, test, actual family, writer, and host surface.
-- [ ] Record-family drift is zero or explicitly classified in the release audit.
-- [ ] Existing schema-v1 records remain readable.
-- [ ] Conflicting same-id writes are rejected; identical writes are idempotent.
-- [ ] Malformed canonical records are reported and block exhaustive recall claims.
-- [ ] Derived indexes are generation stamped, disposable, and freshness checked.
-- [ ] Exact refs, filtered retrieval, lexical retrieval, and coverage are tested.
-- [ ] Context builders no longer independently scan the whole store on the indexed path.
-- [ ] Startup and one normal expansion meet the stated latency and token/byte budgets.
-- [ ] The deployed keyword router never injects topic memory bodies.
-- [ ] Capability parity is generated and compact visibility is explicit.
-- [ ] Architecture tests pass without relaxed limits.
-- [ ] Real-store read-only audit proves no canonical rewrite or trust inflation.
-- [ ] The architecture spec, final roadmap, Gate 0 plan, and Gate 0 release audit agree.
+**Files:**
+- Create: `scripts/run_v5_test_lanes.py`
+- Create: `tests/test_v5_test_lanes.py`
+- Create: `.github/workflows/v5-test-lanes.yml`
+- Modify: `adapters/codex/SKILL.md`
+- Modify: `adapters/claude-code/SKILL.md`
+- Modify: `adapters/opencode/SKILL.md`
+- Modify: `adapters/openclaw/SKILL.md`
+- Modify: `adapters/README.md`
+- Modify: `docs/AITP_SPEC.md`
+- Modify: `docs/PROJECT_INDEX.md`
+- Modify: `tests/test_aitp_pm_deploy_surfaces.py`
+- Preserve unchanged: legacy L0-L4 lifecycle implementation and archived write
+  workflow tests
+
+**Interfaces:**
+- Produces `python scripts/run_v5_test_lanes.py full` as the canonical isolated
+  blocking v5 release command.
+- Produces a blocking `legacy-compat` lane for reads, lossless migration,
+  schema-v1 materialization, old-store manifests, and default write blocking.
+- Produces an explicit `legacy-write-archive` diagnostic lane that is excluded
+  from `full`, scheduled CI, and M0 acceptance.
+- Requires local `full` evidence from the exact staged candidate in an isolated
+  worktree; unrelated protected working-tree edits are not release inputs.
+
+- [x] Clear inherited real-store and legacy-write environment bindings in every
+  blocking lane, preserve explicit per-test bases, and isolate `Path.home()`
+  plus host-specific config roots under system Temp without hiding the
+  launching Python environment. Do not share one global v5 topics root across
+  tests.
+- [x] Define the blocking full suite as every `test_v5_*` module plus package
+  deployment, legacy read/migration, flow-notebook read rendering, and write guards.
+- [x] Select only read/default-blocking nodes from the legacy write-guard file;
+  keep its opt-in bootstrap escape-hatch node in the non-blocking archive.
+- [x] Keep old write E2E tests accessible only through `legacy-write-archive`.
+- [x] Remove the candidate/preflight/L3-L4/promotion/legacy-graph changes that
+  were introduced solely to repair the archived workflow.
+- [x] Replace active-looking legacy adapter instructions with thin v5 pointers,
+  mark unsupported OpenClaw lifecycle automation explicitly, and cover all
+  references with a deployment-surface regression test.
+- [x] Route current specification/index entrypoints to v5 and label the v4
+  L0-L4 protocol tree as historical semantic and migration material.
+- [x] Run foundation, compatibility, legacy-compat, slow-adapter, and blocking
+  full execution without max-failure or timeout truncation.
+- [ ] Optionally record archive drift without treating it as a release defect.
+- [x] Capture an immediate real-store canonical watermark, rebuild only
+  `.aitp/indexes`, then require manifest and post-build watermark equality.
+- [x] Reconcile the release audit, roadmap, and completion checklist from fresh
+  evidence.
+- [x] Stage only exact reviewed paths under the documented exclusion list.
+
+## M0 Completion Checklist
+
+- [x] Runtime audit covers every source, hook, test, actual family, writer, and host surface.
+- [x] Record-family drift is zero or explicitly classified in the release audit.
+- [x] Existing schema-v1 records remain readable.
+- [x] Conflicting same-id writes are rejected; identical writes are idempotent.
+- [x] Malformed canonical records are reported and block exhaustive recall claims.
+- [x] Derived indexes are generation stamped, disposable, and freshness checked.
+- [x] Exact refs, filtered retrieval, lexical retrieval, and coverage are tested.
+- [x] Context builders no longer independently scan the whole store on the indexed path.
+- [x] Startup and one normal expansion meet the stated latency and token/byte budgets.
+- [x] The deployed keyword router never injects topic memory bodies.
+- [x] Capability parity is generated and compact visibility is explicit.
+- [x] Architecture tests pass without relaxed limits.
+- [x] The blocking v5 release suite passes in isolated system Temp with
+  inherited legacy writes disabled, including legacy read/migration/write-guard
+  coverage. No blocking test enables legacy writes; the escape-hatch node is
+  archive-only.
+- [x] Archived L0-L4 write workflows are not release-blocking and no production
+  state-machine change is justified solely by their failures.
+- [x] Real-store read-only audit proves no canonical rewrite or trust inflation.
+- [x] The architecture spec, final roadmap, M0 plan, and M0 release audit agree.

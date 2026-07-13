@@ -57,7 +57,7 @@ def test_lifecycle_event_record_roundtrip(tmp_path):
 def test_create_lifecycle_event_is_idempotent(tmp_path):
     from brain.v5.lifecycle_events import create_lifecycle_event
     from brain.v5.models import LifecycleEventRecord
-    from brain.v5.store import list_valid_records
+    from brain.v5.store import list_records
     from brain.v5.workspace import init_workspace
 
     ws = init_workspace(tmp_path / "ws")
@@ -75,14 +75,14 @@ def test_create_lifecycle_event_is_idempotent(tmp_path):
     first = create_lifecycle_event(ws, **args)
     second = create_lifecycle_event(ws, **args)
     assert first.event_id == second.event_id
-    events = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    events = list_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
     assert len(events) == 1
 
 
 def test_create_lifecycle_event_supersede_distinct_keys(tmp_path):
     from brain.v5.lifecycle_events import create_lifecycle_event
     from brain.v5.models import LifecycleEventRecord
-    from brain.v5.store import list_valid_records
+    from brain.v5.store import list_records
     from brain.v5.workspace import init_workspace
 
     ws = init_workspace(tmp_path / "ws")
@@ -96,7 +96,7 @@ def test_create_lifecycle_event_supersede_distinct_keys(tmp_path):
         lifecycle_status="superseded", reason="r2", operator="o", timestamp="t2",
         replacement_ref="claim-y",
     )
-    events = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    events = list_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
     # same (record, status, replacement) -> one; different status -> two
     assert len(events) == 2
     assert a.event_id != b.event_id
@@ -149,7 +149,7 @@ def test_rehome_claim_marks_misrouted_adds_pointer_and_preserves_body(tmp_path):
 def test_rehome_invalid_record_id_aborts_with_no_change(tmp_path):
     from brain.v5.lifecycle_events import rehome_record
     from brain.v5.models import LifecycleEventRecord
-    from brain.v5.store import list_valid_records
+    from brain.v5.store import list_records
     from brain.v5.workspace import create_topic, init_workspace
 
     ws = init_workspace(tmp_path / "ws")
@@ -161,7 +161,7 @@ def test_rehome_invalid_record_id_aborts_with_no_change(tmp_path):
             from_topic="wrong-topic", to_topic="right-topic",
             reason="r", operator="o", timestamp="t",
         )
-    events = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    events = list_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
     assert events == []
 
 
@@ -172,7 +172,7 @@ def test_supersede_rejects_active_status(tmp_path):
 
     from brain.v5.lifecycle_events import supersede_record
     from brain.v5.models import LifecycleEventRecord
-    from brain.v5.store import list_valid_records
+    from brain.v5.store import list_records
     from brain.v5.workspace import create_claim, create_topic, init_workspace
 
     ws = init_workspace(tmp_path / "ws")
@@ -187,7 +187,7 @@ def test_supersede_rejects_active_status(tmp_path):
             status="active", reason="r", operator="o", timestamp="t",
         )
     # no event written, record still active
-    events = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    events = list_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
     assert events == []
     from brain.v5.workspace import get_claim
     assert get_claim(ws, claim.claim_id).lifecycle_status == "active"
@@ -198,7 +198,7 @@ def test_rehome_rejects_mismatched_from_topic(tmp_path):
 
     from brain.v5.lifecycle_events import rehome_record
     from brain.v5.models import LifecycleEventRecord
-    from brain.v5.store import list_valid_records
+    from brain.v5.store import list_records
     from brain.v5.workspace import create_claim, create_topic, init_workspace
 
     ws = init_workspace(tmp_path / "ws")
@@ -215,7 +215,7 @@ def test_rehome_rejects_mismatched_from_topic(tmp_path):
             from_topic="some-other-topic", to_topic="right-topic",
             reason="r", operator="o", timestamp="t",
         )
-    events = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    events = list_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
     assert events == []
 
 
@@ -251,7 +251,7 @@ def test_rehome_no_orphan_event_on_missing_target_after_subject_load(tmp_path):
 
     from brain.v5.lifecycle_events import rehome_record
     from brain.v5.models import LifecycleEventRecord
-    from brain.v5.store import list_valid_records
+    from brain.v5.store import list_records
     from brain.v5.workspace import create_claim, create_topic, init_workspace
 
     ws = init_workspace(tmp_path / "ws")
@@ -267,7 +267,7 @@ def test_rehome_no_orphan_event_on_missing_target_after_subject_load(tmp_path):
             from_topic="wrong-topic", to_topic="right-topic",
             reason="r", operator="o", timestamp="t",
         )
-    events = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    events = list_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
     assert events == []
 
 
@@ -277,7 +277,7 @@ def test_supersede_same_key_is_idempotent_noop(tmp_path):
 
     from brain.v5.lifecycle_events import supersede_record
     from brain.v5.models import LifecycleEventRecord
-    from brain.v5.store import list_valid_records
+    from brain.v5.store import list_records
     from brain.v5.workspace import create_claim, create_topic, init_workspace
 
     ws = init_workspace(tmp_path / "ws")
@@ -297,7 +297,7 @@ def test_supersede_same_key_is_idempotent_noop(tmp_path):
         replacement_ref="claim-y",
     )
     assert a.event_id == b.event_id
-    events = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    events = list_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
     assert len(events) == 1
 
 
@@ -518,7 +518,7 @@ def test_cli_record_rehome_requires_explicit_record_id(tmp_path):
 def test_mcp_build_rehome_plan_is_readonly_and_apply_requires_explicit_ids(tmp_path):
     from brain.v5.mcp_lifecycle import aitp_v5_apply_rehome_plan, aitp_v5_build_rehome_plan
     from brain.v5.models import LifecycleEventRecord
-    from brain.v5.store import list_valid_records
+    from brain.v5.store import list_records
     from brain.v5.workspace import init_workspace
 
     ws = init_workspace(tmp_path / "ws")
@@ -534,7 +534,7 @@ def test_mcp_build_rehome_plan_is_readonly_and_apply_requires_explicit_ids(tmp_p
     )
     assert plan["ok"] is True
     # build_plan must not write any events
-    events_before = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    events_before = list_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
     assert events_before == []
 
     # apply requires the explicit record_ids from the plan
@@ -548,7 +548,7 @@ def test_mcp_build_rehome_plan_is_readonly_and_apply_requires_explicit_ids(tmp_p
         timestamp="2026-06-20T10:00:00Z",
     )
     assert result["ok"] is True
-    events_after = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    events_after = list_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
     assert len(events_after) == 1
 
     # re-apply is idempotent — no second event
@@ -561,7 +561,7 @@ def test_mcp_build_rehome_plan_is_readonly_and_apply_requires_explicit_ids(tmp_p
         operator="bohan-jia",
         timestamp="2026-06-20T10:00:00Z",
     )
-    events_final = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    events_final = list_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
     assert len(events_final) == 1
     assert result["event_ids"] == result2["event_ids"]
 

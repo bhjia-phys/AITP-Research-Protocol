@@ -6,7 +6,11 @@ from typing import Any
 
 from brain.v5.models import ValidationResultRecord
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import list_valid_records
+from brain.v5.store import list_valid_records as _list_valid_records
+
+
+def _legacy_records(directory, cls):
+    return _list_valid_records(directory, cls, operation="legacy_semantic_repair")
 
 VALIDATION_RESULT_REVISION_PROPOSED_VALUE = (
     "Record a revised validation result after repairing or replacing the failed validation surface."
@@ -16,7 +20,7 @@ VALIDATION_RESULT_REVISION_PROPOSED_VALUE = (
 def validation_results_by_id(ws: WorkspacePaths) -> dict[str, ValidationResultRecord]:
     return {
         record.result_id: record
-        for record in list_valid_records(ws.registry_dir("validation_results"), ValidationResultRecord)
+        for record in _legacy_records(ws.registry_dir("validation_results"), ValidationResultRecord)
     }
 
 

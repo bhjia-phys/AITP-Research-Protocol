@@ -5,7 +5,9 @@ from __future__ import annotations
 from brain.v5.ids import prefixed_id
 from brain.v5.models import ToolRunRecord, ValidationContractRecord, ValidationResultRecord
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import list_records, write_record
+from brain.v5.record_envelope import RecordActor
+from brain.v5.record_repository import RecordRepository
+from brain.v5.store import list_records
 
 
 _STATUS_ALIASES = {
@@ -57,8 +59,8 @@ def create_validation_contract(
         executor_ids=executor_ids or [],
         validator_role=validator_role,
     )
-    write_record(
-        ws.registry_dir("validation_contracts") / f"{contract_id}.md",
+    _repository(ws, actor_id="create_validation_contract").write(
+        "validation_contracts",
         record,
         body=f"# Validation Contract: {contract_id}\n\n"
         f"Required checks: {', '.join(record.required_checks)}\n"
@@ -107,9 +109,14 @@ def record_validation_result(
         )
     if clean_status == "passed" and failures:
         raise ValueError("passed validation result cannot include observed failure modes")
+    evidence = evidence_refs or []
+    artifacts = artifact_ids or []
     result_id = prefixed_id(
         "validation-result",
-        f"{topic_id}:{claim_id}:{contract_id}:{tool_run_id}:{clean_status}:{checked}:{covered_modes}:{failures}",
+        (
+            f"{topic_id}:{claim_id}:{contract_id}:{tool_run_id}:{clean_status}:"
+            f"{checked}:{covered_modes}:{failures}:{evidence}:{artifacts}:{summary.strip()}"
+        ),
         max_slug=72,
     )
     record = ValidationResultRecord(
@@ -123,18 +130,25 @@ def record_validation_result(
         missing_outputs=missing,
         covered_failure_modes=covered_modes,
         failure_modes_observed=failures,
-        evidence_refs=evidence_refs or [],
-        artifact_ids=artifact_ids or [],
+        evidence_refs=evidence,
+        artifact_ids=artifacts,
         summary=summary,
     )
-    write_record(
-        ws.registry_dir("validation_results") / f"{result_id}.md",
+    _repository(ws, actor_id="record_validation_result").write(
+        "validation_results",
         record,
         body=f"# Validation Result: {result_id}\n\n"
         f"Status: {clean_status}\n"
         f"Summary: {summary}\n",
     )
     return record
+
+
+def _repository(ws: WorkspacePaths, *, actor_id: str) -> RecordRepository:
+    return RecordRepository(
+        ws,
+        actor=RecordActor(actor_type="tool", actor_id=actor_id, host="aitp"),
+    )
 
 
 def normalize_validation_status(status: str) -> str:

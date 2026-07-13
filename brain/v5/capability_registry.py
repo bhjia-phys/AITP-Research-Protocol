@@ -9,6 +9,7 @@ from typing import Any, Mapping
 from brain.v5.capability_registry_data import (
     BRIDGE_TARGET_SPECS,
     COMPACT_MCP_NAMES,
+    COMPACT_SOFT_DEPRECATION_BY_MCP,
     KERNEL_WRITE_OPERATIONS,
     MCP_ONLY_CAPABILITIES,
     OPTIONAL_MCP_CAPABILITIES,
@@ -20,6 +21,7 @@ from brain.v5.runtime_entrypoint_catalog import RUNTIME_ENTRYPOINTS
 
 STATE_EFFECTS = frozenset({"read_only", "runtime_write", "kernel_write"})
 COMPACT_VISIBILITIES = frozenset({"compact", "full", "hidden"})
+CAPABILITY_LIFECYCLE_STATUSES = frozenset({"active", "soft_deprecated_from_compact"})
 
 
 class CapabilityRegistryError(RuntimeError):
@@ -35,6 +37,10 @@ class CapabilitySpec:
     state_effect: str
     compact_visibility: str
     bridge_target: str | None = None
+    lifecycle_status: str = "active"
+    compatibility_window: str = ""
+    compatibility_warning: str = ""
+    removal_condition: str = ""
 
 
 def capability_specs() -> dict[str, CapabilitySpec]:
@@ -56,6 +62,7 @@ def capability_specs() -> dict[str, CapabilitySpec]:
                 "compact" if entrypoint["mcp"] in COMPACT_MCP_NAMES else "full"
             ),
             bridge_target=bridge_targets.get(operation),
+            **_compatibility_metadata(str(entrypoint["mcp"])),
         )
         for operation, entrypoint in RUNTIME_ENTRYPOINTS.items()
     }
@@ -70,6 +77,7 @@ def capability_specs() -> dict[str, CapabilitySpec]:
             public_surface=surface,
             state_effect=state_effect,
             compact_visibility=visibility,
+            **_compatibility_metadata(mcp_name),
         )
     return dict(sorted(specs.items()))
 
@@ -95,6 +103,7 @@ def capability_registry_payload() -> dict[str, Any]:
         "capabilities": [asdict(spec) for spec in specs.values()],
         "state_effects": sorted(STATE_EFFECTS),
         "compact_visibilities": sorted(COMPACT_VISIBILITIES),
+        "capability_lifecycle_statuses": sorted(CAPABILITY_LIFECYCLE_STATUSES),
         "truth_source": "capability_registry",
         "summary_inputs_trusted": False,
         "orientation_only": True,
@@ -245,6 +254,21 @@ def _audit_specs(specs: Mapping[str, CapabilitySpec], issues: list[str]) -> None
             issues.append(
                 f"{operation}.compact_visibility: invalid {spec.compact_visibility!r}"
             )
+        if spec.lifecycle_status not in CAPABILITY_LIFECYCLE_STATUSES:
+            issues.append(
+                f"{operation}.lifecycle_status: invalid {spec.lifecycle_status!r}"
+            )
+        if spec.lifecycle_status == "soft_deprecated_from_compact":
+            if spec.compact_visibility != "full":
+                issues.append(
+                    f"{operation}.compact_visibility: soft-deprecated compact route must be full"
+                )
+            if not spec.compatibility_window:
+                issues.append(f"{operation}.compatibility_window: must be non-empty")
+            if not spec.compatibility_warning:
+                issues.append(f"{operation}.compatibility_warning: must be non-empty")
+            if not spec.removal_condition:
+                issues.append(f"{operation}.removal_condition: must be non-empty")
         if not spec.mcp_name:
             issues.append(f"{operation}.mcp_name: must be non-empty")
         if not spec.public_surface:
@@ -270,6 +294,18 @@ def _audit_catalog(
         actual = (spec.mcp_name, spec.cli_route, spec.public_surface)
         if actual != expected:
             issues.append(f"{operation}: registry/catalog route mismatch")
+
+
+def _compatibility_metadata(mcp_name: str) -> dict[str, str]:
+    row = COMPACT_SOFT_DEPRECATION_BY_MCP.get(mcp_name)
+    if row is None:
+        return {}
+    return {
+        "lifecycle_status": row["lifecycle_status"],
+        "compatibility_window": row["compatibility_window"],
+        "compatibility_warning": row["warning"],
+        "removal_condition": row["removal_condition"],
+    }
 
 
 def _audit_names(label: str, registered: set[str], live: set[str], issues: list[str]) -> None:

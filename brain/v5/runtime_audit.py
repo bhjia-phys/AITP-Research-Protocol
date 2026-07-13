@@ -9,6 +9,12 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable
 
+from brain.v5.writer_scan import (
+    direct_mutation_rows,
+    helper_writer_rows,
+    writer_scan_policy,
+)
+
 
 _CLASSIFICATIONS = (
     "directly_touched_by_plan",
@@ -26,7 +32,6 @@ _CHOKE_POINTS = {
     "brain/v5/workspace_refresh.py",
 }
 _PLAN_PATH_RE = re.compile(r"^- (?:Create|Modify|Test): `([^`]+)`", re.MULTILINE)
-_WRITER_CALLS = {"write_record", "write_md", "write_text_atomic", "write_json_atomic"}
 
 
 def build_runtime_capability_audit(
@@ -48,7 +53,8 @@ def build_runtime_capability_audit(
     actual_counts = _actual_registry_counts(Path(workspace_base)) if workspace_base else {}
     actual = sorted(actual_counts)
     capabilities = _capability_inventory(root / "brain" / "v5")
-    writers = _writer_rows(root)
+    writers = helper_writer_rows(root, _source_paths(root))
+    direct_mutations = direct_mutation_rows(root, _source_paths(root))
     counts = Counter(row["classification"] for row in files)
     return {
         "kind": "runtime_capability_audit",
@@ -57,12 +63,16 @@ def build_runtime_capability_audit(
         "inventory": {
             "file_count": len(files),
             "writer_count": len(writers),
+            "direct_mutation_candidate_count": len(direct_mutations),
+            "direct_mutation_file_count": len({row["path"] for row in direct_mutations}),
             "actual_registry_record_count": sum(actual_counts.values()),
             "classification_counts": dict(sorted(counts.items())),
         },
         "files": files,
         "capabilities": capabilities,
         "writers": writers,
+        "direct_mutation_candidates": direct_mutations,
+        "writer_scan_policy": writer_scan_policy(files),
         "record_families": {
             "layout": layout,
             "literal_uses": used,
@@ -212,13 +222,7 @@ def _actual_registry_counts(workspace_base: Path) -> dict[str, int]:
 
 
 def _capability_inventory(directory: Path) -> dict[str, list[str]]:
-    catalog = _literal_named_assignment(
-        directory / "runtime_entrypoint_catalog.py",
-        "RUNTIME_ENTRYPOINTS",
-        default={},
-    )
-    if not isinstance(catalog, dict):
-        catalog = {}
+    catalog = _runtime_catalog_mapping(directory)
     catalog_mcp = sorted(
         {
             str(item.get("mcp"))
@@ -235,17 +239,44 @@ def _capability_inventory(directory: Path) -> dict[str, list[str]]:
             and item.get("surface")
         }
     )
-    public_surfaces = _string_sequence_assignment(
-        directory / "public_surfaces.py", "_PUBLIC_SURFACE_NAMES"
+    public_surfaces = sorted(
+        {
+            *(
+                surface
+                for path in _module_source_files(directory, "public_surfaces")
+                for surface in _string_sequence_assignment(path, "_PUBLIC_SURFACE_NAMES")
+            ),
+            *_mapping_key_assignment(
+                directory / "capability_surface_contracts.py",
+                "_RULES",
+            ),
+        }
     )
-    facade_tools = _string_sequence_assignment(directory / "codex_facade.py", "CODEX_FACADE_TOOLS")
-    support_tools = _string_sequence_assignment(directory / "codex_facade.py", "CODEX_SUPPORT_TOOLS")
+    registry_data = directory / "capability_registry_data.py"
+    legacy_facade = directory / "codex_facade.py"
+    facade_tools = sorted(set(_string_sequence_assignment(registry_data, "CODEX_FACADE_MCP_NAMES")) | set(_string_sequence_assignment(legacy_facade, "CODEX_FACADE_TOOLS")))
+    support_tools = sorted(set(_string_sequence_assignment(registry_data, "CODEX_SUPPORT_MCP_NAMES")) | set(_string_sequence_assignment(legacy_facade, "CODEX_SUPPORT_TOOLS")))
     compact_allowlist = sorted(set(facade_tools) | set(support_tools))
-    mcp_wrappers = _function_names(directory / "mcp_tools.py", prefix="aitp_v5_")
+    mcp_wrappers = sorted(
+        {
+            name
+            for path in _module_source_files(directory, "mcp_tools")
+            for name in _function_names(path, prefix="aitp_v5_")
+        }
+    )
+    registry_rows = _capability_rows(registry_data, "MCP_ONLY_CAPABILITIES")
+    optional_rows = _capability_rows(registry_data, "OPTIONAL_MCP_CAPABILITIES")
+    registry_rows.extend(row for row in optional_rows if row[1] in mcp_wrappers)
+    registry_operations = sorted({*catalog, *(row[0] for row in registry_rows)})
+    registry_mcp = sorted({*catalog_mcp, *(row[1] for row in registry_rows)})
+    registry_surfaces = sorted({*catalog_surfaces, *(row[3] for row in registry_rows)})
     return {
         "catalog_operations": sorted(str(key) for key in catalog),
         "catalog_mcp": catalog_mcp,
         "catalog_surfaces": catalog_surfaces,
+        "registry_operations": registry_operations,
+        "registry_mcp": registry_mcp,
+        "registry_surfaces": registry_surfaces,
         "public_surfaces": public_surfaces,
         "mcp_wrappers": mcp_wrappers,
         "compact_allowlist": compact_allowlist,
@@ -255,80 +286,35 @@ def _capability_inventory(directory: Path) -> dict[str, list[str]]:
         "public_not_catalog": sorted(set(public_surfaces) - set(catalog_surfaces)),
         "compact_not_wrapped": sorted(set(compact_allowlist) - set(mcp_wrappers)),
         "compact_not_catalog": sorted(set(compact_allowlist) - set(catalog_mcp)),
+        "registry_mcp_not_wrapped": sorted(set(registry_mcp) - set(mcp_wrappers)),
+        "wrapped_not_registry": sorted(set(mcp_wrappers) - set(registry_mcp)),
+        "registry_surface_not_public": sorted(set(registry_surfaces) - set(public_surfaces)),
+        "compact_not_registry": sorted(set(compact_allowlist) - set(registry_mcp)),
     }
 
 
-def _writer_rows(root: Path) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    for path in _source_paths(root):
-        relative = _normalize_relative_path(path.relative_to(root).as_posix())
-        if not relative.startswith(("brain/", "hooks/", "deploy/hooks/")):
-            continue
-        try:
-            tree = _parse_python(path)
-        except (SyntaxError, UnicodeDecodeError):
-            continue
-        visitor = _WriterCallVisitor(relative)
-        visitor.visit(tree)
-        rows.extend(visitor.rows)
-    return sorted(rows, key=lambda row: (row["path"], row["line"], row["call"]))
+def _runtime_catalog_mapping(directory: Path) -> dict[str, Any]:
+    paths = [directory / "runtime_entrypoint_catalog.py"]
+    paths.extend(sorted((directory / "runtime_entrypoint_catalog_data").glob("part_*.py")))
+    catalog: dict[str, Any] = {}
+    for path in paths:
+        for value in _literal_assignments_with_prefix(path, "RUNTIME_ENTRYPOINTS"):
+            if isinstance(value, dict):
+                catalog.update(value)
+    return catalog
 
 
-class _WriterCallVisitor(ast.NodeVisitor):
-    def __init__(self, relative_path: str):
-        self.relative_path = relative_path
-        self.function_stack: list[str] = []
-        self.rows: list[dict[str, Any]] = []
-
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        self.function_stack.append(node.name)
-        self.generic_visit(node)
-        self.function_stack.pop()
-
-    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
-        self.function_stack.append(node.name)
-        self.generic_visit(node)
-        self.function_stack.pop()
-
-    def visit_Call(self, node: ast.Call) -> None:
-        call_name = _call_name(node.func)
-        if call_name in _WRITER_CALLS:
-            families, dynamic = _registry_families_in_node(node)
-            self.rows.append(
-                {
-                    "path": self.relative_path,
-                    "function": self.function_stack[-1] if self.function_stack else "<module>",
-                    "line": int(getattr(node, "lineno", 0)),
-                    "call": call_name,
-                    "registry_families": families,
-                    "dynamic_registry_family": dynamic,
-                }
-            )
-        self.generic_visit(node)
+def _module_source_files(directory: Path, stem: str) -> list[Path]:
+    paths = [directory / f"{stem}.py"]
+    paths.extend(sorted((directory / "_compat_shards" / stem).glob("part_*.py")))
+    return [path for path in paths if path.exists()]
 
 
-def _call_name(value: ast.expr) -> str:
-    if isinstance(value, ast.Name):
-        return value.id
-    if isinstance(value, ast.Attribute):
-        return value.attr
-    return ""
-
-
-def _registry_families_in_node(node: ast.AST) -> tuple[list[str], bool]:
-    families: set[str] = set()
-    dynamic = False
-    for candidate in ast.walk(node):
-        if not isinstance(candidate, ast.Call) or not isinstance(candidate.func, ast.Attribute):
-            continue
-        if candidate.func.attr != "registry_dir" or not candidate.args:
-            continue
-        first = candidate.args[0]
-        if isinstance(first, ast.Constant) and isinstance(first.value, str) and first.value.strip():
-            families.add(first.value.strip())
-        else:
-            dynamic = True
-    return sorted(families), dynamic
+def _capability_rows(path: Path, name: str) -> list[tuple[Any, ...]]:
+    value = _literal_named_assignment(path, name, default=())
+    if not isinstance(value, (list, tuple)):
+        return []
+    return [tuple(row) for row in value if isinstance(row, (list, tuple)) and len(row) >= 4]
 
 
 def _literal_named_assignment(path: Path, name: str, *, default: Any) -> Any:
@@ -357,6 +343,59 @@ def _literal_named_assignment(path: Path, name: str, *, default: Any) -> Any:
         except (ValueError, TypeError):
             return default
     return default
+
+
+def _literal_assignments_with_prefix(path: Path, prefix: str) -> list[Any]:
+    if not path.exists():
+        return []
+    try:
+        tree = _parse_python(path)
+    except (SyntaxError, UnicodeDecodeError):
+        return []
+    values: list[Any] = []
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            targets, value = node.targets, node.value
+        elif isinstance(node, ast.AnnAssign):
+            targets, value = [node.target], node.value
+        else:
+            continue
+        if value is None or not any(
+            isinstance(target, ast.Name) and target.id.startswith(prefix)
+            for target in targets
+        ):
+            continue
+        try:
+            values.append(ast.literal_eval(value))
+        except (ValueError, TypeError):
+            continue
+    return values
+
+
+def _mapping_key_assignment(path: Path, name: str) -> list[str]:
+    if not path.exists():
+        return []
+    try:
+        tree = _parse_python(path)
+    except (SyntaxError, UnicodeDecodeError):
+        return []
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            targets, value = node.targets, node.value
+        elif isinstance(node, ast.AnnAssign):
+            targets, value = [node.target], node.value
+        else:
+            continue
+        if not any(isinstance(target, ast.Name) and target.id == name for target in targets):
+            continue
+        if not isinstance(value, ast.Dict):
+            return []
+        return sorted(
+            key.value
+            for key in value.keys
+            if isinstance(key, ast.Constant) and isinstance(key.value, str)
+        )
+    return []
 
 
 def _string_sequence_assignment(path: Path, name: str) -> list[str]:

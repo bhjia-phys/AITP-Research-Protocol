@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from brain.v5.ids import prefixed_id
+from brain.v5.human_approval import checkpoint_can_authorize_trust
 from brain.v5.checkpoints import request_human_checkpoint
 from brain.v5.failure_mode_audit import audit_failure_mode_coverage
 from brain.v5.models import (
@@ -14,7 +15,9 @@ from brain.v5.models import (
     ToolRunRecord,
     ValidationResultRecord,
 )
-from brain.v5.store import list_records, write_record
+from brain.v5.record_envelope import RecordActor
+from brain.v5.record_repository import RecordRepository
+from brain.v5.store import list_records
 from brain.v5.workspace import WorkspacePaths
 
 
@@ -122,8 +125,15 @@ def record_failure_mode_review_result(
         reviewer_role=reviewer_role,
         summary=summary,
     )
-    write_record(
-        ws.registry_dir("failure_mode_reviews") / f"{result_id}.md",
+    RecordRepository(
+        ws,
+        actor=RecordActor(
+            actor_type="model",
+            actor_id=reviewer_role or "failure_mode_reviewer",
+            host="aitp",
+        ),
+    ).write(
+        "failure_mode_reviews",
         record,
         body=f"# Failure-Mode Review Result: {result_id}\n\n**Status:** {status}\n\n{summary}\n",
     )
@@ -196,6 +206,8 @@ def _approved_failure_mode_review_checkpoint(ws: WorkspacePaths, checkpoint_id: 
         raise ValueError("failure-mode review result must cite a checkpoint for the same claim")
     if checkpoint.status != "decided" or checkpoint.decision != "approve_failure_mode_review":
         raise ValueError("failure-mode review result requires an approved failure-mode review checkpoint")
+    if not checkpoint_can_authorize_trust(checkpoint):
+        raise ValueError("failure-mode review result requires a host-verified human approval receipt")
     return checkpoint
 
 

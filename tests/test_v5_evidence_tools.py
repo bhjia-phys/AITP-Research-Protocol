@@ -50,6 +50,7 @@ def test_cli_and_mcp_capture_tool_run_auto_from_local_transcript(tmp_path, capsy
     import hashlib
 
     from brain.v5.mcp_tools import aitp_v5_capture_tool_run_auto
+    from brain.v5.tools import record_tool_run
     from brain.v5.workspace import create_claim, create_topic, init_workspace
 
     ws = init_workspace(tmp_path)
@@ -65,6 +66,16 @@ def test_cli_and_mcp_capture_tool_run_auto_from_local_transcript(tmp_path, capsy
     transcript = tmp_path / "si-gw-transcript.txt"
     transcript.write_text("pytest tests/test_si_gw.py\nPASSED gap=1.23\n", encoding="utf-8")
     expected_hash = hashlib.sha256(transcript.read_bytes()).hexdigest()
+    first = record_tool_run(
+        ws,
+        recipe_id="recipe-librpa-si-gw-initial",
+        tool_family="code",
+        tool_name="pytest",
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        outputs={"status": "failed_runtime"},
+        scientific_run_id="run-A",
+    )
 
     payload = _invoke(
         [
@@ -91,8 +102,24 @@ def test_cli_and_mcp_capture_tool_run_auto_from_local_transcript(tmp_path, capsy
             "Local benchmark transcript.",
             "--max-preview-chars",
             "20",
+            "--scientific-run-id",
+            "run-A",
+            "--supersedes",
+            first.run_id,
+            "--lane",
+            "final",
         ],
         capsys,
+    )
+    second_first = record_tool_run(
+        ws,
+        recipe_id="recipe-librpa-si-gw-initial-mcp",
+        tool_family="code",
+        tool_name="pytest",
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        outputs={"status": "failed_setup"},
+        scientific_run_id="run-B",
     )
     mcp_payload = aitp_v5_capture_tool_run_auto(
         str(tmp_path),
@@ -103,6 +130,9 @@ def test_cli_and_mcp_capture_tool_run_auto_from_local_transcript(tmp_path, capsy
         topic_id="librpa-gw",
         claim_id=claim.claim_id,
         inputs={"test": "tests/test_si_gw.py"},
+        scientific_run_id="run-B",
+        supersedes=second_first.run_id,
+        lane="final",
     )
 
     assert payload["ok"] is True
@@ -119,8 +149,12 @@ def test_cli_and_mcp_capture_tool_run_auto_from_local_transcript(tmp_path, capsy
     assert payload["environment"]["summary_inputs_trusted"] is False
     assert payload["environment"]["can_update_claim_trust"] is False
     assert payload["evidence_status"] == "unreviewed"
+    assert payload["supersedes_run_id"] == first.run_id
+    assert payload["supersedes"] == first.run_id
+    assert payload["lane"] == "final"
     assert mcp_payload["run_id"].startswith("tool-run-recipe-librpa-si-gw-")
     assert mcp_payload["outputs"]["transcript_sha256"] == expected_hash
+    assert mcp_payload["supersedes"] == second_first.run_id
 
 
 def test_large_artifact_is_stored_by_reference_not_inline_frontmatter(tmp_path):

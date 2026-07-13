@@ -3,6 +3,11 @@
 > Map, not encyclopedia. This index tells you *where* to look, not *what* to read.
 > Each entry links to the real doc — go there for details.
 
+> **Runtime boundary:** AITP v5 is the production runtime. Start with
+> `PROJECT_MEMORY.md`, `brain/v5/native_mcp.py`, and the v5 operating-memory
+> design. The L0-L4 protocol tree below is retained for historical semantics,
+> audit, and migration; it is not a production write lifecycle.
+
 ---
 
 ## Where to Start
@@ -10,17 +15,17 @@
 | I want to... | Start here | Then |
 |---|---|---|
 | Understand AITP in 5 minutes | [README.md](../README.md) | [QUICKSTART.md](QUICKSTART.md) → [USER_TOPIC_JOURNEY.md](USER_TOPIC_JOURNEY.md) |
-| Understand the protocol architecture | [CHARTER.md](CHARTER.md) | [AITP_SPEC.md](AITP_SPEC.md) → specific protocol below |
+| Understand the protocol architecture | [v5 operating-memory design](superpowers/specs/2026-07-10-aitp-final-research-operating-memory-design.md) | [final roadmap](superpowers/plans/2026-07-09-aitp-final-research-lifecycle-roadmap.md) → legacy v4 references only when needed |
 | Contribute code to AITP itself | [AITP_GSD_WORKFLOW_CONTRACT.md](AITP_GSD_WORKFLOW_CONTRACT.md) | [architecture.md](architecture.md) → [research/knowledge-hub/LAYER_MAP.md](../research/knowledge-hub/LAYER_MAP.md) |
-| Do theoretical physics research with AITP | [using-aitp/SKILL.md](../skills/using-aitp/SKILL.md) | [aitp-runtime/SKILL.md](../skills/aitp-runtime/SKILL.md) → [USER_TOPIC_JOURNEY.md](USER_TOPIC_JOURNEY.md) |
-| Integrate AITP into my agent platform | [adapters/README.md](../adapters/README.md) | [protocols/adapter_interface.md](protocols/adapter_interface.md) → pick your platform |
-| Understand the research protocol mechanics | [AITP_SPEC.md](AITP_SPEC.md) | [contracts/README.md](../contracts/README.md) → [schemas/README.md](../schemas/README.md) |
-| Understand the runtime engine | [protocols/brain_protocol.md](protocols/brain_protocol.md) | [research/knowledge-hub/runtime/README.md](../research/knowledge-hub/runtime/README.md) |
+| Do theoretical physics research with AITP | [Codex using-aitp skill](../deploy/codex/skills/using-aitp.md) | [AITP runtime skill](../deploy/codex/skills/aitp-runtime.md) → bounded `aitp_v5_*` expansion |
+| Integrate AITP into my agent platform | [adapters/README.md](../adapters/README.md) | choose a v5 adapter and connect it to `brain/v5/native_mcp.py` |
+| Understand the research protocol mechanics | [v5 operating-memory design](superpowers/specs/2026-07-10-aitp-final-research-operating-memory-design.md) | [contracts/README.md](../contracts/README.md) → [schemas/README.md](../schemas/README.md) |
+| Understand the runtime engine | [`brain/v5/native_mcp.py`](../brain/v5/native_mcp.py) | [architecture.md](architecture.md) → legacy Brain protocol only for audit/migration |
 | Audit Codex app support and physics harness fit | [CODEX_APP_ADAPTATION_AND_PHYSICS_HARNESS_AUDIT.md](CODEX_APP_ADAPTATION_AND_PHYSICS_HARNESS_AUDIT.md) | [INSTALL_CODEX.md](INSTALL_CODEX.md) |
 
 ---
 
-## Protocol Architecture (Charter → SPEC → Protocols)
+## Legacy V4 Protocol Architecture (Charter → SPEC → Protocols)
 
 ```
 CHARTER.md (highest authority: 10 articles + three-phase vision)
@@ -48,7 +53,7 @@ All protocol files live under `docs/protocols/` (new) unless otherwise noted.
 
 ---
 
-## Layer Architecture
+## Legacy V4 Layer Architecture
 
 AITP organizes research into five content layers plus two cross-cutting planes.
 The default route is `L0 → L1 → L3 → L4 → L2`.

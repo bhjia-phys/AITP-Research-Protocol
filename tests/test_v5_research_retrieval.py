@@ -80,28 +80,28 @@ def test_retrieval_propagates_malformed_coverage_and_excluded_exact_refs(tmp_pat
     assert audit["coverage"]["can_claim_no_result"] is False
 
 
-def test_exact_retrieval_falls_back_to_document_for_legacy_untyped_record(tmp_path):
+def test_exact_retrieval_falls_back_to_document_for_unmaterializable_record(tmp_path):
     ws = WorkspacePaths(tmp_path)
     ws.ensure_layout()
     write_md(
-        ws.registry_dir("reference_locations") / "legacy-ref.md",
+        ws.registry_dir("claims") / "legacy-claim.md",
         {
-            "reference_location_id": "legacy-ref",
+            "claim_id": "legacy-claim",
             "topic_id": "qsgw",
-            "kind": "reference_location",
-            "title": "Legacy pointer without current connector fields",
+            "kind": "claim",
+            "statement": "Incomplete historical claim shape",
         },
-        "# Legacy pointer\n",
+        "# Incomplete historical claim\n",
     )
     build_query_index(ws)
 
     result = query_records(
         ws,
-        ResearchQuery(exact_refs=("reference_location:legacy-ref",)),
+        ResearchQuery(exact_refs=("claim:legacy-claim",)),
     )
 
     assert result.excluded_candidates == ()
-    assert result.items[0].record_ref == "reference_location:legacy-ref"
+    assert result.items[0].record_ref == "claim:legacy-claim"
     assert result.items[0].exact_score == 100
     assert result.items[0].record["typed_materialization_status"] == "unavailable"
 

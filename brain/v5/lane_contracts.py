@@ -15,7 +15,7 @@ from typing import Any
 from brain.v5.ids import prefixed_id
 from brain.v5.models import LaneContractRecord
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import list_valid_records, write_record
+from brain.v5.store import list_records, write_record
 
 
 def record_lane_contract(
@@ -77,7 +77,7 @@ def list_lane_contracts_for_topic(ws: WorkspacePaths, topic_id: str) -> list[Lan
 
     return [
         contract
-        for contract in list_valid_records(ws.registry_dir("lane_contracts"), LaneContractRecord)
+        for contract in list_records(ws.registry_dir("lane_contracts"), LaneContractRecord)
         if contract.topic_id == topic_id and contract.lifecycle_status == "active"
     ]
 

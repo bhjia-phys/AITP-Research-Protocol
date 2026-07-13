@@ -201,7 +201,7 @@ def test_active_claim_rebind_requires_confirmation_and_writes_audit(tmp_path):
     from brain.v5.claim_relation_map import build_claim_relation_map
     from brain.v5.models import ActiveClaimRebindAuditRecord
     from brain.v5.public_surfaces import require_valid_public_surface
-    from brain.v5.store import list_valid_records
+    from brain.v5.store import list_records
     from brain.v5.workspace import get_claim, get_session_binding
 
     ws, old_claim, hidden_claim, _ = _seed_focus_workspace(tmp_path)
@@ -222,7 +222,7 @@ def test_active_claim_rebind_requires_confirmation_and_writes_audit(tmp_path):
         ),
     )
     relation_map = build_claim_relation_map(ws, "codex-hs-alpha-axis-20260605")
-    audits = list_valid_records(ws.registry_dir("active_claim_rebind_audits"), ActiveClaimRebindAuditRecord)
+    audits = list_records(ws.registry_dir("active_claim_rebind_audits"), ActiveClaimRebindAuditRecord)
 
     assert result["status"] == "applied"
     assert result["old_claim_id"] == old_claim.claim_id

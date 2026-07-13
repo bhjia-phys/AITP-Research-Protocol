@@ -147,6 +147,266 @@ def test_context_compiler_contract_rejects_trust_mutation(tmp_path):
     )
 
 
+def test_context_compiler_preserves_rank_and_selects_diverse_candidate_families(tmp_path):
+    from brain.v5.context_compiler import ContextRequest, compile_research_context
+    from brain.v5.research_retrieval import (
+        RetrievalCoverage,
+        RetrievalItem,
+        RetrievalResult,
+    )
+
+    ws, claim = _seed_context_workspace(tmp_path)
+
+    def item(record_ref, family, score, record):
+        return RetrievalItem(
+            record_ref=record_ref,
+            family=family,
+            topic_id="qg",
+            exact_score=100 if score == 100 else 0,
+            lexical_score=0 if score == 100 else score,
+            total_score=score,
+            record=record,
+        )
+
+    items = (
+        item("session:session-qg", "sessions", 100, {"session_id": "session-qg", "topic_id": "qg"}),
+        item("topic:qg", "topics", 100, {"topic_id": "qg", "title": "Quantum gravity"}),
+        item(
+            f"claim:{claim.claim_id}",
+            "claims",
+            100,
+            {
+                "claim_id": claim.claim_id,
+                "statement": claim.statement,
+                "confidence_state": "conditional",
+            },
+        ),
+        item("code_state:z-high", "code_states", 9, {"title": "High relevance code state", "status": "active"}),
+        item("code_state:a-low", "code_states", 8, {"title": "Lower relevance code state", "status": "active"}),
+        item(
+            "validation_result:v1",
+            "validation_results",
+            7,
+            {"title": "Relevant validation result", "status": "passed"},
+        ),
+    )
+    result = RetrievalResult(
+        items=items,
+        total_count=len(items),
+        offset=0,
+        limit=20,
+        truncated=False,
+        next_offset=None,
+        index_status="fresh",
+        index_generation=1,
+        coverage=RetrievalCoverage(
+            exhaustive=True,
+            can_claim_no_result=True,
+            checked_families=("claims", "code_states", "validation_results"),
+            unchecked_families=(),
+            malformed_count=0,
+            reason="controlled complete result",
+        ),
+    )
+
+    bundle = compile_research_context(
+        ws,
+        ContextRequest(session_id="session-qg", candidate_limit=3),
+        query_fn=lambda _ws, _query: result,
+    )
+
+    assert [row["record_ref"] for row in bundle.candidate_summaries] == [
+        f"claim:{claim.claim_id}",
+        "code_state:z-high",
+        "validation_result:v1",
+    ]
+    assert [row["retrieval_rank"] for row in bundle.candidate_summaries] == [2, 3, 5]
+    assert [row["retrieval_score"] for row in bundle.candidate_summaries] == [100, 9, 7]
+    assert bundle.not_shown_count == 1
+    assert bundle.not_shown_reason == ("candidate_limit",)
+
+
+def test_context_selection_keeps_priority_order_after_diversity():
+    from brain.v5.context_selection import select_candidate_summaries
+
+    candidates = [
+        {"record_ref": "tool_run:fail-a", "family": "tool_runs", "status": "failed", "process_family": True, "retrieval_rank": 0},
+        {"record_ref": "tool_run:fail-b", "family": "tool_runs", "status": "failed", "process_family": True, "retrieval_rank": 1},
+        {"record_ref": "claim:c", "family": "claims", "status": "conditional", "process_family": False, "retrieval_rank": 2},
+        {"record_ref": "code_state:p", "family": "code_states", "status": "active", "process_family": True, "retrieval_rank": 3},
+        {"record_ref": "physics_object:o", "family": "physics_objects", "status": "active", "process_family": False, "retrieval_rank": 4},
+    ]
+
+    selected = select_candidate_summaries(candidates, limit=5)
+
+    assert [row["record_ref"] for row in selected] == [
+        "tool_run:fail-a",
+        "tool_run:fail-b",
+        "claim:c",
+        "code_state:p",
+        "physics_object:o",
+    ]
+
+
+def test_context_selection_reserves_execution_and_source_representatives():
+    from brain.v5.context_selection import select_candidate_summaries
+
+    candidates = [
+        {
+            "record_ref": f"evidence:e{index}",
+            "family": "evidence",
+            "status": "supports",
+            "process_family": False,
+            "retrieval_rank": index,
+        }
+        for index in range(20)
+    ]
+    candidates.extend(
+        [
+            {"record_ref": "claim:c", "family": "claims", "status": "hypothesis", "process_family": False, "retrieval_rank": 20},
+            {"record_ref": "validation_result:v", "family": "validation_results", "status": "passed", "process_family": True, "retrieval_rank": 21},
+            {"record_ref": "tool_run:r", "family": "tool_runs", "status": "supports", "process_family": True, "retrieval_rank": 22},
+            {"record_ref": "code_state:s", "family": "code_states", "status": "active", "process_family": True, "retrieval_rank": 23},
+            {"record_ref": "artifact:a", "family": "artifacts", "status": "active", "process_family": True, "retrieval_rank": 24},
+            {"record_ref": "source_asset:p", "family": "source_assets", "status": "active", "process_family": False, "retrieval_rank": 25},
+            {"record_ref": "source_asset:q", "family": "source_assets", "status": "active", "process_family": False, "retrieval_rank": 26},
+        ]
+    )
+
+    selected = select_candidate_summaries(candidates, limit=8)
+    refs = {row["record_ref"] for row in selected}
+
+    assert {
+        "claim:c",
+        "validation_result:v",
+        "tool_run:r",
+        "code_state:s",
+        "artifact:a",
+        "source_asset:p",
+        "source_asset:q",
+    }.issubset(refs)
+
+
+def test_context_compiler_does_not_count_hidden_anchors_as_candidates(tmp_path):
+    from brain.v5.context_compiler import ContextRequest, compile_research_context
+    from brain.v5.research_retrieval import RetrievalCoverage, RetrievalItem, RetrievalResult
+
+    ws, claim = _seed_context_workspace(tmp_path)
+    items = (
+        RetrievalItem(
+            record_ref=f"claim:{claim.claim_id}",
+            family="claims",
+            topic_id="qg",
+            exact_score=100,
+            lexical_score=0,
+            total_score=100,
+            record={"claim_id": claim.claim_id, "statement": claim.statement, "confidence_state": "conditional"},
+        ),
+        RetrievalItem(
+            record_ref="tool_run:r1",
+            family="tool_runs",
+            topic_id="qg",
+            exact_score=0,
+            lexical_score=5,
+            total_score=5,
+            record={"title": "Relevant replay", "status": "passed"},
+        ),
+    )
+    result = RetrievalResult(
+        items=items,
+        total_count=4,
+        offset=0,
+        limit=2,
+        truncated=True,
+        next_offset=2,
+        index_status="fresh",
+        index_generation=1,
+        coverage=RetrievalCoverage(
+            exhaustive=True,
+            can_claim_no_result=True,
+            checked_families=("claims", "tool_runs"),
+            unchecked_families=(),
+            malformed_count=0,
+            reason="anchors matched but are outside the bounded page",
+        ),
+    )
+
+    bundle = compile_research_context(
+        ws,
+        ContextRequest(session_id="session-qg", candidate_limit=1, record_limit=2),
+        query_fn=lambda _ws, _query: result,
+    )
+
+    assert bundle.not_shown_count == 1
+    assert bundle.not_shown_reason == ("retrieval_page_limit", "candidate_limit")
+
+
+def test_context_compiler_keeps_partial_recall_states_distinct(tmp_path):
+    from brain.v5.context_compiler import ContextRequest, compile_research_context
+    from brain.v5.research_retrieval import (
+        RetrievalCoverage,
+        RetrievalItem,
+        RetrievalResult,
+    )
+
+    ws, claim = _seed_context_workspace(tmp_path)
+    records = (
+        ("session:session-qg", "sessions", {"session_id": "session-qg", "topic_id": "qg"}),
+        ("topic:qg", "topics", {"topic_id": "qg", "title": "Quantum gravity"}),
+        (f"claim:{claim.claim_id}", "claims", {"claim_id": claim.claim_id, "statement": claim.statement}),
+        ("tool_run:r1", "tool_runs", {"title": "Failed replay", "status": "failed"}),
+    )
+    items = tuple(
+        RetrievalItem(
+            record_ref=record_ref,
+            family=family,
+            topic_id="qg",
+            exact_score=100 if index < 3 else 0,
+            lexical_score=0 if index < 3 else 5,
+            total_score=100 if index < 3 else 5,
+            record=record,
+        )
+        for index, (record_ref, family, record) in enumerate(records)
+    )
+    result = RetrievalResult(
+        items=items,
+        total_count=9,
+        offset=0,
+        limit=4,
+        truncated=True,
+        next_offset=4,
+        index_status="stale",
+        index_generation=1,
+        coverage=RetrievalCoverage(
+            exhaustive=False,
+            can_claim_no_result=False,
+            checked_families=("claims", "tool_runs"),
+            unchecked_families=("validation_results",),
+            malformed_count=1,
+            reason="stale index with a scoped read error",
+        ),
+        excluded_candidates=("claim:missing",),
+    )
+
+    bundle = compile_research_context(
+        ws,
+        ContextRequest(session_id="session-qg", candidate_limit=1),
+        query_fn=lambda _ws, _query: result,
+    )
+
+    assert bundle.index_status == "stale"
+    assert bundle.not_checked_families == ("validation_results",)
+    assert bundle.not_found_refs == ("claim:missing",)
+    assert bundle.read_errors == ("malformed_records_in_scope:1",)
+    assert bundle.partial is True
+    assert bundle.retrieval_truncated is True
+    assert bundle.render_truncated is False
+    assert bundle.truncated is True
+    assert bundle.not_shown_count == 6
+    assert bundle.not_shown_reason == ("retrieval_page_limit", "candidate_limit")
+    assert bundle.can_claim_no_prior_result is False
+
+
 def test_codex_record_ref_expansion_is_explicit_bounded_and_paginated(tmp_path):
     from brain.v5.codex_facade import codex_expand_context, codex_tool_catalog
     from brain.v5.mcp_tools import aitp_v5_codex_expand
@@ -268,7 +528,7 @@ def test_objective_graph_uses_indexed_snapshot_not_family_scans(tmp_path, monkey
     def fail_family_scan(*_args, **_kwargs):
         raise AssertionError("objective graph performed a family scan")
 
-    monkeypatch.setattr(objective_graph, "list_valid_records", fail_family_scan)
+    monkeypatch.setattr(objective_graph, "list_records", fail_family_scan)
 
     payload = objective_graph.build_objective_graph(ws, "session-qg")
 
@@ -370,12 +630,23 @@ def test_context_pack_contract_validates_budget_and_coverage_fields(tmp_path):
     pack = build_aitp_context_pack(ws, "session-qg", max_lines=45)
 
     assert validate_aitp_context_pack(pack).ok is True
+    assert pack["not_shown_count"] >= 0
+    assert isinstance(pack["not_shown_reason"], list)
+    assert isinstance(pack["not_found_refs"], list)
+    assert isinstance(pack["not_checked_families"], list)
+    assert isinstance(pack["retrieval_truncated"], bool)
+    assert isinstance(pack["render_truncated"], bool)
+    assert isinstance(pack["partial"], bool)
 
     tampered = dict(pack)
     tampered["byte_count"] = pack["byte_count"] + 1
     result = validate_aitp_context_pack(tampered)
 
     assert any(issue.path.endswith("byte_count") for issue in result.issues)
+
+    missing_not_shown = dict(pack)
+    missing_not_shown.pop("not_shown_count")
+    assert not validate_aitp_context_pack(missing_not_shown).ok
 
 
 def test_exact_ref_expansion_does_not_load_full_derived_index(tmp_path, monkeypatch):

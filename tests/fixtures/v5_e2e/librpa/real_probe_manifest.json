@@ -1,0 +1,39 @@
+{
+  "acceptance": {
+    "collector_policy_markers": [
+      "This script only reads Slurm/status files",
+      "It must not launch ABACUS, PyATB, LibRPA"
+    ],
+    "minimum_final_rows": 10,
+    "required_context_families": [
+      "artifacts",
+      "code_states",
+      "tool_runs",
+      "validation_results"
+    ],
+    "required_materials": [
+      "BN",
+      "MgO",
+      "Si"
+    ]
+  },
+  "inputs": {
+    "collector_script": {
+      "path": "F:/AI_Workspace/Theoretical-Physics/research/librpa/scripts/refresh_qsgw_remote_status.py",
+      "sha256": "bc3197bbd5c88b14c1a56961be758a7f683a555c13c68e3ccb6dd68c05707279"
+    },
+    "final_table": {
+      "path": "F:/AI_Workspace/Theoretical-Physics/research/librpa/reports/si_mgo_bn_qsgw_final_usable_current_20260523.tsv",
+      "sha256": "02dd365210642eeaddf4b6c53d00f5c38b1ffce917e1577e27902545c4b0116c"
+    },
+    "status_table": {
+      "path": "F:/AI_Workspace/Theoretical-Physics/research/librpa/reports/si_mgo_bn_qsgw_status_current_20260523.tsv",
+      "sha256": "3a54cb5d5dc85041764ff79ffb391f94f385c66fb05300c8e01c18ccf0e6733f"
+    }
+  },
+  "kind": "librpa_real_probe_manifest",
+  "objective": "Continue the LibRPA QSGW head-wing implementation: recover formula-code mappings, pinned commit, HPC attempts, failure history, validation, parameters and exact artifacts.",
+  "review_status": "authorized_for_read_only_probe",
+  "session_id": "v5-qsgw-headwing-update-librpa",
+  "topic_id": "qsgw-headwing-update-librpa"
+}

@@ -13,6 +13,10 @@ from brain.v5.contracts import (
     _require_nonempty_str,
 )
 from brain.v5.runtime_audit import _CLASSIFICATIONS
+from brain.v5.writer_scan import (
+    DIRECT_MUTATION_MECHANISMS,
+    WRITER_SOURCE_SCOPES,
+)
 
 
 _FAMILY_LIST_KEYS = (
@@ -27,6 +31,9 @@ _CAPABILITY_LIST_KEYS = (
     "catalog_operations",
     "catalog_mcp",
     "catalog_surfaces",
+    "registry_operations",
+    "registry_mcp",
+    "registry_surfaces",
     "public_surfaces",
     "mcp_wrappers",
     "compact_allowlist",
@@ -36,6 +43,10 @@ _CAPABILITY_LIST_KEYS = (
     "public_not_catalog",
     "compact_not_wrapped",
     "compact_not_catalog",
+    "registry_mcp_not_wrapped",
+    "wrapped_not_registry",
+    "registry_surface_not_public",
+    "compact_not_registry",
 )
 
 
@@ -86,6 +97,22 @@ def validate_runtime_capability_audit(
         if not isinstance(inventory.get("writer_count"), int) or inventory["writer_count"] < 0:
             result.add(f"{path}.inventory.writer_count", "must be a non-negative integer")
         if (
+            not isinstance(inventory.get("direct_mutation_candidate_count"), int)
+            or inventory["direct_mutation_candidate_count"] < 0
+        ):
+            result.add(
+                f"{path}.inventory.direct_mutation_candidate_count",
+                "must be a non-negative integer",
+            )
+        if (
+            not isinstance(inventory.get("direct_mutation_file_count"), int)
+            or inventory["direct_mutation_file_count"] < 0
+        ):
+            result.add(
+                f"{path}.inventory.direct_mutation_file_count",
+                "must be a non-negative integer",
+            )
+        if (
             not isinstance(inventory.get("actual_registry_record_count"), int)
             or inventory["actual_registry_record_count"] < 0
         ):
@@ -120,6 +147,35 @@ def validate_runtime_capability_audit(
             _validate_writer_row(row, f"{path}.writers[{index}]", result)
         if isinstance(inventory, dict) and inventory.get("writer_count") != len(writers):
             result.add(f"{path}.inventory.writer_count", "must equal the number of writer rows")
+
+    direct_mutations = payload.get("direct_mutation_candidates")
+    _require_list(direct_mutations, f"{path}.direct_mutation_candidates", result)
+    if isinstance(direct_mutations, list):
+        for index, row in enumerate(direct_mutations):
+            _validate_direct_mutation_row(
+                row,
+                f"{path}.direct_mutation_candidates[{index}]",
+                result,
+            )
+        if isinstance(inventory, dict):
+            if inventory.get("direct_mutation_candidate_count") != len(direct_mutations):
+                result.add(
+                    f"{path}.inventory.direct_mutation_candidate_count",
+                    "must equal the number of direct mutation rows",
+                )
+            mutation_files = {
+                row.get("path")
+                for row in direct_mutations
+                if isinstance(row, dict) and isinstance(row.get("path"), str)
+            }
+            if inventory.get("direct_mutation_file_count") != len(mutation_files):
+                result.add(
+                    f"{path}.inventory.direct_mutation_file_count",
+                    "must equal the number of files with direct mutation rows",
+                )
+
+    scan_policy = payload.get("writer_scan_policy")
+    _validate_writer_scan_policy(scan_policy, f"{path}.writer_scan_policy", result)
 
     capabilities = payload.get("capabilities")
     _require_mapping(capabilities, f"{path}.capabilities", result)
@@ -199,3 +255,99 @@ def _validate_writer_row(value: Any, path: str, result: ContractResult) -> None:
     _require_list(value.get("registry_families"), f"{path}.registry_families", result)
     if not isinstance(value.get("dynamic_registry_family"), bool):
         result.add(f"{path}.dynamic_registry_family", "must be a boolean")
+
+
+def _validate_direct_mutation_row(value: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(value, path, result)
+    if not isinstance(value, dict):
+        return
+    for key in (
+        "path",
+        "function",
+        "call",
+        "mechanism",
+        "source_scope",
+    ):
+        _require_nonempty_str(value, key, path, result)
+    for key in ("mode", "target_expression", "detail"):
+        if not isinstance(value.get(key), str):
+            result.add(f"{path}.{key}", "must be a string")
+    if not isinstance(value.get("line"), int) or value["line"] < 0:
+        result.add(f"{path}.line", "must be a non-negative integer")
+    if value.get("mechanism") not in DIRECT_MUTATION_MECHANISMS:
+        result.add(f"{path}.mechanism", "must be a recognized mutation mechanism")
+    if value.get("source_scope") not in WRITER_SOURCE_SCOPES:
+        result.add(f"{path}.source_scope", "must be a recognized writer source scope")
+
+
+def _validate_writer_scan_policy(value: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(value, path, result)
+    if not isinstance(value, dict):
+        return
+    for key in (
+        "included_source_prefixes",
+        "excluded_source_prefixes",
+        "recognized_mechanisms",
+        "known_gaps",
+        "excluded_mechanisms",
+        "parse_error_paths",
+    ):
+        items = value.get(key)
+        _require_list(items, f"{path}.{key}", result)
+        if isinstance(items, list) and not all(
+            isinstance(item, str) and item for item in items
+        ):
+            result.add(f"{path}.{key}", "must contain only non-empty strings")
+    if set(value.get("recognized_mechanisms") or []) != set(DIRECT_MUTATION_MECHANISMS):
+        result.add(
+            f"{path}.recognized_mechanisms",
+            "must enumerate every recognized direct mutation mechanism",
+        )
+    if not isinstance(value.get("coverage_complete"), bool):
+        result.add(f"{path}.coverage_complete", "must be a boolean")
+    if not isinstance(value.get("bounded_coverage_complete"), bool):
+        result.add(f"{path}.bounded_coverage_complete", "must be a boolean")
+    if value.get("closure_scope") != "declared_python_source_prefixes":
+        result.add(
+            f"{path}.closure_scope",
+            "must identify the declared Python source-prefix boundary",
+        )
+    counts = {}
+    for key in (
+        "scanned_source_file_count",
+        "parsed_source_file_count",
+        "parse_error_count",
+    ):
+        count = value.get(key)
+        if not isinstance(count, int) or count < 0:
+            result.add(f"{path}.{key}", "must be a non-negative integer")
+        else:
+            counts[key] = count
+    parse_error_paths = value.get("parse_error_paths")
+    if isinstance(parse_error_paths, list):
+        if counts.get("parse_error_count") != len(parse_error_paths):
+            result.add(
+                f"{path}.parse_error_count",
+                "must equal the number of parse_error_paths",
+            )
+    if len(counts) == 3:
+        if counts["parsed_source_file_count"] + counts["parse_error_count"] != counts[
+            "scanned_source_file_count"
+        ]:
+            result.add(
+                f"{path}.parsed_source_file_count",
+                "parsed plus parse-error counts must equal scanned count",
+            )
+    if value.get("bounded_coverage_complete") is True and (
+        counts.get("scanned_source_file_count", 0) == 0
+        or counts.get("parse_error_count") != 0
+    ):
+        result.add(
+            f"{path}.bounded_coverage_complete",
+            "requires at least one scanned source and zero parse errors",
+        )
+    if value.get("excluded_mechanisms") != value.get("known_gaps"):
+        result.add(
+            f"{path}.excluded_mechanisms",
+            "must explicitly mirror the known out-of-scope mechanisms",
+        )

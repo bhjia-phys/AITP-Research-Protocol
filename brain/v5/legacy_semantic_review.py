@@ -9,6 +9,7 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 
 from brain.v5.ids import prefixed_id
+from brain.v5.human_approval import checkpoint_can_authorize_trust
 from brain.v5.legacy_migration_audit import audit_legacy_migration_coverage
 from brain.v5.models import (
     ClaimRecord,
@@ -19,7 +20,15 @@ from brain.v5.models import (
 )
 from brain.v5.paths import WorkspacePaths
 from brain.v5.source_reconstruction import audit_source_reconstruction_batch
-from brain.v5.store import list_records, list_valid_records, write_record
+from brain.v5.store import (
+    list_records,
+    list_valid_records as _list_valid_records,
+    write_record,
+)
+
+
+def _legacy_records(directory, cls):
+    return _list_valid_records(directory, cls, operation="legacy_semantic_review")
 
 
 def build_legacy_semantic_review_queue(
@@ -158,6 +167,8 @@ def record_legacy_semantic_review_result(
         _require_claim(ws, claim_id, topic=str(topic_payload["topic"]))
     if status not in {"passed", "needs_revision", "inconclusive"}:
         raise ValueError("legacy semantic review status must be passed, needs_revision, or inconclusive")
+    if status == "passed" and not checkpoint_id.strip():
+        raise ValueError("passed legacy semantic review requires a human checkpoint")
     if not summary.strip():
         raise ValueError("legacy semantic review summary must not be empty")
     if not any([legacy_refs, typed_refs, evidence, validations]):
@@ -270,7 +281,7 @@ def _validate_basis_refs(
         _require_same_claim_refs(
             "evidence ref",
             evidence_refs,
-            list_valid_records(ws.registry_dir("evidence"), EvidenceRecord),
+            _legacy_records(ws.registry_dir("evidence"), EvidenceRecord),
             "evidence_id",
             claim_id,
         )
@@ -278,7 +289,7 @@ def _validate_basis_refs(
         _require_same_claim_refs(
             "validation result",
             validation_result_ids,
-            list_valid_records(ws.registry_dir("validation_results"), ValidationResultRecord),
+            _legacy_records(ws.registry_dir("validation_results"), ValidationResultRecord),
             "result_id",
             claim_id,
         )
@@ -342,6 +353,8 @@ def _require_semantic_review_checkpoint(
         raise ValueError("legacy semantic review checkpoint must belong to the reviewed topic and claim")
     if checkpoint.status != "decided" or checkpoint.decision not in {"approve", "approve_semantic_review"}:
         raise ValueError("legacy semantic review checkpoint must be decided with approve or approve_semantic_review")
+    if not checkpoint_can_authorize_trust(checkpoint):
+        raise ValueError("legacy semantic review checkpoint requires a host-verified human approval receipt")
 
 
 def _group_review_results(

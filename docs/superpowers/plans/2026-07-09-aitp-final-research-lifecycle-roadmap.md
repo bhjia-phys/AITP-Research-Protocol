@@ -19,9 +19,15 @@
 - Grounded knowledge, reviewed insight, L2 promotion, claim-trust mutation, and skill installation preserve their stated review gates.
 - Active claims are never rebound automatically.
 - Startup context is bounded, coverage-declared, and progressively expandable.
+- `brain/v5/native_mcp.py` and `aitp_v5_*` are the only production research-write
+  runtime. Legacy L0-L4 surfaces remain read-only by default for audit,
+  interpretation, migration, and rollback.
+- `AITP_LEGACY_ENABLE_WRITES=1` is limited to explicit one-time migration/debug
+  fixtures. Legacy candidate, stage, promotion, and graph-write workflows are
+  archived behavior and are never release-blocking acceptance targets.
 - Existing user changes in a dirty worktree are preserved and never reverted as cleanup.
-- Each Gate receives its own detailed TDD implementation plan before code changes begin.
-- Each Gate ends with focused tests, architecture checks, docs, migration notes, and an independently reviewable commit series.
+- Each milestone receives its own detailed TDD implementation plan before code changes begin.
+- Each milestone ends with focused tests, architecture checks, docs, migration notes, and an independently reviewable commit series.
 
 ---
 
@@ -86,53 +92,61 @@ These measurements are acceptance inputs, not estimates.
 | Workflow repeats successfully | Draft a procedural skill candidate and readiness report. | Reviewable package and applicability preview. | No automatic install or overwrite. |
 | AITP friction is observed | Write one generic problem dossier. | Human-reviewable harness issue. | Research runtime does not author an optimization plan. |
 
-## 4. Gate Dependency Graph
+## 4. Milestone Dependency Graph
 
 ```text
-Gate 0  Data, Query, Performance, Architecture Foundation
+M0  Data, Query, Performance, Architecture Foundation
   |
   v
-Gate 1  Scope, Session Lifecycle, Recall, Context Recovery
+M0.5  Complexity Reduction, Classification, Default-Surface Closure
   |
-  +------------+
-  v            v
-Gate 2         Gate 3
-Execution      Knowledge / Insight / RAG
-  |            |
-  +------v-----+
-         Gate 4  Skill Compilation And Use
-             |
-             v
-         Gate 5  Autonomous Host Integration And Feedback
-             |
-             v
-         Gate 6  Real Research End-To-End Acceptance
+  v
+V1-V4  LibRPA/HPC, QFT/QG, New Software, Multi-Topic Isolation
+  |
+  v
+M1-M5  Retain Or Extract Only Capabilities Proven By The Verticals
+  |
+  v
+M6  Final Real Research End-To-End Acceptance
 ```
 
-Gate 2 and Gate 3 may be developed as separate branches after Gate 1, but Gate
-4 consumes both and may not complete before both pass.
+The existing detailed-plan filenames retain `gate-*` as stable repository
+locators. In architecture and acceptance language, these are milestones
+`M0-M6`; the word "gate" is reserved for actual human, trust, validation, and
+mutation checkpoints inside the research lifecycle.
+
+The detailed M1-M5 plans are candidate implementation catalogs, not mandatory
+checklists. M0.5 and the four verticals may merge, replace, postpone, or delete
+their proposed classes, families, tools, and modules while preserving the
+user-facing outcomes and trust invariants.
+
+M3 depends on M2's pinned record/artifact/checkpoint and derivation
+contracts. This removes ambiguous parallel ownership of source reconstruction
+and hash-qualified refs. Independent retrieval experiments may branch, but no
+M3 canonical writer lands before the shared M2 foundation is green.
 
 ## 5. Mapping From The Previous Roadmap
 
 | Previous task | New location | Change |
 |---|---|---|
-| Full runtime file audit | Gate 0.1 | Becomes generated capability/family/file inventory with CI drift checks. |
-| Multi-topic scope and focus | Gate 1.1 | Adds polymorphic focus refs and record-level bridges. |
-| Closeout, resume, context coverage | Gates 1.2-1.4 | Uses one indexed query/context contract and correct persistent-record flags. |
-| Deep recall audit | Gate 1.3 | Adds index generation, read errors, excluded candidates, and non-exhaustive language. |
-| Pending recording queue | Gate 1.5 | Replaced by runtime staging plus one durable coalesced candidate batch. |
-| Run-dir extractor and monitor | Gates 2.2-2.3 | Generalized to local/remote compute intake and execution maturity. |
-| Skill distillation, install, applicability | Gate 4 | Procedural-only candidates, typed checkpoint, host-neutral package, usage refs. |
-| Harness feedback registry | Gate 5.3 | Replaced by one Markdown-backed problem-dossier family. |
-| Lifecycle MCP protocol | Gates 1.6 and 5.2 | Facade-first exposure plus generated capability registry. |
-| Deferred theory knowledge boundary | Gate 3 | Split into immediate schema/retrieval implementation and advanced discovery after acceptance. |
-| End-to-end lifecycle test | Gate 6 | Expanded to LibRPA/HPC, QFT/QG, new software, and multi-topic isolation. |
+| Full runtime file audit | M0.1 | Becomes generated capability/family/file inventory with CI drift checks. |
+| Complexity and public-surface reduction | M0.5 | Classifies every capability/family/writer, shrinks the default surface, and freezes unowned abstractions before vertical work. |
+| Multi-topic scope and focus | M1.1 | Adds polymorphic focus refs and record-level bridges. |
+| Closeout, resume, context coverage | M1.2-M1.4 | Uses one indexed query/context contract and correct persistent-record flags. |
+| Deep recall audit | M1.3 | Adds index generation, read errors, excluded candidates, and non-exhaustive language. |
+| Pending recording queue | M1.5 | Replaced by runtime staging plus one durable coalesced candidate batch. |
+| Run-dir extractor and monitor | M2.2-M2.3 | Generalized to local/remote compute intake and execution maturity. |
+| Skill distillation, install, applicability | M4 | Procedural-only candidates, typed checkpoint, host-neutral package, usage refs. |
+| Harness feedback registry | M5.3 | Replaced by one Markdown-backed problem-dossier family. |
+| Lifecycle MCP protocol | M1.6 and M5.2 | Facade-first exposure plus generated capability registry. |
+| Deferred theory knowledge boundary | M3 | Split into immediate schema/retrieval implementation and advanced discovery after acceptance. |
+| End-to-end lifecycle test | M6 | Expanded to LibRPA/HPC, QFT/QG, new software, and multi-topic isolation. |
 
-## 6. Gate 0: Data, Query, Performance, And Architecture Foundation
+## 6. M0: Data, Query, Performance, And Architecture Foundation
 
 **Detailed plan:** `docs/superpowers/plans/2026-07-10-aitp-gate-0-foundation.md`
 
-**Gate outcome:** Every canonical family is centrally registered, writes are
+**Milestone outcome:** Every canonical family is centrally registered, writes are
 safe and diagnosable, indexed queries replace repeated whole-store scans, compact
 entry meets latency budgets, host injection is bounded, and architecture tests
 are green without relaxing limits.
@@ -151,13 +165,14 @@ are green without relaxing limits.
 - Produces: generated lists of source files, actual registry directories,
   dataclasses, writers, readers, MCP/CLI surfaces, compact visibility, and tests.
 
-- [ ] Inventory every `brain/v5`, host hook, and `test_v5_*` file.
-- [ ] Detect used-but-unregistered and registered-but-unused families.
-- [ ] Detect writers missing exact-ref, inventory, timeline, graph, lifecycle, or
+- [x] Inventory every `brain/v5`, host hook, and `test_v5_*` file.
+- [x] Detect used-but-unregistered and registered-but-unused families.
+- [x] Detect writers missing exact-ref, inventory, timeline, graph, lifecycle, or
   recording coverage.
-- [ ] Detect capabilities missing MCP/CLI/bridge/compact declarations.
-- [ ] Persist a reviewable report and fail CI on unexplained drift.
-- [ ] Verify the current real-store family count and record the audit watermark.
+- [x] Detect capabilities missing MCP/CLI/bridge/compact declarations.
+- [x] Persist a reviewable report and fail CI on unexplained drift.
+- [x] Verify the real-store family count and record the audit watermark used by
+  that release probe; refresh it again during final index closure.
 
 ### Task 0.2: Add RecordEnvelope And RecordFamilySpec
 
@@ -210,7 +225,8 @@ are green without relaxing limits.
 - [x] Implement actual lock or compare-and-swap protection.
 - [x] Report malformed records with path and error instead of silently omitting
   them from canonical reads.
-- [ ] Limit tolerant reads to named legacy migration operations.
+- [x] Limit tolerant reads to named legacy migration or recovery operations;
+  ordinary runtime readers fail visibly on malformed canonical records.
 - [x] Migrate one low-risk writer family first and prove compatibility.
 
 ### Task 0.4: Build Generation-Stamped Index And Unified Query Layer
@@ -309,33 +325,246 @@ are green without relaxing limits.
 - Produces generated MCP/CLI/public/bridge/compact validation catalogs.
 
 - [x] Register current capabilities before adding new lifecycle operations.
-- [ ] Split oversized modules by existing responsibility boundaries while
+- [x] Split oversized modules by existing responsibility boundaries while
   preserving public imports.
 - [x] Keep compact Codex exposure intentionally small.
 - [x] Make missing or duplicate host exposure a registry validation failure.
-- [ ] Restore all architecture tests without increasing line limits.
-- [ ] Split CI into focused lanes and record a scheduled full-suite command.
+- [x] Restore all architecture tests without increasing line limits.
+- [x] Split CI into focused lanes and record a scheduled full-suite command.
 
-### Gate 0 Acceptance
+### Task 0.8: Close V5 Release Isolation And Legacy Compatibility Boundaries
 
-- [ ] All existing schema-v1 records remain readable.
-- [ ] Every actual registry family is registered and exact-expandable.
-- [ ] Canonical read errors are visible and block exhaustive recall claims.
-- [ ] Same-id conflicting writes are rejected.
-- [ ] Minimal entry warm p95 is under 1 second and cold p95 under 3 seconds on
+**Files:**
+- Create: `scripts/run_v5_test_lanes.py`
+- Create: `tests/test_v5_test_lanes.py`
+- Create: `.github/workflows/v5-test-lanes.yml`
+- Modify: `adapters/codex/SKILL.md`
+- Modify: `adapters/claude-code/SKILL.md`
+- Modify: `adapters/opencode/SKILL.md`
+- Modify: `adapters/openclaw/SKILL.md`
+- Modify: `adapters/README.md`
+- Modify: `docs/AITP_SPEC.md`
+- Modify: `docs/PROJECT_INDEX.md`
+- Modify: `tests/test_aitp_pm_deploy_surfaces.py`
+- Preserve unchanged: legacy L0-L4 candidate, stage, promotion, graph-write,
+  and end-to-end implementation/tests
+
+**Interfaces:**
+- Produces blocking `foundation`, `compatibility`, `legacy-compat`,
+  `slow-adapter`, and `full` v5 release lanes in system Temp.
+- Defines `full` as every `test_v5_*` module plus package-manager deployment,
+  legacy read/migration, flow-notebook read rendering, and write-guard tests.
+- Keeps `legacy-write-archive` explicit and opt-in; it is never invoked by
+  `full`, scheduled CI, milestone acceptance, or release readiness.
+- Local release evidence is taken from the exact staged candidate in an
+  isolated worktree so protected unrelated working-tree edits cannot alter the
+  result; CI naturally runs from a clean checkout.
+
+- [x] Clear inherited real-store and legacy-write bindings in every blocking
+  lane, preserve explicit per-test bases, and isolate `Path.home()` plus
+  host-specific config roots under system Temp without hiding the launching
+  Python environment. Do not set one global v5 topics root across the suite.
+- [x] Add a blocking compatibility lane for legacy reads, lossless migration,
+  schema-v1 materialization, old-store manifests, and default write blocking.
+- [x] Select legacy write-guard tests by node id so the opt-in bootstrap
+  escape-hatch test remains archive-only and cannot make old writes release
+  blocking.
+- [x] Exclude archived L0-L4 write workflows from `full` and CI release jobs.
+- [x] Revert candidate/preflight/L3-L4/promotion/legacy-graph changes that were
+  introduced only to make archived write E2E tests pass.
+- [x] Remove legacy MCP/stage instructions from active-looking adapter
+  references, make unsupported OpenClaw lifecycle status explicit, and cover
+  all four references in the blocking deployment-surface test.
+- [x] Route the specification, project index, and adapter index entrypoints to
+  v5, while labeling the v4 L0-L4 protocol tree as historical semantics rather
+  than a production write lifecycle.
+- [x] Run targeted regressions, all blocking named lanes, and the blocking full
+  v5 release suite in writable system Temp.
+- [ ] Optionally record the `legacy-write-archive` result as historical drift;
+  failures are not defects unless they break read, migration, or write blocking.
+- [x] Rebuild only the real `.aitp/indexes` projection and prove
+  `canonical_before == manifest == canonical_after`.
+- [x] Stage only the reviewed allowlist; exclude protected Harness Feedback,
+  README, shared mixed-hunk files, real canonical records, PDFs, images, and
+  temporary artifacts.
+
+### M0 Acceptance
+
+- [x] All existing schema-v1 records remain readable.
+- [x] Every actual registry family is registered and exact-expandable.
+- [x] Canonical read errors are visible and block exhaustive recall claims.
+- [x] Same-id conflicting writes are rejected.
+- [x] Minimal entry warm p95 is under 1 second and cold p95 under 3 seconds on
   the 10,000-record fixture.
-- [ ] Normal context expansion warm p95 is under 2 seconds.
-- [ ] No startup hook injects full topic memories.
-- [ ] Architecture tests pass without relaxed limits.
-- [ ] Gate 0 migration and rollback notes are documented.
+- [x] Normal context expansion warm p95 is under 2 seconds.
+- [x] No startup hook injects full topic memories.
+- [x] Architecture tests pass without relaxed limits.
+- [x] All blocking v5, package-manager, legacy read/migration, and write-guard
+  tests pass in system Temp with inherited legacy writes disabled. No blocking
+  test enables legacy writes; the escape-hatch node is archive-only.
+- [x] Archived L0-L4 write workflows are absent from release acceptance and no
+  production legacy state-machine change is justified solely by their result.
+- [x] Rebuilding `.aitp/indexes` leaves every canonical record hash unchanged.
+- [x] M0 migration and rollback notes are documented.
 
-## 7. Gate 1: Scope, Lifecycle, Recall, And Context Recovery
+## 6.5. M0.5: Complexity Reduction And Vertical Re-Baselining
+
+**Detailed design:** `docs/superpowers/specs/2026-07-11-aitp-m0-5-complexity-reduction-design.md`
+
+**Detailed plan:** `docs/superpowers/plans/2026-07-11-aitp-m0-5-complexity-reduction-review.md`
+
+**Milestone outcome:** Every current capability, family, writer, compatibility
+surface, and logical module has explicit ownership and evidence. Codex sees the
+smallest useful default surface, legacy behavior is isolated, and subsequent
+implementation follows real research verticals rather than the existing
+M1-M5 file lists.
+
+### CR0: Freeze And Complete Classification
+
+- [x] Classify all core capabilities as `core`, `vertical_extension`,
+  `maintenance`, `migration`, or `soft_deprecated` with caller and removal
+  evidence.
+- [x] Classify all 46 record families, including 12 zero-record families and
+  five `unimplemented_layout` families.
+- [x] Classify the 114 currently recognized helper-call writers (111 at the M0
+  baseline) into canonical,
+  derived, host/runtime, migration, or shared-primitive ownership; expand the
+  scanner to direct file APIs and every declared source tree before claiming
+  complete writer or canonical-bypass coverage.
+- [x] Add drift tests that reject unclassified capabilities, families, or
+  writers and reject new entries without a vertical owner.
+
+### CR1: Approve Compatibility And Reduce Default Exposure
+
+- [x] Obtain an explicit compatibility decision: one-release soft deprecation
+  (recommended), immediate removal, or classification-only freeze.
+- [x] If soft deprecation is approved, move six hook/bridge maintenance tools
+  out of compact visibility while preserving full/CLI forwarding shims.
+- [x] Keep the proposed compact surface at no more than ten tools and 6,000
+  schema bytes; load no unrelated legacy or migration catalog by default.
+- [x] Keep installation, release diagnostics, and migration discoverable but
+  absent from normal research context.
+
+### CR2: Close Context Selection Semantics
+
+- [x] Preserve retrieval relevance through candidate-summary selection rather
+  than re-sorting solely by family/ref.
+- [x] Add status/family diversity and explicit `not_shown` accounting while
+  preserving `not_found`, `not_checked`, stale, partial, and read-error states.
+- [x] Treat `curated_legacy_migration` route markers as visible migration
+  diagnostics, not fabricated route records and not hidden errors.
+- [x] Re-run LibRPA and QFT/QG real context probes against the fresh index.
+
+### CR3: Converge Canonical Writes By Vertical
+
+- [x] Route the first vertical's canonical writes through `RecordRepository`
+  with actor, collision, revision, exact-ref, and trust-boundary tests.
+- [x] Separate derived-output and host-install writers from canonical writer
+  policy.
+- [x] Repeat only for writers exercised by accepted verticals; maintain a
+  measured remainder until canonical bypass count reaches zero.
+  LibRPA, QFT/QG fixture, new-software, and multi-topic tests prove that every
+  canonical byte change in their scoped journeys equals a successful
+  `RecordRepository` create/revision/archive receipt. The bounded scanner keeps
+  the repository-wide dynamic/native remainder explicit rather than claiming
+  zero.
+- [x] Do not add a generic repository-adapter framework without two completed
+  verticals demonstrating the same requirement.
+
+### CR4: Isolate Legacy Imports And Replace Touched Shards
+
+- [x] Keep legacy support limited to read, audit, migration, schema-v1
+  materialization, and write blocking.
+- [x] Prevent compact native MCP from importing unrelated legacy modules.
+- [x] Replace a numbered shard with a named responsibility module only when a
+  real vertical touches that responsibility; preserve the public import shim
+  for the compatibility window.
+- [x] Track logical facade-plus-shard size and prohibit net complexity growth.
+
+### CR5: Execute Vertical-First Retention Review
+
+- [x] Close the minimal LibRPA/HPC and code-modification journey.
+- [x] Close the minimal QFT/quantum-gravity source and open-derivation journey.
+  The real paired-source probe now verifies both pinned PDF byte hashes, two
+  exact equation-range anchors, one source-grounded object per paper, one
+  explicitly hypothetical cross-paper relation, and one human-gated open proof
+  obligation with an ordered strategy. This is the smallest honest derivation
+  trace for the real topic, not a completed physics derivation or trust update.
+  See `docs/superpowers/progress/2026-07-13-qft-qg-real-vertical-probe.json`.
+- [x] Close new-software onboarding from no existing recipe or skill.
+- [x] Prove multi-topic knowledge/workflow reuse without claim/insight/trust
+  propagation.
+- [x] Retain, merge, postpone, or remove M1-M5 candidate capabilities from the
+  evidence of those journeys. The classification audit retains core,
+  maintenance, migration, and 77 owned vertical contracts; 12 unowned vertical
+  extensions are frozen without expansion during the compatibility window.
+
+### M0.5 Acceptance
+
+- [x] Every capability, family, and writer reported by the bounded scan policy
+  has exactly one reviewed classification and owner; the policy covers direct
+  file APIs rather than only named helper calls. Unbounded dynamic/native I/O
+  coverage remains explicitly false and cannot support a repository-wide
+  no-bypass claim.
+- [x] Compact visibility meets the ten-tool, 6,000-byte, and import budgets.
+- [x] No maintenance/migration tool appears in normal Codex context.
+- [x] Context exposes `not_shown` and retains relevance, diversity, coverage,
+  and explicit migration/read diagnostics.
+- [x] The first accepted vertical has no canonical repository bypass.
+- [x] Legacy writes remain blocked and archived write E2E remains non-release.
+- [x] Logical module complexity is non-increasing.
+- [x] The selected compatibility policy is approved and documented.
+
+## 7. M1: Scope, Lifecycle, Recall, And Context Recovery
 
 **Detailed plan:** `docs/superpowers/plans/2026-07-10-aitp-gate-1-lifecycle-context.md`
 
-**Gate outcome:** A real session resumes quickly with explicit focus and coverage,
+**Milestone outcome:** A real session resumes quickly with explicit focus and coverage,
 records durable moments through one review batch, and closes without trust
 leakage or forced claim rebinding.
+
+### Task 1.0: Incremental Query Overlay And Scoped Freshness
+
+**Files:**
+- Create: `brain/v5/query_index_generation.py`
+- Create: `brain/v5/query_index_locking.py`
+- Create: `brain/v5/query_index_delta.py`
+- Create: `brain/v5/query_index_delta_contracts.py`
+- Create: `tests/test_v5_query_index_delta.py`
+- Create: `tests/test_v5_query_index_concurrency.py`
+- Modify: `brain/v5/query_index.py`
+- Modify: `brain/v5/research_retrieval.py`
+- Modify: `brain/v5/record_repository.py`
+
+**Interfaces:**
+- Produces a disposable write-through delta over the full index generation.
+- Produces global and selected-family freshness/coverage tokens.
+- Produces a typed projection outcome on every repository write.
+- Produces explicit build/mutation leases whose OS advisory locks survive
+  exceptions and release on owner death.
+
+- [ ] Publish immutable full generations through one atomic root-manifest
+  pointer only after component hashes and three-way derived/canonical family
+  content watermarks agree; retain conservative M0/schema-v1 reads.
+- [ ] Project successful repository creates/revisions into a base-bound,
+  hash-verified atomic delta with fixed lock ordering, predecessor continuity,
+  and durable dirty-family semantics; canonical writes remain authoritative if
+  projection fails.
+- [ ] Overlay delta rows deterministically and compact them into a later full
+  generation without rewriting canonical records or dropping writes concurrent
+  with build/publication.
+- [ ] Require every successful v2 root publication, including ordinary rebuild,
+  to publish a delta rebound/empty state bound to the new base in the same
+  lease transaction.
+- [ ] Read root/base/delta as one retryable coherent snapshot and convert
+  integrity disagreement into typed stale diagnostics.
+- [ ] Allow scoped exhaustive coverage only when every requested family has a
+  strong content verification, not merely a fast state-token match; unscoped
+  queries still require global verification.
+- [ ] Provide a bounded strict single-family fallback with visible diagnostics,
+  never a hidden whole-store scan.
+- [ ] Prove a newly written closeout is immediately resumable and a newly
+  persisted recall audit does not invalidate the families it just checked.
 
 ### Task 1.1: Research Programs, Focus Sets, And Record-Level Bridges
 
@@ -380,7 +609,8 @@ leakage or forced claim rebinding.
 - [ ] Compile resume from closeout, focus, current typed records, and coverage.
 - [ ] Persist the same compact boundary to `session_start.generated.md`.
 - [ ] Preserve can-say/cannot-say, failed routes, gaps, next actions, and pending
-  candidate refs.
+  candidate refs as structured items with boundary class, scope, and exact
+  provenance rather than authority-bearing summary strings.
 - [ ] Test no claim-trust mutation and no summary-as-evidence behavior.
 
 ### Task 1.3: Deep Recall And Coverage Certificates
@@ -444,20 +674,22 @@ leakage or forced claim rebinding.
 - [ ] Test Codex compact discovery and bridge acceptance.
 - [ ] Ensure host startup and explicit facade entry compile the same context.
 
-### Gate 1 Acceptance
+### M1 Acceptance
 
 - [ ] Multi-topic focus never auto-rebinds the active claim.
 - [ ] Startup, topic-status, workspace-refresh, and compact-entry boundaries match.
 - [ ] Recall coverage is persisted and blocks unsupported exhaustive claims.
+- [ ] Lifecycle writes are immediately queryable through the delta overlay and
+  unrelated process writes do not invalidate scoped scientific recall.
 - [ ] One closeout creates one resumable process record and at most one review
   batch by default.
 - [ ] No lifecycle surface changes claim trust.
 
-## 8. Gate 2: Reproducible Execution, HPC, And Formal Derivations
+## 8. M2: Reproducible Execution, HPC, And Formal Derivations
 
 **Detailed plan:** `docs/superpowers/plans/2026-07-10-aitp-gate-2-execution-derivation.md`
 
-**Gate outcome:** Important computations and software use can be reproduced from
+**Milestone outcome:** Important computations and software use can be reproduced from
 exact code, scripts, parameters, environment, outputs, and validation; formal
 derivations have inspectable DAG records.
 
@@ -467,7 +699,17 @@ derivations have inspectable DAG records.
 - Create: `brain/v5/execution_environments.py`
 - Create: `brain/v5/execution_contracts.py`
 - Create: `brain/v5/execution_baselines.py`
+- Create: `brain/v5/pinned_record_refs.py`
+- Create: `brain/v5/checkpoint_bindings.py`
+- Create: `brain/v5/checkpoint_transactions.py`
+- Create: `brain/v5/artifact_blobs.py`
+- Create: `brain/v5/code_patch_manifests.py`
+- Create: `brain/v5/effective_attempts.py`
+- Create: `brain/v5/execution_scope_policy.py`
+- Create: `brain/v5/bound_execution.py`
+- Create: `brain/v5/scope_revalidation.py`
 - Create: `tests/test_v5_execution_memory.py`
+- Create: `tests/test_v5_execution_scope_policy.py`
 - Modify: `brain/v5/models.py`
 - Modify: `brain/v5/tools.py`
 - Modify: `brain/v5/code.py`
@@ -475,15 +717,62 @@ derivations have inspectable DAG records.
 **Interfaces:**
 - Produces: `ExecutionEnvironmentRecord`
 - Produces: `ExecutionBaselineRecord`
-- Extends: `ToolRecipeRecord`, `ToolRunRecord`, `CodeStateRecord`
+- Produces: `ArtifactBlobReceiptRecord`, `CodePatchManifestRecord`,
+  `CheckpointApplicationReceiptRecord`, `ScopeRevalidationDecisionRecord`
+- Produces: `ExecutionMaturityProjection`, `ExecutionScopeDecision`, and
+  `BoundExecutionReceipt`
+- Produces: `assess_execution_scope(ws, *, operation, consumer_scope,
+  dependency_refs, revalidation_decision_refs=()) -> ExecutionScopeDecision`
+- Extends: `ToolRecipeRecord`, `ToolRunRecord`, `CodeStateRecord`,
+  `ArtifactRecord`, and `HumanCheckpointRecord`
 
 - [ ] Add recipe versions, parameter roles/schema, scripts, environment,
   failures, stop rules, validation, and applicability.
 - [ ] Add structured argv, cwd, actual parameters, hashes, timestamps, outputs,
   validation refs, monitors, and skill usage to runs.
-- [ ] Add diagnostic, reproducible-candidate, accepted-baseline, and superseded
-  maturity states.
-- [ ] Require passed validation and checkpoint for accepted baseline.
+- [ ] Keep legacy bare ids readable but require typed recipe/code/environment/
+  artifact/validation/monitor/skill refs for v2 reproducibility gates.
+- [ ] Restrict new `ToolRunRecord.recorded_maturity` writes to `diagnostic`,
+  `reproducible_candidate`, or `superseded`; never write `accepted_baseline`
+  into a ToolRun or its legacy `maturity` compatibility alias.
+- [ ] Derive `ExecutionMaturityProjection.effective_maturity`; only an active
+  immutable `ExecutionBaselineRecord` may project `accepted_baseline`, with the
+  ToolRun left unchanged.
+- [ ] Freeze a recursive `FrozenDependencyManifest` by typed
+  ref/content-hash/revision, including every declared transitive edge and
+  terminal blob/patch receipt; support exact archived reads and prohibit latest,
+  path, URI, worktree, or tuple-based implicit lookup during replay.
+- [ ] Require every reproducibility-eligible `ArtifactRecord` to pin one
+  `ArtifactBlobReceiptRecord` by `artifact_blob_receipt_ref` and
+  `artifact_blob_receipt_hash`; require every dirty `CodeStateRecord` to pin one
+  `CodePatchManifestRecord` by `patch_manifest_ref` and `patch_manifest_hash`.
+  Each paired hash is the target record's `record_content_hash`, distinct from
+  artifact byte hashes and patch-entry byte hashes.
+- [ ] Pin/resolve/rehash required local bytes or approved immutable external
+  storage receipts; reference-only mutable paths cannot satisfy replay.
+- [ ] Make immutable `CheckpointApplicationReceiptRecord` the sole application/
+  consumption fact. Its deterministic id includes action payload hash and pinned
+  intent, subjects, request, and decision; its immutable payload pins those
+  refs/hashes plus result, terminal status, timestamps, and errors. Only
+  `status=applied` proves consumption. New checkpoint writes omit
+  `consumed_by_ref`; legacy values are read-only projections, and no application
+  path mutates a checkpoint again.
+- [ ] Require exact run/recipe/executor/output/failure-contract validation and a
+  subject/request-hash-bound checkpoint for accepted baseline.
+- [ ] Cover staged/unstaged/deleted/binary/submodule/required-untracked bytes in
+  dirty snapshots or retain `non_reproducible`.
+- [ ] Persist exact validation contract/run/recipe/executor/output/failure-mode
+  bindings and enforce the per-family topic/program/claim scope matrix.
+- [ ] Implement the matrix once in `assess_execution_scope(...)`; baseline,
+  context, and facade consumers call it directly and pass explicit pinned
+  `ScopeRevalidationDecisionRecord` refs rather than rediscovering decisions.
+- [ ] Provide a registered-executor high-risk `BoundExecutionReceipt` that pins
+  ToolRun, ValidationResult, and checkpoint-application receipt refs/hashes for
+  later Skill validation, plus explicit target-scope revalidation records.
+- [ ] Register `artifact_blob_receipts`, `code_patch_manifests`,
+  `checkpoint_application_receipts`, and `scope_revalidation_decisions` in
+  `RecordFamilySpec`, typed-ref resolution, inventory, lifecycle/index coverage,
+  and generated workspace layout before enabling their writers.
 - [ ] Redact secrets before environment/argv persistence.
 
 ### Task 2.2: Generic Local And Remote Compute Intake
@@ -492,14 +781,16 @@ derivations have inspectable DAG records.
 - Create: `brain/v5/compute_run_intake.py`
 - Create: `brain/v5/compute_run_intake_contracts.py`
 - Create: `tests/test_v5_compute_run_intake.py`
-- Modify: `brain/v5/harness_feedback.py`
 
 **Interfaces:**
-- Produces: `build_compute_run_intake(...) -> dict[str, Any]`
+- Produces: `ComputeRunIntakeRequest`, `ComputeRunIntakeReport`
+- Produces: `build_compute_run_intake(request: ComputeRunIntakeRequest) ->
+  ComputeRunIntakeReport`
 - Consumes local paths or remote URIs, scheduler/job metadata, and collector
   manifests.
 
-- [ ] Generalize the NiO run-dir extractor plan.
+- [ ] Generalize compute intake independently; NiO is fixture data and Harness
+  Feedback owns no execution/monitor behavior.
 - [ ] Capture collector version, captured time, code/executable hashes, input and
   output manifests, resources, lane, and missing fields.
 - [ ] Return typed prefill candidates without creating scientific evidence.
@@ -509,7 +800,8 @@ derivations have inspectable DAG records.
 
 **Files:**
 - Modify: `brain/v5/models.py`
-- Modify: `brain/v5/harness_feedback.py`
+- Modify: `brain/v5/hpc_cockpit.py`
+- Modify: `brain/v5/lane_contracts.py`
 - Create: `brain/v5/monitor_snapshots.py`
 - Create: `tests/test_v5_monitor_snapshots.py`
 
@@ -517,6 +809,8 @@ derivations have inspectable DAG records.
 - [ ] Add capture time, sequence, collector id, remote URI, and immutable id.
 - [ ] Preserve scheduler state as process evidence only.
 - [ ] Link snapshots to tool runs without overwriting earlier observations.
+- [ ] Resolve effective attempt/supersession, latest monitor state, partial
+  outputs, and final/diagnostic lane eligibility in both cockpit and baseline.
 
 ### Task 2.4: Formula-Code Relations
 
@@ -538,15 +832,23 @@ derivations have inspectable DAG records.
 ### Task 2.5: Formal Derivation Records And Legacy Migration
 
 **Files:**
+- Create: `brain/v5/derivation_models.py`
 - Create: `brain/v5/derivations.py`
 - Create: `brain/v5/derivation_contracts.py`
 - Create: `brain/v5/derivation_migration.py`
+- Create: `brain/v5/derivation_reviews.py`
 - Create: `tests/test_v5_derivations.py`
 - Create: `tests/test_v5_derivation_migration.py`
+- Create: `tests/test_v5_derivation_reviews.py`
 
 **Interfaces:**
 - Produces: `DerivationChainRecord`
 - Produces: `DerivationStepRecord`
+- Produces: `DerivationReviewRecord`
+- Produces: `record_derivation_review(...)`
+- Produces: `supersede_derivation_review(ws, prior_review_ref, replacement, *,
+  actor) -> WriteResult`
+- Produces: `project_derivation_status(...) -> DerivationStatusProjection`
 - Produces: `migrate_legacy_derivation_candidates(...) -> MigrationReport`
 
 - [ ] Represent target, assumptions, conventions, regime, dependencies, source
@@ -556,20 +858,29 @@ derivations have inspectable DAG records.
 - [ ] Import legacy derivation DAGs through reviewable migration reports.
 - [ ] Test cycles, missing dependencies, unresolved steps, and source-local
   reconstruction.
+- [ ] Separate `structurally_closed` from hash-bound reviewed/validated status
+  and integrate derivations into source-reconstruction review.
+- [ ] Reject foreign-topic dependencies without explicit bridge and target-side
+  revalidation.
 
-### Gate 2 Acceptance
+### M2 Acceptance
 
 - [ ] A validated run can be reproduced from exact structured records.
+- [ ] Current-record revisions cannot change an accepted baseline's frozen
+  meaning, and generic/replayed checkpoints cannot approve it.
+- [ ] Bare legacy ids or unhashed paths cannot satisfy reproducibility.
 - [ ] Dirty code without a patch is visibly non-reproducible.
 - [ ] Remote partial state is not reported as completion.
 - [ ] Formula-code context resolves theory, source, code, parameter, and tests.
 - [ ] Derivation chains preserve assumptions and open gaps.
+- [ ] M2 proves deterministic contract readiness; real LibRPA/HPC acceptance
+  remains a mandatory M6 probe.
 
-## 9. Gate 3: Grounded Knowledge, Speculative Insight, And Hybrid RAG
+## 9. M3: Grounded Knowledge, Speculative Insight, And Hybrid RAG
 
 **Detailed plan:** `docs/superpowers/plans/2026-07-10-aitp-gate-3-knowledge-insight-rag.md`
 
-**Gate outcome:** High-quality sources and accumulated research compile into
+**Milestone outcome:** High-quality sources and accumulated research compile into
 source-grounded physics knowledge plus separately labeled insights, retrieved
 through auditable hybrid lanes and exposed through bounded context.
 
@@ -577,13 +888,14 @@ through auditable hybrid lanes and exposed through bounded context.
 
 **Files:**
 - Create: `brain/v5/physics_knowledge_contracts.py`
+- Create: `brain/v5/physics_assertions.py`
 - Create: `brain/v5/physics_knowledge_migration.py`
 - Create: `tests/test_v5_physics_knowledge.py`
 - Modify: `brain/v5/models.py`
 - Modify: `brain/v5/physics_objects.py`
 
-- [ ] Add scope, role, canonical name, aliases, expressions, symbols, framework,
-  regime, assumptions, non-claims, source assertion, and review fields.
+- [ ] Keep stable object identity separate from source/convention-specific
+  `PhysicsAssertionRecord` definitions, equations, properties, and revisions.
 - [ ] Add typed subject/object refs, conditions, contradiction, source, status,
   and transfer policy to relations.
 - [ ] Preserve legacy ids and fields through schema-v1 readers.
@@ -594,12 +906,21 @@ through auditable hybrid lanes and exposed through bounded context.
 **Files:**
 - Create: `brain/v5/knowledge_candidates.py`
 - Create: `brain/v5/knowledge_promotion.py`
+- Create: `brain/v5/knowledge_review.py`
+- Create: `brain/v5/evidence_basis_policy.py`
 - Create: `brain/v5/insights.py`
 - Create: `brain/v5/knowledge_contracts.py`
 - Create: `tests/test_v5_knowledge_candidates.py`
 - Create: `tests/test_v5_insights.py`
 - Modify: `brain/v5/literature_source_extraction.py`
 - Modify: `brain/v5/research_distillation.py`
+- Modify: `brain/v5/evidence.py`
+- Modify: `brain/v5/pretool_policy.py`
+- Modify: `brain/v5/trust_audit.py`
+- Modify: `brain/v5/models.py`
+- Modify: `brain/v5/record_family_registry.py`
+- Modify: `brain/v5/record_refs.py`
+- Modify: `brain/v5/lifecycle_events.py`
 
 **Interfaces:**
 - Produces: `InsightRecord`
@@ -614,6 +935,11 @@ through auditable hybrid lanes and exposed through bounded context.
 - [ ] Require exact grounding refs for grounded promotion.
 - [ ] Keep reviewed insight non-evidence and able only to motivate research
   questions, routes, obligations, and checks.
+- [ ] Enforce evidence-basis admissibility in evidence write, pre-tool policy,
+  trust audit, and promotion so insight/search/summary/Skill cannot be wrapped
+  into claim support.
+- [ ] Bind per-item review to content hash and preserve revise/demote/invalidate/
+  supersede history.
 
 ### Task 3.3: Versioned Source Shelf And Structured Ingestion
 
@@ -622,6 +948,13 @@ through auditable hybrid lanes and exposed through bounded context.
 - Modify: `brain/v5/curated_rag_contracts.py`
 - Modify: `brain/v5/knowledge_connector_bindings.py`
 - Create: `brain/v5/source_shelf.py`
+- Create: `brain/v5/source_acquisition.py`
+- Modify: `brain/v5/source_reconstruction.py`
+- Modify: `brain/v5/source_reconstruction_review.py`
+- Modify: `brain/v5/models.py`
+- Modify: `brain/v5/record_family_registry.py`
+- Modify: `brain/v5/record_refs.py`
+- Modify: `brain/v5/lifecycle_events.py`
 - Create: `tests/test_v5_source_shelf.py`
 
 - [ ] Preserve source identity, URI, hash, access/license note, reader version,
@@ -631,6 +964,13 @@ through auditable hybrid lanes and exposed through bounded context.
 - [ ] Store equation labels, symbols, assumptions, and nearby prose as fields.
 - [ ] Keep copyrighted-source handling conservative and source-local.
 - [ ] Record extraction failures and stale source versions.
+- [ ] Require typed acquisition allow/deny/review receipts with access/license,
+  storage permission, acquired byte hash, and dedup identity; URI-only metadata
+  cannot satisfy grounding.
+- [ ] Make source reconstruction resolve every asserted anchor to a hash-pinned
+  asset/location; record presence or arbitrary labels cannot pass.
+- [ ] Turn persisted knowledge gaps into budgeted host/connector discovery
+  requests; keep snippets and unacquired results process-only.
 
 ### Task 3.4: Hybrid Retrieval And Evaluation
 
@@ -639,6 +979,7 @@ through auditable hybrid lanes and exposed through bounded context.
 - Create: `brain/v5/formula_retrieval.py`
 - Create: `brain/v5/graph_retrieval.py`
 - Create: `brain/v5/retrieval_fusion.py`
+- Create: `brain/v5/knowledge_snapshot.py`
 - Create: `tests/test_v5_knowledge_retrieval.py`
 - Create: `tests/fixtures/v5_retrieval/`
 
@@ -648,6 +989,10 @@ through auditable hybrid lanes and exposed through bounded context.
 - [ ] Add formula-normalized and graph-dependency retrieval.
 - [ ] Fuse independent rankings and expose component scores.
 - [ ] Keep grounded and speculative result lanes separate.
+- [ ] Bind all components to one record/shelf snapshot and expose stale/dirty/
+  errors, fixed tie rules, lane quotas, token allocation, and pagination.
+- [ ] Hard-filter incompatible framework/regime/conventions from default context;
+  comparison intent uses a separate lane.
 - [ ] Measure recall, contamination, exact-anchor recovery, convention mismatch,
   and reasoning-intensive retrieval on versioned fixtures.
 
@@ -663,26 +1008,36 @@ through auditable hybrid lanes and exposed through bounded context.
 
 - [ ] Add grounded knowledge, source anchors, derivation dependencies, and
   visibly separated insight to context profiles.
-- [ ] Add QFT/QG framework, regime, convention, and speculation boundaries.
+- [x] Add QFT/QG framework, regime, convention, and speculation boundaries.
 - [ ] Add exact expansion for source, equation, derivation, object, relation,
   and insight refs.
 - [ ] Enforce context token budgets and retrieval coverage.
 
-### Gate 3 Acceptance
+### M3 Acceptance
 
 - [ ] Grounded nodes have exact source or derivation grounding.
 - [ ] Insights never appear as evidence or claim support.
-- [ ] QFT/QG fixtures distinguish source results, interpretations, and
+- [ ] Object identity/assertion lineage, acquisition policy, source
+  reconstruction, and evidence admissibility are enforced end to end.
+- [ ] Evidence separates support basis from trace context and persists a
+  payload-hash-bound policy audit.
+- [ ] Review revise/demote/invalidate/supersede and target-scope revalidation
+  have exact records, hashes, and lifecycle behavior.
+- [x] QFT/QG fixtures distinguish source results, interpretations, and
   conjectures.
 - [ ] Hybrid retrieval improves target recall without hiding component scores or
   coverage.
 - [ ] Deleting all derived indexes leaves canonical knowledge intact.
+- [ ] Formula/graph/dense sidecar failures degrade visibly without false
+  deterministic or exhaustive claims.
+- [ ] M3 proves fixture-contract readiness only; real QFT/QG source-memory
+  acceptance remains mandatory in M6.
 
-## 10. Gate 4: Reviewed Skill Compilation, Installation, And Use
+## 10. M4: Reviewed Skill Compilation, Installation, And Use
 
 **Detailed plan:** `docs/superpowers/plans/2026-07-10-aitp-gate-4-skills.md`
 
-**Gate outcome:** Stable validated procedures become complete, reviewable,
+**Milestone outcome:** Stable validated procedures become complete, reviewable,
 host-neutral skill packages linked to their source research and actual usage.
 
 ### Task 4.1: Procedural Skill Distillation Records
@@ -718,15 +1073,31 @@ host-neutral skill packages linked to their source research and actual usage.
 **Files:**
 - Create: `brain/v5/project_skill_packages.py`
 - Create: `brain/v5/project_skill_contracts.py`
+- Create: `brain/v5/skill_install_transactions.py`
+- Create: `brain/v5/skill_validation_execution.py`
+- Create: `brain/v5/skill_package_artifacts.py`
 - Create: `tests/test_v5_project_skill_packages.py`
 - Modify: `brain/v5/domain_skill_shims.py`
 
 - [ ] Build complete package previews with manifest, provenance, references,
   scripts/templates when required, tests, version, and content hash.
+- [ ] Pin exact package bytes as an immutable artifact plus renderer/template
+  version; hashes alone cannot stand in for missing unreconstructable bytes.
+- [ ] Store a canonical sorted package-tree manifest whose files resolve through
+  M2 content-addressed blob receipts; reject symlinks/special files.
 - [ ] Use a dedicated AITP-generated namespace.
 - [ ] Bind install/overwrite approval to a typed human checkpoint, hash, target,
   and diff.
-- [ ] Preserve external domain shims as discovery adapters.
+- [ ] Run built-in declarative validators only; arbitrary commands use a
+  separate M2 high-risk execution request/receipt.
+- [ ] Route external domain-shim writes through the same project-root,
+  plan/checkpoint/receipt gate; legacy direct apply cannot bypass it.
+- [ ] Enforce immutable id/version/hash, idempotent reinstall, monotonic upgrade,
+  separately approved downgrade, and explicit history-preserving rollback.
+- [ ] Persist install intent before mutation, read back exact bytes, persist an
+  immutable receipt, and compensate on receipt failure.
+- [ ] Model prepared/materialized/completed/compensated/recovery-required intent
+  transitions and deterministic resume/recovery; rollback is a canonical plan.
 - [ ] Materialize host-specific shims without changing canonical skill content.
 
 ### Task 4.4: Applicability, Usage, And Patch Loop
@@ -736,7 +1107,6 @@ host-neutral skill packages linked to their source research and actual usage.
 - Create: `brain/v5/skill_usage.py`
 - Create: `tests/test_v5_skill_applicability.py`
 - Modify: `brain/v5/models.py`
-- Modify: `brain/v5/harness_feedback.py`
 
 - [ ] Derive applicability from domain/task/software/repository/code-path/
   physics-object/focus selectors.
@@ -744,9 +1114,10 @@ host-neutral skill packages linked to their source research and actual usage.
 - [ ] Record skill id/version usage on tool runs and execution baselines.
 - [ ] Generate patch proposals from new validated success, failure, or boundary
   evidence.
+- [ ] Reject Harness Feedback as Skill candidate/patch evidence.
 - [ ] Require review before patch application.
 
-### Gate 4 Acceptance
+### M4 Acceptance
 
 - [ ] No conceptual knowledge enters a skill package as a substitute for graph
   refs.
@@ -755,13 +1126,18 @@ host-neutral skill packages linked to their source research and actual usage.
 - [ ] An applicable skill is discoverable at session start without loading every
   full skill body.
 - [ ] Skill installation and overwrite cannot occur without a typed approval.
+- [ ] Domain shims, rollback, downgrade, and reinstall cannot bypass the same
+  transaction and checkpoint path.
+- [ ] Install readback cannot implicitly execute arbitrary generated scripts.
 - [ ] Actual use records the exact skill version.
+- [ ] Same id/version cannot map to different bytes and rollback preserves
+  immutable install history.
 
-## 11. Gate 5: Autonomous Research Moments, Hosts, And Feedback
+## 11. M5: Autonomous Research Moments, Hosts, And Feedback
 
 **Detailed plan:** `docs/superpowers/plans/2026-07-10-aitp-gate-5-autonomous-hosts.md`
 
-**Gate outcome:** AITP behaves as a quiet assistant inside real host sessions,
+**Milestone outcome:** AITP behaves as a quiet assistant inside real host sessions,
 captures objective process state, stages semantic candidates, exposes relevant
 skills/context, and records its own friction without taking engineering authority.
 
@@ -777,6 +1153,8 @@ skills/context, and records its own friction without taking engineering authorit
 - [ ] Map logical research events to ignore, auto-capture, candidate, review,
   checkpoint, or block decisions.
 - [ ] Include reason codes, minimum refs, dedup key, expiry, and verification.
+- [ ] Allow a persisted knowledge gap to request budgeted read-only literature
+  discovery while keeping acquisition and semantic promotion separately gated.
 - [ ] Skip low-value tool noise and recursive semantic-tool capture.
 - [ ] Test objective auto-writes separately from scientific promotion.
 
@@ -785,18 +1163,34 @@ skills/context, and records its own friction without taking engineering authorit
 **Files:**
 - Modify: `hooks/aitp_v5_claude_hook.py`
 - Modify: `hooks/aitp_v5_kimi_hook.py`
+- Modify: `deploy/templates/opencode/aitp-plugin.js`
+- Modify: `adapters/codex/SKILL.md`
+- Modify: `adapters/claude-code/SKILL.md`
+- Modify: `adapters/opencode/SKILL.md`
+- Modify: `adapters/openclaw/SKILL.md`
+- Modify: `docs/protocols/adapter_interface.md`
 - Modify: `brain/v5/hook_codex_install.py`
+- Modify: `brain/v5/hook_install_templates.py`
+- Modify: `brain/v5/hook_kimi_install.py`
+- Modify: `brain/v5/hook_install_audit.py`
 - Modify: `brain/v5/hook_protocol_contracts.py`
 - Modify: `brain/v5/host_readiness.py`
 - Modify: `brain/v5/hook_smoke_coverage.py`
 - Modify: `brain/v5/codex_facade.py`
+- Modify: `tests/test_aitp_pm_deploy_surfaces.py`
 - Create: `brain/v5/context_injection_events.py`
 - Create: `tests/test_v5_real_host_lifecycle.py`
 
 - [ ] Map native hooks to host-neutral research events.
 - [ ] Use first relevant prompt as ResearchTurnStart when SessionStart is absent.
+- [ ] Wire prompt-submit and stop/session-end only where supported; advertise and
+  test idempotent begin-turn/closeout facade fallbacks elsewhere.
 - [ ] Inject only bounded context fingerprints/refs and selected content.
 - [ ] Persist injection audits without full context duplication.
+- [ ] Namespace receipt/dedup identity by workspace/host/session/topic-focus/
+  event/profile and enforce named 800/4000 and 1500/7500 token/byte profiles.
+- [ ] Encode context receipt paths from canonical namespace SHA-256 rather than
+  raw host ids; reject traversal, reserved-name, and symlink escapes.
 - [ ] Prove hooks cannot write trusted evidence, promote memory, install skills,
   or mutate claim trust.
 - [ ] Quarantine legacy paths that inject stale stage guidance or full memories.
@@ -818,25 +1212,29 @@ skills/context, and records its own friction without taking engineering authorit
   source refs, proposed direction, status, and reviewer.
 - [ ] Keep `produces_harness_optimization_plan=false` and
   `can_install_skill=false`.
+- [ ] Remove legacy Skill-candidate/patch/preview/install/distillation emission
+  from Harness Feedback and test every prohibited path.
 - [ ] Move NiO-specific content into fixtures/examples.
 - [ ] Do not create separate friction/workflow/schema/automation/proposal
   registry families.
 - [ ] Aggregate repeated cases in a derived review view.
 
-### Gate 5 Acceptance
+### M5 Acceptance
 
 - [ ] A normal research session can start, retrieve, work, capture, review, and
   close without manual AITP file editing.
 - [ ] Objective capture is idempotent and low-noise.
 - [ ] Semantic candidates remain review gated.
+- [ ] Search snippets and unacquired literature results remain process-only.
 - [ ] Host context stays within budget and is traceable to exact refs.
 - [ ] Harness feedback produces only a reviewable problem dossier.
+- [ ] Harness feedback cannot create any Skill or automatic optimization action.
 
-## 12. Gate 6: Real Research End-To-End Acceptance
+## 12. M6: Real Research End-To-End Acceptance
 
 **Detailed plan:** `docs/superpowers/plans/2026-07-10-aitp-gate-6-e2e-release.md`
 
-**Gate outcome:** The full architecture is proven on realistic research journeys,
+**Milestone outcome:** The full architecture is proven on realistic research journeys,
 migrates the existing store without trust inflation, and is documented for real
 users and maintainers.
 
@@ -851,6 +1249,8 @@ users and maintainers.
 - [ ] Capture a diagnostic remote run and monitor snapshots.
 - [ ] Validate a reproducible candidate and accept a baseline through checkpoint.
 - [ ] Generate a skill patch candidate after a new failure without applying it.
+- [x] Repeat the journey read-only against a real LibRPA topic plus an approved
+  hash-pinned real HPC collector manifest or configured collector.
 
 ### Task 6.2: QFT/Quantum-Gravity Literature And Derivation Journey
 
@@ -858,11 +1258,21 @@ users and maintainers.
 - Create: `tests/test_v5_e2e_qft_qg_knowledge.py`
 - Create: `tests/fixtures/v5_e2e/qft_qg/`
 
-- [ ] Ingest a paired source set with exact anchors and conventions.
-- [ ] Build grounded objects, relations, and a derivation chain.
-- [ ] Record a cross-paper interpretation and speculative insight separately.
-- [ ] Retrieve compact context with framework/regime/speculation boundaries.
-- [ ] Prove no retrieval or insight path changes claim trust.
+- [x] Start from a knowledge gap, run bounded discovery, and ingest an allowed
+  paired source set with exact anchors and conventions.
+- [x] Build grounded objects and relations plus a minimal open derivation trace:
+  exact anchors and an ordered `ProofObligationRecord.proof_strategy`. Do not
+  describe this as a completed derivation or invent a full derivation ontology
+  until another real vertical demonstrates that the current trace is
+  insufficient.
+- [x] Record the cross-paper hypothesis and speculative insight separately from
+  source-grounded objects; neither is evidence.
+- [x] Retrieve compact context with framework/regime/speculation boundaries.
+- [x] Prove no retrieval or insight path changes claim trust.
+- [x] Repeat against hash-pinned real QFT/QG source assets and exact locations;
+  fixture excerpts alone are insufficient. The real probe passes with two
+  source anchors, two grounded objects, one cross-source hypothesis, and one
+  open proof obligation, while remaining orientation-only and trust-neutral.
 
 ### Task 6.3: New Software Onboarding Journey
 
@@ -870,34 +1280,54 @@ users and maintainers.
 - Create: `tests/test_v5_e2e_new_software.py`
 - Create: `tests/fixtures/v5_e2e/new_software/`
 
-- [ ] Start without an existing recipe or skill.
-- [ ] Capture source/docs, environment, diagnostic run, parameters, and failure.
-- [ ] Produce a validated reproducible recipe and accepted baseline.
-- [ ] Produce a reviewable procedural skill candidate.
+- [x] Start without an existing recipe or skill.
+- [x] Capture source/docs, environment, diagnostic run, parameters, and failure.
+- [ ] Produce a validated reproducible recipe and accepted baseline. The recipe
+  is validated; a distinct scientific-baseline acceptance checkpoint remains
+  open and is not implied by Skill installation approval.
+- [x] Produce a reviewable procedural skill candidate.
+- [x] Onboard one real disposable local research utility and reconstruct its
+  actual run; a mocked executable alone is insufficient.
 
 ### Task 6.4: Multi-Topic Isolation And Discovery Journey
 
 **Files:**
 - Create: `tests/test_v5_e2e_multi_topic_isolation.py`
 
-- [ ] Reuse a workflow and shared grounded knowledge across related topics.
-- [ ] Keep topic-local interpretations and insights scoped.
-- [ ] Require explicit bridge and target revalidation.
-- [ ] Prove claim trust never transfers.
+- [x] Reuse a workflow and shared grounded knowledge across related topics.
+- [x] Keep topic-local interpretations and insights scoped.
+- [x] Require explicit bridge and target revalidation.
+- [x] Prove claim trust never transfers.
 
 ### Task 6.5: Real-Store Migration And Performance Acceptance
 
 **Files:**
 - Create: `brain/v5/release_audit.py`
+- Create: `brain/v5/release_readiness.py`
+- Create: `brain/v5/migration_transactions.py`
+- Create: `brain/v5/mcp_release.py`
+- Create: `brain/v5/cli_release.py`
 - Create: `tests/test_v5_release_audit.py`
 - Create: `docs/superpowers/progress/aitp-final-release-audit.md`
 
 - [ ] Run a read-only pre-migration audit of the real store.
+- [ ] Build a hash-bound migration plan/checkpoint with per-record CAS, backup
+  before-images, immutable apply receipt, executable rollback plan, and immutable
+  rollback receipt.
 - [ ] Build indexes and report malformed records without rewriting them.
+- [ ] Prove full-base/delta write visibility, explicit delta-failure degradation,
+  exact canonical recovery, and deterministic repair/compaction.
 - [ ] Run compatibility, focused, architecture, host, and E2E suites.
 - [ ] Record cold/warm performance distributions and context budgets.
 - [ ] Verify no record became more trusted through migration.
-- [ ] Record rollback and index-rebuild procedures.
+- [ ] Execute rollback drill on a disposable clone; documentation alone does not
+  satisfy rollback.
+- [ ] Evaluate a machine-readable release decision that requires `passed` real
+  LibRPA/HPC, QFT/QG, and new-software receipts; skipped/unavailable/fixture-only
+  evidence blocks release.
+- [ ] Store probe/readiness receipts as hash-pinned generated release artifacts
+  with per-vertical input-fingerprint freshness; expose full-surface validated
+  release/migration routes.
 
 ### Task 6.6: Documentation And Installation Contract
 
@@ -916,20 +1346,26 @@ users and maintainers.
 - [ ] Document host startup, exact expansion, recovery, and troubleshooting.
 - [ ] Keep AGENTS.md and CLAUDE.md as thin project-memory shims.
 
-### Gate 6 Acceptance
+### M6 Acceptance
 
 - [ ] All four real journeys pass.
+- [ ] Every objective-mandated real vertical has a hash-pinned machine-validated
+  `passed` receipt; unavailable leaves M6 incomplete.
 - [ ] Performance budgets pass on the versioned large fixture.
 - [ ] Real-store migration audit has no unexplained read loss or trust inflation.
+- [ ] Delta deletion/corruption never hides canonical lifecycle records and is
+  recoverable without trust or content changes.
 - [ ] Targeted CI lanes and scheduled full-suite instructions are green.
+- [ ] A dedicated security-install lane and transactional migration/rollback
+  tests are green; migration and performance-smoke are named lanes.
 - [ ] README, spec, roadmap, install docs, and project memory agree.
 
-## 13. Cross-Gate Testing Commands
+## 13. Cross-Milestone Testing Commands
 
 Use the bundled workspace Python when the system Python lacks project
 dependencies. Use a writable explicit `--basetemp` on this Windows workspace.
 
-Focused commands grow by Gate:
+Focused commands grow by milestone:
 
 ```powershell
 python -m pytest tests\test_v5_record_family_registry.py tests\test_v5_record_repository.py tests\test_v5_query_index.py -q -p no:cacheprovider
@@ -942,14 +1378,14 @@ python -m pytest tests\test_v5_research_moments.py tests\test_v5_real_host_lifec
 python -m pytest tests\test_v5_e2e_librpa_research_memory.py tests\test_v5_e2e_qft_qg_knowledge.py tests\test_v5_e2e_new_software.py tests\test_v5_e2e_multi_topic_isolation.py -q -p no:cacheprovider
 ```
 
-Each detailed Gate plan records the exact temporary directory, expected failing
+Each detailed milestone plan records the exact temporary directory, expected failing
 test, expected passing test, and commit boundary for every task.
 
 ## 14. Commit And Review Policy
 
 - One independently testable task per commit series.
 - Documentation and migration notes ship with the task they describe.
-- Do not mix unrelated cleanup into a Gate commit.
+- Do not mix unrelated cleanup into a milestone commit.
 - Review kernel/trust boundaries before performance or UX review.
 - Review data migration before enabling automatic capture.
 - Review skill package diffs before installation tests.

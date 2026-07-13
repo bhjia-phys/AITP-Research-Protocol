@@ -8,6 +8,49 @@ import subprocess
 import sys
 
 
+_COMPACT_MAINTENANCE_NAMES = {
+    "aitp_v5_get_runtime_bridge_target_manifest",
+    "aitp_v5_get_runtime_payload_profiles",
+    "aitp_v5_audit_runtime_mcp_bridge_acceptance",
+    "aitp_v5_audit_hook_installation",
+    "aitp_v5_discover_hook_install_paths",
+    "aitp_v5_report_hook_smoke_coverage",
+}
+
+_EXPECTED_COMPACT_NAMES = {
+    "aitp_v5_codex_tool_catalog",
+    "aitp_v5_codex_autoroute",
+    "aitp_v5_codex_enter",
+    "aitp_v5_codex_expand",
+    "aitp_v5_codex_recording_step",
+    "aitp_v5_codex_record_apply",
+    "aitp_v5_codex_literature_step",
+    "aitp_v5_codex_closeout",
+    "aitp_v5_evaluate_pre_tool_policy",
+    "aitp_v5_preflight_trust_update",
+}
+
+_ALLOWED_COMPACT_LEGACY_MODULES = {
+    "brain.v5.legacy_record_materialization",
+}
+
+_FORBIDDEN_COMPACT_MODULES = {
+    "brain.mcp_server",
+    "brain.v5.claim_relation_map",
+    "brain.v5.codex_facade",
+    "brain.v5.legacy_l2_seed_audit",
+    "brain.v5.legacy_migration_audit",
+    "brain.v5.mcp_legacy",
+    "brain.v5.objective_graph",
+    "brain.v5.process_graph",
+    "brain.v5.research_timeline",
+}
+
+_FORBIDDEN_COMPACT_MODULE_PREFIXES = (
+    "brain.v5.workspace_migration_",
+)
+
+
 def _seed_workspace(tmp_path: Path):
     from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
 
@@ -44,6 +87,60 @@ def _read_content_length_message(stream: BytesIO) -> dict:
             break
     assert length is not None
     return json.loads(stream.read(length).decode("utf-8"))
+
+
+def _native_mcp_import_probe(tmp_path: Path, *, surface: str | None) -> dict:
+    repo_root = Path(__file__).resolve().parents[1]
+    code = f"""
+import json
+import os
+import sys
+if {surface is None!r}:
+    os.environ.pop("AITP_MCP_SURFACE", None)
+else:
+    os.environ["AITP_MCP_SURFACE"] = {surface!r}
+os.environ["AITP_V5_MCP_LOG"] = {str(tmp_path / 'surface.log')!r}
+sys.path.insert(0, {str(repo_root)!r})
+import brain.v5.native_mcp as server
+legacy_modules = sorted(
+    name for name in sys.modules
+    if name.startswith("brain.") and "legacy" in name.lower()
+)
+forbidden_modules = sorted(
+    name for name in sys.modules
+    if name in {sorted(_FORBIDDEN_COMPACT_MODULES)!r}
+    or name.startswith({tuple(_FORBIDDEN_COMPACT_MODULE_PREFIXES)!r})
+)
+maintenance_descriptions = {{
+    row["name"]: row["description"]
+    for row in server._TOOL_SCHEMAS
+    if row["name"] in {sorted(_COMPACT_MAINTENANCE_NAMES)!r}
+}}
+print(json.dumps({{
+    "tool_names": sorted(server._TOOLS),
+    "schema_bytes": len(json.dumps(
+        server._TOOL_SCHEMAS,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")),
+    "v5_module_count": len([
+        name for name in sys.modules if name.startswith("brain.v5")
+    ]),
+    "legacy_modules": legacy_modules,
+    "forbidden_modules": forbidden_modules,
+    "full_catalog_loaded": "brain.v5.mcp_tools" in sys.modules,
+    "maintenance_descriptions": maintenance_descriptions,
+}}))
+"""
+    process = subprocess.run(
+        [sys.executable, "-B", "-c", code],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert process.returncode == 0, process.stderr
+    return json.loads(process.stdout)
 
 
 def test_codex_facade_tools_are_compact_progressive_and_trust_safe(tmp_path):
@@ -542,6 +639,68 @@ def test_native_mcp_codex_surface_exposes_facade_not_full_kernel(tmp_path):
     assert len(tool_names) < 20
 
 
+def test_native_mcp_compact_surface_meets_exposure_and_import_budgets(tmp_path):
+    probe = _native_mcp_import_probe(tmp_path, surface="compact")
+
+    assert set(probe["tool_names"]) == _EXPECTED_COMPACT_NAMES
+    assert probe["schema_bytes"] <= 6000
+    assert probe["v5_module_count"] <= 120
+    assert len(probe["legacy_modules"]) <= 1
+    assert set(probe["legacy_modules"]) <= _ALLOWED_COMPACT_LEGACY_MODULES
+    assert probe["forbidden_modules"] == []
+    assert probe["full_catalog_loaded"] is False
+    assert probe["maintenance_descriptions"] == {}
+
+
+def test_native_mcp_full_surface_retains_soft_deprecated_compact_routes(tmp_path):
+    probe = _native_mcp_import_probe(tmp_path, surface="full")
+
+    assert _COMPACT_MAINTENANCE_NAMES <= set(probe["tool_names"])
+    assert set(probe["maintenance_descriptions"]) == _COMPACT_MAINTENANCE_NAMES
+    assert all(
+        "removed from compact" in description
+        for description in probe["maintenance_descriptions"].values()
+    )
+
+
+def test_native_mcp_compact_call_returns_soft_deprecation_route(tmp_path):
+    script = Path(__file__).resolve().parents[1] / "brain" / "v5" / "native_mcp.py"
+    env = {
+        **os.environ,
+        "AITP_MCP_SURFACE": "compact",
+        "AITP_V5_MCP_LOG": str(tmp_path / "mcp.log"),
+    }
+    request = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "tools/call",
+        "params": {
+            "name": "aitp_v5_get_runtime_bridge_target_manifest",
+            "arguments": {},
+        },
+    }
+    body = json.dumps(request).encode("utf-8")
+    process = subprocess.run(
+        [sys.executable, str(script)],
+        cwd=tmp_path,
+        input=f"Content-Length: {len(body)}\r\n\r\n".encode("utf-8") + body,
+        capture_output=True,
+        env=env,
+        timeout=10,
+    )
+
+    assert process.returncode == 0, process.stderr.decode("utf-8", "replace")
+    error = _read_content_length_message(BytesIO(process.stdout))["error"]
+    assert error["code"] == -32601
+    assert error["data"] == {
+        "reason": "soft_deprecated_from_compact",
+        "compatibility_window": "one_release",
+        "full_mcp_available": True,
+        "cli_route": "aitp-v5 adapter bridge-targets",
+    }
+    assert "removed from compact" in error["message"]
+
+
 def test_native_mcp_unknown_surface_fails_closed_to_codex_allowlist(tmp_path):
     script = Path(__file__).resolve().parents[1] / "brain" / "v5" / "native_mcp.py"
     env = {
@@ -569,6 +728,21 @@ def test_native_mcp_unknown_surface_fails_closed_to_codex_allowlist(tmp_path):
     assert "aitp_v5_apply_trust_update" not in tool_names
     assert "aitp_v5_register_source_asset" not in tool_names
     assert len(tool_names) < 20
+
+
+def test_native_mcp_blank_surface_fails_closed_to_compact(tmp_path):
+    probe = _native_mcp_import_probe(tmp_path, surface="   ")
+
+    assert set(probe["tool_names"]) == _EXPECTED_COMPACT_NAMES
+    assert probe["full_catalog_loaded"] is False
+
+
+def test_native_mcp_absent_surface_preserves_full_default(tmp_path):
+    probe = _native_mcp_import_probe(tmp_path, surface=None)
+
+    assert probe["full_catalog_loaded"] is True
+    assert _COMPACT_MAINTENANCE_NAMES <= set(probe["tool_names"])
+    assert "aitp_v5_apply_trust_update" in probe["tool_names"]
 
 
 def _git(repo: Path, *args: str) -> str:

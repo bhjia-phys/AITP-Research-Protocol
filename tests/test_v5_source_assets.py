@@ -172,7 +172,7 @@ def test_cli_and_mcp_capture_source_asset_auto_from_local_file(tmp_path, capsys)
     assert payload["orientation_only"] is True
     assert payload["can_update_claim_trust"] is False
     assert mcp_payload["asset_id"].startswith("source-asset-qg-")
-    assert mcp_payload["title"] == "Operator algebra notes"
+    assert mcp_payload["title"] == "operator algebra notes"
     assert copied_payload["metadata"]["original_local_path"] == str(source_file.resolve())
     assert copied_payload["metadata"]["local_path"] != str(source_file.resolve())
     assert copied_payload["metadata"]["blob_path"].startswith("source_blobs/qg/")

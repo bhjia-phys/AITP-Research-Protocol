@@ -5,11 +5,12 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import asdict, dataclass, fields
+from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from brain.v5.legacy_record_materialization import materialize_record_class
 from brain.v5.markdown import read_md, write_text_atomic
 from brain.v5.paths import WorkspacePaths
 from brain.v5.record_envelope import read_envelope_compat
@@ -19,6 +20,7 @@ from brain.v5.record_repository import record_family_paths
 
 _LATIN_TOKEN_RE = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.+-]*")
 _CJK_TOKEN_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]+")
+INDEX_SCHEMA_VERSION = 2
 _CONTEXT_SUMMARY_FIELDS = (
     "active_uncertainty",
     "artifact_type",
@@ -41,6 +43,7 @@ _CONTEXT_SUMMARY_FIELDS = (
     "statement",
     "summary",
     "superseded_by",
+    "supersedes_run_id",
     "timestamp",
     "tool_family",
     "tool_name",
@@ -51,6 +54,10 @@ _CONTEXT_SUMMARY_FIELDS = (
 
 class IndexIntegrityError(RuntimeError):
     """Raised when disposable index files disagree with their manifest."""
+
+
+class IndexSnapshotChangedError(RuntimeError):
+    """Raised when canonical records change during an index build scan."""
 
 
 @dataclass(frozen=True)
@@ -69,6 +76,7 @@ class IndexManifest:
     issues_hash: str
     document_file: str = "record_documents.json"
     lexical_file: str = "lexical_index.json"
+    index_schema_version: int = 1
 
 
 @dataclass(frozen=True)
@@ -101,6 +109,7 @@ class LoadedQueryIndex:
 def build_query_index(ws: WorkspacePaths) -> IndexBuildReport:
     """Build disposable sorted metadata and lexical indexes from canonical files."""
 
+    state_token_before = canonical_state_token(ws)
     specs = record_family_specs()
     documents: list[dict[str, Any]] = []
     issues: list[IndexBuildIssue] = []
@@ -136,6 +145,7 @@ def build_query_index(ws: WorkspacePaths) -> IndexBuildReport:
             canonical_pairs.append([document["record_ref"], document["record_content_hash"]])
             family_counts[family] = family_counts.get(family, 0) + 1
 
+    _project_tool_run_supersession(documents)
     documents.sort(key=lambda row: row["record_ref"])
     for doc_id, document in enumerate(documents):
         document["doc_id"] = doc_id
@@ -153,17 +163,23 @@ def build_query_index(ws: WorkspacePaths) -> IndexBuildReport:
     issues_hash = _hash_text(issues_text)
     content_hash = _hash_json(
         {
+            "index_schema_version": INDEX_SCHEMA_VERSION,
             "canonical_watermark": watermark,
             "document_hash": document_hash,
             "lexical_hash": lexical_hash,
             "issues_hash": issues_hash,
         }
     )
+    state_token_after = canonical_state_token(ws)
+    if state_token_after != state_token_before:
+        raise IndexSnapshotChangedError(
+            "canonical state changed while query index was built; retry after writes quiesce"
+        )
     generation = _next_generation(ws)
     manifest = IndexManifest(
         generation=generation,
         canonical_watermark=watermark,
-        canonical_state_token=canonical_state_token(ws),
+        canonical_state_token=state_token_before,
         content_hash=content_hash,
         record_count=len(documents),
         family_counts=dict(sorted(family_counts.items())),
@@ -173,6 +189,7 @@ def build_query_index(ws: WorkspacePaths) -> IndexBuildReport:
         document_hash=document_hash,
         lexical_hash=lexical_hash,
         issues_hash=issues_hash,
+        index_schema_version=INDEX_SCHEMA_VERSION,
     )
     index_dir = ws.root / "indexes"
     write_text_atomic(
@@ -206,6 +223,7 @@ def load_query_index(ws: WorkspacePaths) -> LoadedQueryIndex:
     index_dir = ws.root / "indexes"
     manifest_data = _load_json(index_dir / "manifest.json")
     manifest_data.setdefault("malformed_family_counts", {})
+    manifest_data.setdefault("index_schema_version", 1)
     manifest = IndexManifest(**manifest_data)
     document_text = (index_dir / manifest.document_file).read_text(encoding="utf-8")
     lexical_text = (index_dir / manifest.lexical_file).read_text(encoding="utf-8")
@@ -220,12 +238,13 @@ def load_query_index(ws: WorkspacePaths) -> LoadedQueryIndex:
         "lexical_hash": manifest.lexical_hash,
         "issues_hash": manifest.issues_hash,
     }
-    actual_hash = _hash_json(
-        {
-            "canonical_watermark": manifest.canonical_watermark,
-            **component_hashes,
-        }
-    )
+    hash_basis = {
+        "canonical_watermark": manifest.canonical_watermark,
+        **component_hashes,
+    }
+    if manifest.index_schema_version >= 2:
+        hash_basis["index_schema_version"] = manifest.index_schema_version
+    actual_hash = _hash_json(hash_basis)
     if component_hashes != expected_components or actual_hash != manifest.content_hash:
         raise IndexIntegrityError("manifest content hash does not match derived index files")
     documents = tuple(json.loads(document_text))
@@ -244,7 +263,17 @@ def load_query_manifest(ws: WorkspacePaths) -> IndexManifest:
 
     manifest_data = _load_json(ws.root / "indexes" / "manifest.json")
     manifest_data.setdefault("malformed_family_counts", {})
+    manifest_data.setdefault("index_schema_version", 1)
     return IndexManifest(**manifest_data)
+
+
+def query_index_is_fresh(ws: WorkspacePaths, manifest: IndexManifest) -> bool:
+    """Require both canonical-state and index-algorithm freshness."""
+
+    return (
+        manifest.index_schema_version == INDEX_SCHEMA_VERSION
+        and canonical_state_token(ws) == manifest.canonical_state_token
+    )
 
 
 def current_canonical_watermark(ws: WorkspacePaths) -> str:
@@ -307,6 +336,23 @@ def _document_row(ws, spec, frontmatter, body, envelope, path):
     }
 
 
+def _project_tool_run_supersession(documents: list[dict[str, Any]]) -> None:
+    successors: dict[str, list[str]] = {}
+    for document in documents:
+        if document.get("family") != "tool_runs":
+            continue
+        summary = document.get("summary_fields") or {}
+        prior_id = str(summary.get("supersedes_run_id") or "").strip()
+        if prior_id:
+            successors.setdefault(prior_id, []).append(str(document.get("record_id") or ""))
+    for document in documents:
+        if document.get("family") != "tool_runs":
+            continue
+        successor_ids = sorted(item for item in successors.get(document.get("record_id"), []) if item)
+        if successor_ids:
+            document["summary_fields"]["superseded_by"] = successor_ids[0]
+
+
 def _lexical_index(documents):
     postings: dict[str, set[int]] = {}
     for row in documents:
@@ -319,7 +365,14 @@ def lexical_terms(text: str) -> tuple[str, ...]:
     """Tokenize Latin identifiers and bounded CJK n-grams deterministically."""
 
     lowered = str(text or "").lower()
-    terms = set(_LATIN_TOKEN_RE.findall(lowered))
+    latin_tokens = set(_LATIN_TOKEN_RE.findall(lowered))
+    terms = set(latin_tokens)
+    for token in latin_tokens:
+        terms.update(
+            part
+            for part in re.split(r"[._+\-]+", token)
+            if len(part) >= 2
+        )
     for match in _CJK_TOKEN_RE.findall(lowered):
         sequence = match[:128]
         terms.add(sequence)
@@ -334,17 +387,13 @@ def lexical_terms(text: str) -> tuple[str, ...]:
 def _typed_materialization_status(frontmatter, spec) -> str:
     if spec.record_class is None:
         return "not_applicable"
-    values = dict(frontmatter)
-    if spec.id_field not in values:
-        for legacy_field in spec.legacy_id_fields:
-            if values.get(legacy_field):
-                values[spec.id_field] = values[legacy_field]
-                break
-    if "topic_id" not in values and values.get("topic"):
-        values["topic_id"] = values["topic"]
-    allowed = {field.name for field in fields(spec.record_class)}
     try:
-        spec.record_class(**{key: value for key, value in values.items() if key in allowed})
+        materialize_record_class(
+            frontmatter,
+            spec.record_class,
+            id_field=spec.id_field,
+            legacy_id_fields=spec.legacy_id_fields,
+        )
     except (TypeError, ValueError):
         return "unavailable"
     return "ready"

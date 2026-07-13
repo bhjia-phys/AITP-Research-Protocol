@@ -12,7 +12,7 @@ from brain.v5.ids import prefixed_id
 from brain.v5.markdown import write_md
 from brain.v5.models import ResearchRunEventRecord, ResearchRunRecord
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import list_valid_records, read_record, write_record
+from brain.v5.store import list_records, read_record, write_record
 
 RUN_STATUSES = {"active", "paused", "stopped", "complete", "blocked"}
 RUN_PHASES = {
@@ -264,7 +264,7 @@ def research_run_event_payload(record: ResearchRunEventRecord) -> dict[str, Any]
 def list_research_runs_for_topic(ws: WorkspacePaths, topic_id: str) -> list[ResearchRunRecord]:
     return [
         record
-        for record in list_valid_records(ws.registry_dir("research_runs"), ResearchRunRecord)
+        for record in list_records(ws.registry_dir("research_runs"), ResearchRunRecord)
         if record.topic_id == topic_id
     ]
 
@@ -272,7 +272,7 @@ def list_research_runs_for_topic(ws: WorkspacePaths, topic_id: str) -> list[Rese
 def list_research_run_events_for_topic(ws: WorkspacePaths, topic_id: str) -> list[ResearchRunEventRecord]:
     return [
         record
-        for record in list_valid_records(ws.registry_dir("research_run_events"), ResearchRunEventRecord)
+        for record in list_records(ws.registry_dir("research_run_events"), ResearchRunEventRecord)
         if record.topic_id == topic_id
     ]
 

@@ -18,7 +18,7 @@ from typing import Any
 from brain.v5.lane_contracts import get_effective_lane_contract
 from brain.v5.models import ClaimRecord, ToolRunRecord
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import list_valid_records
+from brain.v5.store import list_records
 
 # evidence_status values that mean the scheduler job is still in flight.
 _ACTIVE_EVIDENCE_STATUSES = {
@@ -47,15 +47,42 @@ def build_hpc_cockpit(ws: WorkspacePaths, topic_id: str) -> dict[str, Any]:
 
     all_runs = [
         run
-        for run in list_valid_records(ws.registry_dir("tool_runs"), ToolRunRecord)
+        for run in list_records(ws.registry_dir("tool_runs"), ToolRunRecord)
         if run.topic_id == topic_id
     ]
-    # A run whose superseded_by is set has been replaced by a later attempt and
-    # is no longer the current view of that scientific run.
-    current_runs = [run for run in all_runs if not getattr(run, "superseded_by", "")]
+    superseded_ids = {
+        run.supersedes_run_id
+        for run in all_runs
+        if getattr(run, "supersedes_run_id", "")
+    }
+    successor_by_prior = {
+        run.supersedes_run_id: run.run_id
+        for run in all_runs
+        if getattr(run, "supersedes_run_id", "")
+    }
+    # New records carry only the immutable forward edge. Reverse status is a
+    # derived read model; legacy ``superseded_by`` values remain read-only.
+    current_runs = [
+        run
+        for run in all_runs
+        if run.run_id not in superseded_ids and not getattr(run, "superseded_by", "")
+    ]
 
-    active_jobs = [_run_brief(run) for run in current_runs if run.evidence_status in _ACTIVE_EVIDENCE_STATUSES]
-    failures = [_run_brief(run) for run in current_runs if run.evidence_status in _FAILURE_EVIDENCE_STATUSES]
+    active_jobs = [
+        _run_brief(run, successor_by_prior.get(run.run_id, ""))
+        for run in current_runs
+        if run.evidence_status in _ACTIVE_EVIDENCE_STATUSES
+    ]
+    current_failures = [
+        _run_brief(run, successor_by_prior.get(run.run_id, ""))
+        for run in current_runs
+        if run.evidence_status in _FAILURE_EVIDENCE_STATUSES
+    ]
+    failures = [
+        _run_brief(run, successor_by_prior.get(run.run_id, ""))
+        for run in all_runs
+        if run.evidence_status in _FAILURE_EVIDENCE_STATUSES
+    ]
 
     lane_counts = {lane: 0 for lane in _LANES}
     missing_code_state: list[str] = []
@@ -82,7 +109,7 @@ def build_hpc_cockpit(ws: WorkspacePaths, topic_id: str) -> dict[str, Any]:
 
     claims = [
         claim
-        for claim in list_valid_records(ws.registry_dir("claims"), ClaimRecord)
+        for claim in list_records(ws.registry_dir("claims"), ClaimRecord)
         if claim.topic_id == topic_id
     ]
     current_claim = _claim_brief(claims[0]) if claims else None
@@ -92,7 +119,7 @@ def build_hpc_cockpit(ws: WorkspacePaths, topic_id: str) -> dict[str, Any]:
 
     next_actions = _derive_next_actions(
         active_jobs=active_jobs,
-        failures=failures,
+        failures=current_failures,
         missing_code_state=missing_code_state,
         missing_artifacts=missing_artifacts,
         lane_counts=lane_counts,
@@ -101,7 +128,7 @@ def build_hpc_cockpit(ws: WorkspacePaths, topic_id: str) -> dict[str, Any]:
     )
     allowed, not_allowed = _derive_conclusions(
         active_jobs=active_jobs,
-        failures=failures,
+        failures=current_failures,
         lane_counts=lane_counts,
         lane_contract=lane_contract,
     )
@@ -136,7 +163,7 @@ def build_hpc_cockpit(ws: WorkspacePaths, topic_id: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-def _run_brief(run: ToolRunRecord) -> dict[str, Any]:
+def _run_brief(run: ToolRunRecord, derived_successor_id: str = "") -> dict[str, Any]:
     return {
         "run_id": run.run_id,
         "scientific_run_id": run.scientific_run_id,
@@ -147,7 +174,7 @@ def _run_brief(run: ToolRunRecord) -> dict[str, Any]:
         "run_dir": _run_dir(run),
         "scheduler_job_id": _scheduler_job_id(run),
         "supersedes": run.supersedes,
-        "superseded_by": run.superseded_by,
+        "superseded_by": derived_successor_id or getattr(run, "superseded_by", ""),
         "has_code_state": bool(run.code_state_ids),
         "has_artifacts": bool(run.artifact_ids),
     }

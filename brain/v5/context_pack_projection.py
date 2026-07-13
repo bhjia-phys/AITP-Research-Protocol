@@ -97,7 +97,13 @@ def compiler_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
     return {
         "candidate_id": record_ref,
         "candidate_kind": str(candidate.get("family") or "typed_record"),
+        "family": str(candidate.get("family") or "typed_record"),
+        "status": str(candidate.get("status") or "unknown"),
         "title": str(candidate.get("title") or record_ref),
+        "retrieval_rank": int(candidate.get("retrieval_rank") or 0),
+        "retrieval_score": int(candidate.get("retrieval_score") or 0),
+        "exact_score": int(candidate.get("exact_score") or 0),
+        "lexical_score": int(candidate.get("lexical_score") or 0),
         "distillation_state": "needs_more_records",
         "can_draft_reusable_block": False,
         "can_materialize_without_human_review": False,
@@ -235,14 +241,14 @@ def bounded_context_lines(
     line_limit: int,
     max_bytes: int,
     max_tokens: int,
-) -> list[str]:
+) -> tuple[list[str], bool]:
     accepted: list[str] = []
     for line in lines[:line_limit]:
         candidate = "\n".join([*accepted, line]) + "\n"
         if len(candidate.encode("utf-8")) > max_bytes or estimate_context_tokens(candidate) > max_tokens:
             break
         accepted.append(line)
-    return accepted
+    return accepted, len(accepted) < len(lines)
 
 
 def _focus_terms(text: Any) -> tuple[str, ...]:

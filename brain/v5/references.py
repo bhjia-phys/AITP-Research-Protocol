@@ -7,7 +7,7 @@ from brain.v5.models import ReferenceLocationRecord
 from brain.v5.paths import WorkspacePaths
 from brain.v5.record_envelope import RecordActor
 from brain.v5.record_repository import RecordRepository
-from brain.v5.store import list_valid_records
+from brain.v5.store import list_records, list_valid_records
 
 
 def record_reference_location(
@@ -72,12 +72,30 @@ def record_reference_location(
     return record
 
 
-def list_reference_locations_for_claim(ws: WorkspacePaths, claim_id: str) -> list[ReferenceLocationRecord]:
+def list_reference_locations_for_claim(
+    ws: WorkspacePaths,
+    claim_id: str,
+) -> list[ReferenceLocationRecord]:
     """Return orientation-only reference locations linked to a claim."""
 
+    records = list_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord)
+    return [location for location in records if location.claim_id == claim_id]
+
+
+def list_legacy_reference_locations_for_brief(
+    ws: WorkspacePaths,
+    claim_id: str,
+) -> list[ReferenceLocationRecord]:
+    """Read legacy orientation records without weakening the strict query API."""
+
+    records = list_valid_records(
+        ws.registry_dir("reference_locations"),
+        ReferenceLocationRecord,
+        operation="execution_brief_legacy_orientation",
+    )
     return [
         location
-        for location in list_valid_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord)
+        for location in records
         if location.claim_id == claim_id
     ]
 

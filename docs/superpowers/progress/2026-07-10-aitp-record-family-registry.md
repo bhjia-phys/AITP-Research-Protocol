@@ -47,7 +47,7 @@ The two architecture failures are the pre-existing baseline: 39 source modules
 remain above the 500-line limit, and `brain/v5/cli.py` remains 1,509 lines. This
 task added no oversized module and did not raise either limit.
 
-## Next Gate 0 Work
+## Next M0 Work
 
 The registry is metadata convergence, not yet safe storage. The next tasks add a
 compatibility `RecordEnvelope`, then a strict atomic `RecordRepository` with

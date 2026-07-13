@@ -1,28 +1,22 @@
 ---
 name: aitp-runtime
-description: Reference for running AITP from Codex. All topic work uses MCP tools.
+description: Compatibility pointer for the Codex AITP v5 runtime; canonical Codex skills and plugin assets live under deploy/codex and plugins/aitp-research-protocol.
 ---
 
-# AITP Runtime For Codex
+# AITP V5 For Codex
 
-## Stage flow (v4.0)
+Codex is the default interactive research host. Use these canonical assets:
 
-```
-L0 (discover) → L1 (read → frame) → L3 (flexible workspace) → L4 (validate) → L2 (knowledge)
-```
+- MCP entrypoint: `brain/v5/native_mcp.py`
+- compact tools: `aitp_v5_codex_*`
+- runtime skill: `deploy/codex/skills/aitp-runtime.md`
+- gateway skill: `deploy/codex/skills/using-aitp.md`
+- plugin package: `plugins/aitp-research-protocol/`
 
-L5 removed in v4.0. L2 is the endpoint.
+Start with `aitp_v5_codex_autoroute`, restore bounded state with
+`aitp_v5_codex_enter`, expand one needed context family with
+`aitp_v5_codex_expand`, and use the guided recording/closeout facades only at
+durable research moments.
 
-## Key tools
-
-| Phase | Tool |
-|-------|------|
-| L0 | `aitp_bootstrap_topic`, `aitp_register_source`, `aitp_advance_to_l1` |
-| L1 | `aitp_parse_source_toc`, `aitp_write_section_intake`, `aitp_advance_to_l3` |
-| L3 | `aitp_switch_l3_activity`, `aitp_submit_candidate`, `aitp_submit_idea` |
-| L4 | `aitp_submit_l4_review`, `aitp_return_to_l3_from_l4` |
-| L2 | `aitp_request_promotion`, `aitp_promote_candidate` |
-
-Retreat: `aitp_retreat_to_l0`, `aitp_retreat_to_l1`.
-
-Always call `aitp_get_execution_brief` before deciding what to do.
+Legacy L0-L4 files are read/migration context only. Do not enable legacy writes
+or treat adapter text, summaries, RAG output, or Skills as scientific evidence.

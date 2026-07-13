@@ -1,0 +1,40 @@
+{
+  "kind": "qft_qg_real_probe_manifest",
+  "claim_id": "claim-quantum-gravity-von-neumann-20b0618e",
+  "objective": "Compare Wormholes and Averaging over N with Emergent Mixed States for Baby Universes and Black Holes: recover exact sources, formula assumptions, framework boundaries, derivations, interpretations and speculative gaps.",
+  "session_id": "v5-quantum-gravity-von-neumann-legacy-preserve",
+  "required_proof_strategy": [
+    "Define omega_N(a) and apply Mellin averaging to N -> omega_N(a).",
+    "Check linearity and omega_bar(1) = 1.",
+    "Check positivity on a^* a.",
+    "Construct the GNS representation and characterize its commutant.",
+    "Classify the von Neumann algebra type independently."
+  ],
+  "sources": [
+    {
+      "arxiv_id": "2605.15180",
+      "exact_anchor": {
+        "arxiv_version": "v1",
+        "equation_labels": ["2.5", "2.6", "2.7", "2.8", "2.9"],
+        "section_number": "2",
+        "uri": "arxiv:2605.15180v1#sec.2;eqs.2.5-2.9"
+      },
+      "paired_with": "2510.06376",
+      "record_ref": "source_asset:source-asset-quantum-gravity-von-neumann-paper-https-arxiv-org-pdf-2605-15180-pdf-e70-7f7ea60c",
+      "sha256": "e702a98370f96f419be10d19a1eda4e7994e34075a22511fc401f54e11ae7ed8"
+    },
+    {
+      "arxiv_id": "2510.06376",
+      "exact_anchor": {
+        "arxiv_version": "v2",
+        "equation_labels": ["2.1", "2.2"],
+        "section_number": "2",
+        "uri": "arxiv:2510.06376v2#sec.2;eqs.2.1-2.2"
+      },
+      "paired_with": "2605.15180",
+      "record_ref": "source_asset:source-asset-quantum-gravity-von-neumann-paper-https-arxiv-org-pdf-2510-06376-pdf-78c-5883028e",
+      "sha256": "78c2036abda3694dbea3ba5175ed3d2b3d2c2a288eaef9188801954c13c9f788"
+    }
+  ],
+  "topic_id": "quantum-gravity-von-neumann"
+}

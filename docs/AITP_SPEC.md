@@ -1,13 +1,16 @@
-# AITP Specification v4
+# AITP Specification v4 (Legacy Protocol Reference)
 
-Status: authoritative specification, subordinate to CHARTER.md.
-Last updated: 2026-04-26.
+Status: legacy v4 protocol reference, subordinate to CHARTER.md.
+Last content update: 2026-04-26.
+Runtime-boundary update: 2026-07-11.
 Version: 4.0 (brain-driven, skill-first, file-system state, domain-skills).
 
-This document is the single specification that bridges the Charter to the
-protocol tree. Every sub-protocol must be consistent with this SPEC.
-If a conflict arises, Charter overrides SPEC, SPEC overrides sub-protocols,
-sub-protocols override implementation.
+Production research uses `brain/v5/native_mcp.py`, `aitp_v5_*` typed tools,
+and the v5 operating-memory design under `docs/superpowers/specs/`. This file
+retains historical protocol semantics and the stable human-facing output rules
+explicitly referenced by `PROJECT_MEMORY.md`; it does not authorize legacy
+L0-L4 writes or define current release acceptance. When runtime guidance here
+conflicts with the v5 design or `PROJECT_MEMORY.md`, the v5 boundary wins.
 
 ---
 

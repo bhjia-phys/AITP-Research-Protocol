@@ -19,7 +19,7 @@ from brain.v5.models import (
 from brain.v5.paths import WorkspacePaths
 from brain.v5.recovery_session import recover_session_binding_for_read
 from brain.v5.research_timeline import previous_failed_attempts_from_relation_map
-from brain.v5.store import list_valid_records
+from brain.v5.store import list_records
 
 
 def build_objective_graph(

@@ -78,5 +78,5 @@ the benchmark.
   `context_compiler.py` 440, `indexed_topic_snapshot.py` 224,
   `context_pack.py` 425, `context_pack_projection.py` 249,
   `objective_graph.py` 491, and `research_timeline.py` 458.
-- Repository-wide architecture debt remains a Gate 0 Task 9 blocker and was not
+- Repository-wide architecture debt remains an M0 Task 9 blocker and was not
   hidden by relaxing limits.

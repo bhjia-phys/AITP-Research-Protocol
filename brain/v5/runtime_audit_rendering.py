@@ -32,6 +32,9 @@ def render_runtime_capability_audit_markdown(payload: dict[str, Any]) -> str:
         f"- repo_root: `{payload.get('repo_root', '')}`",
         f"- workspace_base: `{payload.get('workspace_base') or 'not inspected'}`",
         f"- file_count: `{inventory.get('file_count', 0)}`",
+        f"- legacy_writer_helper_count: `{inventory.get('writer_count', 0)}`",
+        f"- direct_mutation_candidate_count: `{inventory.get('direct_mutation_candidate_count', 0)}`",
+        f"- direct_mutation_file_count: `{inventory.get('direct_mutation_file_count', 0)}`",
         f"- actual_registry_record_count: `{inventory.get('actual_registry_record_count', 0)}`",
         f"- truth_source: `{payload.get('truth_source', '')}`",
         f"- summary_inputs_trusted: {str(payload.get('summary_inputs_trusted', True)).lower()}",
@@ -46,6 +49,12 @@ def render_runtime_capability_audit_markdown(payload: dict[str, Any]) -> str:
         lines.append(f"- {classification}: `{counts.get(classification, 0)}`")
     lines.extend(_capability_and_family_lines(capabilities, families))
     lines.extend(_writer_lines(payload.get("writers")))
+    lines.extend(
+        _direct_mutation_lines(
+            payload.get("direct_mutation_candidates"),
+            payload.get("writer_scan_policy"),
+        )
+    )
     lines.extend(_file_lines(payload.get("files")))
     lines.append("")
     return "\n".join(lines)
@@ -61,6 +70,8 @@ def _capability_and_family_lines(
         "",
         f"- catalog_operations: `{len(capabilities.get('catalog_operations') or [])}`",
         f"- catalog_mcp: `{len(capabilities.get('catalog_mcp') or [])}`",
+        f"- registry_operations: `{len(capabilities.get('registry_operations') or [])}`",
+        f"- registry_mcp: `{len(capabilities.get('registry_mcp') or [])}`",
         f"- public_surfaces: `{len(capabilities.get('public_surfaces') or [])}`",
         f"- mcp_wrappers: `{len(capabilities.get('mcp_wrappers') or [])}`",
         f"- compact_allowlist: `{len(capabilities.get('compact_allowlist') or [])}`",
@@ -72,6 +83,10 @@ def _capability_and_family_lines(
         "public_not_catalog",
         "compact_not_wrapped",
         "compact_not_catalog",
+        "registry_mcp_not_wrapped",
+        "wrapped_not_registry",
+        "registry_surface_not_public",
+        "compact_not_registry",
     ):
         lines.append(f"- {key}: `{_inline_list(capabilities.get(key))}`")
     lines.extend(
@@ -132,6 +147,47 @@ def _writer_lines(value: Any) -> list[str]:
                 call=_escape_table(str(row.get("call") or "")),
                 families=_escape_table(_inline_list(row.get("registry_families"))),
                 dynamic=str(row.get("dynamic_registry_family", False)).lower(),
+            )
+        )
+    return lines
+
+
+def _direct_mutation_lines(value: Any, policy_value: Any) -> list[str]:
+    policy = policy_value if isinstance(policy_value, dict) else {}
+    lines = [
+        "",
+        "## Direct Filesystem Mutation Candidates",
+        "",
+        f"- writer_scan_coverage_complete: {str(policy.get('coverage_complete', False)).lower()}",
+        f"- writer_scan_bounded_coverage_complete: {str(policy.get('bounded_coverage_complete', False)).lower()}",
+        f"- closure_scope: `{policy.get('closure_scope', '')}`",
+        f"- scanned_source_file_count: `{policy.get('scanned_source_file_count', 0)}`",
+        f"- parsed_source_file_count: `{policy.get('parsed_source_file_count', 0)}`",
+        f"- parse_error_count: `{policy.get('parse_error_count', 0)}`",
+        f"- parse_error_paths: `{_inline_list(policy.get('parse_error_paths'))}`",
+        f"- included_source_prefixes: `{_inline_list(policy.get('included_source_prefixes'))}`",
+        f"- excluded_source_prefixes: `{_inline_list(policy.get('excluded_source_prefixes'))}`",
+        f"- recognized_mechanisms: `{_inline_list(policy.get('recognized_mechanisms'))}`",
+        f"- excluded_mechanisms: `{_inline_list(policy.get('excluded_mechanisms'))}`",
+        f"- known_gaps: `{_inline_list(policy.get('known_gaps'))}`",
+        "",
+        "| Path | Function | Line | Mechanism | Call | Mode | Target | Detail | Scope |",
+        "|---|---|---:|---|---|---|---|---|---|",
+    ]
+    for row in value if isinstance(value, list) else []:
+        if not isinstance(row, dict):
+            continue
+        lines.append(
+            "| `{path}` | `{function}` | {line} | {mechanism} | `{call}` | {mode} | `{target}` | {detail} | {scope} |".format(
+                path=_escape_table(str(row.get("path") or "")),
+                function=_escape_table(str(row.get("function") or "")),
+                line=int(row.get("line") or 0),
+                mechanism=_escape_table(str(row.get("mechanism") or "")),
+                call=_escape_table(str(row.get("call") or "")),
+                mode=_escape_table(str(row.get("mode") or "")) or "none",
+                target=_escape_table(str(row.get("target_expression") or "")),
+                detail=_escape_table(str(row.get("detail") or "")) or "none",
+                scope=_escape_table(str(row.get("source_scope") or "")),
             )
         )
     return lines

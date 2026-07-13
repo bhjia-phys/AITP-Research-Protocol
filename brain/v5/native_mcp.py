@@ -21,7 +21,8 @@ from typing import Any
 _DIAG = Path(os.environ.get("AITP_V5_MCP_LOG", str(Path(tempfile.gettempdir()) / "aitp_v5_mcp_boot.log")))
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _OUTPUT_MODE = "content-length"
-_MCP_SURFACE = os.environ.get("AITP_MCP_SURFACE", "full").strip().lower() or "full"
+_MCP_SURFACE_ENV = os.environ.get("AITP_MCP_SURFACE")
+_MCP_SURFACE = "full" if _MCP_SURFACE_ENV is None else _MCP_SURFACE_ENV.strip().lower()
 # Legacy compatibility aliases are disabled by default in 1.0.0.  Set
 # AITP_V5_EXPOSE_COMPAT_ALIASES=1 only for migration/debug sessions that must
 # discover old topic shells; current research should use aitp_v5_* typed tools.
@@ -41,7 +42,12 @@ if str(_REPO_ROOT) not in sys.path:
 
 warnings.filterwarnings("ignore")
 
-from brain.v5.codex_facade import CODEX_SURFACE_TOOL_ALLOWLIST
+from brain.v5.capability_registry_data import (
+    COMPACT_MCP_NAMES,
+    COMPACT_SOFT_DEPRECATION_BY_MCP,
+)
+
+CODEX_SURFACE_TOOL_ALLOWLIST = COMPACT_MCP_NAMES
 
 
 def _log(message: str) -> None:
@@ -183,6 +189,9 @@ def _build_tool_schema(name: str, func: Any) -> dict[str, Any]:
     doc = (func.__doc__ or f"AITP v5 tool: {name}").strip()
     lines = doc.splitlines()
     description = lines[0] if lines else f"AITP v5 tool: {name}"
+    compatibility = COMPACT_SOFT_DEPRECATION_BY_MCP.get(name)
+    if compatibility:
+        description = f"{description} Compatibility warning: {compatibility['warning']}"
     return {
         "name": name,
         "description": description[:500],
@@ -197,14 +206,21 @@ def _build_tool_schema(name: str, func: Any) -> dict[str, Any]:
 def _load_tools() -> dict[str, Any]:
     _log(f"BOOT python={sys.executable} cwd={Path.cwd()}")
     _log(f"mcp_surface={_MCP_SURFACE}")
-    _log("importing brain.v5.mcp_tools ...")
-    from brain.v5 import mcp_tools
+    if _MCP_SURFACE == "none":
+        _log("MCP surface disabled")
+        return {}
+    if _surface_is_full():
+        _log("importing brain.v5.mcp_tools full catalog ...")
+        from brain.v5 import mcp_tools as tool_module
+    else:
+        _log("importing brain.v5.compact_mcp_tools ...")
+        from brain.v5 import compact_mcp_tools as tool_module
 
     tools = {
-        name: getattr(mcp_tools, name)
-        for name in dir(mcp_tools)
+        name: getattr(tool_module, name)
+        for name in dir(tool_module)
         if (name.startswith("aitp_v5_") or name in _COMPAT_TOOL_NAMES)
-        and callable(getattr(mcp_tools, name))
+        and callable(getattr(tool_module, name))
         and _surface_allows_tool(name)
     }
     _log(f"loaded {len(tools)} v5 tools")
@@ -212,13 +228,17 @@ def _load_tools() -> dict[str, Any]:
 
 
 def _surface_allows_tool(name: str) -> bool:
-    if _MCP_SURFACE in {"full", "kernel", "all", "dev"}:
+    if _surface_is_full():
         return True
     if _MCP_SURFACE in {"codex", "compact", "entry"}:
         return name in CODEX_SURFACE_TOOL_ALLOWLIST
     if _MCP_SURFACE == "none":
         return False
     return name in CODEX_SURFACE_TOOL_ALLOWLIST
+
+
+def _surface_is_full() -> bool:
+    return _MCP_SURFACE in {"full", "kernel", "all", "dev"}
 
 
 _TOOLS = _load_tools()
@@ -259,6 +279,22 @@ def _handle_request(request: dict[str, Any]) -> dict[str, Any] | None:
         arguments = params.get("arguments", {})
         func = _TOOLS.get(tool_name)
         if func is None:
+            compatibility = COMPACT_SOFT_DEPRECATION_BY_MCP.get(tool_name)
+            if compatibility and _MCP_SURFACE != "none":
+                return {
+                    "jsonrpc": "2.0",
+                    "id": request_id,
+                    "error": {
+                        "code": -32601,
+                        "message": compatibility["warning"],
+                        "data": {
+                            "reason": compatibility["lifecycle_status"],
+                            "compatibility_window": compatibility["compatibility_window"],
+                            "full_mcp_available": True,
+                            "cli_route": compatibility["cli_route"],
+                        },
+                    },
+                }
             return {
                 "jsonrpc": "2.0",
                 "id": request_id,

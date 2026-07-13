@@ -16,8 +16,13 @@ Date: 2026-07-10
   silently converting them into absence.
 - New writes validate the selected family dataclass schema and typed-ref syntax
   before taking the lock or creating a canonical file.
-- `list_valid_records` remains available only as a documented legacy-tolerant
-  helper and is forbidden for exhaustive queries or absence claims.
+- `list_valid_records` now requires one of nine named legacy-migration or
+  workspace-recovery operations. Ordinary runtime readers use strict reads;
+  a repository-level AST test rejects undeclared tolerant reads.
+- Six early schema-v1 shapes have explicit conservative typed-materialization
+  adapters. They preserve old ids and payload fields while keeping unknown
+  claims empty, old tool runs diagnostic/unreviewed, and incomplete code states
+  visibly non-reproducible.
 - `record_reference_location` is the first migrated public writer and preserves
   its existing return object and public surface while writing the full envelope.
 
@@ -34,14 +39,14 @@ payload and that only `record_content_hash` drives repository integrity checks.
 
 | Measure | Result |
 |---|---:|
-| Registry Markdown checked | 7,235 |
-| Current typed dataclasses loaded | 7,213 |
-| Explicit typed-construction issues | 22 |
-| Full strict scan wall time | 46.232 s |
+| All registered canonical locations checked | 9,741 |
+| Current typed dataclasses loaded | 9,741 |
+| Explicit typed-construction issues | 0 |
+| Schema-v1 records conservatively adapted | 22 |
 | Canonical records rewritten | 0 |
 
-The 22 issues are early simplified records that have a valid compatibility
-envelope but do not contain every field required by the current dataclass:
+The 22 adapted records are early simplified records that do not contain every
+field required by the current dataclass:
 
 | Family | Checked | Loaded | Issues |
 |---|---:|---:|---:|
@@ -52,11 +57,10 @@ envelope but do not contain every field required by the current dataclass:
 | `tool_runs` | 708 | 704 | 4 |
 | `validation_results` | 35 | 31 | 4 |
 
-These records are not absent and are not discarded. The compatibility-envelope
-audit loads all 7,235 records. Gate 0 query indexing must therefore index the
-document/envelope layer and separately expose typed-materialization readiness;
-the 22 records become an explicit migration backlog rather than disappearing
-from retrieval.
+These records are not absent, discarded, or silently treated as current-schema
+evidence. The document/envelope layer remains authoritative, and the adapter
+uses only conservative compatibility values. New enveloped records and new
+write payloads cannot use these defaults to bypass current schema validation.
 
 ## Verification
 

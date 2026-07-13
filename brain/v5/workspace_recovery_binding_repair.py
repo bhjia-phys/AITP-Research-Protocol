@@ -11,8 +11,16 @@ from brain.v5.active_claim_focus import detect_active_claim_focus_drift
 from brain.v5.markdown import write_text_atomic
 from brain.v5.models import ClaimRecord, SessionBinding, TopicRecord
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import list_valid_records, read_record
+from brain.v5.store import list_valid_records as _list_valid_records, read_record
 from brain.v5.workspace import bind_session
+
+
+def _legacy_records(directory, cls):
+    return _list_valid_records(
+        directory,
+        cls,
+        operation="workspace_recovery_binding_repair",
+    )
 
 
 def build_workspace_recovery_binding_repair(
@@ -242,7 +250,7 @@ def _focus_drift_repair_action(reconciliation: dict[str, Any]) -> dict[str, Any]
 
 def _claims_by_topic(ws: WorkspacePaths) -> dict[str, list[ClaimRecord]]:
     out: dict[str, list[ClaimRecord]] = defaultdict(list)
-    for claim in list_valid_records(ws.registry_dir("claims"), ClaimRecord):
+    for claim in _legacy_records(ws.registry_dir("claims"), ClaimRecord):
         out[claim.topic_id].append(claim)
     for claims in out.values():
         claims.sort(key=lambda claim: claim.claim_id)
@@ -251,7 +259,7 @@ def _claims_by_topic(ws: WorkspacePaths) -> dict[str, list[ClaimRecord]]:
 
 def _sessions_by_topic(ws: WorkspacePaths) -> dict[str, list[SessionBinding]]:
     out: dict[str, list[SessionBinding]] = defaultdict(list)
-    for session in list_valid_records(ws.root / "runtime" / "sessions", SessionBinding):
+    for session in _legacy_records(ws.root / "runtime" / "sessions", SessionBinding):
         out[session.topic_id].append(session)
     for sessions in out.values():
         sessions.sort(key=lambda session: session.session_id)
@@ -259,7 +267,7 @@ def _sessions_by_topic(ws: WorkspacePaths) -> dict[str, list[SessionBinding]]:
 
 
 def _session_by_id(ws: WorkspacePaths, session_id: str) -> SessionBinding | None:
-    for session in list_valid_records(ws.root / "runtime" / "sessions", SessionBinding):
+    for session in _legacy_records(ws.root / "runtime" / "sessions", SessionBinding):
         if session.session_id == session_id:
             return session
     return None

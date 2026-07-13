@@ -19,11 +19,19 @@ def test_v5_source_modules_stay_bounded():
     source_root = repo_root / "brain" / "v5"
 
     oversized = {}
-    for module_path in sorted(source_root.glob("*.py")):
+    for module_path in sorted(source_root.rglob("*.py")):
+        relative = module_path.relative_to(source_root)
         line_count = len(module_path.read_text(encoding="utf-8").splitlines())
-        limit = INTENTIONAL_V5_AGGREGATOR_LIMITS.get(module_path.name, MAX_V5_SOURCE_MODULE_LINES)
+        limit = (
+            INTENTIONAL_V5_AGGREGATOR_LIMITS.get(
+                module_path.name,
+                MAX_V5_SOURCE_MODULE_LINES,
+            )
+            if len(relative.parts) == 1
+            else MAX_V5_SOURCE_MODULE_LINES
+        )
         if line_count > limit:
-            oversized[module_path.name] = line_count
+            oversized[relative.as_posix()] = line_count
 
     assert oversized == {}
 

@@ -5,10 +5,12 @@ import pytest
 from brain.v5.models import ClaimRecord, SourceAssetRecord
 from brain.v5.paths import WorkspacePaths
 from brain.v5.query_index import (
+    INDEX_SCHEMA_VERSION,
     IndexIntegrityError,
     build_query_index,
     current_canonical_watermark,
     load_query_index,
+    query_index_is_fresh,
 )
 from brain.v5.research_retrieval import ResearchQuery, query_records
 from brain.v5.store import write_record
@@ -69,6 +71,34 @@ def test_query_index_is_deterministic_across_insertion_order(tmp_path):
     assert right_loaded.record_refs == left_loaded.record_refs
     assert left_report.indexed_count == 2
     assert left_report.malformed_count == 0
+
+
+def test_query_index_refuses_to_publish_a_concurrent_canonical_snapshot(tmp_path, monkeypatch):
+    import brain.v5.query_index as query_index
+
+    ws = _seed_index_workspace(tmp_path, ["claim", "source"])
+    index_dir = ws.root / "indexes"
+    sentinels = {
+        name: f"old-{name}\n"
+        for name in (
+            "record_documents.json",
+            "lexical_index.json",
+            "issues.json",
+            "manifest.json",
+        )
+    }
+    for name, content in sentinels.items():
+        (index_dir / name).write_text(content, encoding="utf-8")
+    tokens = iter(("state-before-scan", "state-after-scan"))
+    monkeypatch.setattr(query_index, "canonical_state_token", lambda _ws: next(tokens))
+
+    with pytest.raises(RuntimeError, match="changed while query index was built"):
+        build_query_index(ws)
+
+    assert {
+        name: (index_dir / name).read_text(encoding="utf-8")
+        for name in sentinels
+    } == sentinels
 
 
 def test_query_reports_stale_partial_coverage_after_canonical_change(tmp_path):
@@ -139,3 +169,28 @@ def test_query_index_watermark_accounts_for_malformed_canonical_files(tmp_path):
 
     assert report.malformed_count == 1
     assert report.manifest.canonical_watermark == current_canonical_watermark(ws)
+def test_lexical_terms_preserve_identifiers_and_add_natural_language_components():
+    from brain.v5.query_index import lexical_terms
+
+    terms = set(lexical_terms("target-spin-chain fit_inverse_size LibRPA.GW"))
+
+    assert "target-spin-chain" in terms
+    assert {"target", "spin", "chain"}.issubset(terms)
+    assert "fit_inverse_size" in terms
+    assert {"fit", "inverse", "size"}.issubset(terms)
+    assert "librpa.gw" in terms
+    assert {"librpa", "gw"}.issubset(terms)
+
+
+def test_index_freshness_includes_index_schema_version(tmp_path):
+    from dataclasses import replace
+
+    ws = _seed_index_workspace(tmp_path, ["claim", "source"])
+    report = build_query_index(ws)
+
+    assert report.manifest.index_schema_version == INDEX_SCHEMA_VERSION
+    assert query_index_is_fresh(ws, report.manifest) is True
+    assert query_index_is_fresh(
+        ws,
+        replace(report.manifest, index_schema_version=INDEX_SCHEMA_VERSION - 1),
+    ) is False

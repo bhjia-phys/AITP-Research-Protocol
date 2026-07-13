@@ -14,7 +14,7 @@ from brain.v5.models import (
     SourceReconstructionReviewResultRecord,
 )
 from brain.v5.record_refs import lookup_record_refs
-from brain.v5.store import list_valid_records
+from brain.v5.store import list_records
 from brain.v5.workspace import get_session_binding
 
 
@@ -135,13 +135,13 @@ def build_literature_source_set_readiness(
 
 def _record_index(ws) -> dict[str, list[Any]]:
     return {
-        "source_assets": list_valid_records(ws.registry_dir("source_assets"), SourceAssetRecord),
-        "reference_locations": list_valid_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord),
-        "physics_objects": list_valid_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord),
-        "object_relations": list_valid_records(ws.registry_dir("object_relations"), ObjectRelationRecord),
-        "proof_obligations": list_valid_records(ws.registry_dir("proof_obligations"), ProofObligationRecord),
-        "sensemaking_reports": list_valid_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord),
-        "source_reviews": list_valid_records(
+        "source_assets": list_records(ws.registry_dir("source_assets"), SourceAssetRecord),
+        "reference_locations": list_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord),
+        "physics_objects": list_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord),
+        "object_relations": list_records(ws.registry_dir("object_relations"), ObjectRelationRecord),
+        "proof_obligations": list_records(ws.registry_dir("proof_obligations"), ProofObligationRecord),
+        "sensemaking_reports": list_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord),
+        "source_reviews": list_records(
             ws.registry_dir("source_reconstruction_reviews"),
             SourceReconstructionReviewResultRecord,
         ),

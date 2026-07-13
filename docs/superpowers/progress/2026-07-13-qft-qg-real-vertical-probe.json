@@ -1,0 +1,47 @@
+{
+  "blockers": [],
+  "can_update_claim_trust": false,
+  "can_update_kernel_state": false,
+  "covered_source_refs": [
+    "source_asset:source-asset-quantum-gravity-von-neumann-paper-https-arxiv-org-pdf-2605-15180-pdf-e70-7f7ea60c",
+    "source_asset:source-asset-quantum-gravity-von-neumann-paper-https-arxiv-org-pdf-2510-06376-pdf-78c-5883028e"
+  ],
+  "exact_reference_location_count": 2,
+  "exact_reference_source_count": 2,
+  "exploratory_record_count": 1,
+  "index_generation": 12,
+  "input_fingerprint": "66c1cd8800c60c9a8d9cbc3dd3417d453631c860ffaa2bd15d075d9a38c9bb42",
+  "kind": "real_vertical_probe_receipt",
+  "object_relation_count": 7,
+  "ok": true,
+  "orientation_only": true,
+  "physics_object_count": 9,
+  "proof_obligation_count": 1,
+  "reference_location_count": 46,
+  "source_grounded_object_relation_count": 1,
+  "source_grounded_physics_object_count": 2,
+  "source_grounded_proof_obligation_count": 1,
+  "source_linked_speculative_insight_count": 1,
+  "sources": [
+    {
+      "arxiv_id": "2605.15180",
+      "paired_with": "2510.06376",
+      "record_ref": "source_asset:source-asset-quantum-gravity-von-neumann-paper-https-arxiv-org-pdf-2605-15180-pdf-e70-7f7ea60c",
+      "sha256": "e702a98370f96f419be10d19a1eda4e7994e34075a22511fc401f54e11ae7ed8",
+      "size_bytes": 1156333,
+      "title": "Wormholes and Averaging over N"
+    },
+    {
+      "arxiv_id": "2510.06376",
+      "paired_with": "2605.15180",
+      "record_ref": "source_asset:source-asset-quantum-gravity-von-neumann-paper-https-arxiv-org-pdf-2510-06376-pdf-78c-5883028e",
+      "sha256": "78c2036abda3694dbea3ba5175ed3d2b3d2c2a288eaef9188801954c13c9f788",
+      "size_bytes": 727371,
+      "title": "Emergent Mixed States for Baby Universes and Black Holes"
+    }
+  ],
+  "status": "passed",
+  "summary_inputs_trusted": false,
+  "topic_id": "quantum-gravity-von-neumann",
+  "vertical": "qft_qg_knowledge"
+}

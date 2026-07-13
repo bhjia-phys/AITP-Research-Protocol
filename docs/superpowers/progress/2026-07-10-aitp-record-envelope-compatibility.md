@@ -4,7 +4,7 @@ Date: 2026-07-10
 
 ## Result
 
-The Gate 0 compatibility layer can derive a validated, non-writing
+The M0 compatibility layer can derive a validated, non-writing
 `RecordEnvelope` for every canonical registry Markdown record in the live
 theoretical-physics topic store.
 
@@ -18,7 +18,7 @@ theoretical-physics topic store.
 | Full scan wall time | 39.674 s |
 
 The wall time is a measured cold full-scan baseline, not a target. It confirms
-why Gate 0 still needs a derived incremental query index before automatic
+why M0 still needs a derived incremental query index before automatic
 session recall can be enabled.
 
 ## Compatibility Decisions Proven Against Real Records

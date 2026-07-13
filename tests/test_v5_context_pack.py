@@ -68,6 +68,55 @@ def test_context_pack_is_bounded_codex_context_not_memory_or_trust(tmp_path):
     assert pack["distillation_status"]["top_candidates"][0]["missing_requirements"]
 
 
+def test_context_pack_accounts_for_candidates_hidden_by_host_limit(tmp_path):
+    from brain.v5.context_pack import build_aitp_context_pack
+    from brain.v5.query_index import build_query_index
+    from brain.v5.workspace import create_claim
+
+    ws, _claim = _seed_workspace(tmp_path)
+    for index in range(3):
+        create_claim(
+            ws,
+            topic_id="hs-chain",
+            statement=f"Alternative sector convention {index} requires comparison.",
+            evidence_profile="semi_formal_theory",
+            confidence_state="candidate",
+            active_uncertainty="The sector map remains unvalidated.",
+        )
+    build_query_index(ws)
+
+    pack = build_aitp_context_pack(ws, "s-hs", candidate_limit=1, max_lines=12)
+
+    assert len(pack["distillation_status"]["top_candidates"]) == 1
+    assert pack["not_shown_count"] >= 3
+    assert "context_pack_candidate_limit" in pack["not_shown_reason"]
+    candidate = pack["distillation_status"]["top_candidates"][0]
+    assert candidate["family"]
+    assert candidate["status"] == "hypothesis"
+    assert isinstance(candidate["retrieval_rank"], int)
+    assert isinstance(candidate["retrieval_score"], int)
+    assert pack["partial"] is True
+    assert pack["render_truncated"] is True
+    assert pack["orientation_only"] is True
+    assert pack["can_update_claim_trust"] is False
+
+
+def test_context_pack_fingerprint_ignores_noop_index_generation(tmp_path):
+    from brain.v5.context_pack import build_aitp_context_pack
+    from brain.v5.query_index import build_query_index
+
+    ws, _claim = _seed_workspace(tmp_path)
+    build_query_index(ws)
+    first = build_aitp_context_pack(ws, "s-hs", candidate_limit=2)
+
+    build_query_index(ws)
+    second = build_aitp_context_pack(ws, "s-hs", candidate_limit=2)
+
+    assert second["source_index_generation"] == first["source_index_generation"] + 1
+    assert second["fingerprint"] == first["fingerprint"]
+    assert second["pack_id"] == first["pack_id"]
+
+
 def test_context_pack_can_compile_explicit_task_profile(tmp_path):
     from brain.v5.context_pack import build_aitp_context_pack
     from brain.v5.public_surfaces import require_valid_public_surface

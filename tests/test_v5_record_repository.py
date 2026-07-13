@@ -1,12 +1,13 @@
 from dataclasses import replace
 from concurrent.futures import ThreadPoolExecutor
 import os
+from pathlib import Path
 import time
 
 import pytest
 
 from brain.v5.markdown import read_md
-from brain.v5.models import ClaimRecord, SourceAssetRecord
+from brain.v5.models import ClaimRecord, SourceAssetRecord, ToolRecipeRecord
 from brain.v5.paths import WorkspacePaths
 from brain.v5.record_envelope import RecordActor
 from brain.v5.record_repository import (
@@ -39,6 +40,15 @@ def _repository(tmp_path):
     return RecordRepository(
         ws,
         actor=RecordActor(actor_type="model", actor_id="repository-test", host="pytest"),
+    )
+
+
+def _tool_recipe(recipe_id: str) -> ToolRecipeRecord:
+    return ToolRecipeRecord(
+        recipe_id=recipe_id,
+        tool_family="remote_numerics",
+        tool_name="fisherd",
+        purpose="Run a bounded numerical audit.",
     )
 
 
@@ -87,6 +97,147 @@ def test_repository_validates_family_schema_before_write(tmp_path):
     assert not (
         repo.ws.registry_dir("claims") / "claim-incomplete.md"
     ).exists()
+
+
+def test_repository_path_containment_rejects_traversal_before_filesystem_access(
+    tmp_path,
+    monkeypatch,
+):
+    repo = _repository(tmp_path)
+    filesystem_calls = []
+
+    def unexpected_filesystem_call(path, *_args, **_kwargs):
+        filesystem_calls.append(str(path))
+        raise AssertionError(f"filesystem accessed for unsafe record id: {path}")
+
+    monkeypatch.setattr(Path, "resolve", unexpected_filesystem_call)
+    monkeypatch.setattr(Path, "mkdir", unexpected_filesystem_call)
+
+    with pytest.raises(ValueError, match="record_id"):
+        repo.write("tool_recipes", _tool_recipe("../escaped-family"))
+
+    assert filesystem_calls == []
+
+
+@pytest.mark.parametrize(
+    "record_id",
+    [
+        "../escaped-family",
+        r"..\escaped-family",
+        "nested/record",
+        r"nested\record",
+        ".",
+        "..",
+        " leading-space",
+        "trailing-space ",
+        "trailing-dot.",
+        "record:alias",
+        "NUL",
+    ],
+)
+def test_repository_path_containment_rejects_unsafe_or_ambiguous_record_ids(
+    tmp_path,
+    record_id,
+):
+    repo = _repository(tmp_path)
+
+    with pytest.raises(ValueError, match="record_id"):
+        repo.write("tool_recipes", _tool_recipe(record_id))
+
+
+def test_repository_path_containment_rejects_traversal_lock_paths(tmp_path):
+    repo = _repository(tmp_path)
+    family_lock_root = repo.ws.root / "runtime" / "locks" / "tool_recipes"
+    escaped_lock = repo.ws.root / "runtime" / "locks" / "escaped-family.lock"
+
+    with pytest.raises(ValueError, match="record_id"):
+        with repo.lock_record("tool_recipes", "../escaped-family"):
+            pass
+
+    assert not family_lock_root.exists()
+    assert not escaped_lock.exists()
+
+
+def test_repository_path_containment_marks_unsafe_exact_refs_malformed_without_lookup(
+    tmp_path,
+    monkeypatch,
+):
+    repo = _repository(tmp_path)
+    looked_up_paths = []
+
+    def track_exists(path):
+        looked_up_paths.append(str(path))
+        return False
+
+    monkeypatch.setattr(Path, "exists", track_exists)
+
+    result = repo.read("tool_recipe:../escaped-family")
+
+    assert result.status == "malformed_ref"
+    assert result.path == ""
+    assert looked_up_paths == []
+
+
+def test_repository_path_containment_rejects_resolved_canonical_escape(
+    tmp_path,
+    monkeypatch,
+):
+    repo = _repository(tmp_path)
+    record = _tool_recipe("fisherd-bounded-numerical-audit")
+    canonical_path = (
+        repo.ws.registry_dir("tool_recipes") / f"{record.recipe_id}.md"
+    )
+    escaped_path = (tmp_path / "escaped-canonical.md").resolve()
+    real_resolve = Path.resolve
+
+    def resolve_with_escape(path, *args, **kwargs):
+        if path == canonical_path:
+            return escaped_path
+        return real_resolve(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", resolve_with_escape)
+
+    with pytest.raises(ValueError, match="canonical record path escaped"):
+        repo.write("tool_recipes", record)
+
+
+def test_repository_path_containment_rejects_resolved_lock_escape(
+    tmp_path,
+    monkeypatch,
+):
+    repo = _repository(tmp_path)
+    record_id = "fisherd-bounded-numerical-audit"
+    family_lock_root = repo.ws.root / "runtime" / "locks" / "tool_recipes"
+    lock_path = family_lock_root / f"{record_id}.lock"
+    escaped_path = (repo.ws.root / "runtime" / "locks" / "escaped.lock").resolve()
+    real_resolve = Path.resolve
+
+    def resolve_with_escape(path, *args, **kwargs):
+        if path == lock_path:
+            return escaped_path
+        return real_resolve(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", resolve_with_escape)
+
+    with pytest.raises(ValueError, match="record lock path escaped"):
+        with repo.lock_record("tool_recipes", record_id):
+            pass
+
+    assert not family_lock_root.exists()
+
+
+def test_repository_path_containment_preserves_valid_recipe_ids_and_exact_reads(tmp_path):
+    repo = _repository(tmp_path)
+    record = _tool_recipe("fisherd-bounded-numerical-audit")
+
+    written = repo.write("tool_recipes", record)
+    found = repo.read(f"tool_recipe:{record.recipe_id}")
+
+    assert Path(written.path).resolve().is_relative_to(
+        repo.ws.registry_dir("tool_recipes").resolve()
+    )
+    assert found.status == "found"
+    assert found.record == record
 
 
 def test_repository_rejects_untyped_source_record_refs(tmp_path):
@@ -313,6 +464,33 @@ def test_repository_results_satisfy_trust_neutral_contracts(tmp_path):
 
     assert validate_write_result(write_result) == ()
     assert validate_record_read_report(read_report) == ()
+
+
+def test_record_lock_closes_its_descriptor_once(tmp_path, monkeypatch):
+    import brain.v5.record_repository as repository_module
+
+    closed_descriptors = []
+
+    class TrackingOS:
+        O_CREAT = os.O_CREAT
+        O_EXCL = os.O_EXCL
+        O_WRONLY = os.O_WRONLY
+        open = staticmethod(os.open)
+        write = staticmethod(os.write)
+        getpid = staticmethod(os.getpid)
+
+        @staticmethod
+        def close(descriptor):
+            closed_descriptors.append(descriptor)
+            os.close(descriptor)
+
+    monkeypatch.setattr(repository_module, "os", TrackingOS)
+    repo = _repository(tmp_path)
+
+    with repo.lock_record("claims", "claim-lock-close-once"):
+        pass
+
+    assert len(closed_descriptors) == 1
 
 
 def test_atomic_text_writer_removes_temp_file_when_replace_fails(tmp_path, monkeypatch):

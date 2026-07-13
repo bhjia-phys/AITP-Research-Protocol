@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from pathlib import Path
 
 
 def test_mcp_wrappers_create_session_and_return_contract_valid_brief(tmp_path):
@@ -213,7 +214,15 @@ def test_mcp_write_session_summary_validates_payload_before_return(tmp_path, mon
 def test_mcp_tools_do_not_import_legacy_mcp_monolith():
     import brain.v5.mcp_tools as mcp_tools
 
-    source = inspect.getsource(mcp_tools)
+    facade = Path(inspect.getsourcefile(mcp_tools) or "")
+    sources = [facade.read_text(encoding="utf-8")]
+    sources.extend(
+        path.read_text(encoding="utf-8")
+        for path in sorted(
+            (facade.parent / "_compat_shards" / "mcp_tools").glob("part_*.py")
+        )
+    )
+    source = "\n".join(sources)
 
     assert "require_valid_public_surface" in source
     assert "require_valid_adapter_packet" not in source
@@ -221,3 +230,14 @@ def test_mcp_tools_do_not_import_legacy_mcp_monolith():
     assert "brain.mcp_server" not in source
     assert "mcp__aitp" not in source
     assert "aitp_get_execution_brief" not in source
+
+
+def test_compact_mcp_wrappers_are_shared_with_full_surface():
+    from brain.v5 import compact_mcp_tools, mcp_tools
+    from brain.v5.capability_registry_data import COMPACT_MCP_NAMES
+
+    for name in COMPACT_MCP_NAMES:
+        assert getattr(mcp_tools, name) is getattr(compact_mcp_tools, name)
+
+    catalog = compact_mcp_tools.aitp_v5_codex_tool_catalog()
+    assert catalog["kind"] == "codex_mcp_surface_catalog"

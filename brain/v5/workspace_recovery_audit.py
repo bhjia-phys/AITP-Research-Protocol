@@ -11,8 +11,12 @@ from brain.v5.claim_relation_map import build_claim_relation_map, build_claim_re
 from brain.v5.markdown import write_text_atomic
 from brain.v5.models import SessionBinding
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import list_valid_records
+from brain.v5.store import list_valid_records as _list_valid_records
 from brain.v5.workspace_migration_discovery import latest_workspace_migration_plan, latest_workspace_recovery_audit
+
+
+def _legacy_records(directory, cls):
+    return _list_valid_records(directory, cls, operation="workspace_recovery_audit")
 
 
 def build_workspace_recovery_audit(
@@ -35,7 +39,9 @@ def build_workspace_recovery_audit(
     plan_topics = _migration_plan_topics(plan_path)
     topic_ids = sorted(selected_topics or (set(_canonical_topic_ids(ws)) | set(plan_topics.keys())))
     sessions_by_topic = _sessions_by_topic(ws)
-    relation_index = build_claim_relation_registry_index(ws) if len(topic_ids) > 1 else None
+    # Recovery audits are read-only, so use the in-memory registry projection
+    # even for one topic instead of letting a relation map materialize an index.
+    relation_index = build_claim_relation_registry_index(ws)
     rows = [
         _topic_recovery_row(
             ws,
@@ -219,7 +225,7 @@ def _load_json(path: str | Path) -> Any:
 
 def _sessions_by_topic(ws: WorkspacePaths) -> dict[str, list[SessionBinding]]:
     rows: dict[str, list[SessionBinding]] = defaultdict(list)
-    for session in list_valid_records(ws.root / "runtime" / "sessions", SessionBinding):
+    for session in _legacy_records(ws.root / "runtime" / "sessions", SessionBinding):
         rows[session.topic_id].append(session)
     for sessions in rows.values():
         sessions.sort(key=lambda item: item.session_id)

@@ -3,6 +3,16 @@ import hashlib
 from pathlib import Path
 
 
+_COMPACT_MAINTENANCE_NAMES = {
+    "aitp_v5_get_runtime_bridge_target_manifest",
+    "aitp_v5_get_runtime_payload_profiles",
+    "aitp_v5_audit_runtime_mcp_bridge_acceptance",
+    "aitp_v5_audit_hook_installation",
+    "aitp_v5_discover_hook_install_paths",
+    "aitp_v5_report_hook_smoke_coverage",
+}
+
+
 def _mcp_wrapper_names():
     from brain.v5 import mcp_tools
 
@@ -78,6 +88,24 @@ def test_capability_registry_declares_gate0_and_compact_capabilities():
         assert spec.mcp_name == mcp_name
         assert spec.state_effect == state_effect
         assert spec.compact_visibility == visibility
+
+
+def test_compact_maintenance_capabilities_use_one_release_soft_deprecation():
+    from brain.v5.capability_registry import capability_specs, compact_mcp_tools
+    from brain.v5.capability_registry_data import COMPACT_SOFT_DEPRECATION_BY_MCP
+
+    specs_by_name = {spec.mcp_name: spec for spec in capability_specs().values()}
+
+    assert len(compact_mcp_tools()) == 10
+    assert _COMPACT_MAINTENANCE_NAMES.isdisjoint(compact_mcp_tools())
+    for name in _COMPACT_MAINTENANCE_NAMES:
+        spec = specs_by_name[name]
+        assert spec.compact_visibility == "full"
+        assert spec.lifecycle_status == "soft_deprecated_from_compact"
+        assert spec.compatibility_window == "one_release"
+        assert spec.cli_route
+        assert COMPACT_SOFT_DEPRECATION_BY_MCP[name]["cli_route"] == spec.cli_route
+        assert "full MCP or CLI" in spec.compatibility_warning
 
 
 def test_capability_registry_matches_public_compact_and_bridge_surfaces():

@@ -8,7 +8,7 @@ from typing import Any
 from brain.v5.ids import prefixed_id
 from brain.v5.models import AuthorityRecord
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import list_valid_records, write_record
+from brain.v5.store import list_records, write_record
 
 AUTHORITY_TYPES = {
     "sector_authority",
@@ -91,7 +91,7 @@ def list_authorities_for_topic(
 ) -> list[AuthorityRecord]:
     authorities = [
         record
-        for record in list_valid_records(ws.registry_dir("authorities"), AuthorityRecord)
+        for record in list_records(ws.registry_dir("authorities"), AuthorityRecord)
         if record.topic_id == topic_id
     ]
     if authority_type:

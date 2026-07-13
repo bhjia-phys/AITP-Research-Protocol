@@ -664,6 +664,86 @@ def test_apply_promotion_populates_memory_entry_and_packet_fields(tmp_path):
     assert refreshed_packet.human_checkpoint_id == checkpoint.checkpoint_id
 
 
+def test_apply_promotion_recovers_after_packet_commit_before_memory_write(
+    tmp_path,
+    monkeypatch,
+):
+    from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
+    from brain.v5.memory import apply_promotion_packet, create_promotion_packet
+    from brain.v5.models import MemoryEntryRecord, PromotionPacketRecord
+    from brain.v5.record_repository import RecordRepository
+    from brain.v5.store import list_records, read_record
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="Counting identifies the edge CFT in the recorded sector.",
+        evidence_profile="toy_numeric",
+        confidence_state="locally_checked",
+        active_uncertainty="promotion readiness",
+    )
+    packet = create_promotion_packet(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        scope="fixed sector ED",
+        evidence_refs=["evidence-counting"],
+        known_failure_modes=["sector misassignment"],
+    )
+    checkpoint = request_human_checkpoint(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        reason="L2 promotion",
+        requested_by="risk_policy",
+        options=["approve"],
+    )
+    decide_human_checkpoint(
+        ws,
+        checkpoint_id=checkpoint.checkpoint_id,
+        decision="approve",
+        rationale="Good",
+        decided_by="human",
+    )
+
+    original_write = RecordRepository.write
+    fail_memory_write = True
+
+    def injected_write(self, family, record, *, body="", policy=None):
+        nonlocal fail_memory_write
+        if family == "memory_entries" and fail_memory_write:
+            raise RuntimeError("injected memory entry write failure")
+        return original_write(self, family, record, body=body, policy=policy)
+
+    monkeypatch.setattr(RecordRepository, "write", injected_write)
+    with pytest.raises(RuntimeError, match="injected memory entry write failure"):
+        apply_promotion_packet(
+            ws,
+            packet_id=packet.packet_id,
+            checkpoint_id=checkpoint.checkpoint_id,
+        )
+
+    committed_packet = read_record(
+        ws.registry_dir("promotion_packets") / f"{packet.packet_id}.md",
+        PromotionPacketRecord,
+    )
+    assert committed_packet.status == "promoted"
+    assert committed_packet.human_checkpoint_id == checkpoint.checkpoint_id
+    assert list_records(ws.root / "memory" / "l2" / "entries", MemoryEntryRecord) == []
+
+    fail_memory_write = False
+    recovered = apply_promotion_packet(
+        ws,
+        packet_id=packet.packet_id,
+        checkpoint_id=checkpoint.checkpoint_id,
+    )
+    assert recovered.status == "active"
+    assert recovered.source_packet_id == packet.packet_id
+
+
 def test_apply_promotion_rejects_already_promoted_packet(tmp_path):
     from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
     from brain.v5.memory import apply_promotion_packet, create_promotion_packet
@@ -748,6 +828,60 @@ def test_apply_promotion_rejects_checkpoint_for_different_claim(tmp_path):
 
     with pytest.raises(ValueError, match="same topic and claim"):
         apply_promotion_packet(ws, packet_id=packet.packet_id, checkpoint_id=checkpoint.checkpoint_id)
+
+
+def test_apply_promotion_rejects_forged_checkpoint_authority_metadata(tmp_path):
+    from brain.v5.memory import apply_promotion_packet, create_promotion_packet
+    from brain.v5.models import HumanCheckpointRecord
+    from brain.v5.store import write_record
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="A forged boolean must not authorize promotion.",
+        evidence_profile="toy_numeric",
+        confidence_state="hypothesis",
+        active_uncertainty="No verified human receipt exists.",
+    )
+    packet = create_promotion_packet(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        scope="fixed sector ED",
+        evidence_refs=["evidence-counting"],
+        known_failure_modes=["sector misassignment"],
+    )
+    checkpoint = HumanCheckpointRecord(
+        checkpoint_id="checkpoint-forged-authority",
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        reason="Forged approval.",
+        requested_by="risk_policy",
+        options=["approve"],
+        status="decided",
+        decision="approve",
+        rationale="Not actually verified.",
+        decided_by="model",
+        decision_verified=True,
+        decision_verification="forged_boolean_only",
+        decision_receipt_hash="not-a-host-receipt",
+        decision_receipt_nonce="forged",
+        can_authorize_trust=True,
+    )
+    write_record(
+        ws.registry_dir("checkpoints") / f"{checkpoint.checkpoint_id}.md",
+        checkpoint,
+    )
+
+    with pytest.raises(ValueError, match="host-verified"):
+        apply_promotion_packet(
+            ws,
+            packet_id=packet.packet_id,
+            checkpoint_id=checkpoint.checkpoint_id,
+        )
 
 
 def test_promotion_apply_cli_mcp_and_runtime_surface(tmp_path):

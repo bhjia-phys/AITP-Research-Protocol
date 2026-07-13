@@ -1,0 +1,9 @@
+pytest>=8,<10
+pyyaml>=6,<7
+pygments>=2,<3
+jsonschema>=4,<5
+pydantic>=2,<3
+numpy>=2,<3
+fastmcp>=3,<4
+sympy>=1.12,<2
+pypdf>=5,<7

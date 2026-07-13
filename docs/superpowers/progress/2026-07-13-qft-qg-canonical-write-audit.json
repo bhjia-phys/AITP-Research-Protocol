@@ -1,0 +1,81 @@
+{
+  "authorized_scope": {
+    "canonical_record_count": 7,
+    "derived_index_rebuild": true,
+    "topic_id": "quantum-gravity-von-neumann"
+  },
+  "can_update_claim_trust": false,
+  "canonical_after_file_count": 9858,
+  "canonical_after_snapshot_hash": "edbe88d21f64a857477ce3de4e36c6da6753cf38509e0e4635125ac889646257",
+  "canonical_before_file_count": 9851,
+  "canonical_before_snapshot_hash": "8d7965ec561616a16dc5f0155b5ea72d80976bf938c1b230c20e307bf7bc32db",
+  "canonical_unchanged_by_index_rebuild": true,
+  "changed_canonical_paths": [
+    "registry/exploratory_records/exploratory-quantum-gravity-von-neumann-claim-quantum-gravity-von-neumann-20b0618e-l-cb8aaaec.md",
+    "registry/object_relations/object-relation-quantum-gravity-von-neumann-candidate-averaging-bridge-physics-o-539d4584.md",
+    "registry/physics_objects/physics-object-quantum-gravity-von-neumann-averaging-prescription-mellin-averag-f7388995.md",
+    "registry/physics_objects/physics-object-quantum-gravity-von-neumann-representation-construction-gns-repr-11d9e3c4.md",
+    "registry/proof_obligations/proof-obligation-quantum-gravity-von-neumann-claim-quantum-gravity-von-neumann-20b0618e-cross-1fb5c45f.md",
+    "registry/reference_locations/reference-location-quantum-gravity-von-neumann-claim-quantum-gravity-von-neumann-20-7a0e40ba.md",
+    "registry/reference_locations/reference-location-quantum-gravity-von-neumann-claim-quantum-gravity-von-neumann-20-fd3222eb.md"
+  ],
+  "claim_id": "claim-quantum-gravity-von-neumann-20b0618e",
+  "index_after": {
+    "canonical_state_token": "125335b6db599aa67312826a50ddb46d8f80dc9ce6b94381a5101aa64c673ff4",
+    "canonical_watermark": "e8d8005f7106a9993c0f8ed277bcb1fcdccbf40d8ae11a1782fbd9b49d79e306",
+    "generation": 12,
+    "malformed_count": 0,
+    "record_count": 9858,
+    "schema_version": 2
+  },
+  "kind": "approved_qft_qg_canonical_write_audit",
+  "record_receipts": [
+    {
+      "record_content_hash": "67a93f8b2c7eaf1dfcb7963c67b3c1cde8f40e24080e5e4ed43cbb003b86a1fb",
+      "record_ref": "reference_location:reference-location-quantum-gravity-von-neumann-claim-quantum-gravity-von-neumann-20-fd3222eb",
+      "revision": 1
+    },
+    {
+      "record_content_hash": "f1877b62a78a1d1f60994cdb135690d9dd9c64ee37f61a3ca8c89d4a84646ea6",
+      "record_ref": "reference_location:reference-location-quantum-gravity-von-neumann-claim-quantum-gravity-von-neumann-20-7a0e40ba",
+      "revision": 1
+    },
+    {
+      "record_content_hash": "7df1d99a48eb7dbf4c05f18060cc3c28eee3dce4e55901e5f01ef115ea81f21d",
+      "record_ref": "physics_object:physics-object-quantum-gravity-von-neumann-averaging-prescription-mellin-averag-f7388995",
+      "revision": 1
+    },
+    {
+      "record_content_hash": "2249931ed8af7657f81e87ca44344d2eef60f0fbcf92c120a2f4dd9e36ec2287",
+      "record_ref": "physics_object:physics-object-quantum-gravity-von-neumann-representation-construction-gns-repr-11d9e3c4",
+      "revision": 1
+    },
+    {
+      "record_content_hash": "28b519d5edc662a079268c3382b2e1be9a79a0a172150a6446b26688318fdd4d",
+      "record_ref": "object_relation:object-relation-quantum-gravity-von-neumann-candidate-averaging-bridge-physics-o-539d4584",
+      "revision": 1
+    },
+    {
+      "record_content_hash": "19f4f5b80052b7627c7b814e97dd0e93f4b4ffe0e06a416f47e640707209e5ee",
+      "record_ref": "proof_obligation:proof-obligation-quantum-gravity-von-neumann-claim-quantum-gravity-von-neumann-20b0618e-cross-1fb5c45f",
+      "revision": 1
+    },
+    {
+      "record_content_hash": "2af760a56044c90fbd276053484d86c12de1c63843399d9904ea365c897c9555",
+      "record_ref": "exploratory_record:exploratory-quantum-gravity-von-neumann-claim-quantum-gravity-von-neumann-20b0618e-l-cb8aaaec",
+      "revision": 1
+    }
+  ],
+  "source_receipts": [
+    {
+      "record_ref": "source_asset:source-asset-quantum-gravity-von-neumann-paper-https-arxiv-org-pdf-2605-15180-pdf-e70-7f7ea60c",
+      "sha256": "e702a98370f96f419be10d19a1eda4e7994e34075a22511fc401f54e11ae7ed8"
+    },
+    {
+      "record_ref": "source_asset:source-asset-quantum-gravity-von-neumann-paper-https-arxiv-org-pdf-2510-06376-pdf-78c-5883028e",
+      "sha256": "78c2036abda3694dbea3ba5175ed3d2b3d2c2a288eaef9188801954c13c9f788"
+    }
+  ],
+  "status": "passed",
+  "trust_effect": "none"
+}

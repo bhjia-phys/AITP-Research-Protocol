@@ -378,6 +378,7 @@ def execute_registered_tool_result(
         code_state_ids=code_state_ids,
         artifact_ids=artifact_ids,
         source_refs=source_refs,
+        lane="diagnostic",
     )
     evidence = None
     if supports_outputs:

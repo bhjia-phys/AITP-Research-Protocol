@@ -458,6 +458,10 @@ def _unique(values) -> list[str]:
 def _tool_runs_for_claim(ws: WorkspacePaths, claim_id: str) -> list[ToolRunRecord]:
     return [
         run
-        for run in list_valid_records(ws.registry_dir("tool_runs"), ToolRunRecord)
+        for run in list_valid_records(
+            ws.registry_dir("tool_runs"),
+            ToolRunRecord,
+            operation="session_summary_legacy_tool_runs",
+        )
         if run.claim_id == claim_id
     ]

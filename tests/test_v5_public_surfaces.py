@@ -657,6 +657,10 @@ def test_public_surface_validator_accepts_typed_write_records():
         "code_state_ids": ["code-state-ed"],
         "artifact_ids": ["artifact-spectrum"],
         "source_refs": ["paper:example"],
+        "scientific_run_id": "",
+        "supersedes_run_id": "",
+        "supersedes": "",
+        "lane": "diagnostic",
     }
     code_state = {
         "ok": True,

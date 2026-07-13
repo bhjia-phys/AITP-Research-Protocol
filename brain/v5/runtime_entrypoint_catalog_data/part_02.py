@@ -1,0 +1,377 @@
+"""Runtime entrypoint catalog part 2."""
+
+from __future__ import annotations
+
+RUNTIME_ENTRYPOINTS_02 = {
+    'source_reconstruction_manifest': {
+        "cli": "aitp-v5 source reconstruction-manifest",
+        "mcp": "aitp_v5_build_source_reconstruction_manifest",
+        "surface": "source_reconstruction_manifest",
+    },
+    'source_stack_coverage_manifest': {
+        "cli": "aitp-v5 source coverage-manifest",
+        "mcp": "aitp_v5_build_source_stack_coverage_manifest",
+        "surface": "source_stack_coverage_manifest",
+    },
+    'source_reconstruction_review_manifest': {
+        "cli": "aitp-v5 source reconstruction-review-manifest",
+        "mcp": "aitp_v5_build_source_reconstruction_review_manifest",
+        "surface": "source_reconstruction_review_manifest",
+    },
+    'source_reconstruction_obsidian_view': {
+        "cli": "aitp-v5 source reconstruction-obsidian-view",
+        "mcp": "aitp_v5_write_source_reconstruction_obsidian_view",
+        "surface": "source_reconstruction_obsidian_view_bundle",
+    },
+    'source_reconstruction_review_packet': {
+        "cli": "aitp-v5 source reconstruction-review <args>",
+        "mcp": "aitp_v5_build_source_reconstruction_review_packet",
+        "surface": "source_reconstruction_review_packet",
+    },
+    'record_source_reconstruction_review_result': {
+        "cli": "aitp-v5 source reconstruction-review-result <args>",
+        "mcp": "aitp_v5_record_source_reconstruction_review_result",
+        "surface": "source_reconstruction_review_result_record",
+    },
+    'persist_hook_trace_event': {
+        "cli": "aitp-v5 trace hook-event persist <args>",
+        "mcp": "aitp_v5_persist_hook_trace_event",
+        "surface": "hook_trace_event_record",
+    },
+    'record_reference_location': {
+        "cli": "aitp-v5 reference location record <args>",
+        "mcp": "aitp_v5_record_reference_location",
+        "surface": "reference_location_record",
+    },
+    'migrate_legacy_topic': {
+        "cli": "aitp-v5 legacy migrate <args>",
+        "mcp": "aitp_v5_migrate_legacy_topic_to_v5",
+        "surface": "legacy_migration_result",
+    },
+    'legacy_migration_coverage_audit': {
+        "cli": "aitp-v5 legacy migration-audit <args>",
+        "mcp": "aitp_v5_audit_legacy_migration_coverage",
+        "surface": "legacy_migration_coverage_audit",
+    },
+    'write_legacy_migration_accounting_run': {
+        "cli": "aitp-v5 legacy migration-accounting-run <args>",
+        "mcp": "aitp_v5_write_legacy_migration_accounting_run",
+        "surface": "legacy_migration_coverage_audit",
+    },
+    'legacy_l2_graph_manifest': {
+        "cli": "aitp-v5 legacy l2-graph-manifest <args>",
+        "mcp": "aitp_v5_build_legacy_l2_graph_manifest",
+        "surface": "legacy_l2_graph_manifest",
+    },
+    'legacy_l2_typed_migration_packet': {
+        "cli": "aitp-v5 legacy l2-typed-migration-packet <args>",
+        "mcp": "aitp_v5_build_legacy_l2_typed_migration_packet",
+        "surface": "legacy_l2_typed_migration_packet",
+    },
+    'canonical_legacy_l2_seed_audit': {
+        "cli": "aitp-v5 legacy l2-seed-audit <args>",
+        "mcp": "aitp_v5_audit_canonical_legacy_l2_seeds",
+        "surface": "canonical_legacy_l2_seed_audit",
+    },
+    'canonical_legacy_l2_seed_review_worklist': {
+        "cli": "aitp-v5 legacy l2-seed-review-worklist <args>",
+        "mcp": "aitp_v5_build_canonical_legacy_l2_seed_review_worklist",
+        "surface": "canonical_legacy_l2_seed_review_worklist",
+    },
+    'record_legacy_l2_seed_group_review_result': {
+        "cli": "aitp-v5 legacy l2-seed-review-result <args>",
+        "mcp": "aitp_v5_record_legacy_l2_seed_group_review_result",
+        "surface": "legacy_l2_seed_group_review_result_record",
+    },
+    'legacy_l2_obsidian_view': {
+        "cli": "aitp-v5 legacy l2-obsidian-view <args>",
+        "mcp": "aitp_v5_write_legacy_l2_obsidian_view",
+        "surface": "legacy_l2_obsidian_view_bundle",
+    },
+    'legacy_runtime_log_marker_audit': {
+        "cli": "aitp-v5 legacy runtime-log-marker-audit <args>",
+        "mcp": "aitp_v5_build_legacy_runtime_log_marker_audit",
+        "surface": "legacy_runtime_log_marker_audit",
+    },
+    'legacy_semantic_review_queue': {
+        "cli": "aitp-v5 legacy semantic-review-queue <args>",
+        "mcp": "aitp_v5_build_legacy_semantic_review_queue",
+        "surface": "legacy_semantic_review_queue",
+    },
+    'legacy_semantic_review_manifest': {
+        "cli": "aitp-v5 legacy semantic-review-manifest <args>",
+        "mcp": "aitp_v5_build_legacy_semantic_review_manifest",
+        "surface": "legacy_semantic_review_manifest",
+    },
+    'legacy_semantic_review_worklist': {
+        "cli": "aitp-v5 legacy semantic-review-worklist <args>",
+        "mcp": "aitp_v5_build_legacy_semantic_review_worklist",
+        "surface": "legacy_semantic_review_worklist",
+    },
+    'legacy_semantic_needs_revision_basis_queue': {
+        "cli": "aitp-v5 legacy semantic-needs-revision-basis <args>",
+        "mcp": "aitp_v5_build_legacy_semantic_needs_revision_basis_queue",
+        "surface": "legacy_semantic_needs_revision_basis_queue",
+    },
+    'legacy_semantic_needs_revision_basis_packet': {
+        "cli": "aitp-v5 legacy semantic-needs-revision-basis-packet <args>",
+        "mcp": "aitp_v5_build_legacy_semantic_needs_revision_basis_packet",
+        "surface": "legacy_semantic_needs_revision_basis_packet",
+    },
+    'legacy_semantic_needs_revision_basis_obsidian_view': {
+        "cli": "aitp-v5 legacy semantic-needs-revision-basis-obsidian-view <args>",
+        "mcp": "aitp_v5_write_legacy_semantic_needs_revision_basis_obsidian_view",
+        "surface": "legacy_semantic_needs_revision_basis_obsidian_view_bundle",
+    },
+    'legacy_semantic_review_obsidian_view': {
+        "cli": "aitp-v5 legacy semantic-review-obsidian-view <args>",
+        "mcp": "aitp_v5_write_legacy_semantic_review_obsidian_view",
+        "surface": "legacy_semantic_review_obsidian_view_bundle",
+    },
+    'legacy_semantic_review_packet': {
+        "cli": "aitp-v5 legacy semantic-review-packet <args>",
+        "mcp": "aitp_v5_build_legacy_semantic_review_packet",
+        "surface": "legacy_semantic_review_packet",
+    },
+    'legacy_semantic_repair_plan': {
+        "cli": "aitp-v5 legacy semantic-repair-plan <args>",
+        "mcp": "aitp_v5_build_legacy_semantic_repair_plan",
+        "surface": "legacy_semantic_repair_plan",
+    },
+    'legacy_semantic_repair_manifest': {
+        "cli": "aitp-v5 legacy semantic-repair-manifest <args>",
+        "mcp": "aitp_v5_build_legacy_semantic_repair_manifest",
+        "surface": "legacy_semantic_repair_manifest",
+    },
+    'legacy_semantic_repair_apply': {
+        "cli": "aitp-v5 legacy semantic-repair-apply <args>",
+        "mcp": "aitp_v5_apply_legacy_semantic_repair",
+        "surface": "legacy_semantic_repair_apply",
+    },
+    'legacy_source_reconstruction_plan': {
+        "cli": "aitp-v5 legacy source-reconstruction-plan <args>",
+        "mcp": "aitp_v5_build_legacy_source_reconstruction_plan",
+        "surface": "legacy_source_reconstruction_plan",
+    },
+    'legacy_source_reconstruction_manifest': {
+        "cli": "aitp-v5 legacy source-reconstruction-manifest <args>",
+        "mcp": "aitp_v5_build_legacy_source_reconstruction_manifest",
+        "surface": "legacy_source_reconstruction_manifest",
+    },
+    'legacy_source_reconstruction_obsidian_view': {
+        "cli": "aitp-v5 legacy source-reconstruction-obsidian-view <args>",
+        "mcp": "aitp_v5_write_legacy_source_reconstruction_obsidian_view",
+        "surface": "legacy_source_reconstruction_obsidian_view_bundle",
+    },
+    'legacy_source_reconstruction_review_packet': {
+        "cli": "aitp-v5 legacy source-reconstruction-review <args>",
+        "mcp": "aitp_v5_build_legacy_source_reconstruction_review_packet",
+        "surface": "legacy_source_reconstruction_review_packet",
+    },
+    'legacy_source_metadata_repair_packet': {
+        "cli": "aitp-v5 legacy source-metadata-repair-packet <args>",
+        "mcp": "aitp_v5_build_legacy_source_metadata_repair_packet",
+        "surface": "legacy_source_metadata_repair_packet",
+    },
+    'legacy_executable_evidence_packet': {
+        "cli": "aitp-v5 legacy executable-evidence-packet <args>",
+        "mcp": "aitp_v5_build_legacy_executable_evidence_packet",
+        "surface": "legacy_executable_evidence_packet",
+    },
+    'legacy_human_checkpoint_packet': {
+        "cli": "aitp-v5 legacy human-checkpoint-packet <args>",
+        "mcp": "aitp_v5_build_legacy_human_checkpoint_packet",
+        "surface": "legacy_human_checkpoint_packet",
+    },
+    'legacy_topic_question_backfill_packet': {
+        "cli": "aitp-v5 legacy topic-question-backfill-packet <args>",
+        "mcp": "aitp_v5_build_legacy_topic_question_backfill_packet",
+        "surface": "legacy_topic_question_backfill_packet",
+    },
+    'legacy_human_checkpoint_obsidian_view': {
+        "cli": "aitp-v5 legacy human-checkpoint-obsidian-view <args>",
+        "mcp": "aitp_v5_write_legacy_human_checkpoint_obsidian_view",
+        "surface": "legacy_human_checkpoint_obsidian_view_bundle",
+    },
+    'legacy_source_reconstruction_apply': {
+        "cli": "aitp-v5 legacy source-reconstruction-apply <args>",
+        "mcp": "aitp_v5_apply_legacy_source_reconstruction_repair",
+        "surface": "legacy_source_reconstruction_apply",
+    },
+    'record_legacy_semantic_review_result': {
+        "cli": "aitp-v5 legacy semantic-review-result <args>",
+        "mcp": "aitp_v5_record_legacy_semantic_review_result",
+        "surface": "legacy_semantic_review_result_record",
+    },
+    'summary_orientation': {
+        "cli": "aitp-v5 summary orientation <session-id>",
+        "mcp": "aitp_v5_read_summary_orientation",
+        "surface": "summary_orientation",
+    },
+    'session_summary': {
+        "cli": "aitp-v5 summary session <session-id>",
+        "mcp": "aitp_v5_write_session_summary",
+        "surface": "session_summary_bundle",
+    },
+    'workspace_summary': {"cli": "aitp-v5 summary workspace", "mcp": "aitp_v5_write_workspace_summary", "surface": "workspace_summary_bundle"},
+    'workspace_replay': {"cli": "aitp-v5 summary replay", "mcp": "aitp_v5_write_workspace_replay_packet", "surface": "workspace_replay_packet"},
+    'workspace_refresh': {"cli": "aitp-v5 summary refresh", "mcp": "aitp_v5_refresh_workspace_views", "surface": "workspace_refresh_bundle"},
+    'workspace_file_migration_ledger': {
+        "cli": "aitp-v5 workspace file-migration-ledger <args>",
+        "mcp": "aitp_v5_build_workspace_file_migration_ledger",
+        "surface": "workspace_file_migration_ledger",
+    },
+    'workspace_migration_health': {
+        "cli": "aitp-v5 workspace migration-health",
+        "mcp": "aitp_v5_get_workspace_migration_health",
+        "surface": "workspace_migration_health",
+    },
+    'write_workspace_file_migration_ledger': {
+        "cli": "aitp-v5 workspace file-migration-ledger <args>",
+        "mcp": "aitp_v5_write_workspace_file_migration_ledger",
+        "surface": "workspace_file_migration_ledger_progress",
+    },
+    'workspace_old_store_import_plan': {
+        "cli": "aitp-v5 workspace old-store-import <args>",
+        "mcp": "aitp_v5_build_workspace_old_store_import_plan",
+        "surface": "workspace_old_store_import_result",
+    },
+    'apply_workspace_old_store_import': {
+        "cli": "aitp-v5 workspace old-store-import <args> --apply",
+        "mcp": "aitp_v5_apply_workspace_old_store_import",
+        "surface": "workspace_old_store_import_result",
+    },
+    'workspace_recovery_binding_repair': {
+        "cli": "aitp-v5 workspace recovery-binding-repair <args>",
+        "mcp": "aitp_v5_build_workspace_recovery_binding_repair",
+        "surface": "workspace_recovery_binding_repair",
+    },
+    'apply_workspace_recovery_binding_repair': {
+        "cli": "aitp-v5 workspace recovery-binding-repair <args> --apply",
+        "mcp": "aitp_v5_apply_workspace_recovery_binding_repair",
+        "surface": "workspace_recovery_binding_repair",
+    },
+    'workspace_recovery_audit': {
+        "cli": "aitp-v5 workspace recovery-audit <args>",
+        "mcp": "aitp_v5_build_workspace_recovery_audit",
+        "surface": "workspace_recovery_audit",
+    },
+    'write_workspace_recovery_audit': {
+        "cli": "aitp-v5 workspace recovery-audit <args>",
+        "mcp": "aitp_v5_write_workspace_recovery_audit",
+        "surface": "workspace_recovery_audit_progress",
+    },
+    'workspace_recording_audit': {
+        "cli": "aitp-v5 workspace recording-audit <args>",
+        "mcp": "aitp_v5_build_workspace_recording_audit",
+        "surface": "workspace_recording_audit",
+    },
+    'write_workspace_recording_audit': {
+        "cli": "aitp-v5 workspace recording-audit <args>",
+        "mcp": "aitp_v5_write_workspace_recording_audit",
+        "surface": "workspace_recording_audit",
+    },
+    'topic_status': {"cli": "aitp-v5 status topic <session-id>", "mcp": "aitp_v5_write_topic_status_surfaces", "surface": "topic_status_bundle"},
+    'topic_status_compact': {"cli": "aitp-v5 status topic <session-id> --compact", "mcp": "aitp_v5_write_topic_status_surfaces_compact", "surface": "topic_status_bundle"},
+    'objective_graph': {"cli": "aitp-v5 status objective-graph <session-id>", "mcp": "aitp_v5_get_objective_graph", "surface": "objective_graph"},
+    'compact_execution_brief': {"cli": "aitp-v5 status compact-brief <session-id>", "mcp": "aitp_v5_get_compact_brief", "surface": "compact_execution_brief"},
+    'aitp_context_pack': {"cli": "aitp-v5 status context-pack <session-id>", "mcp": "aitp_v5_get_context_pack", "surface": "aitp_context_pack"},
+    'context_profile_templates': {"cli": "aitp-v5 status context-profile-templates", "mcp": "aitp_v5_get_context_profile_templates", "surface": "context_profile_template_catalog"},
+    'context_profile_draft': {"cli": "aitp-v5 status context-profile-draft <session-id> --profile closeout", "mcp": "aitp_v5_build_context_profile_draft", "surface": "context_profile_draft"},
+    'research_distillation_candidates': {"cli": "aitp-v5 status distillation-candidates <session-id>", "mcp": "aitp_v5_get_research_distillation_candidates", "surface": "research_distillation_candidates"},
+    'note_outline': {"cli": "aitp-v5 status note-outline <session-id> --style jhep", "mcp": "aitp_v5_compile_note_outline", "surface": "note_outline"},
+    'record_authority': {"cli": "aitp-v5 authority record --topic fqhe --type sector_authority --statement sample-authority", "mcp": "aitp_v5_record_authority", "surface": "authority_record"},
+    'list_authorities': {"cli": "aitp-v5 authority list --topic fqhe", "mcp": "aitp_v5_list_authorities", "surface": "authority_registry"},
+    'quiet_checkpoint_preview': {"cli": "aitp-v5 checkpoint preview-batch <session-id> --summary sample-checkpoint", "mcp": "aitp_v5_preview_quiet_checkpoint_batch", "surface": "quiet_checkpoint_preview"},
+    'quiet_checkpoint_apply': {"cli": "aitp-v5 checkpoint apply-batch <session-id> --summary sample-checkpoint", "mcp": "aitp_v5_apply_quiet_checkpoint_batch", "surface": "quiet_checkpoint_batch"},
+    'qsgw_cockpit': {"cli": "aitp-v5 status qsgw-cockpit", "mcp": "aitp_v5_write_qsgw_cockpit_surfaces", "surface": "qsgw_cockpit_bundle"},
+    'qsgw_cockpit_compact': {"cli": "aitp-v5 status qsgw-cockpit --compact", "mcp": "aitp_v5_write_qsgw_cockpit_surfaces_compact", "surface": "qsgw_cockpit_bundle"},
+    'research_cockpit': {"cli": "aitp-v5 status research-cockpit", "mcp": "aitp_v5_write_research_cockpit_surfaces", "surface": "research_cockpit_bundle"},
+    'research_cockpit_compact': {"cli": "aitp-v5 status research-cockpit --compact", "mcp": "aitp_v5_write_research_cockpit_surfaces_compact", "surface": "research_cockpit_bundle"},
+    'trust_preflight': {
+        "cli": "aitp-v5 trust preflight <args>",
+        "mcp": "aitp_v5_preflight_trust_update",
+        "surface": "trust_update_preflight",
+    },
+    'trust_apply': {
+        "cli": "aitp-v5 trust apply <args>",
+        "mcp": "aitp_v5_apply_trust_update",
+        "surface": "trust_update_apply",
+    },
+    'get_trust_update_record': {
+        "cli": "aitp-v5 trust update-record <args>",
+        "mcp": "aitp_v5_get_trust_update_record",
+        "surface": "trust_update_record",
+    },
+    'audit_claim_trust': {
+        "cli": "aitp-v5 trust audit <args>",
+        "mcp": "aitp_v5_audit_claim_trust",
+        "surface": "claim_trust_audit",
+    },
+    'pre_tool_policy': {
+        "cli": "aitp-v5 policy pre-tool <args>",
+        "mcp": "aitp_v5_evaluate_pre_tool_policy",
+        "surface": "pre_tool_policy_decision",
+    },
+    'record_physics_object': {
+        "cli": "aitp-v5 object record <args>",
+        "mcp": "aitp_v5_record_physics_object",
+        "surface": "physics_object_record",
+    },
+    'record_object_relation': {
+        "cli": "aitp-v5 relation record <args>",
+        "mcp": "aitp_v5_record_object_relation",
+        "surface": "object_relation_record",
+    },
+    'record_sensemaking_report': {
+        "cli": "aitp-v5 sensemaking report <args>",
+        "mcp": "aitp_v5_record_sensemaking_report",
+        "surface": "sensemaking_report_record",
+    },
+    'ingest_subagent_result': {
+        "cli": "aitp-v5 subagent ingest-result <args>",
+        "mcp": "aitp_v5_ingest_subagent_result",
+        "surface": "sensemaking_report_record",
+    },
+    'create_validation_contract': {
+        "cli": "aitp-v5 validation contract create <args>",
+        "mcp": "aitp_v5_create_validation_contract",
+        "surface": "validation_contract_record",
+    },
+    'record_validation_result': {
+        "cli": "aitp-v5 validation result record <args>",
+        "mcp": "aitp_v5_record_validation_result",
+        "surface": "validation_result_record",
+    },
+    'request_human_checkpoint': {
+        "cli": "aitp-v5 checkpoint request <args>",
+        "mcp": "aitp_v5_request_human_checkpoint",
+        "surface": "human_checkpoint_record",
+    },
+    'decide_human_checkpoint': {
+        "cli": "aitp-v5 checkpoint decide <args>",
+        "mcp": "aitp_v5_decide_human_checkpoint",
+        "surface": "human_checkpoint_record",
+    },
+    'create_promotion_packet': {
+        "cli": "aitp-v5 promotion packet create <args>",
+        "mcp": "aitp_v5_create_promotion_packet",
+        "surface": "promotion_packet_record",
+    },
+    'apply_promotion_packet': {
+        "cli": "aitp-v5 promotion packet apply <args>",
+        "mcp": "aitp_v5_apply_promotion_packet",
+        "surface": "memory_entry_record",
+    },
+    'audit_l2_memory_context': {"cli": "aitp-v5 memory audit <args>", "mcp": "aitp_v5_audit_l2_memory_context", "surface": "l2_memory_audit"},
+    'l2_obsidian_view': {"cli": "aitp-v5 memory obsidian-view", "mcp": "aitp_v5_write_l2_obsidian_view", "surface": "l2_obsidian_view_bundle"},
+    'audit_failure_mode_coverage': {"cli": "aitp-v5 memory failure-modes <args>", "mcp": "aitp_v5_audit_failure_mode_coverage", "surface": "failure_mode_audit"},
+    'build_failure_mode_review_packet': {"cli": "aitp-v5 memory failure-mode-review <args>", "mcp": "aitp_v5_build_failure_mode_review_packet", "surface": "failure_mode_review_packet"},
+    'request_failure_mode_review_checkpoint': {"cli": "aitp-v5 memory request-failure-mode-review <args>", "mcp": "aitp_v5_request_failure_mode_review_checkpoint", "surface": "human_checkpoint_record"},
+    'record_failure_mode_review_result': {"cli": "aitp-v5 memory failure-mode-review-result <args>", "mcp": "aitp_v5_record_failure_mode_review_result", "surface": "failure_mode_review_result_record"},
+    'goal_continuation_write': {"cli": "aitp-v5 goal write <args>", "mcp": "aitp_v5_write_goal_continuation", "surface": "goal_continuation_packet"},
+    'goal_continuation_latest': {"cli": "aitp-v5 goal latest", "mcp": "aitp_v5_read_latest_goal_continuation", "surface": "goal_continuation_packet"},
+    'goal_continuation_list': {"cli": "aitp-v5 goal list", "mcp": "aitp_v5_list_goal_continuations", "surface": "goal_continuation_list"},
+    'hpc_cockpit': {"cli": "aitp-v5 status hpc-cockpit <args>", "mcp": "aitp_v5_hpc_cockpit", "surface": "hpc_cockpit"},
+    'lane_contract_record': {"cli": "aitp-v5 status lane-contract <args>", "mcp": "aitp_v5_record_lane_contract", "surface": "lane_contract_record"},
+}

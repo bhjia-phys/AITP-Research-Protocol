@@ -5,7 +5,9 @@ from __future__ import annotations
 from brain.v5.ids import prefixed_id
 from brain.v5.models import ObjectRelationRecord, PhysicsObjectRecord
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import list_records, write_record
+from brain.v5.record_envelope import RecordActor
+from brain.v5.record_repository import RecordRepository
+from brain.v5.store import list_records
 
 
 def record_physics_object(
@@ -36,8 +38,8 @@ def record_physics_object(
         linked_records=linked_records or {},
         status=status,
     )
-    write_record(
-        ws.registry_dir("physics_objects") / f"{object_id}.md",
+    _repository(ws, "record_physics_object").write(
+        "physics_objects",
         record,
         body=f"# Physics Object: {name}\n\n{definition}\n",
     )
@@ -88,8 +90,8 @@ def record_object_relation(
         metadata=metadata or {},
         status=status,
     )
-    write_record(
-        ws.registry_dir("object_relations") / f"{relation_id}.md",
+    _repository(ws, "record_object_relation").write(
+        "object_relations",
         record,
         body=f"# Object Relation: {relation_type}\n\n{statement}\n",
     )
@@ -114,3 +116,10 @@ def object_relation_brief_payload(relation: ObjectRelationRecord) -> dict:
         "failure_modes": list(relation.failure_modes),
         "status": relation.status,
     }
+
+
+def _repository(ws: WorkspacePaths, actor_id: str) -> RecordRepository:
+    return RecordRepository(
+        ws,
+        actor=RecordActor(actor_type="tool", actor_id=actor_id, host="aitp-v5"),
+    )

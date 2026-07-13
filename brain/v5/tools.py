@@ -4,17 +4,30 @@ from __future__ import annotations
 
 import hashlib
 import mimetypes
+from contextlib import nullcontext
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from dataclasses import asdict
 
-from brain.v5.ids import prefixed_id, short_hash
-from brain.v5.markdown import read_md
 from brain.v5.models import ToolRecipeRecord, ToolRunRecord
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import read_record, write_record
+from brain.v5.record_envelope import RecordActor
+from brain.v5.record_repository import RecordRepository
+from brain.v5.tool_run_transitions import (
+    create_or_merge_tool_run as _create_or_merge_tool_run,
+    merge_tool_run_links as _merge_tool_run_links,
+    require_acyclic_supersession as _require_acyclic_supersession,
+    require_available_successor as _require_available_successor,
+    select_tool_run_id as _select_tool_run_id,
+    tool_run_identity as _tool_run_identity,
+    tool_run_revision_basis as _tool_run_revision_basis,
+    tool_run_v1_id as _tool_run_v1_id,
+)
+
+
+_TOOL_RUN_LANES = frozenset({"final", "diagnostic", "exploratory"})
 
 
 def register_tool_recipe(
@@ -39,8 +52,8 @@ def register_tool_recipe(
         expected_outputs=expected_outputs or [],
         invariants=invariants or [],
     )
-    write_record(
-        ws.registry_dir("tool_recipes") / f"{recipe_id}.md",
+    _repository(ws, actor_id="register_tool_recipe").write(
+        "tool_recipes",
         record,
         body=f"# Tool Recipe\n\n{purpose}\n",
     )
@@ -69,64 +82,130 @@ def record_tool_run(
     """Record one tool execution as auditable evidence input.
 
     HPC job attempts reuse this same record. ``scientific_run_id`` groups the
-    attempts of one scientific run; ``supersedes`` points at the prior attempt
-    being replaced and back-fills that record's ``superseded_by``; ``lane``
-    marks the run ``final``/``diagnostic``/``exploratory`` and defaults to
-    ``diagnostic`` so an unmarked run can never be mistaken for final evidence.
+    attempts of one scientific run. ``supersedes`` becomes an immutable,
+    hash-protected forward edge on the new attempt. The prior attempt is never
+    patched; read models derive the reverse edge. ``lane`` marks the run
+    ``final``/``diagnostic``/``exploratory`` and defaults to ``diagnostic`` so
+    an unmarked run can never be mistaken for final evidence.
     """
 
-    run_basis = ":".join(
-        [
-            recipe_id,
-            tool_family,
-            tool_name,
-            topic_id,
-            claim_id,
-            short_hash(str(inputs or {}), 8),
-            short_hash(str(outputs or {}), 8),
-        ]
+    if lane not in _TOOL_RUN_LANES:
+        raise ValueError(f"lane must be one of {sorted(_TOOL_RUN_LANES)}")
+    repository = _repository(ws, actor_id="record_tool_run")
+    transition_lock = (
+        repository.lock_record("tool_runs", supersedes)
+        if supersedes
+        else nullcontext()
     )
-    run_id = prefixed_id("tool-run", run_basis, max_slug=72)
+    with transition_lock:
+        effective_scientific_run_id = scientific_run_id
+        legacy_v1_candidates: list[str] = []
+        if supersedes:
+            old_record, _, _ = _tool_run_revision_basis(repository, supersedes)
+            if old_record.topic_id != topic_id or old_record.claim_id != claim_id:
+                raise ValueError(
+                    "superseding tool runs must belong to the same topic and claim"
+                )
+            if (
+                scientific_run_id
+                and old_record.scientific_run_id
+                and scientific_run_id != old_record.scientific_run_id
+            ):
+                raise ValueError(
+                    "superseding tool run scientific_run_id must match the prior run"
+                )
+            if not effective_scientific_run_id:
+                effective_scientific_run_id = old_record.scientific_run_id
 
-    inherited_run_id = scientific_run_id
-    backfill: tuple[Path, ToolRunRecord, str] | None = None
-    if supersedes:
-        old_path = ws.registry_dir("tool_runs") / f"{supersedes}.md"
-        if not old_path.exists():
-            raise ValueError(f"superseded tool run not found: {supersedes}")
-        old_record = read_record(old_path, ToolRunRecord)
-        _, old_body = read_md(old_path)
-        old_record.superseded_by = run_id
-        backfill = (old_path, old_record, old_body)
-        if not inherited_run_id and old_record.scientific_run_id:
-            inherited_run_id = old_record.scientific_run_id
+        v1_run_id = _tool_run_v1_id(
+            recipe_id=recipe_id,
+            tool_family=tool_family,
+            tool_name=tool_name,
+            topic_id=topic_id,
+            claim_id=claim_id,
+            inputs=inputs or {},
+            outputs=outputs or {},
+            environment=environment or {},
+            evidence_status=evidence_status,
+            source_refs=source_refs or [],
+            scientific_run_id=effective_scientific_run_id,
+            supersedes_run_id=supersedes,
+            lane=lane,
+        )
+        if supersedes and effective_scientific_run_id:
+            legacy_v1_candidates.append(
+                _tool_run_v1_id(
+                    recipe_id=recipe_id,
+                    tool_family=tool_family,
+                    tool_name=tool_name,
+                    topic_id=topic_id,
+                    claim_id=claim_id,
+                    inputs=inputs or {},
+                    outputs=outputs or {},
+                    environment=environment or {},
+                    evidence_status=evidence_status,
+                    source_refs=source_refs or [],
+                    scientific_run_id="",
+                    supersedes_run_id=supersedes,
+                    lane=lane,
+                )
+            )
 
-    record = ToolRunRecord(
-        run_id=run_id,
-        recipe_id=recipe_id,
-        tool_family=tool_family,
-        tool_name=tool_name,
-        topic_id=topic_id,
-        claim_id=claim_id,
-        inputs=inputs or {},
-        outputs=outputs or {},
-        environment=environment or {},
-        evidence_status=evidence_status,
-        code_state_ids=code_state_ids or [],
-        artifact_ids=artifact_ids or [],
-        source_refs=source_refs or [],
-        scientific_run_id=inherited_run_id,
-        supersedes=supersedes,
-        lane=lane,
-    )
-    write_record(
-        ws.registry_dir("tool_runs") / f"{run_id}.md",
-        record,
-        body=f"# Tool Run\n\nRecipe: `{recipe_id}`\n\nTool: `{tool_family}:{tool_name}`\n",
-    )
-    if backfill is not None:
-        old_path, old_record, old_body = backfill
-        write_record(old_path, old_record, body=old_body)
+        identity = _tool_run_identity(
+            recipe_id=recipe_id,
+            tool_family=tool_family,
+            tool_name=tool_name,
+            topic_id=topic_id,
+            claim_id=claim_id,
+            inputs=inputs or {},
+            outputs=outputs or {},
+            environment=environment or {},
+            evidence_status=evidence_status,
+            source_refs=source_refs or [],
+            scientific_run_id=effective_scientific_run_id,
+            supersedes_run_id=supersedes,
+            lane=lane,
+        )
+        run_id = _select_tool_run_id(
+            repository,
+            v1_run_id=v1_run_id,
+            identity=identity,
+            legacy_v1_candidates=legacy_v1_candidates,
+        )
+        if supersedes:
+            _require_acyclic_supersession(
+                repository,
+                supersedes,
+                run_id,
+                topic_id=topic_id,
+                claim_id=claim_id,
+                scientific_run_id=effective_scientific_run_id,
+            )
+            _require_available_successor(repository, supersedes, run_id)
+
+        record = ToolRunRecord(
+            run_id=run_id,
+            recipe_id=recipe_id,
+            tool_family=tool_family,
+            tool_name=tool_name,
+            topic_id=topic_id,
+            claim_id=claim_id,
+            inputs=inputs or {},
+            outputs=outputs or {},
+            environment=environment or {},
+            evidence_status=evidence_status,
+            code_state_ids=code_state_ids or [],
+            artifact_ids=artifact_ids or [],
+            source_refs=source_refs or [],
+            scientific_run_id=effective_scientific_run_id,
+            supersedes_run_id=supersedes,
+            lane=lane,
+        )
+        record = _create_or_merge_tool_run(
+            repository,
+            record,
+            body=f"# Tool Run\n\nRecipe: `{recipe_id}`\n\nTool: `{tool_family}:{tool_name}`\n",
+        )
     return record
 
 
@@ -220,16 +299,12 @@ def link_code_state_to_run(
     only pinned later). Preserves the run body.
     """
 
-    path = ws.registry_dir("tool_runs") / f"{run_id}.md"
-    if not path.exists():
-        raise ValueError(f"tool run not found: {run_id}")
-    record = read_record(path, ToolRunRecord)
-    if code_state_id in record.code_state_ids:
-        return record
-    _, body = read_md(path)
-    record.code_state_ids = [*record.code_state_ids, code_state_id]
-    write_record(path, record, body=body)
-    return record
+    repository = _repository(ws, actor_id="link_code_state_to_run")
+    return _merge_tool_run_links(
+        repository,
+        run_id=run_id,
+        code_state_ids=[code_state_id],
+    )
 
 
 def link_artifact_to_run(
@@ -237,20 +312,31 @@ def link_artifact_to_run(
 ) -> ToolRunRecord:
     """Back-link an artifact/source_asset id to an existing tool run (idempotent)."""
 
-    path = ws.registry_dir("tool_runs") / f"{run_id}.md"
-    if not path.exists():
-        raise ValueError(f"tool run not found: {run_id}")
-    record = read_record(path, ToolRunRecord)
-    if artifact_id in record.artifact_ids:
-        return record
-    _, body = read_md(path)
-    record.artifact_ids = [*record.artifact_ids, artifact_id]
-    write_record(path, record, body=body)
-    return record
+    repository = _repository(ws, actor_id="link_artifact_to_run")
+    return _merge_tool_run_links(
+        repository,
+        run_id=run_id,
+        artifact_ids=[artifact_id],
+    )
 
 
-def tool_run_payload(record: ToolRunRecord) -> dict[str, Any]:
-    return {"ok": True, **asdict(record)}
+def tool_run_payload(
+    record: ToolRunRecord,
+    *,
+    include_ok: bool = True,
+) -> dict[str, Any]:
+    payload = asdict(record)
+    # One-release public compatibility alias. Canonical records use only the
+    # unambiguous forward-edge field and never persist this legacy string key.
+    payload["supersedes"] = record.supersedes_run_id
+    return {"ok": True, **payload} if include_ok else payload
+
+
+def _repository(ws: WorkspacePaths, *, actor_id: str) -> RecordRepository:
+    return RecordRepository(
+        ws,
+        actor=RecordActor(actor_type="tool", actor_id=actor_id, host="aitp"),
+    )
 
 
 def _sha256(path: Path) -> str:

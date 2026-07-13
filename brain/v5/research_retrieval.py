@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import asdict, dataclass, is_dataclass
 from typing import Any
 
 from brain.v5.paths import WorkspacePaths
 from brain.v5.query_index import (
-    canonical_state_token,
     lexical_terms,
     load_query_index,
     load_query_manifest,
+    query_index_is_fresh,
 )
 from brain.v5.record_envelope import RecordActor
 from brain.v5.record_repository import RecordRepository
@@ -71,7 +72,7 @@ def query_records(ws: WorkspacePaths, query: ResearchQuery) -> RetrievalResult:
     if query.offset < 0 or query.limit < 1:
         raise ValueError("offset must be non-negative and limit must be positive")
     index = load_query_index(ws)
-    fresh = canonical_state_token(ws) == index.manifest.canonical_state_token
+    fresh = query_index_is_fresh(ws, index.manifest)
     index_status = "fresh" if fresh else "stale"
     selected_families = tuple(sorted(set(query.families)))
     all_families = tuple(sorted(record_family_specs()))
@@ -123,18 +124,30 @@ def query_records(ws: WorkspacePaths, query: ResearchQuery) -> RetrievalResult:
         row_statuses = {row.get("status", ""), row.get("lifecycle_status", "")}
         if query.statuses and not row_statuses.intersection(query.statuses):
             continue
-        lexical_score = sum(
-            1 for term in terms if row["doc_id"] in index.lexical_terms.get(term, ())
-        )
+        matching_terms = [
+            term for term in terms if row["doc_id"] in index.lexical_terms.get(term, ())
+        ]
+        lexical_score = len(matching_terms)
         if terms and lexical_score == 0:
             continue
+        weighted_score = sum(
+            1
+            + int(
+                math.log2(
+                    (len(index.documents) + 1)
+                    / (len(index.lexical_terms.get(term, ())) + 1)
+                )
+                * 4
+            )
+            for term in matching_terms
+        )
         items_by_ref[row["record_ref"]] = RetrievalItem(
             record_ref=row["record_ref"],
             family=row["family"],
             topic_id=row["topic_id"],
             exact_score=0,
             lexical_score=lexical_score,
-            total_score=lexical_score,
+            total_score=weighted_score,
             record=dict(row),
         )
 
@@ -169,7 +182,7 @@ def exact_expand(
     requested = tuple(dict.fromkeys(str(ref).strip() for ref in refs if str(ref).strip()))
     page_refs = requested[:limit]
     manifest = load_query_manifest(ws)
-    fresh = canonical_state_token(ws) == manifest.canonical_state_token
+    fresh = query_index_is_fresh(ws, manifest)
     repository = RecordRepository(
         ws,
         actor=RecordActor(actor_type="migration", actor_id="retrieval-read", host="retrieval"),
@@ -248,7 +261,7 @@ def _exact_item(
         topic_id=str(record.get("topic_id") or record.get("topic") or ""),
         exact_score=100,
         lexical_score=0,
-        total_score=100,
+        total_score=10_000,
         record=record,
     )
 
@@ -277,7 +290,7 @@ def _exact_item_from_repository(
         topic_id=str(record.get("topic_id") or record.get("topic") or ""),
         exact_score=100,
         lexical_score=0,
-        total_score=100,
+        total_score=10_000,
         record=record,
     )
 

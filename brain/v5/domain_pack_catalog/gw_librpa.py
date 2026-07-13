@@ -1,0 +1,217 @@
+"""Built-in gw_librpa domain pack."""
+
+from brain.v5.domain_pack_types import DomainPackRecord
+
+
+def build_domain_pack() -> DomainPackRecord:
+    return DomainPackRecord(
+            pack_id="gw_librpa",
+            domain="gw_librpa",
+            description="Self-energy, frequency grid, basis cutoff, Coulomb singularity, commit/build/runtime, benchmark recipe.",
+            suggested_question_intents=[
+                "formula_code_invariant_check",
+                "provenance_check",
+                "benchmark_consistency_check",
+                "finite_size_or_cutoff_check",
+            ],
+            risk_signals=["formula_to_code_risk", "reproducibility_risk", "compute_cost"],
+            workflow_graph={
+                "default_routes": [
+                    {
+                        "route_id": "abacus_librpa_molecule_gw",
+                        "system_type": "molecule",
+                        "stages": ["scf", "librpa_gw", "postprocess"],
+                        "required_records": ["code_state", "tool_recipe", "tool_run", "artifact"],
+                    },
+                    {
+                        "route_id": "abacus_pyatb_librpa_periodic_gw",
+                        "system_type": "solid_or_2d",
+                        "stages": ["scf", "pyatb", "nscf", "preprocess", "librpa_gw", "postprocess"],
+                        "required_records": ["code_state", "tool_recipe", "tool_run", "artifact"],
+                    },
+                    {
+                        "route_id": "abacus_librpa_rpa_energy",
+                        "system_type": "molecule_or_solid",
+                        "stages": ["scf", "librpa_rpa", "convergence_report"],
+                        "required_records": ["code_state", "tool_recipe", "tool_run", "artifact"],
+                    },
+                ],
+                "stage_gate": "each expensive stage should have an explicit preflight or validation contract before trust-relevant use",
+                "orientation_only": True,
+            },
+            failure_taxonomy=[
+                {
+                    "failure_id": "basis_or_shrink_mismatch",
+                    "signals": ["ABFS_ORBITAL mismatch", "use_shrink_abfs inconsistency", "basis cutoff drift"],
+                    "review_basis": ["input bundle", "generated basis artifacts", "librpa.in"],
+                    "required_followup_records": ["artifact", "validation_result"],
+                },
+                {
+                    "failure_id": "formula_code_mismatch",
+                    "signals": ["self-energy formula path changed", "head-wing convention changed"],
+                    "review_basis": ["formula_refs", "code_state", "formula_code_invariant"],
+                    "required_followup_records": ["code_state", "tool_run", "evidence"],
+                },
+                {
+                    "failure_id": "nonfinal_or_diagnostic_data",
+                    "signals": ["nonconverged", "negative gap", "noiter", "contaminated root", "assumption-only plot"],
+                    "review_basis": ["lane manifest", "run report", "validation result"],
+                    "required_followup_records": ["tool_run", "artifact", "validation_result"],
+                },
+                {
+                    "failure_id": "hpc_runtime_not_science",
+                    "signals": ["OOM", "TIME LIMIT", "node failure", "dependency pending", "missing final artifact"],
+                    "review_basis": ["scheduler state", "stderr/stdout", "run status manifest"],
+                    "required_followup_records": ["tool_run", "artifact"],
+                },
+            ],
+            lane_policy={
+                "default_lane": "diagnostic",
+                "final_evidence_requires": [
+                    "explicit final lane label",
+                    "clean code_state",
+                    "passed validation_result",
+                    "artifact allowlist or final output manifest",
+                ],
+                "diagnostic_labels": ["smoke", "debug", "pilot", "nonconverged", "assumption_plot"],
+                "forbidden_promotions": [
+                    "diagnostic run",
+                    "unfinished run",
+                    "scheduler failure",
+                    "missing final artifact",
+                    "summary-only observation",
+                ],
+                "orientation_only": True,
+            },
+            artifact_schema={
+                "required_artifact_roles": [
+                    "input_bundle",
+                    "run_report",
+                    "stdout_stderr",
+                    "final_or_diagnostic_output_manifest",
+                ],
+                "recommended_artifact_roles": [
+                    "plot",
+                    "benchmark_table",
+                    "lane_manifest",
+                    "preflight_report",
+                    "archive",
+                ],
+                "hash_required_for": ["input_bundle", "final_or_diagnostic_output_manifest", "archive"],
+                "orientation_only": True,
+            },
+            hpc_interpretation={
+                "scheduler_states_are_process_evidence_only": True,
+                "runtime_failure_not_algorithmic_evidence": True,
+                "missing_expected_output_means": "not_ready",
+                "record_as": "tool_run",
+                "trust_update_allowed": False,
+                "orientation_only": True,
+            },
+            context_profile_refs=[
+                "librpa_run_continuation",
+                "source_reconstruction",
+                "group_meeting_report",
+                "closeout",
+            ],
+            tool_recipes=["librpa_gw_benchmark_recipe", "code_state_capture", "abacus_librpa_input_audit"],
+            skill_refs=[
+                {
+                    "skill_id": "oh-my-librpa",
+                    "kind": "external_skill_bundle",
+                    "repo": "https://github.com/AroundPeking/oh-my-LibRPA",
+                    "entrypoint": "skills/oh-my-librpa/SKILL.md",
+                    "role": "chat-first front router for ABACUS/FHI-aims + LibRPA workflows",
+                    "load_when": [
+                        "LibRPA GW or RPA computation is requested",
+                        "ABACUS or FHI-aims source bundles, logs, or run artifacts need intake",
+                        "a first-principles workflow needs route selection, preflight, execution, or debug guidance",
+                    ],
+                    "required_followup_records": [
+                        "code_state",
+                        "tool_recipe",
+                        "tool_run",
+                        "artifact",
+                        "evidence",
+                        "validation_contract",
+                        "validation_result",
+                    ],
+                    "orientation_only": True,
+                },
+                {
+                    "skill_id": "oh-my-librpa-abacus-librpa",
+                    "kind": "external_stack_skill",
+                    "repo": "https://github.com/AroundPeking/oh-my-LibRPA",
+                    "entrypoint": "skills/oh-my-librpa-abacus-librpa/SKILL.md",
+                    "role": "ABACUS -> LibRPA stack router",
+                    "orientation_only": True,
+                },
+                {
+                    "skill_id": "oh-my-librpa-fhi-aims-qsgw",
+                    "kind": "external_stack_skill",
+                    "repo": "https://github.com/AroundPeking/oh-my-LibRPA",
+                    "entrypoint": "skills/oh-my-librpa-fhi-aims-qsgw/SKILL.md",
+                    "role": "FHI-aims -> LibRPA QSGW/G0W0 stack router",
+                    "orientation_only": True,
+                },
+            ],
+            manifest_refs=[
+                {
+                    "manifest_id": "domain-manifest.abacus-librpa",
+                    "repo": "https://github.com/AroundPeking/oh-my-LibRPA",
+                    "path": "registry/domain-manifest.abacus-librpa.json",
+                    "role": "domain operations, invariants, routing, contracts, and reproducibility metadata",
+                    "orientation_only": True,
+                },
+                {
+                    "manifest_id": "aitp-integration",
+                    "repo": "https://github.com/AroundPeking/oh-my-LibRPA",
+                    "path": "docs/aitp-integration.md",
+                    "role": "external integration guide for AITP and oh-my-LibRPA contract boundaries",
+                    "orientation_only": True,
+                },
+            ],
+            tool_executor_recommendations=[
+                {
+                    "executor_id": "metric_table_check",
+                    "recipe_id": "recipe-librpa-gw-benchmark-table",
+                    "evidence_type": "code_method",
+                    "supports_outputs": ["evidence_or_provenance", "minimal_check"],
+                    "use_when": "Compare a GW benchmark table against reference values after recording code state.",
+                    "required_context_refs": ["code_state_ids"],
+                },
+                {
+                    "executor_id": "scalar_tolerance_check",
+                    "recipe_id": "recipe-librpa-single-benchmark-observable",
+                    "evidence_type": "code_method",
+                    "supports_outputs": ["evidence_or_provenance"],
+                    "use_when": "Check one GW benchmark observable such as a gap or self-energy norm.",
+                    "required_context_refs": ["code_state_ids"],
+                },
+                {
+                    "executor_id": "formula_code_invariant_check",
+                    "recipe_id": "recipe-librpa-gw-formula-code-invariant",
+                    "evidence_type": "code_method",
+                    "supports_outputs": ["formula_code_invariant", "minimal_check"],
+                    "use_when": "Check that formula references, code paths, and expected GW invariants are explicitly matched.",
+                    "required_context_refs": ["code_state_ids", "formula_refs"],
+                },
+                {
+                    "executor_id": "librpa_gw_run_metadata_check",
+                    "recipe_id": "recipe-librpa-gw-run-metadata-diagnostic",
+                    "evidence_type": "code_method",
+                    "supports_outputs": ["librpa_gw_run_metadata", "minimal_check"],
+                    "use_when": "Check frequency-grid and basis-cutoff metadata from versioned LibRPA/GW input/output artifacts.",
+                    "required_context_refs": ["code_state_ids", "artifact_ids"],
+                },
+                {
+                    "executor_id": "failure_mode_basis_check",
+                    "recipe_id": "recipe-librpa-gw-failure-mode-review-basis",
+                    "evidence_type": "code_method",
+                    "supports_outputs": ["failure_mode_review_basis", "minimal_check"],
+                    "use_when": "Check that frequency-grid, basis-cutoff, formula-code, and code-state failure modes have concrete review basis before promotion.",
+                    "required_context_refs": ["code_state_ids", "validation_result_ids"],
+                },
+            ],
+            trust_card_templates=["clean_code_state_trust_card", "trusted_benchmark_recipe_card"],
+        )

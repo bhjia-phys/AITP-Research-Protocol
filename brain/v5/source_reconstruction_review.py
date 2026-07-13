@@ -17,8 +17,20 @@ from brain.v5.models import (
 )
 from brain.v5.paths import WorkspacePaths
 from brain.v5.source_reconstruction import audit_source_reconstruction_batch
-from brain.v5.store import list_records, list_valid_records, write_record
+from brain.v5.store import (
+    list_records,
+    list_valid_records as _list_valid_records,
+    write_record,
+)
 from brain.v5.workspace import get_claim
+
+
+def _legacy_records(directory, cls):
+    return _list_valid_records(
+        directory,
+        cls,
+        operation="legacy_source_reconstruction_review",
+    )
 
 _REVIEWABLE_COMPONENTS = {
     "definitions",
@@ -303,34 +315,34 @@ def _validate_typed_basis_refs(
     _require_same_claim_refs(
         "evidence ref",
         evidence_refs,
-        list_valid_records(ws.registry_dir("evidence"), EvidenceRecord),
+        _legacy_records(ws.registry_dir("evidence"), EvidenceRecord),
         "evidence_id",
         claim_id,
     )
     _require_same_claim_refs(
         "validation result",
         validation_result_ids,
-        list_valid_records(ws.registry_dir("validation_results"), ValidationResultRecord),
+        _legacy_records(ws.registry_dir("validation_results"), ValidationResultRecord),
         "result_id",
         claim_id,
     )
     _require_same_claim_refs(
         "reference location",
         reference_location_ids,
-        list_valid_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord),
+        _legacy_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord),
         "location_id",
         claim_id,
     )
     _require_topic_refs(
         "physics object",
         object_ids,
-        list_valid_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord),
+        _legacy_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord),
         "object_id",
         topic_id,
     )
     _require_relation_refs(
         relation_ids,
-        list_valid_records(ws.registry_dir("object_relations"), ObjectRelationRecord),
+        _legacy_records(ws.registry_dir("object_relations"), ObjectRelationRecord),
         topic_id,
         claim_id,
     )

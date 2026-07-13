@@ -11,6 +11,8 @@ from brain.v5.evidence import record_artifact_ref
 from brain.v5.ids import prefixed_id, short_hash
 from brain.v5.models import CodeStateRecord, CodeWorkspaceRecord
 from brain.v5.paths import WorkspacePaths
+from brain.v5.record_envelope import RecordActor
+from brain.v5.record_repository import RecordRepository
 from brain.v5.store import write_record
 
 
@@ -106,8 +108,15 @@ def record_code_state(
         linked_records=linked_records or {},
         known_divergence=known_divergence,
     )
-    write_record(
-        ws.registry_dir("code_states") / f"{code_state_id}.md",
+    RecordRepository(
+        ws,
+        actor=RecordActor(
+            actor_type="tool",
+            actor_id="record_code_state",
+            host="aitp",
+        ),
+    ).write(
+        "code_states",
         record,
         body=(
             "# Code State\n\n"

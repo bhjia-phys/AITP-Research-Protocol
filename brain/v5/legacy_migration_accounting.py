@@ -30,7 +30,15 @@ from brain.v5.models import (
     ValidationResultRecord,
 )
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import list_valid_records
+from brain.v5.store import list_valid_records as _list_valid_records
+
+
+def _legacy_records(directory, cls):
+    return _list_valid_records(
+        directory,
+        cls,
+        operation="legacy_migration_accounting",
+    )
 
 
 def write_legacy_migration_accounting_run(
@@ -234,23 +242,23 @@ def _markdown_readability_problems(topic_dir: Path, files: list[dict[str, Any]])
 
 def _registry_snapshot(ws: WorkspacePaths) -> dict[str, list[Any]]:
     return {
-        "claims": list_valid_records(ws.registry_dir("claims"), ClaimRecord),
-        "claim_statuses": list_valid_records(ws.registry_dir("claim_statuses"), ClaimStatusRecord),
-        "proof_obligations": list_valid_records(ws.registry_dir("proof_obligations"), ProofObligationRecord),
-        "physics_objects": list_valid_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord),
-        "object_relations": list_valid_records(ws.registry_dir("object_relations"), ObjectRelationRecord),
-        "evidence": list_valid_records(ws.registry_dir("evidence"), EvidenceRecord),
-        "artifacts": list_valid_records(ws.registry_dir("artifacts"), ArtifactRecord),
-        "reference_locations": list_valid_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord),
-        "source_assets": list_valid_records(ws.registry_dir("source_assets"), SourceAssetRecord),
-        "sensemaking_reports": list_valid_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord),
-        "validation_contracts": list_valid_records(ws.registry_dir("validation_contracts"), ValidationContractRecord),
-        "validation_results": list_valid_records(ws.registry_dir("validation_results"), ValidationResultRecord),
-        "tool_runs": list_valid_records(ws.registry_dir("tool_runs"), ToolRunRecord),
-        "research_routes": list_valid_records(ws.registry_dir("routes"), ResearchRouteRecord),
-        "research_runs": list_valid_records(ws.registry_dir("research_runs"), ResearchRunRecord),
-        "research_run_events": list_valid_records(ws.registry_dir("research_run_events"), ResearchRunEventRecord),
-        "memory_entries": list_valid_records(ws.root / "memory" / "l2" / "entries", MemoryEntryRecord),
+        "claims": _legacy_records(ws.registry_dir("claims"), ClaimRecord),
+        "claim_statuses": _legacy_records(ws.registry_dir("claim_statuses"), ClaimStatusRecord),
+        "proof_obligations": _legacy_records(ws.registry_dir("proof_obligations"), ProofObligationRecord),
+        "physics_objects": _legacy_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord),
+        "object_relations": _legacy_records(ws.registry_dir("object_relations"), ObjectRelationRecord),
+        "evidence": _legacy_records(ws.registry_dir("evidence"), EvidenceRecord),
+        "artifacts": _legacy_records(ws.registry_dir("artifacts"), ArtifactRecord),
+        "reference_locations": _legacy_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord),
+        "source_assets": _legacy_records(ws.registry_dir("source_assets"), SourceAssetRecord),
+        "sensemaking_reports": _legacy_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord),
+        "validation_contracts": _legacy_records(ws.registry_dir("validation_contracts"), ValidationContractRecord),
+        "validation_results": _legacy_records(ws.registry_dir("validation_results"), ValidationResultRecord),
+        "tool_runs": _legacy_records(ws.registry_dir("tool_runs"), ToolRunRecord),
+        "research_routes": _legacy_records(ws.registry_dir("routes"), ResearchRouteRecord),
+        "research_runs": _legacy_records(ws.registry_dir("research_runs"), ResearchRunRecord),
+        "research_run_events": _legacy_records(ws.registry_dir("research_run_events"), ResearchRunEventRecord),
+        "memory_entries": _legacy_records(ws.root / "memory" / "l2" / "entries", MemoryEntryRecord),
     }
 
 

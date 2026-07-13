@@ -1,0 +1,50 @@
+{
+  "can_update_claim_trust": false,
+  "can_update_kernel_state": false,
+  "final_row_count": 31,
+  "index_generation": 11,
+  "input_fingerprint": "1494e8dd3f71ca5a8f66ce548c06eb903daf3b5dd3feb81b5c4b7baa6dbe61ae",
+  "inputs": {
+    "collector_script": {
+      "path": "F:/AI_Workspace/Theoretical-Physics/research/librpa/scripts/refresh_qsgw_remote_status.py",
+      "sha256": "bc3197bbd5c88b14c1a56961be758a7f683a555c13c68e3ccb6dd68c05707279",
+      "size_bytes": 13994
+    },
+    "final_table": {
+      "path": "F:/AI_Workspace/Theoretical-Physics/research/librpa/reports/si_mgo_bn_qsgw_final_usable_current_20260523.tsv",
+      "sha256": "02dd365210642eeaddf4b6c53d00f5c38b1ffce917e1577e27902545c4b0116c",
+      "size_bytes": 8370
+    },
+    "status_table": {
+      "path": "F:/AI_Workspace/Theoretical-Physics/research/librpa/reports/si_mgo_bn_qsgw_status_current_20260523.tsv",
+      "sha256": "3a54cb5d5dc85041764ff79ffb391f94f385c66fb05300c8e01c18ccf0e6733f",
+      "size_bytes": 19498
+    }
+  },
+  "kind": "real_vertical_probe_receipt",
+  "materials": [
+    "BN",
+    "MgO",
+    "Si"
+  ],
+  "not_shown_count": 1215,
+  "ok": true,
+  "orientation_only": true,
+  "selected_context_families": [
+    "artifacts",
+    "claim_statuses",
+    "claims",
+    "code_states",
+    "evidence",
+    "physics_objects",
+    "proof_obligations",
+    "reference_locations",
+    "source_assets",
+    "tool_runs",
+    "validation_results"
+  ],
+  "status": "passed",
+  "summary_inputs_trusted": false,
+  "topic_id": "qsgw-headwing-update-librpa",
+  "vertical": "librpa_hpc"
+}

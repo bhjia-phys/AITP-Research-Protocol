@@ -13,6 +13,7 @@ from brain.v5.context_compiler import (
     compile_research_context,
     estimate_context_tokens,
 )
+from brain.v5.context_selection import merge_not_shown_reasons, select_candidate_summaries
 from brain.v5.context_pack_projection import (
     bounded_context_lines as _bounded_context_lines,
     compact_from_bundle as _compact_from_bundle,
@@ -67,10 +68,20 @@ def build_aitp_context_pack(
         ),
     )
     compact = _compact_from_bundle(bundle)
+    projected_candidates = select_candidate_summaries(
+        bundle.candidate_summaries,
+        limit=candidate_limit,
+    )
     top_candidates = [
         _compiler_candidate(candidate)
-        for candidate in bundle.candidate_summaries[:candidate_limit]
+        for candidate in projected_candidates
     ]
+    projection_omitted = len(bundle.candidate_summaries) - len(projected_candidates)
+    not_shown_count = bundle.not_shown_count + projection_omitted
+    not_shown_reason = merge_not_shown_reasons(
+        bundle.not_shown_reason,
+        (("context_pack_candidate_limit",) if projection_omitted else ()),
+    )
     distillation = _distillation_from_candidates(top_candidates)
     focus_reconciliation = _focus_reconciliation_from_bundle(
         bundle,
@@ -123,6 +134,14 @@ def build_aitp_context_pack(
         "retrieval_coverage": bundle.coverage,
         "index_status": bundle.index_status,
         "source_index_generation": bundle.source_index_generation,
+        "partial": bool(bundle.partial or projection_omitted),
+        "not_found_refs": list(bundle.not_found_refs),
+        "not_checked_families": list(bundle.not_checked_families),
+        "retrieval_truncated": bundle.retrieval_truncated,
+        "render_truncated": bundle.render_truncated,
+        "truncated": bundle.truncated,
+        "not_shown_count": not_shown_count,
+        "not_shown_reason": list(not_shown_reason),
         "record_refs": list(bundle.record_refs),
         "context_budget": {
             "max_bytes": max_bytes,
@@ -195,11 +214,19 @@ def build_aitp_context_pack(
     }
     if profile_warning:
         payload["warnings"].extend(profile_warning)
-    payload["context_lines"] = _bounded_context_lines(
+    context_lines, host_render_truncated = _bounded_context_lines(
         _context_lines(payload, compact),
         line_limit=line_limit,
         max_bytes=max_bytes,
         max_tokens=max_tokens,
+    )
+    payload["context_lines"] = context_lines
+    payload["render_truncated"] = bool(bundle.render_truncated or host_render_truncated)
+    payload["truncated"] = bool(bundle.retrieval_truncated or payload["render_truncated"])
+    payload["partial"] = bool(
+        bundle.partial
+        or projection_omitted
+        or host_render_truncated
     )
     payload["line_count"] = len(payload["context_lines"])
     payload["markdown"] = "\n".join(payload["context_lines"]) + "\n"
@@ -294,6 +321,11 @@ def _context_lines(payload: dict[str, Any], compact: dict[str, Any]) -> list[str
             )
         lines.append("")
     lines.extend(list(compact.get("lines") or []))
+    lines.append(
+        "Context-pack candidate selection: "
+        f"not_shown={payload.get('not_shown_count', 0)}; "
+        f"reason={'+'.join(payload.get('not_shown_reason') or []) or 'none'}."
+    )
     lines.append("")
     lines.append(
         "Reusable-block candidates: "
@@ -328,7 +360,7 @@ def _fingerprint(payload: dict[str, Any]) -> str:
     fingerprint_payload = {
         key: value
         for key, value in payload.items()
-        if key not in {"fingerprint", "pack_id", "markdown"}
+        if key not in {"fingerprint", "pack_id", "markdown", "source_index_generation"}
     }
     encoded = json.dumps(fingerprint_payload, sort_keys=True, ensure_ascii=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()

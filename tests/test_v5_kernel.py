@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 
 def test_init_workspace_creates_v5_layout(tmp_path):
     from brain.v5.workspace import init_workspace
@@ -264,7 +266,7 @@ def test_execution_brief_skips_malformed_code_state_and_tool_run_records(tmp_pat
     assert summary.source_records["tool_runs"] == ["tool-run-valid"]
 
 
-def test_list_evidence_for_claim_skips_malformed_legacy_records(tmp_path):
+def test_list_evidence_for_claim_reports_malformed_canonical_records(tmp_path):
     from brain.v5.evidence import list_evidence_for_claim, record_evidence
     from brain.v5.markdown import write_md
     from brain.v5.workspace import create_claim, create_topic, init_workspace
@@ -293,9 +295,9 @@ def test_list_evidence_for_claim_skips_malformed_legacy_records(tmp_path):
         summary="Plot guard uses final-lane allowlist.",
     )
 
-    records = list_evidence_for_claim(ws, claim.claim_id)
-
-    assert [record.evidence_id for record in records] == [evidence.evidence_id]
+    assert evidence.evidence_id
+    with pytest.raises(TypeError, match="topic_id"):
+        list_evidence_for_claim(ws, claim.claim_id)
 
 
 def test_execution_brief_highlights_orientation_operating_notes(tmp_path):

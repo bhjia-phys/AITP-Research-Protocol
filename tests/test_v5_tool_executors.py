@@ -111,6 +111,8 @@ def test_mcp_tool_execute_wrapper_returns_valid_tool_run_record(tmp_path):
     assert payload["kind"] == "tool_run"
     assert payload["outputs"]["absolute_error"] == 0.0
     assert payload["evidence_status"] == "supports"
+    assert payload["supersedes_run_id"] == ""
+    assert payload["supersedes"] == ""
 
 
 def test_tool_execute_can_record_evidence_and_update_brief_coverage(tmp_path):
@@ -196,6 +198,7 @@ def test_cli_tool_execute_can_return_evidence_id(tmp_path, capsys):
     assert payload["ok"] is True
     assert payload["kind"] == "tool_run"
     assert payload["evidence_id"].startswith("evidence-fqhe-")
+    assert payload["supersedes"] == payload["supersedes_run_id"]
 
 
 def test_mcp_tool_execute_can_return_evidence_record(tmp_path):

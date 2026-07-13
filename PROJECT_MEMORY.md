@@ -1,29 +1,31 @@
 # AITP Research Protocol — Project Memory
 
-This repository implements the AITP (AI Theoretical Physics) research protocol as a
-FastMCP-based MCP server. It provides tools for AI coding agents to conduct
-structured theoretical physics research with formal validation.
+This repository implements AITP v5 as a typed research operating memory for
+theoretical-physics work. The canonical Markdown/YAML graph records research
+scope, evidence, derivations, execution provenance, validation, trust, and
+reviewed process memory; indexed views and host context are derived.
 
 ## Architecture
 
-- `brain/mcp_server.py` — Main MCP server. ~49 @mcp.tool() functions implement the
-  AITP protocol (L0-L4 layers). Uses FastMCP + PyYAML with file-based persistence
-  (Markdown + YAML frontmatter).
-- `brain/state_model.py` — Gate evaluation logic, artifact templates, stage
-  definitions (L0, L1, L3, L4), required frontmatter fields, and heading
-  contracts. Also defines the knowledge graph types (nodes, edges, towers) and
-  the domain skill registry (`DOMAIN_SKILL_REGISTRY`, `resolve_domain_prerequisites`).
-- `skills/` — Stage-specific skill Markdown files loaded by agents, plus domain
-  skills (e.g., `skill-librpa.md`) that are injected as prerequisites by the
-  execution brief when the topic matches a domain pattern.
-- `schemas/` — JSON Schema definitions for protocol objects.
-- `contracts/` — Protocol contract definitions.
-- `adapters/` — Platform-specific adapters (OpenClaw, Codex).
-- `templates/` — File templates for topics and artifacts.
+- `brain/v5/native_mcp.py` - Production MCP entrypoint. Normal research uses
+  only `aitp_v5_*` typed tools.
+- `brain/v5/` - Canonical typed kernel, record repository, query/index/context
+  services, capability registry, CLI, adapters, and public contracts.
+- `brain/mcp_server.py` - Legacy L0-L4 compatibility server. It is read-only by
+  default and retained for audit, migration, rollback, and historical
+  interpretation. Do not extend its candidate/stage/promotion write workflow.
+- `brain/state_model.py`, `brain/state.py`, and `brain/gates.py` - Legacy L0-L4
+  contracts. They are not the v5 research lifecycle.
+- `deploy/`, `hooks/`, and `brain/v5/*adapter*` - Host integration surfaces;
+  these preserve typed-record and bounded-context authority rules.
+- `skills/` - Legacy stage/domain skill material. Reviewed v5 skill compilation
+  and installation remain separate from conceptual knowledge and claim trust.
+- `schemas/`, `contracts/`, `adapters/`, and `templates/` - Compatibility and
+  deployment assets; verify the consuming runtime before changing them.
 
-## Domain Skill System
+## Legacy Domain Skill Compatibility
 
-The execution brief includes a `domain_prerequisites` field. Domain skills are
+The legacy execution brief includes a `domain_prerequisites` field. Domain skills are
 detected via three mechanisms (in priority order):
 
 1. **Contract-based**: `contracts/domain-manifest.<domain_id>.json` in the topic
@@ -32,26 +34,82 @@ detected via three mechanisms (in priority order):
 2. **State frontmatter**: `domains: [abacus-librpa]` in `state.md` frontmatter.
 3. **Legacy slug fallback**: pattern matching on topic slug (for pre-existing topics).
 
-The agent must load domain skills BEFORE the stage skill. Domain skills encode
+Legacy agents load domain skills before the stage skill. Domain skills encode
 domain-specific conventions, invariants, routing, and validation requirements.
 
-To add a new domain: add an entry to `DOMAIN_ID_TO_SKILL` in `state_model.py`
-and create the corresponding skill file in `skills/`. To register a topic with
-a domain: copy the domain manifest into the topic's `contracts/` or add
-`domains` to `state.md` frontmatter.
+Do not use this compatibility registry as the v5 skill compiler. New v5 domain
+support belongs in typed domain packs/capabilities; new reusable procedures
+must follow the reviewed skill-candidate/install/use lifecycle.
+
+## V5 Procedural Skill Lifecycle
+
+- Skill detection is read-only and derived. At explicit closeout, validation
+  completion, or user request, `build_procedural_skill_candidates` checks a
+  topic's recipe, final runs, source/code provenance, artifacts, passed
+  validation, and applicability invariants.
+- Missing records are returned as recording gaps. Ordinary tool noise does not
+  create proposals. Physics objects, relations, exploratory Insight, and
+  sensemaking are excluded from procedural Skill eligibility.
+- `propose_detected_procedural_skill` writes one review-gated
+  `skill_patch_proposal` with topic, execution, validation, source, artifact,
+  precondition, and applicability refs. It does not install anything.
+- Project installation requires a content-hash-bound, host-verified
+  `approve_install` human checkpoint. `apply_project_skill` writes only
+  `.agents/skills/<skill-name>/SKILL.md`, rejects conflicting existing content,
+  CAS-updates proposal status, and cannot update claim trust.
+- These operations are available on full MCP. The existing research
+  distillation response includes procedural candidates; compact remains ten
+  tools and loads no Skill installer by default.
+- Current scope is one project-local `SKILL.md`. Multi-file packages, rollback,
+  cross-host installation, and skill-usage records remain future vertical-owned
+  work, not hidden implemented capability.
 
 ## Key Conventions
 
-- **Topic storage**: All state is Markdown files with YAML frontmatter. No JSON
-  databases, no SQL.
-- **Topics root**: Set via `AITP_TOPICS_ROOT` env var. Each topic is a directory
-  with `state.md` as the entry point.
-- **Gate model**: Each stage (L0, L1, L3, L4) has required artifacts with
-  required frontmatter fields and required Markdown headings. Missing any = blocked.
-- **Tool return types**: Tools return `dict` or `_GateResult` (dict subclass).
-  `_GateResult.__str__` returns its message for human display.
-- **Popup gates**: Tools that require human decisions return popup_gate dicts for
-  the agent to render as user prompts.
+- **Canonical storage**: v5 typed Markdown/YAML records are authoritative.
+  `.aitp/indexes`, summaries, RAG views, context packs, and dashboards are
+  disposable projections and cannot update claim trust.
+- **Workspace base**: Resolve the explicit v5 base/topics root used by the
+  current host. Never infer a real canonical target from a test or install
+  record. Blocking tests clear inherited `AITP_TOPICS_ROOT`, preserve each
+  explicit test base, and isolate `Path.home()` plus host-specific config roots
+  under system Temp without hiding the launching Python environment.
+- **Legacy boundary**: L0-L4 writes are disabled by default.
+  `AITP_LEGACY_ENABLE_WRITES=1` is only for explicit migration/debug fixtures;
+  archived legacy write E2E failures are not release defects.
+- **Milestones vs gates**: The implementation roadmap uses M0-M6. "Gate" is
+  reserved for real human/trust/validation/mutation checkpoints in research.
+- **M0.5 complexity freeze**: M0 is accepted, but M1-M6 are not automatic
+  implementation checklists. First classify and reduce capabilities, families,
+  writers, imports, legacy dependencies, compact exposure, and logical shard
+  complexity; then retain abstractions only when a real research vertical or
+  required compatibility fixture owns them.
+- **Writer-audit lower bound**: Preserve the historical M0 111-row named-helper
+  baseline while classifying the current 114-row inventory separately from the
+  164-row direct-mutation inventory. The latter
+  covers literal path/open/copy/rename/SQL mechanisms in declared production
+  trees and excludes tests. Its bounded policy currently parses 573/573
+  declared production Python files with zero errors, so
+  `bounded_coverage_complete` is true. Universal `coverage_complete` remains
+  false for dynamic/reflected/native I/O. Do not sum call sites into a semantic
+  writer claim or use bounded closure as a repository-wide no-bypass proof.
+- **Vertical writer closure**: LibRPA, QFT/QG fixture, new-software, and
+  multi-topic E2E tests compare complete canonical before/after byte snapshots
+  with successful `RecordRepository` create/revision/archive receipts. This
+  proves scoped vertical convergence only; it does not erase the bounded
+  scanner's dynamic/native remainder.
+- **Trust boundary**: RAG, summaries, skills, hooks, cross-topic links, and
+  migration adapters never transfer or inflate claim trust by themselves.
+- **Human checkpoint authority**: `decided_by` is descriptive provenance, not
+  proof of human approval. Production checkpoint decisions require a
+  content-bound host receipt from
+  `.aitp/runtime/human_approval_receipts/<checkpoint-id>.json`, verified with
+  the host-only `AITP_HUMAN_APPROVAL_HMAC_KEY_B64`. Canonical records persist
+  only verification metadata and the receipt hash, never the raw receipt or
+  signature. Historical decisions default to non-authorizing. The symmetric
+  key must remain isolated to the MCP/host process; this local receipt closes
+  accidental or fabricated tool-call approval, not a malicious process that
+  can read the host secret.
 - **Human-facing output stability**: `docs/AITP_SPEC.md` defines the stable
   output spine for chat reports, session summaries, replay packets, and review
   views. Preserve the spine: core claim, verified content, uncertainty/failure
@@ -67,10 +125,14 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
 
 ## Development
 
-- Install: `pip install fastmcp pyyaml`
-- Run: `python brain/mcp_server.py`
-- Test: `pytest tests/`
-- The MCP server is configured in each workspace's `.mcp.json`
+- Install test dependencies: `python -m pip install -r requirements-test.txt`
+- Run production MCP: `python brain/v5/native_mcp.py`
+- Run v5 CLI: `python -m brain.v5.cli --help`
+- Run blocking release tests: `python scripts/run_v5_test_lanes.py full`
+- Run focused compatibility: `python scripts/run_v5_test_lanes.py legacy-compat`
+- `legacy-write-archive` is an explicit historical diagnostic only and is not
+  part of CI or milestone acceptance.
+- Host/plugin configuration should point at the v5 MCP entrypoint.
 
 ## AITP v5 Runtime Hooks
 
@@ -642,9 +704,14 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `tool_run` family, not through parallel job/dataset/environment/sanity
   families. `record_tool_run` / `capture_tool_run_from_local_path` accept
   optional `scientific_run_id`, `supersedes`, and `lane` fields; passing
-  `supersedes` back-fills the prior run's `superseded_by` (and inherits its
-  `scientific_run_id` when not given), and `lane` defaults to `diagnostic` so
-  an unmarked run can never be treated as final. `link_code_state_to_run` /
+  `supersedes` writes one immutable `supersedes_run_id` forward edge on the new
+  attempt (and inherits the prior `scientific_run_id` when not given). It never
+  patches the prior run; cockpit, timeline, relation-map, and index projections
+  derive the reverse superseded state. Full MCP/CLI payloads retain the legacy
+  string alias `supersedes` for one release, while canonical frontmatter keeps
+  the envelope `supersedes` revision-ref list separate. `lane` defaults to
+  `diagnostic` so an unmarked run can never be treated as final.
+  `link_code_state_to_run` /
   `link_artifact_to_run` back-fill `code_state_ids` / `artifact_ids` after the
   fact (the common gap when a run is recorded before its provenance is pinned).
   Real HPC runs (Slurm/ABACUS/LibRPA/PyATB, remote Fisherd) already live as
@@ -655,6 +722,13 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   (runs not superseded), active jobs, failure history, lane distribution,
   provenance gaps, the topic's lane contract, next valid actions, and
   allowed/not-allowed conclusions. It depends on no new record family.
+- Tool-run IDs preserve the historical v1 identity for unambiguous inputs and
+  use a canonical v2 identity when colon-delimited scalar fields would collide.
+  Selection is independent of insertion order and safe under concurrent writes.
+  Supersession is serialized on the prior run and must remain in one
+  topic/claim/scientific-run chain. Repository locks must close their file
+  descriptor exactly once; a second close can invalidate another thread's
+  newly reused descriptor on Windows.
 - `lane_contract` records (`aitp_v5_record_lane_contract` /
   `brain/v5/lane_contracts.py`) promote cockpit lane discipline (forbidden /
   preferred roots, final allowlist, final-evidence rules, default lane,
@@ -675,16 +749,49 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   orientation-only and should be used to preserve commit ranges, tests, smoke
   commands, blocking backlogs, and next actions for cross-session review.
 
-## Protocol Layer Map
+## V5 Layer Map
 
-| Layer | Purpose | Key Tools |
-|-------|---------|-----------|
-| L0 | Source discovery & ingestion | `register_source`, `list_sources`, `ingest_knowledge` |
-| L1 | Reading & framing | (artifacts filled by agent) |
-| L2 | Cross-topic knowledge graph | `create_l2_node`, `create_l2_edge`, `promote_candidate` |
-| L3 | Derivation campaign | `advance_to_l3`, `advance_l3_subplane`, `submit_candidate` |
-| L4 | Validation | `create_validation_contract`, `submit_l4_review`, research loop |
-| Cross | Health & navigation | `health_check`, `list_topics`, `get_status`, `get_execution_brief` |
+| Layer | Purpose | Authority boundary |
+|-------|---------|--------------------|
+| Canonical typed graph | Claims, sources, code states, runs, artifacts, validation, checkpoints, knowledge objects, and durable process memory | Only repository-backed typed writes may change canonical state |
+| Query and projections | Incremental index, retrieval, RAG, summaries, timelines, cockpits, and relation maps | Rebuildable and never a trust source |
+| Host context | Autoroute, compact entry, bounded context compilation, exact expansion, and closeout | Orientation-only unless an explicit typed write is requested |
+| Reuse | Reviewed recipes, grounded cross-topic references, and human-gated skill candidates | Never transfers claim trust or installs a skill automatically |
+| Host/runtime | Codex interaction, tool execution, hooks, HPC collection, and optional scheduling | May execute or collect, but cannot decide scientific trust |
+
+Legacy L0-L4 names describe historical compatibility records only. Their
+read/audit/migration/schema-v1 materialization remains available, but their
+candidate submission, stage advancement, promotion, and graph-write lifecycle
+is not a production or release-acceptance path.
+
+## Current Real-Store Baseline
+
+- Generation 12/schema-v2 derived query index: 9,858 records, zero malformed,
+  fresh. Freshness includes both canonical state and index-algorithm version.
+- Canonical watermark:
+  `e8d8005f7106a9993c0f8ed277bcb1fcdccbf40d8ae11a1782fbd9b49d79e306`.
+- Canonical state token:
+  `125335b6db599aa67312826a50ddb46d8f80dc9ce6b94381a5101aa64c673ff4`.
+- Authorized QFT/QG write proof: the complete canonical snapshot changed from
+  9,851 to 9,858 files, and the seven changed paths exactly equal the approved
+  two reference locations, two physics objects, one object relation, one proof
+  obligation, and one exploratory record. The post-write 9,858-file hash map
+  remained byte-identical across the generation-12 index rebuild, with SHA-256
+  `edbe88d21f64a857477ce3de4e36c6da6753cf38509e0e4635125ac889646257`.
+  The compact durable receipt is
+  `docs/superpowers/progress/2026-07-13-qft-qg-canonical-write-audit.json`.
+- Fresh bounded context probes complete in 0.835 seconds for the real LibRPA
+  topic and 0.687 seconds for the real quantum-gravity topic. LibRPA preserves
+  code state, tool run, artifact, validation, source, and proof-gap
+  representatives; QFT/QG exposes both paired source assets. Both expose
+  explicit `not_shown` counts and remain unable to claim absence.
+- The hash-pinned real LibRPA/HPC vertical probe passes with 31 accepted final
+  rows across Si, MgO, and BN. The real QFT/QG probe now also passes: both PDF
+  byte hashes and exact equation anchors are covered by source-grounded objects,
+  an explicitly hypothetical cross-paper relation, and a human-gated open proof
+  obligation. This closes the minimal open derivation trace, not the underlying
+  physics derivation; the speculative insight remains non-evidence and no claim
+  trust was changed.
 
 ## Operator Rule
 
