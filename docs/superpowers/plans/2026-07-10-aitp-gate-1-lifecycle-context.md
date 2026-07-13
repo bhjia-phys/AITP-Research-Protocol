@@ -583,7 +583,7 @@ class ScopeResolution:
     claim_trust_transfer: str = "forbidden"
 ```
 
-- [ ] **Step 1: Write failing scope-isolation tests**
+- [x] **Step 1: Write failing scope-isolation tests**
 
 Cover all allowed `focus_kind` values: `question`, `claim`, `route`,
 `work_package`, `source_set`, `code_change`, and `run_campaign`.
@@ -605,24 +605,24 @@ def test_cross_topic_bridge_requires_typed_refs_and_revalidation(tmp_path):
 Also test excluded scope, ambiguous primary scope, stale focus refs, same-topic
 bridges, unknown ref kinds, and `claim_trust_transfer != forbidden`.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run the new test module with a writable basetemp. Expected: missing module.
 
-- [ ] **Step 3: Implement validators and repository writers**
+- [x] **Step 3: Implement validators and repository writers**
 
 Validate typed refs through the generated record-family registry. Validate
 source/target existence with exact repository reads, but allow an explicitly
 `pending_target` bridge only when it remains excluded from context. Writers use
 `WritePolicy(create_or_idempotent)` and never call `bind_session`.
 
-- [ ] **Step 4: Implement scope resolution**
+- [x] **Step 4: Implement scope resolution**
 
 Return primary, supporting, excluded, unresolved, and optional discovery lanes
 separately. Program/shared records may orient the target topic; cross-topic
 scientific support remains `requires_target_revalidation=True`.
 
-- [ ] **Step 5: Feed scope into context requests**
+- [x] **Step 5: Feed scope into context requests**
 
 Extend `ContextRequest` with optional `focus_set_ref`, `program_id`, and
 `include_cross_topic_discovery=False`, plus the required disclosure level.
@@ -634,12 +634,49 @@ checked/unchecked scope, read errors, and next-level handles. Never merge
 cross-topic trust or active-claim state, and never convert `not_checked` or
 `not_shown` into `not_found`.
 
-- [ ] **Step 6: Run M0 plus scope tests**
+- [x] **Step 6: Run M0 plus scope tests**
 
 Run the scope module, context compiler, active-claim focus, retrieval, and
 record-ref tests. Verify the same session binding file hash before/after.
 
-- [ ] **Step 7: Commit Task 2**
+Implementation evidence (2026-07-13):
+
+- Initial RED produced 22 expected failures for the missing scope module and
+  disclosure fields. Independent review then reproduced five valid boundary
+  gaps: non-exact explicit-ref scope bypass, missing canonical exact payloads,
+  inactive explicit focus selection, page-local exact coverage overclaim, and
+  topicless bridge endpoints. The reported blank-`created_at` issue was not a
+  defect because the repository persists the generated envelope timestamp.
+  Additional RED tests reproduced omitted-support accounting (`1 failed`) and
+  inactive program routing (`3 failed`).
+- `ContextRequest` now has the closed disclosure ladder plus optional focus,
+  program, and discovery inputs. Route hints contain handles only; startup uses
+  orientation-only support handles; normal context uses one primary-topic query
+  plus exact reviewed support; exact expansion returns canonical typed payloads
+  with bounded truthful pagination. Scope-excluded/discovery refs remain
+  distinct from `not_found`. Reviewed support omitted by the normal record
+  budget is counted and exposed through bounded exact-expansion handles rather
+  than silently disappearing.
+- Focus lookup uses cached orientation state tokens and exact reads, with a
+  bounded single-family canonical fallback only when state is stale. This keeps
+  routing trust-neutral while refusing malformed or unreadable focus records.
+  Explicit focus must be active, and a program enters active session scope only
+  when its review status is `reviewed` or `approved`.
+- Final scope/disclosure/compiler suite: 58 passed. Direct context, retrieval,
+  active-focus, context-pack, public-surface, family-registry, and architecture
+  regression: 117 passed. Query-index/concurrency/repository/envelope: 101
+  passed. Runtime audit, architecture, multi-topic, and QFT/QG verticals: 22
+  passed, 1 explicitly skipped because `AITP_RUN_REAL_VERTICAL_PROBES=1` was not
+  enabled.
+- Disposable 10k fixture: cold context 0.9166s, warm context p95 0.0875s,
+  timeline p95 0.6436s, exact-ref p95 0.00341s, and write-through p95 0.0624s.
+  The largest touched v5 modules are 448 lines, below the 500-line architecture
+  limit.
+- Protected user-work diff hashes remained
+  `f4651e2355ca5e394bf2f96fed8b76b209969055` and
+  `3c0ca5a7b2ed30e0f32d43d3d1aa0e83330823a1`.
+
+- [x] **Step 7: Commit Task 2**
 
 Commit message: `v5: add isolated research session scope`.
 

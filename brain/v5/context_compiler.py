@@ -1,22 +1,47 @@
-"""Bounded research context compiled from one indexed retrieval plan."""
+"""Bounded research context compiled through an isolated session scope."""
 
 from __future__ import annotations
 
-import re
-from dataclasses import asdict, dataclass, is_dataclass
-from typing import Any, Callable, Mapping
+from dataclasses import asdict, dataclass
+from typing import Any
 
 from brain.v5.indexed_topic_snapshot import (
-    IndexedRecord,
-    IndexedTopicSnapshot,
     load_indexed_topic_snapshot,
 )
 from brain.v5.context_selection import candidate_not_shown, select_candidate_summaries
+from brain.v5.context_compiler_support import (
+    boundary as _boundary,
+    bounded_markdown as _bounded_markdown,
+    candidate_summary as _candidate_summary,
+    context_lines as _context_lines,
+    empty_boundary as _empty_boundary,
+    estimate_context_tokens,
+    index_generation as _index_generation,
+    objective as _objective,
+    read_errors as _read_errors,
+    record_mapping as _record_mapping,
+    typed_ref as _typed_ref,
+)
+from brain.v5.context_compiler_retrieval import (
+    QueryFunction,
+    exact_disclosure_result as _exact_disclosure_result,
+    record_expansion as _record_expansion,
+    scoped_retrieval_result as _scoped_retrieval_result,
+)
+from brain.v5.context_disclosure import (
+    next_level_handles,
+    route_hint_coverage,
+    route_hint_markdown,
+    route_hint_refs,
+    scope_payload,
+    validate_disclosure_level,
+)
 from brain.v5.paths import WorkspacePaths
-from brain.v5.query_index import build_query_index
+from brain.v5.query_index import build_query_index, load_query_manifest
 from brain.v5.record_envelope import RecordActor
 from brain.v5.record_repository import RecordRepository
-from brain.v5.research_retrieval import ResearchQuery, RetrievalResult, query_records
+from brain.v5.research_retrieval import RetrievalResult, query_records
+from brain.v5.research_scope import ScopeResolution, resolve_session_scope
 
 
 _DEFAULT_CONTEXT_FAMILIES = (
@@ -42,25 +67,6 @@ _DEFAULT_CONTEXT_FAMILIES = (
     "validation_contracts",
     "validation_results",
 )
-_PROCESS_FAMILIES = frozenset(
-    {
-        "artifacts",
-        "checkpoints",
-        "code_states",
-        "evidence",
-        "quiet_checkpoints",
-        "research_run_events",
-        "research_runs",
-        "routes",
-        "tool_runs",
-        "validation_results",
-    }
-)
-_TOKEN_RE = re.compile(
-    r"[A-Za-z0-9_]+(?:[.+-][A-Za-z0-9_]+)*|[\u3400-\u4dbf\u4e00-\u9fff]|[^\s]"
-)
-
-
 class ContextCompilationError(RuntimeError):
     """Raised when the requested session cannot anchor a bounded context."""
 
@@ -71,16 +77,26 @@ class ContextRequest:
     objective_text: str = ""
     user_goal: str = ""
     topic_id: str = ""
+    disclosure_level: str = "normal_research"
+    focus_set_ref: str = ""
+    program_id: str = ""
+    include_cross_topic_discovery: bool = False
     exact_refs: tuple[str, ...] = ()
     families: tuple[str, ...] = _DEFAULT_CONTEXT_FAMILIES
     max_tokens: int = 1200
     max_bytes: int = 6000
     record_limit: int = 160
     candidate_limit: int = 12
+    record_offset: int = 0
 
     def __post_init__(self) -> None:
         if not self.session_id.strip():
             raise ValueError("session_id must be non-empty")
+        validate_disclosure_level(self.disclosure_level)
+        if self.disclosure_level == "exact_expansion" and not self.exact_refs:
+            raise ValueError("exact_expansion requires at least one exact ref")
+        if not isinstance(self.include_cross_topic_discovery, bool):
+            raise ValueError("include_cross_topic_discovery must be a boolean")
         if self.max_tokens < 64:
             raise ValueError("max_tokens must be at least 64")
         if self.max_bytes < 384:
@@ -89,12 +105,19 @@ class ContextRequest:
             raise ValueError("record_limit must be between 1 and 200")
         if not 1 <= self.candidate_limit <= 40:
             raise ValueError("candidate_limit must be between 1 and 40")
+        if self.record_offset < 0:
+            raise ValueError("record_offset must be non-negative")
 
 
 @dataclass(frozen=True)
 class ContextBundle:
     session_id: str
     topic_id: str
+    disclosure_level: str
+    focus_set_ref: str
+    program_id: str
+    scope: dict[str, Any]
+    next_level_handles: dict[str, Any]
     current_objective: dict[str, Any]
     current_boundary: dict[str, Any]
     recent_process_refs: tuple[str, ...]
@@ -127,9 +150,6 @@ class ContextBundle:
     can_update_claim_trust: bool = False
 
 
-QueryFunction = Callable[[WorkspacePaths, ResearchQuery], RetrievalResult]
-
-
 def compile_research_context(
     ws: WorkspacePaths,
     request: ContextRequest,
@@ -137,7 +157,7 @@ def compile_research_context(
     query_fn: QueryFunction = query_records,
     repository: RecordRepository | None = None,
 ) -> ContextBundle:
-    """Compile one trust-neutral context from one exact read and one query plan."""
+    """Compile one trust-neutral context through the fixed disclosure ladder."""
 
     repo = repository or RecordRepository(
         ws,
@@ -147,6 +167,20 @@ def compile_research_context(
             host="context-compiler",
         ),
     )
+    if not (ws.root / "indexes" / "manifest.json").exists():
+        build_query_index(ws)
+    try:
+        scope = resolve_session_scope(
+            ws,
+            request.session_id,
+            include_discovery=request.include_cross_topic_discovery,
+            focus_set_ref=request.focus_set_ref,
+            program_id=request.program_id,
+        )
+    except (TypeError, ValueError, RuntimeError) as exc:
+        raise ContextCompilationError(
+            f"cannot resolve scope for session {request.session_id!r}: {exc}"
+        ) from exc
     session_result = repo.read(f"session:{request.session_id}")
     if session_result.status != "found" or session_result.record is None:
         detail = session_result.issue.message if session_result.issue else session_result.status
@@ -154,36 +188,112 @@ def compile_research_context(
             f"cannot compile context for session {request.session_id!r}: {detail}"
         )
     session = _record_mapping(session_result.record)
-    topic_id = request.topic_id.strip() or str(session.get("topic_id") or "")
+    topic_id = scope.primary_topic_id
     if not topic_id:
         raise ContextCompilationError("session does not identify a topic")
+    if request.topic_id.strip() and request.topic_id.strip() != topic_id:
+        raise ContextCompilationError("requested topic conflicts with the resolved session scope")
+    if request.disclosure_level == "route_hint":
+        return _compile_route_hint(ws, request, scope)
 
-    exact_refs = _unique_refs(
-        (
-            f"session:{request.session_id}",
-            f"topic:{topic_id}",
-            _typed_ref("claim", session.get("active_claim")),
-            _typed_ref("research_route", session.get("active_route")),
-            *request.exact_refs,
+    if request.disclosure_level == "exact_expansion":
+        result, expansion = _exact_disclosure_result(ws, request)
+    else:
+        result = _scoped_retrieval_result(
+            ws,
+            request,
+            scope,
+            query_fn=query_fn,
         )
-    )
-    query_text = " ".join(
-        part.strip() for part in (request.objective_text, request.user_goal) if part.strip()
-    )
-    if not (ws.root / "indexes" / "manifest.json").exists():
-        build_query_index(ws)
-    result = query_fn(
-        ws,
-        ResearchQuery(
-            text=query_text,
-            exact_refs=exact_refs,
-            topic_ids=(topic_id,),
-            families=tuple(dict.fromkeys(request.families)),
-            limit=request.record_limit,
-            verification_mode="orientation",
-        ),
+        blocked_explicit_refs = result.blocked_explicit_refs
+        result = result.result
+        expansion = _record_expansion(result)
+    if request.disclosure_level == "exact_expansion":
+        blocked_explicit_refs = ()
+    return _bundle_from_result(
+        request=request,
+        scope=scope,
+        session=session,
+        result=result,
+        expansion=expansion,
+        blocked_explicit_refs=blocked_explicit_refs,
     )
 
+
+def _compile_route_hint(
+    ws: WorkspacePaths,
+    request: ContextRequest,
+    scope: ScopeResolution,
+) -> ContextBundle:
+    refs = route_hint_refs(scope)
+    coverage = route_hint_coverage()
+    raw_markdown = route_hint_markdown(scope, refs)
+    markdown, budget_truncated = _bounded_markdown(
+        raw_markdown.rstrip().splitlines(),
+        max_bytes=request.max_bytes,
+        max_tokens=request.max_tokens,
+    )
+    generation = load_query_manifest(ws).generation
+    return ContextBundle(
+        session_id=request.session_id,
+        topic_id=scope.primary_topic_id,
+        disclosure_level=request.disclosure_level,
+        focus_set_ref=scope.focus_set_ref,
+        program_id=scope.program_id,
+        scope=scope_payload(scope),
+        next_level_handles=next_level_handles(scope, request.disclosure_level),
+        current_objective={
+            "objective_id": f"route-{scope.primary_topic_id}",
+            "title": scope.primary_topic_id,
+            "requested_focus": "",
+            "source_ref": f"topic:{scope.primary_topic_id}",
+            "orientation_only": True,
+        },
+        current_boundary=_empty_boundary(),
+        recent_process_refs=(),
+        candidate_summaries=(),
+        record_refs=refs,
+        expansion={
+            "surface": "record_refs",
+            "refs": list(refs),
+            "page_size": min(20, max(1, len(refs))),
+            "next_offset": None,
+            "requires_explicit_call": True,
+            "full_record_bodies_in_default_context": False,
+        },
+        coverage=coverage,
+        read_errors=scope.read_errors,
+        not_found_refs=(),
+        not_checked_families=tuple(coverage["unchecked_families"]),
+        index_status="fresh",
+        source_index_generation=generation,
+        total_candidates=len(refs),
+        not_shown_count=0,
+        not_shown_reason=(),
+        partial=True,
+        retrieval_truncated=False,
+        render_truncated=budget_truncated,
+        truncated=budget_truncated,
+        can_claim_no_prior_result=False,
+        requires_exact_expansion_before_trust_conclusions=True,
+        markdown=markdown,
+        byte_count=len(markdown.encode("utf-8")),
+        estimated_tokens=estimate_context_tokens(markdown),
+        max_bytes=request.max_bytes,
+        max_tokens=request.max_tokens,
+    )
+
+
+def _bundle_from_result(
+    *,
+    request: ContextRequest,
+    scope: ScopeResolution,
+    session: dict[str, Any],
+    result: RetrievalResult,
+    expansion: dict[str, Any],
+    blocked_explicit_refs: tuple[str, ...],
+) -> ContextBundle:
+    topic_id = scope.primary_topic_id
     item_by_ref = {item.record_ref: item for item in result.items}
     topic_item = item_by_ref.get(f"topic:{topic_id}")
     active_claim_ref = _typed_ref("claim", session.get("active_claim"))
@@ -191,12 +301,23 @@ def compile_research_context(
     current_objective = _objective(topic_id, topic_item, request)
     current_boundary = _boundary(claim_item)
     record_refs = tuple(item.record_ref for item in result.items)
-    process_refs = tuple(
-        item.record_ref for item in result.items if item.family in _PROCESS_FAMILIES
-    )[:12]
-    anchor_refs = {f"session:{request.session_id}", f"topic:{topic_id}"}
+    omitted_supporting_refs = tuple(
+        ref for ref in scope.supporting_refs if ref not in set(record_refs)
+    )
+    supporting = set(scope.supporting_refs)
+    revalidation = set(scope.requires_revalidation_refs)
+    anchor_refs = (
+        set()
+        if request.disclosure_level == "exact_expansion"
+        else {f"session:{request.session_id}", f"topic:{topic_id}"}
+    )
     all_candidate_summaries = [
-        _candidate_summary(item, retrieval_rank=rank)
+        _candidate_summary(
+            item,
+            retrieval_rank=rank,
+            scope_lane="supporting" if item.record_ref in supporting else "primary",
+            requires_target_revalidation=item.record_ref in revalidation,
+        )
         for rank, item in enumerate(result.items)
         if item.record_ref not in anchor_refs
     ]
@@ -212,18 +333,21 @@ def compile_research_context(
         selected_count=len(candidate_summaries),
         retrieval_truncated=result.truncated,
     )
-    read_errors = _read_errors(result)
+    read_errors = tuple(dict.fromkeys([*_read_errors(result), *scope.read_errors]))
     not_found_refs = tuple(result.excluded_candidates)
     not_checked_families = tuple(result.coverage.unchecked_families)
     coverage = asdict(result.coverage)
-    expansion = {
-        "surface": "record_refs",
-        "refs": list(record_refs),
-        "page_size": min(20, max(1, len(record_refs))),
-        "next_offset": result.next_offset,
-        "requires_explicit_call": True,
-        "full_record_bodies_in_default_context": False,
-    }
+    scope_data = scope_payload(scope)
+    scope_data["blocked_explicit_refs"] = list(blocked_explicit_refs)
+    scope_data["not_shown_refs"] = list(
+        dict.fromkeys(
+            [
+                *scope_data["not_shown_refs"],
+                *blocked_explicit_refs,
+                *omitted_supporting_refs,
+            ]
+        )
+    )
     lines = _context_lines(
         request=request,
         topic_id=topic_id,
@@ -238,6 +362,7 @@ def compile_research_context(
         not_shown_count=not_shown_count,
         not_shown_reason=not_shown_reason,
         record_refs=record_refs,
+        scope=scope_data,
     )
     markdown, budget_truncated = _bounded_markdown(
         lines,
@@ -253,17 +378,41 @@ def compile_research_context(
         or read_errors
         or truncated
         or not_shown_count
+        or scope.unresolved_refs
+        or scope.excluded_refs
+        or blocked_explicit_refs
     )
     can_claim_no_prior_result = bool(
-        result.total_count == 0
+        request.disclosure_level == "normal_research"
+        and result.total_count == 0
         and result.coverage.can_claim_no_result
         and not truncated
         and not read_errors
         and not not_found_refs
     )
+    process_refs = tuple(
+        row["record_ref"]
+        for row in all_candidate_summaries
+        if row["process_family"]
+    )[:12]
+    handles = next_level_handles(scope, request.disclosure_level)
+    recoverable_refs = (
+        ()
+        if request.disclosure_level == "exact_expansion"
+        else tuple(dict.fromkeys([*blocked_explicit_refs, *omitted_supporting_refs]))
+    )
+    handles["exact_expansion_refs"] = list(recoverable_refs[:20])
+    handles["exact_expansion_ref_count"] = len(recoverable_refs)
+    handles["exact_expansion_refs_truncated"] = len(recoverable_refs) > 20
+    handles["blocked_refs_require_exact_expansion"] = bool(blocked_explicit_refs)
     return ContextBundle(
         session_id=request.session_id,
         topic_id=topic_id,
+        disclosure_level=request.disclosure_level,
+        focus_set_ref=scope.focus_set_ref,
+        program_id=scope.program_id,
+        scope=scope_data,
+        next_level_handles=handles,
         current_objective=current_objective,
         current_boundary=current_boundary,
         recent_process_refs=process_refs,
@@ -297,194 +446,3 @@ def context_bundle_payload(bundle: ContextBundle) -> dict[str, Any]:
     """Return the stable JSON-compatible representation used by host surfaces."""
 
     return asdict(bundle)
-
-
-def estimate_context_tokens(text: str) -> int:
-    """Return a deterministic conservative token estimate for mixed physics text."""
-
-    return len(_TOKEN_RE.findall(str(text or "")))
-
-
-def _record_mapping(record: Any) -> dict[str, Any]:
-    if is_dataclass(record):
-        return asdict(record)
-    if isinstance(record, Mapping):
-        return dict(record)
-    raise ContextCompilationError(f"unsupported exact record type: {type(record).__name__}")
-
-
-def _typed_ref(kind: str, record_id: Any) -> str:
-    text = str(record_id or "").strip()
-    return f"{kind}:{text}" if text else ""
-
-
-def _unique_refs(refs: tuple[str, ...]) -> tuple[str, ...]:
-    return tuple(dict.fromkeys(ref for ref in refs if ref and ":" in ref))
-
-
-def _objective(
-    topic_id: str,
-    topic_item: Any,
-    request: ContextRequest,
-) -> dict[str, Any]:
-    record = topic_item.record if topic_item is not None else {}
-    title = str(record.get("title") or topic_id)
-    return {
-        "objective_id": f"objective-{topic_id}",
-        "title": title,
-        "requested_focus": request.objective_text or request.user_goal,
-        "source_ref": f"topic:{topic_id}",
-        "orientation_only": True,
-    }
-
-
-def _boundary(claim_item: Any) -> dict[str, Any]:
-    if claim_item is None:
-        return {
-            "claim_id": "",
-            "statement": "",
-            "confidence_state": "unknown",
-            "active_uncertainty": "active claim is not available in the current result page",
-            "source_ref": "",
-            "requires_exact_expansion": True,
-        }
-    record = claim_item.record
-    return {
-        "claim_id": str(record.get("claim_id") or record.get("record_id") or ""),
-        "statement": str(record.get("statement") or record.get("title") or ""),
-        "confidence_state": str(record.get("confidence_state") or "unknown"),
-        "active_uncertainty": str(record.get("active_uncertainty") or ""),
-        "scope": str(record.get("scope") or ""),
-        "source_ref": claim_item.record_ref,
-        "requires_exact_expansion": True,
-    }
-
-
-def _candidate_summary(item: Any, *, retrieval_rank: int) -> dict[str, Any]:
-    record = item.record
-    summary_fields = record.get("summary_fields")
-    selected = dict(summary_fields) if isinstance(summary_fields, Mapping) else {}
-    if item.family == "claims":
-        status_value = (
-            record.get("confidence_state")
-            or selected.get("confidence_state")
-            or selected.get("claim_status")
-            or record.get("status")
-            or record.get("lifecycle_status")
-        )
-    else:
-        status_value = (
-            record.get("status")
-            or record.get("lifecycle_status")
-            or selected.get("evidence_status")
-            or selected.get("claim_status")
-            or selected.get("validation_status")
-        )
-    status = str(status_value or "unknown")
-    return {
-        "record_ref": item.record_ref,
-        "family": item.family,
-        "claim_id": str(record.get("claim_id") or ""),
-        "title": str(record.get("title") or record.get("statement") or ""),
-        "status": status,
-        "summary_fields": selected,
-        "typed_materialization_status": str(record.get("typed_materialization_status") or ""),
-        "retrieval_rank": retrieval_rank,
-        "retrieval_score": item.total_score,
-        "exact_score": item.exact_score,
-        "lexical_score": item.lexical_score,
-        "process_family": item.family in _PROCESS_FAMILIES,
-        "requires_exact_expansion": True,
-        "orientation_only": True,
-    }
-
-
-def _read_errors(result: RetrievalResult) -> tuple[str, ...]:
-    errors: list[str] = []
-    if result.coverage.malformed_count:
-        errors.append(f"malformed_records_in_scope:{result.coverage.malformed_count}")
-    return tuple(errors)
-
-
-def _context_lines(
-    *,
-    request: ContextRequest,
-    topic_id: str,
-    current_objective: Mapping[str, Any],
-    current_boundary: Mapping[str, Any],
-    candidate_summaries: tuple[dict[str, Any], ...],
-    coverage: Mapping[str, Any],
-    index_status: str,
-    read_errors: tuple[str, ...],
-    not_found_refs: tuple[str, ...],
-    not_checked_families: tuple[str, ...],
-    not_shown_count: int,
-    not_shown_reason: tuple[str, ...],
-    record_refs: tuple[str, ...],
-) -> list[str]:
-    lines = [
-        "AITP bounded research context.",
-        f"Session: {request.session_id} | Topic: {topic_id}",
-        (
-            "Coverage: "
-            f"index={index_status}; exhaustive={str(bool(coverage.get('exhaustive'))).lower()}; "
-            f"can_claim_no_result={str(bool(coverage.get('can_claim_no_result'))).lower()}."
-        ),
-        "Boundary: orientation-only; exact expansion is required before evidence, validation, or trust conclusions.",
-        f"Objective: {_excerpt(current_objective.get('title'), 180)}",
-    ]
-    requested = request.objective_text or request.user_goal
-    if requested:
-        lines.append(f"Requested focus: {_excerpt(requested, 220)}")
-    if current_boundary.get("claim_id"):
-        lines.extend(
-            [
-                f"Active claim: {current_boundary.get('claim_id')} - {_excerpt(current_boundary.get('statement'), 240)}",
-                f"Current uncertainty: {_excerpt(current_boundary.get('active_uncertainty'), 220)}",
-            ]
-        )
-    else:
-        lines.append("Active claim: unavailable in bounded result; expand the session and claim refs.")
-    if read_errors:
-        lines.append(f"Read diagnostics: {'; '.join(read_errors)}")
-    if not_found_refs:
-        lines.append(f"Not-found exact refs: {', '.join(not_found_refs)}")
-    if not_checked_families:
-        lines.append(f"Not-checked families: {', '.join(not_checked_families)}")
-    lines.append(
-        "Candidate selection: "
-        f"shown={len(candidate_summaries)}; not_shown={not_shown_count}; "
-        f"reason={'+'.join(not_shown_reason) or 'none'}."
-    )
-    if candidate_summaries:
-        lines.append("Candidate records:")
-        for candidate in candidate_summaries:
-            label = candidate.get("title") or candidate.get("status") or candidate.get("family")
-            lines.append(f"- {candidate['record_ref']}: {_excerpt(label, 180)}")
-    if record_refs:
-        lines.append("Expansion refs: " + ", ".join(record_refs[:12]))
-    lines.append("Default context contains summaries and handles only, never full record bodies.")
-    return lines
-
-
-def _bounded_markdown(lines: list[str], *, max_bytes: int, max_tokens: int) -> tuple[str, bool]:
-    accepted: list[str] = []
-    truncated = False
-    for line in lines:
-        candidate = "\n".join([*accepted, line]) + "\n"
-        if len(candidate.encode("utf-8")) > max_bytes or estimate_context_tokens(candidate) > max_tokens:
-            truncated = True
-            break
-        accepted.append(line)
-    if not accepted:
-        raise ContextCompilationError("context budget cannot hold the mandatory coverage header")
-    return "\n".join(accepted) + "\n", truncated
-
-
-def _excerpt(value: Any, limit: int) -> str:
-    text = " ".join(str(value or "").split())
-    return text if len(text) <= limit else text[: limit - 3].rstrip() + "..."
-
-
-def _index_generation(result: RetrievalResult) -> int:
-    return int(result.index_generation)

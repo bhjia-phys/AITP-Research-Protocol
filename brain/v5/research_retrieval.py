@@ -33,6 +33,7 @@ class ResearchQuery:
     text: str = ""
     exact_refs: tuple[str, ...] = ()
     topic_ids: tuple[str, ...] = ()
+    session_ids: tuple[str, ...] = ()
     families: tuple[str, ...] = ()
     statuses: tuple[str, ...] = ()
     offset: int = 0
@@ -199,6 +200,8 @@ def query_records(ws: WorkspacePaths, query: ResearchQuery) -> RetrievalResult:
         if selected_families and row["family"] not in selected_families:
             continue
         if query.topic_ids and row["topic_id"] not in query.topic_ids:
+            continue
+        if query.session_ids and row.get("session_id", "") not in query.session_ids:
             continue
         row_statuses = {row.get("status", ""), row.get("lifecycle_status", "")}
         if query.statuses and not row_statuses.intersection(query.statuses):

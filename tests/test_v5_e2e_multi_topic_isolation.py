@@ -193,6 +193,7 @@ def test_multi_topic_reuse_requires_bridge_and_target_validation(tmp_path, monke
         ContextRequest(
             session_id="session-multi-topic-target",
             objective_text="Inspect the exact source method note referenced by the target bridge.",
+            disclosure_level="exact_expansion",
             exact_refs=(f"source_asset:{source_asset.asset_id}",),
             candidate_limit=20,
         ),
