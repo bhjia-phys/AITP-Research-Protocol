@@ -16,3 +16,26 @@ _load_module_shards(
     ),
 )
 del _load_module_shards
+
+from brain.v5.cli_session_lifecycle import (
+    add_session_lifecycle_parsers as _add_session_lifecycle_parsers,
+    dispatch_session_lifecycle as _dispatch_session_lifecycle,
+    is_session_lifecycle_command as _is_session_lifecycle_command,
+)
+
+
+_add_parser_section_04_without_lifecycle = _add_parser_section_04
+
+
+def _add_parser_section_04(sp):
+    _add_parser_section_04_without_lifecycle(sp)
+    _add_session_lifecycle_parsers(sp)
+
+
+_dispatch_without_lifecycle = _dispatch
+
+
+def _dispatch(args):
+    if _is_session_lifecycle_command(args):
+        return _dispatch_session_lifecycle(args)
+    return _dispatch_without_lifecycle(args)

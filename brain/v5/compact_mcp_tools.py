@@ -4,18 +4,18 @@ from __future__ import annotations
 
 from brain.v5.mcp_base_resolution import resolve_workspace_base
 from brain.v5.models import TrustUpdateRequest
+from brain.v5.paths import WorkspacePaths
 from brain.v5.pretool_policy import evaluate_context_pre_tool_policy
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.trust_updates import preflight_trust_update
-from brain.v5.workspace import init_workspace
 
 
 def _ws(base: str):
-    return init_workspace(resolve_workspace_base(base))
+    return WorkspacePaths(resolve_workspace_base(base))
 
 
 def aitp_v5_codex_tool_catalog(profile: str = "entry") -> dict:
-    """Return the compact Codex App 1.0 MCP surface catalog."""
+    """List compact AITP tools and disclosure policy."""
 
     from brain.v5.codex_facade import codex_tool_catalog
 
@@ -32,7 +32,7 @@ def aitp_v5_codex_autoroute(
     recent_tool_summary: str = "",
     semantic_assessment: dict | None = None,
 ) -> dict:
-    """Decide whether Codex should enter AITP before answering."""
+    """Route one request into AITP when needed."""
 
     from brain.v5.codex_facade import codex_autoroute
 
@@ -58,7 +58,7 @@ def aitp_v5_codex_enter(
     max_lines: int = 60,
     candidate_limit: int = 3,
 ) -> dict:
-    """Enter AITP from Codex with compact context or recovery hints."""
+    """Enter AITP with bounded context."""
 
     from brain.v5.codex_facade import codex_enter_context
 
@@ -88,7 +88,7 @@ def aitp_v5_codex_expand(
     record_refs: list[str] | None = None,
     offset: int = 0,
 ) -> dict:
-    """Expand one Codex context family on demand."""
+    """Expand one context family explicitly."""
 
     from brain.v5.codex_facade import codex_expand_context
 
@@ -123,7 +123,7 @@ def aitp_v5_codex_recording_step(
     candidate: dict | None = None,
     expected_refs: list[str] | None = None,
 ) -> dict:
-    """Classify and expand one durable recording moment without doing the write."""
+    """Classify or stage one durable research moment."""
 
     from brain.v5.codex_facade import codex_recording_step
 
@@ -155,7 +155,7 @@ def aitp_v5_codex_record_apply(
     claim_id: str = "",
     expected_refs: list[str] | None = None,
 ) -> dict:
-    """Apply one constrained typed record selected through the Codex facade."""
+    """Apply one reviewed recording action."""
 
     from brain.v5.codex_facade import codex_record_apply
 
@@ -190,7 +190,7 @@ def aitp_v5_codex_literature_step(
     rationale: str = "",
     asset_type: str = "",
 ) -> dict:
-    """Run a layered literature/reference workflow step from Codex."""
+    """Run one literature workflow step."""
 
     from brain.v5.codex_facade import codex_literature_step
 
@@ -235,8 +235,11 @@ def aitp_v5_codex_closeout(
     tool_run_specs: list[dict] | None = None,
     sensemaking_summary: str = "",
     source_refs: list[str] | None = None,
+    lifecycle_request: dict | None = None,
+    lifecycle_plan: dict | None = None,
+    lifecycle_plan_id: str = "",
 ) -> dict:
-    """Preview or apply a quiet closeout checkpoint without trust mutation."""
+    """Plan or apply a trust-neutral closeout."""
 
     from brain.v5.codex_facade import codex_closeout
 
@@ -260,6 +263,9 @@ def aitp_v5_codex_closeout(
         tool_run_specs=tool_run_specs,
         sensemaking_summary=sensemaking_summary,
         source_refs=source_refs,
+        lifecycle_request=lifecycle_request,
+        lifecycle_plan=lifecycle_plan,
+        lifecycle_plan_id=lifecycle_plan_id,
     )
 
 

@@ -82,6 +82,8 @@ recording_slot_expansion
 research_distillation_candidates
 research_event_classifier
 research_timeline
+session_closeout_plan
+session_start
 runtime_bridge_target_manifest
 runtime_hook_installation_audit
 runtime_hook_installation_paths
@@ -135,6 +137,7 @@ qsgw_cockpit
 qsgw_cockpit_compact
 research_cockpit
 research_cockpit_compact
+recording_stage
 session_summary
 source_reconstruction_obsidian_view
 topic_status
@@ -195,6 +198,8 @@ record_reference_location
 record_research_intent_packet
 record_research_route
 record_research_run_event
+recall_audit
+recording_batch
 record_run_iteration
 record_sensemaking_report
 record_source_reconstruction_review_result
@@ -208,6 +213,7 @@ register_tool_recipe
 request_failure_mode_review_checkpoint
 request_human_checkpoint
 request_operator_checkpoint
+session_closeout_apply
 start_research_run
 supersede_record
 trust_apply
@@ -283,7 +289,7 @@ MCP_ONLY_CAPABILITIES = (
     ("codex_expand", "aitp_v5_codex_expand", None, "codex_context_expansion", "read_only", "compact"),
     ("codex_literature_step", "aitp_v5_codex_literature_step", None, "codex_literature_step", "kernel_write", "compact"),
     ("codex_record_apply", "aitp_v5_codex_record_apply", None, "codex_record_apply", "kernel_write", "compact"),
-    ("codex_recording_step", "aitp_v5_codex_recording_step", None, "codex_recording_step", "read_only", "compact"),
+    ("codex_recording_step", "aitp_v5_codex_recording_step", None, "codex_recording_step", "runtime_write", "compact"),
     ("codex_tool_catalog", "aitp_v5_codex_tool_catalog", None, "codex_mcp_surface_catalog", "read_only", "compact"),
     ("create_claim", "aitp_v5_create_claim", None, "claim_record", "kernel_write", "full"),
     ("create_topic", "aitp_v5_create_topic", None, "topic_record", "kernel_write", "full"),

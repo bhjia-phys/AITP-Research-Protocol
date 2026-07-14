@@ -33,6 +33,14 @@ from brain.v5.compact_mcp_tools import (
     aitp_v5_evaluate_pre_tool_policy,
     aitp_v5_preflight_trust_update,
 )
+from brain.v5.mcp_session_lifecycle import (
+    aitp_v5_apply_session_closeout,
+    aitp_v5_coalesce_recording_batch,
+    aitp_v5_plan_session_closeout,
+    aitp_v5_run_recall_audit,
+    aitp_v5_session_start,
+    aitp_v5_stage_recording_candidate,
+)
 
 
 def aitp_v5_propose_detected_procedural_skill(

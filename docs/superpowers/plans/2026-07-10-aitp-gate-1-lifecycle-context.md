@@ -69,6 +69,8 @@
 | `brain/v5/recall_audit_contracts.py` | Coverage, staleness, and exhaustive-language validation. |
 | `brain/v5/recording_batches.py` | Runtime staging, semantic deduplication, durable batch coalescing. |
 | `brain/v5/recording_batch_contracts.py` | Candidate and batch validation. |
+| `brain/v5/lifecycle_facade.py` | Existing-workspace gates, lifecycle input normalization, closeout plan binding, and host-neutral orchestration. |
+| `brain/v5/lifecycle_surface_contracts.py` | Public payload and trust-effect contracts for the six M1 lifecycle operations. |
 | `brain/v5/mcp_session_lifecycle.py` | Host-neutral M1 MCP wrappers. |
 | `brain/v5/cli_session_lifecycle.py` | PowerShell-safe M1 CLI routes. |
 
@@ -1049,6 +1051,8 @@ not be deleted or weakened.
 ## Task 6: Lifecycle MCP, CLI, Capability, And Compact Entry
 
 **Files:**
+- Create: `brain/v5/lifecycle_facade.py`
+- Create: `brain/v5/lifecycle_surface_contracts.py`
 - Create: `brain/v5/mcp_session_lifecycle.py`
 - Create: `brain/v5/cli_session_lifecycle.py`
 - Create: `tests/test_v5_lifecycle_facade.py`
@@ -1056,8 +1060,10 @@ not be deleted or weakened.
 - Modify: `brain/v5/cli.py`
 - Modify: `brain/v5/capability_registry_data.py`
 - Modify: `brain/v5/codex_facade.py`
+- Modify: `brain/v5/compact_mcp_tools.py`
 - Modify: `brain/v5/public_surfaces.py`
 - Modify: `brain/v5/runtime_entrypoint_catalog.py`
+- Modify: `brain/v5/runtime_entrypoint_samples.py`
 
 **Interfaces:**
 - Produces full-surface operations: `session_start`, `recall_audit`,
@@ -1070,34 +1076,61 @@ not be deleted or weakened.
 - Host autoroute emits only `route_hint`; it cannot call a deeper level without
   an explicit facade/tool transition recorded in the context receipt.
 
-- [ ] **Step 1: Write failing capability/facade tests**
+- [x] **Step 1: Write failing capability/facade tests**
 
 Assert every direct wrapper has one `CapabilitySpec`, state effect, public
 surface, CLI route, and MCP wrapper. Assert compact allowlist count does not
 grow unless the final design explicitly requires it.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
-- [ ] **Step 3: Implement wrappers and `session` CLI group**
+- [x] **Step 3: Implement wrappers and `session` CLI group**
 
 Use file-backed JSON options for nested candidate/closeout payloads. Read-only
 start/plan operations do not initialize or write a workspace. Runtime staging
 is `runtime_write`; closeout/audit/batch are trust-neutral `kernel_write`.
 
-- [ ] **Step 4: Route existing compact facade operations**
+- [x] **Step 4: Route existing compact facade operations**
 
 `codex_enter` returns the same session-start resume/context boundary.
 `codex_recording_step` stages/coalesces according to policy. `codex_closeout`
 plans first and applies only the explicit supplied plan id.
 
-- [ ] **Step 5: Run capability and bridge matrices**
+- [x] **Step 5: Run capability and bridge matrices**
 
 Run capability registry, public surfaces, runtime entrypoints, bridge runtime,
 MCP bridge acceptance, CLI, Codex facade, and adapters.
 
-- [ ] **Step 6: Commit Task 6**
+- [x] **Step 6: Commit Task 6**
 
 Commit message: `v5: expose host-neutral session lifecycle`.
+
+Implementation evidence (2026-07-14): the six lifecycle operations share one
+orchestration layer and one set of public contracts across full MCP and the
+file-backed `aitp-v5 session` CLI. `session_start` and closeout planning require
+an existing indexed workspace and never initialize it. Explicit paths cannot
+fall through to an unrelated `AITP_TOPICS_ROOT`. Closeout apply requires the
+reviewed deterministic `plan_id`, verifies the serialized fingerprint, rebuilds
+the plan against current typed/index state, and persists only that fresh plan.
+
+Compact MCP remains exactly the existing ten tools and stays below its schema
+budget. Autoroute exposes only `route_hint`; enter embeds the same
+`startup_orientation` session-start boundary; bounded and exact expansion emit
+explicit context-transition receipts. Recording-step may write only runtime
+staging, recording-apply coalesces one reviewed batch, and lifecycle closeout
+always plans before an explicit apply. Legacy quiet-checkpoint closeout remains
+available through its existing compatibility arguments.
+
+Verification: lifecycle facade and complete CLI flow `6 passed`; current
+surface/capability/MCP/architecture slice `89 passed`; repository, query-index,
+scope, recall, lifecycle, recording, and CLI regression `172 passed`; bridge
+runtime `7 passed`; MCP bridge acceptance `4 passed`; adapter event runners
+`13 passed`; slow adapter lane `88 passed in 725.45 seconds`; hooks `24 passed`.
+Two earlier aggregate commands timed out because their budgets combined these
+slow lanes; every constituent lane subsequently completed green. All touched
+v5 source modules remain below 500 lines. Protected user-work hashes remained
+`f4651e2355ca5e394bf2f96fed8b76b209969055` and
+`3c0ca5a7b2ed30e0f32d43d3d1aa0e83330823a1`.
 
 ## Task 7: M1 Migration And End-To-End Acceptance
 

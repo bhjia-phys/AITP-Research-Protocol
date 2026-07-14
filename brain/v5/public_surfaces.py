@@ -13,3 +13,25 @@ _load_module_shards(
     ),
 )
 del _load_module_shards
+
+from brain.v5.lifecycle_surface_contracts import (
+    lifecycle_surface_names as _lifecycle_surface_names,
+    lifecycle_surface_purposes as _lifecycle_surface_purposes,
+    lifecycle_surface_validators as _lifecycle_surface_validators,
+)
+
+
+_PUBLIC_SURFACE_NAMES = tuple(
+    dict.fromkeys((*_PUBLIC_SURFACE_NAMES, *_lifecycle_surface_names()))
+)
+_PUBLIC_SURFACE_PURPOSES = {
+    **_PUBLIC_SURFACE_PURPOSES,
+    **_lifecycle_surface_purposes(),
+}
+_validators_without_lifecycle = _validators
+
+
+def _validators():
+    validators = _validators_without_lifecycle()
+    validators.update(_lifecycle_surface_validators())
+    return validators

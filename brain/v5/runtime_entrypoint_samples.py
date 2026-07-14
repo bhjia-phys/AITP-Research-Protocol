@@ -6,6 +6,9 @@ from brain.v5.runtime_entrypoint_sample_data import SAMPLE_ARG_RESOLVERS
 
 
 def sample_args_for_template(template: str) -> list[str]:
+    lifecycle_args = lifecycle_sample_args(template)
+    if lifecycle_args is not None:
+        return lifecycle_args
     adapter_args = adapter_sample_args(template)
     if adapter_args is not None:
         return adapter_args
@@ -14,6 +17,20 @@ def sample_args_for_template(template: str) -> list[str]:
         if result is not None:
             return result
     return []
+
+
+def lifecycle_sample_args(template: str) -> list[str] | None:
+    if template.startswith("session recall-audit"):
+        return ["recall-request.json"]
+    if template.startswith("session recording-stage"):
+        return ["recording-candidate.json"]
+    if template.startswith("session recording-batch"):
+        return ["milestone-1"]
+    if template.startswith("session closeout-plan"):
+        return ["closeout-request.json"]
+    if template.startswith("session closeout-apply"):
+        return ["closeout-plan.json", "--plan-id", "plan-1"]
+    return None
 
 
 def adapter_sample_args(template: str) -> list[str] | None:
