@@ -151,6 +151,14 @@ class RecallAuditRecord:
     query_text: str
     normalized_intent: str
     scope_refs: list[str]
+    focus_set_ref: str = ""
+    program_id: str = ""
+    required_families: list[str] = field(default_factory=list)
+    required_exact_refs: list[str] = field(default_factory=list)
+    missing_exact_refs: list[str] = field(default_factory=list)
+    include_program_scope: bool = True
+    include_discovery: bool = False
+    top_k: int = 20
     lanes: list[dict[str, Any]] = field(default_factory=list)
     index_generation: int = 0
     base_index_generation: int = 0

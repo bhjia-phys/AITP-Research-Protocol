@@ -33,6 +33,7 @@ class ResearchQuery:
     text: str = ""
     exact_refs: tuple[str, ...] = ()
     topic_ids: tuple[str, ...] = ()
+    program_ids: tuple[str, ...] = ()
     session_ids: tuple[str, ...] = ()
     families: tuple[str, ...] = ()
     statuses: tuple[str, ...] = ()
@@ -41,6 +42,7 @@ class ResearchQuery:
     allow_family_fallback: bool = False
     fallback_max_records: int = 500
     verification_mode: str = "strong"
+    exact_only: bool = False
 
 
 @dataclass(frozen=True)
@@ -97,6 +99,8 @@ def query_records(ws: WorkspacePaths, query: ResearchQuery) -> RetrievalResult:
         raise ValueError("fallback_max_records must be positive")
     if query.verification_mode not in {"strong", "orientation"}:
         raise ValueError("verification_mode must be strong or orientation")
+    if not isinstance(query.exact_only, bool):
+        raise ValueError("exact_only must be a boolean")
     selected_families = tuple(sorted(set(query.families)))
     all_families = tuple(sorted(record_family_specs()))
     checked_set = set(selected_families)
@@ -197,10 +201,17 @@ def query_records(ws: WorkspacePaths, query: ResearchQuery) -> RetrievalResult:
     for row in index.documents:
         if row["record_ref"] in items_by_ref:
             continue
+        if query.exact_only:
+            continue
         if selected_families and row["family"] not in selected_families:
             continue
-        if query.topic_ids and row["topic_id"] not in query.topic_ids:
-            continue
+        if query.topic_ids or query.program_ids:
+            topic_match = bool(query.topic_ids and row["topic_id"] in query.topic_ids)
+            program_match = bool(
+                query.program_ids and row.get("program_id", "") in query.program_ids
+            )
+            if not topic_match and not program_match:
+                continue
         if query.session_ids and row.get("session_id", "") not in query.session_ids:
             continue
         row_statuses = {row.get("status", ""), row.get("lifecycle_status", "")}

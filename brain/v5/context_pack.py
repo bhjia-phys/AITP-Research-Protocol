@@ -38,6 +38,7 @@ def build_aitp_context_pack(
     objective_text: str = "",
     user_goal: str = "",
     task_profile: str = "",
+    recall_audit_ref: str = "",
 ) -> dict[str, Any]:
     """Build the bounded research-state slice intended for Codex turn input.
 
@@ -61,6 +62,7 @@ def build_aitp_context_pack(
             session_id=session_id,
             objective_text=objective_text,
             user_goal=user_goal,
+            recall_audit_ref=recall_audit_ref,
             max_tokens=max_tokens,
             max_bytes=max_bytes,
             record_limit=max(24, candidate_limit * 8),
@@ -113,6 +115,7 @@ def build_aitp_context_pack(
         "designed_for_host": "codex",
         "session_id": str(compact.get("session_id") or ""),
         "topic_id": str(compact.get("topic_id") or ""),
+        "recall_audit_ref": str(recall_audit_ref or ""),
         "current_objective": compact.get("current_objective") or {},
         "active_work_package": compact.get("active_work_package") or {},
         "relevant_claims": list(compact.get("relevant_claims") or []),

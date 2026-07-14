@@ -36,6 +36,11 @@ from brain.v5.context_disclosure import (
     scope_payload,
     validate_disclosure_level,
 )
+from brain.v5.context_recall import (
+    RecallContextError,
+    RecallContextFacts,
+    build_recall_context_facts,
+)
 from brain.v5.paths import WorkspacePaths
 from brain.v5.query_index import build_query_index, load_query_manifest
 from brain.v5.record_envelope import RecordActor
@@ -81,6 +86,7 @@ class ContextRequest:
     focus_set_ref: str = ""
     program_id: str = ""
     include_cross_topic_discovery: bool = False
+    recall_audit_ref: str = ""
     exact_refs: tuple[str, ...] = ()
     families: tuple[str, ...] = _DEFAULT_CONTEXT_FAMILIES
     max_tokens: int = 1200
@@ -193,6 +199,16 @@ def compile_research_context(
         raise ContextCompilationError("session does not identify a topic")
     if request.topic_id.strip() and request.topic_id.strip() != topic_id:
         raise ContextCompilationError("requested topic conflicts with the resolved session scope")
+    try:
+        recall = build_recall_context_facts(
+            repo,
+            audit_ref=request.recall_audit_ref,
+            session_id=request.session_id,
+            topic_id=topic_id,
+            disclosure_level=request.disclosure_level,
+        )
+    except RecallContextError as exc:
+        raise ContextCompilationError(str(exc)) from exc
     if request.disclosure_level == "route_hint":
         return _compile_route_hint(ws, request, scope)
 
@@ -217,6 +233,7 @@ def compile_research_context(
         result=result,
         expansion=expansion,
         blocked_explicit_refs=blocked_explicit_refs,
+        recall=recall,
     )
 
 
@@ -292,6 +309,7 @@ def _bundle_from_result(
     result: RetrievalResult,
     expansion: dict[str, Any],
     blocked_explicit_refs: tuple[str, ...],
+    recall: RecallContextFacts,
 ) -> ContextBundle:
     topic_id = scope.primary_topic_id
     item_by_ref = {item.record_ref: item for item in result.items}
@@ -300,7 +318,9 @@ def _bundle_from_result(
     claim_item = item_by_ref.get(active_claim_ref) if active_claim_ref else None
     current_objective = _objective(topic_id, topic_item, request)
     current_boundary = _boundary(claim_item)
-    record_refs = tuple(item.record_ref for item in result.items)
+    record_refs = tuple(
+        dict.fromkeys([*(item.record_ref for item in result.items), *recall.record_refs])
+    )
     omitted_supporting_refs = tuple(
         ref for ref in scope.supporting_refs if ref not in set(record_refs)
     )
@@ -337,6 +357,9 @@ def _bundle_from_result(
     not_found_refs = tuple(result.excluded_candidates)
     not_checked_families = tuple(result.coverage.unchecked_families)
     coverage = asdict(result.coverage)
+    coverage["retrieval_can_claim_no_result"] = bool(coverage["can_claim_no_result"])
+    coverage["can_claim_no_result"] = recall.can_claim_no_result
+    coverage.update(recall.coverage)
     scope_data = scope_payload(scope)
     scope_data["blocked_explicit_refs"] = list(blocked_explicit_refs)
     scope_data["not_shown_refs"] = list(
@@ -364,6 +387,7 @@ def _bundle_from_result(
         record_refs=record_refs,
         scope=scope_data,
     )
+    lines.extend(recall.lines)
     markdown, budget_truncated = _bounded_markdown(
         lines,
         max_bytes=request.max_bytes,
@@ -381,19 +405,24 @@ def _bundle_from_result(
         or scope.unresolved_refs
         or scope.excluded_refs
         or blocked_explicit_refs
+        or recall.partial
     )
     can_claim_no_prior_result = bool(
         request.disclosure_level == "normal_research"
-        and result.total_count == 0
-        and result.coverage.can_claim_no_result
-        and not truncated
-        and not read_errors
-        and not not_found_refs
+        and recall.can_claim_no_result
+        and not budget_truncated
     )
     process_refs = tuple(
-        row["record_ref"]
-        for row in all_candidate_summaries
-        if row["process_family"]
+        dict.fromkeys(
+            [
+                *recall.process_refs,
+                *(
+                    row["record_ref"]
+                    for row in all_candidate_summaries
+                    if row["process_family"]
+                ),
+            ]
+        )
     )[:12]
     handles = next_level_handles(scope, request.disclosure_level)
     recoverable_refs = (
@@ -401,9 +430,10 @@ def _bundle_from_result(
         if request.disclosure_level == "exact_expansion"
         else tuple(dict.fromkeys([*blocked_explicit_refs, *omitted_supporting_refs]))
     )
-    handles["exact_expansion_refs"] = list(recoverable_refs[:20])
-    handles["exact_expansion_ref_count"] = len(recoverable_refs)
-    handles["exact_expansion_refs_truncated"] = len(recoverable_refs) > 20
+    expansion_refs = tuple(dict.fromkeys([*recall.expansion_refs, *recoverable_refs]))
+    handles["exact_expansion_refs"] = list(expansion_refs[:20])
+    handles["exact_expansion_ref_count"] = len(expansion_refs)
+    handles["exact_expansion_refs_truncated"] = len(expansion_refs) > 20
     handles["blocked_refs_require_exact_expansion"] = bool(blocked_explicit_refs)
     return ContextBundle(
         session_id=request.session_id,

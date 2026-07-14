@@ -882,7 +882,7 @@ class RecallGateDecision:
     can_update_claim_trust: bool = False
 ```
 
-- [ ] **Step 1: Write failing audit tests**
+- [x] **Step 1: Write failing audit tests**
 
 Cover primary topic, program/shared, and optional discovery lanes independently.
 Assert query text, normalized intent, focus refs, index generation, canonical
@@ -898,9 +898,9 @@ def test_required_recall_failure_blocks_high_cost_action(action):
     assert decision.reason_code == "required_recall_not_exhaustive"
 ```
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
-- [ ] **Step 3: Implement ordered lane retrieval and persistence**
+- [x] **Step 3: Implement ordered lane retrieval and persistence**
 
 Run exact/current primary scope first, program/shared second, and discovery only
 when requested. Preserve lane-local scores and coverage before fusion. Persist
@@ -911,19 +911,45 @@ now-changed global watermark. If `recall_audits` is itself requested, mark that
 lane non-exhaustive until a later generation rather than allowing
 self-certification.
 
-- [ ] **Step 4: Implement prerequisite gates**
+- [x] **Step 4: Implement prerequisite gates**
 
 Block when a required family is unchecked, index stale, read errors exist,
 results truncated beyond the declared policy, or a required exact ref is
 missing. Return required repair actions, never a trust update.
 
-- [ ] **Step 5: Compile coverage headers from audit facts**
+- [x] **Step 5: Compile coverage headers from audit facts**
 
 Context may cite `recall_audit:<id>` and exact expansion handles. It may say
 "no prior result found" only when the relevant persisted audit has
 `can_claim_no_result=True`.
 
-- [ ] **Step 6: Run retrieval/context/recall tests and commit**
+- [x] **Step 6: Run retrieval/context/recall tests and commit**
+
+Implementation evidence (2026-07-13):
+
+- Initial RED produced eight expected failures for the missing recall module.
+  The completed suite has nine tests covering ordered primary,
+  program/shared, and opt-in discovery lanes; discovery without program scope;
+  stale/index-bypass and missing exact refs; self-certification refusal;
+  prerequisite reason priority; and audit-bound no-result language.
+- Canonical recall persists query/intent, focus/program scope, required families
+  and exact refs, lane-local scores and coverage, selected-family state/content
+  tokens, dirty/read-error facts, excluded refs, and bounded top refs. It stores
+  no retrieved record content and cannot update claim trust.
+- Recall retrieval and audit persistence share one canonical-mutation lease.
+  Post-write validation compares only checked-family state/content facts and
+  deliberately excludes the newly changed `recall_audits` family; global
+  watermark change is not misclassified as scientific staleness.
+- Context exposes the exact audit ref plus query/normalized-intent boundary and
+  exact-expansion handles. Generic no-result language is disabled without a
+  persisted, empty, exhaustive, content-verified, non-stale audit.
+- Recall/context/retrieval/model/architecture regression: 70 passed. Final
+  lifecycle/startup/context plus M0 index/concurrency/repository/envelope
+  regression: 214 passed in 47.56 seconds. Family registry, public-surface, and
+  runtime-audit regression: 53 passed in 34.10 seconds.
+- All touched v5 source modules remain below 500 lines. Protected user-work
+  hashes remained `f4651e2355ca5e394bf2f96fed8b76b209969055` and
+  `3c0ca5a7b2ed30e0f32d43d3d1aa0e83330823a1`.
 
 Commit message: `v5: add persisted deep recall coverage`.
 
