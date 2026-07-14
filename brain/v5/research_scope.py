@@ -15,7 +15,7 @@ from brain.v5.paths import WorkspacePaths
 from brain.v5.query_index import build_query_index
 from brain.v5.record_envelope import RecordActor
 from brain.v5.record_repository import RecordRepository, WritePolicy, WriteResult
-from brain.v5.research_retrieval import ResearchQuery, query_records
+from brain.v5.research_retrieval import QuerySnapshotSession, ResearchQuery, query_records
 from brain.v5.research_scope_contracts import (
     SCOPED_PROGRAM_REVIEW_STATUSES,
     SUPPORTING_BRIDGE_STATUSES,
@@ -112,6 +112,7 @@ def resolve_session_scope(
     include_discovery: bool = False,
     focus_set_ref: str = "",
     program_id: str = "",
+    query_session: QuerySnapshotSession | None = None,
 ) -> ScopeResolution:
     """Resolve one session without rebinding its runtime claim or topic."""
 
@@ -137,6 +138,7 @@ def resolve_session_scope(
         repository,
         session_id=session_id,
         requested_ref=focus_set_ref,
+        query_session=query_session,
     )
     if focus is not None and focus.primary_topic_id != primary_topic_id:
         raise ScopeResolutionError("focus primary topic conflicts with the session topic")
@@ -228,6 +230,7 @@ def _select_focus_set(
     *,
     session_id: str,
     requested_ref: str,
+    query_session: QuerySnapshotSession | None,
 ) -> SessionFocusSetRecord | None:
     if requested_ref:
         canonical, spec, result = inspect_existing_ref(repository, requested_ref)
@@ -255,6 +258,7 @@ def _select_focus_set(
             fallback_max_records=500,
             verification_mode="orientation",
         ),
+        query_session=query_session,
     )
     if result.truncated:
         raise ScopeResolutionError("focus-set lookup is incomplete; exact selection is required")

@@ -523,6 +523,12 @@ M1-M5 file lists.
 records durable moments through one review batch, and closes without trust
 leakage or forced claim rebinding.
 
+**Status (2026-07-14): complete.** The reviewed implementation and acceptance
+evidence are recorded in
+`docs/superpowers/progress/2026-07-10-aitp-gate-1-release-audit.md`. The real
+store migration remained read-only: it produced review candidates but wrote no
+focus set, research program, closeout, recording batch, or claim-trust state.
+
 ### Task 1.0: Incremental Query Overlay And Scoped Freshness
 
 **Files:**
@@ -543,27 +549,27 @@ leakage or forced claim rebinding.
 - Produces explicit build/mutation leases whose OS advisory locks survive
   exceptions and release on owner death.
 
-- [ ] Publish immutable full generations through one atomic root-manifest
+- [x] Publish immutable full generations through one atomic root-manifest
   pointer only after component hashes and three-way derived/canonical family
   content watermarks agree; retain conservative M0/schema-v1 reads.
-- [ ] Project successful repository creates/revisions into a base-bound,
+- [x] Project successful repository creates/revisions into a base-bound,
   hash-verified atomic delta with fixed lock ordering, predecessor continuity,
   and durable dirty-family semantics; canonical writes remain authoritative if
   projection fails.
-- [ ] Overlay delta rows deterministically and compact them into a later full
+- [x] Overlay delta rows deterministically and compact them into a later full
   generation without rewriting canonical records or dropping writes concurrent
   with build/publication.
-- [ ] Require every successful v2 root publication, including ordinary rebuild,
+- [x] Require every successful v2 root publication, including ordinary rebuild,
   to publish a delta rebound/empty state bound to the new base in the same
   lease transaction.
-- [ ] Read root/base/delta as one retryable coherent snapshot and convert
+- [x] Read root/base/delta as one retryable coherent snapshot and convert
   integrity disagreement into typed stale diagnostics.
-- [ ] Allow scoped exhaustive coverage only when every requested family has a
+- [x] Allow scoped exhaustive coverage only when every requested family has a
   strong content verification, not merely a fast state-token match; unscoped
   queries still require global verification.
-- [ ] Provide a bounded strict single-family fallback with visible diagnostics,
+- [x] Provide a bounded strict single-family fallback with visible diagnostics,
   never a hidden whole-store scan.
-- [ ] Prove a newly written closeout is immediately resumable and a newly
+- [x] Prove a newly written closeout is immediately resumable and a newly
   persisted recall audit does not invalidate the families it just checked.
 
 ### Task 1.1: Research Programs, Focus Sets, And Record-Level Bridges
@@ -580,13 +586,13 @@ leakage or forced claim rebinding.
 - Produces: `SessionFocusSetRecord`
 - Produces: `CrossTopicRelationRecord`
 
-- [ ] Keep `SessionBinding` single-topic and add sidecar focus.
-- [ ] Support question, claim, route, work package, source set, code change, and
+- [x] Keep `SessionBinding` single-topic and add sidecar focus.
+- [x] Support question, claim, route, work package, source set, code change, and
   run campaign focus refs.
-- [ ] Require source/target typed refs and explicit revalidation boundary for
+- [x] Require source/target typed refs and explicit revalidation boundary for
   cross-topic relations.
-- [ ] Enforce `claim_trust_transfer=forbidden` in writers and consumers.
-- [ ] Test related, excluded, ambiguous, and stale focus scopes.
+- [x] Enforce `claim_trust_transfer=forbidden` in writers and consumers.
+- [x] Test related, excluded, ambiguous, and stale focus scopes.
 
 ### Task 1.2: Canonical Closeout And Derived Resume
 
@@ -605,13 +611,13 @@ leakage or forced claim rebinding.
 - Produces: `record_session_closeout(...) -> SessionCloseoutRecord`
 - Produces: `build_session_resume_card(...) -> dict[str, Any]`
 
-- [ ] Record closeout as persistent process state with `trust_effect=none`.
-- [ ] Compile resume from closeout, focus, current typed records, and coverage.
-- [ ] Persist the same compact boundary to `session_start.generated.md`.
-- [ ] Preserve can-say/cannot-say, failed routes, gaps, next actions, and pending
+- [x] Record closeout as persistent process state with `trust_effect=none`.
+- [x] Compile resume from closeout, focus, current typed records, and coverage.
+- [x] Persist the same compact boundary to `session_start.generated.md`.
+- [x] Preserve can-say/cannot-say, failed routes, gaps, next actions, and pending
   candidate refs as structured items with boundary class, scope, and exact
   provenance rather than authority-bearing summary strings.
-- [ ] Test no claim-trust mutation and no summary-as-evidence behavior.
+- [x] Test no claim-trust mutation and no summary-as-evidence behavior.
 
 ### Task 1.3: Deep Recall And Coverage Certificates
 
@@ -626,13 +632,13 @@ leakage or forced claim rebinding.
 - Produces: `RecallAuditRecord`
 - Produces: `run_recall_audit(ws, request: RecallRequest) -> RecallAuditRecord`
 
-- [ ] Persist query, scope, families, index generation, counts, errors, top-k,
+- [x] Persist query, scope, families, index generation, counts, errors, top-k,
   truncation, and excluded candidates.
-- [ ] Add primary-topic, program/shared, and optional discovery lanes.
-- [ ] Compile compact coverage headers from persisted audit facts.
-- [ ] Block major-conclusion and expensive-run gates on stale/failed required
+- [x] Add primary-topic, program/shared, and optional discovery lanes.
+- [x] Compile compact coverage headers from persisted audit facts.
+- [x] Block major-conclusion and expensive-run gates on stale/failed required
   recall.
-- [ ] Test non-exhaustive wording and cross-topic trust isolation.
+- [x] Test non-exhaustive wording and cross-topic trust isolation.
 
 ### Task 1.4: Coalesced Recording Candidate Batches
 
@@ -649,11 +655,11 @@ leakage or forced claim rebinding.
 - Produces: `stage_recording_candidate(...) -> StagedCandidate`
 - Produces: `coalesce_recording_batch(...) -> RecordingCandidateBatchRecord`
 
-- [ ] Store raw staging separately from durable batch records.
-- [ ] Deduplicate by semantic key and source refs.
-- [ ] Coalesce review at milestone/closeout.
-- [ ] Prevent batches from invoking evidence, trust, skill, or install writers.
-- [ ] Test expiry, supersession, rejection, and resume behavior.
+- [x] Store raw staging separately from durable batch records.
+- [x] Deduplicate by semantic key and source refs.
+- [x] Coalesce review at milestone/closeout.
+- [x] Prevent batches from invoking evidence, trust, skill, or install writers.
+- [x] Test expiry, supersession, rejection, and resume behavior.
 
 ### Task 1.5: Lifecycle Facade And Host-Neutral Entry Contract
 
@@ -669,21 +675,21 @@ leakage or forced claim rebinding.
 - Produces compact operations for session start, exact expand, recording batch,
   closeout plan, and closeout apply.
 
-- [ ] Expose facade operations through CapabilitySpec.
-- [ ] Keep maintenance writers on the full surface.
-- [ ] Test Codex compact discovery and bridge acceptance.
-- [ ] Ensure host startup and explicit facade entry compile the same context.
+- [x] Expose facade operations through CapabilitySpec.
+- [x] Keep maintenance writers on the full surface.
+- [x] Test Codex compact discovery and bridge acceptance.
+- [x] Ensure host startup and explicit facade entry compile the same context.
 
 ### M1 Acceptance
 
-- [ ] Multi-topic focus never auto-rebinds the active claim.
-- [ ] Startup, topic-status, workspace-refresh, and compact-entry boundaries match.
-- [ ] Recall coverage is persisted and blocks unsupported exhaustive claims.
-- [ ] Lifecycle writes are immediately queryable through the delta overlay and
+- [x] Multi-topic focus never auto-rebinds the active claim.
+- [x] Startup, topic-status, workspace-refresh, and compact-entry boundaries match.
+- [x] Recall coverage is persisted and blocks unsupported exhaustive claims.
+- [x] Lifecycle writes are immediately queryable through the delta overlay and
   unrelated process writes do not invalidate scoped scientific recall.
-- [ ] One closeout creates one resumable process record and at most one review
+- [x] One closeout creates one resumable process record and at most one review
   batch by default.
-- [ ] No lifecycle surface changes claim trust.
+- [x] No lifecycle surface changes claim trust.
 
 ## 8. M2: Reproducible Execution, HPC, And Formal Derivations
 

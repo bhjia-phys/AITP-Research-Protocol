@@ -60,6 +60,7 @@
 | `brain/v5/query_index_delta_repair.py` | Strong full-family repair and the only dirty-state clearing path. |
 | `brain/v5/query_index_family_scan.py` | Independent strong canonical family reconstruction. |
 | `brain/v5/query_index_fallback.py` | Explicit bounded single-family canonical fallback. |
+| `brain/v5/research_retrieval.py` | Indexed retrieval plus a request-bounded coherent snapshot shared only within one startup/resume compilation. |
 | `brain/v5/research_scope.py` | Program, focus-set, cross-topic-relation writes and scope resolution. |
 | `brain/v5/research_scope_contracts.py` | Scope/ref/transfer-policy validation. |
 | `brain/v5/session_lifecycle.py` | Closeout plan and canonical closeout write. |
@@ -73,6 +74,8 @@
 | `brain/v5/lifecycle_surface_contracts.py` | Public payload and trust-effect contracts for the six M1 lifecycle operations. |
 | `brain/v5/mcp_session_lifecycle.py` | Host-neutral M1 MCP wrappers. |
 | `brain/v5/cli_session_lifecycle.py` | PowerShell-safe M1 CLI routes. |
+| `brain/v5/lifecycle_migration.py` | Read-only discovery of review candidates for optional focus/program sidecars. |
+| `brain/v5/runtime_entrypoint_catalog_data/part_03.py` | Statically auditable catalog rows for the six M1 lifecycle entrypoints. |
 
 ## Task 0: Incremental Query Overlay And Family-Scoped Freshness
 
@@ -1135,27 +1138,36 @@ v5 source modules remain below 500 lines. Protected user-work hashes remained
 ## Task 7: M1 Migration And End-To-End Acceptance
 
 **Files:**
+- Create: `brain/v5/lifecycle_migration.py`
+- Create: `brain/v5/runtime_entrypoint_catalog_data/part_03.py`
 - Create: `tests/test_v5_gate1_lifecycle_e2e.py`
 - Create: `docs/superpowers/progress/2026-07-10-aitp-gate-1-release-audit.md`
-- Modify: `README.md`
+- Modify: `brain/v5/research_retrieval.py`
+- Modify: `brain/v5/research_scope.py`
+- Modify: `brain/v5/context_compiler.py`
+- Modify: `brain/v5/session_resume.py`
+- Modify: `brain/v5/runtime_entrypoint_catalog.py`
+- Modify: `brain/v5/runtime_audit.py`
 - Modify: `tests/test_v5_test_lanes.py`
 - Modify: `docs/superpowers/progress/2026-07-11-aitp-m0-5-classification-audit.md`
 - Modify: `docs/superpowers/plans/2026-07-09-aitp-final-research-lifecycle-roadmap.md`
 - Modify: `docs/superpowers/plans/2026-07-10-aitp-gate-1-lifecycle-context.md`
+- Modify: `PROJECT_MEMORY.md`
+- Protected and not modified/staged: `README.md`
 
-- [ ] **Step 1: Add a two-topic end-to-end fixture**
+- [x] **Step 1: Add a two-topic end-to-end fixture**
 
 Start one primary QFT/QG topic with a supporting method topic, retrieve primary
 then program scope, stage duplicate semantic candidates, coalesce one batch,
 persist one closeout, and resume a new session. Assert no active claim rebind,
 no cross-topic trust transfer, and identical startup boundaries.
 
-- [ ] **Step 2: Add migration dry-run**
+- [x] **Step 2: Add migration dry-run**
 
 Inventory existing sessions/topics and report possible program/focus candidates
 without writing them. Existing sessions remain valid with no focus sidecar.
 
-- [ ] **Step 3: Run M1 focused lanes**
+- [x] **Step 3: Run M1 focused lanes**
 
 Run all new tests plus M0 foundation/compatibility lanes. Run the slow
 adapter lane separately. Record exact commands, counts, and durations.
@@ -1164,45 +1176,47 @@ classification inventory for approved M1 additions. Preserve exhaustive set
 equality and stable writer signatures; do not convert the checks to lower
 bounds or exclude the new lifecycle modules.
 
-- [ ] **Step 4: Run real-store read-only start/resume benchmark**
+- [x] **Step 4: Run real-store read-only start/resume benchmark**
 
 Use an existing session without writing canonical M1 records. Confirm
 fallback resume remains under 800 estimated tokens and warm p95 under one
 second. Hash canonical state before/after.
 
-- [ ] **Step 5: Update README and roadmap**
+- [x] **Step 5: Update roadmap and release documentation while preserving the protected README**
 
 Document sidecar focus, recall coverage, one coalesced review batch, closeout vs
 resume, exact expansion, and trust isolation. Mark only verified checklist
-items complete.
+items complete. The independently edited `README.md` is deliberately excluded
+from this commit; its existing working-tree diff is neither overwritten nor
+used as M1 release evidence.
 
-- [ ] **Step 6: Write release audit and verify staged tree**
+- [x] **Step 6: Write release audit and verify staged tree**
 
 Run `git diff --check`, AST parse all source files, named test lanes, and a
 staged-tree capability audit. Preserve independent user hunks.
 
-- [ ] **Step 7: Commit M1**
+- [x] **Step 7: Commit M1**
 
 Commit message: `v5: complete M1 research lifecycle`.
 
 ## M1 Completion Checklist
 
-- [ ] Session focus supports all required ref kinds without changing `SessionBinding.active_claim`.
-- [ ] Cross-topic relations always forbid claim-trust transfer and require target revalidation.
-- [ ] One closeout is idempotent, canonical process state with no trust effect.
-- [ ] Every model-facing closeout boundary item preserves proved/conditional/
+- [x] Session focus supports all required ref kinds without changing `SessionBinding.active_claim`.
+- [x] Cross-topic relations always forbid claim-trust transfer and require target revalidation.
+- [x] One closeout is idempotent, canonical process state with no trust effect.
+- [x] Every model-facing closeout boundary item preserves proved/conditional/
   finite-evidence/open-gap classification and exact refs; summary text alone
   never enters the can-say lane.
-- [ ] Resume, topic status, workspace refresh, compact entry, and generated startup files share one boundary.
-- [ ] MCP, CLI, hooks, topic status, and workspace refresh expose the same
+- [x] Resume, topic status, workspace refresh, compact entry, and generated startup files share one boundary.
+- [x] MCP, CLI, hooks, topic status, and workspace refresh expose the same
   four-level disclosure ladder; every level preserves coverage/errors/handles
   and `not_checked|not_shown` never becomes `not_found`.
-- [ ] Recall coverage is persisted and blocks unsupported exhaustive/high-cost actions.
-- [ ] Full-base plus delta retrieval makes lifecycle writes immediately visible;
+- [x] Recall coverage is persisted and blocks unsupported exhaustive/high-cost actions.
+- [x] Full-base plus delta retrieval makes lifecycle writes immediately visible;
   scoped content verification survives unrelated process writes without hiding
   dirty, stale, malformed, or continuity-broken required families.
-- [ ] One milestone creates at most one coalesced recording batch by default.
-- [ ] Raw staging cannot write evidence, trust, memory, or skills.
-- [ ] Capability, MCP, CLI, public, bridge, and compact declarations have zero drift.
-- [ ] M0 tests remain green and architecture limits are unchanged.
-- [ ] Real-store fallback startup meets token/latency budgets without canonical rewrites.
+- [x] One milestone creates at most one coalesced recording batch by default.
+- [x] Raw staging cannot write evidence, trust, memory, or skills.
+- [x] Capability, MCP, CLI, public, bridge, and compact declarations have zero drift.
+- [x] M0 tests remain green and architecture limits are unchanged.
+- [x] Real-store fallback startup meets token/latency budgets without canonical rewrites.

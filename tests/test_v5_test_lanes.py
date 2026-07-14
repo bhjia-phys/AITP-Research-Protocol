@@ -26,6 +26,7 @@ def test_m0_test_lanes_reference_existing_tests_and_required_boundaries():
         "tests/test_v5_query_index.py",
         "tests/test_v5_context_compiler.py",
         "tests/test_v5_capability_registry.py",
+        "tests/test_v5_gate1_lifecycle_e2e.py",
         "tests/test_v5_test_lanes.py",
         "tests/test_v5_runtime_mcp_bridge_acceptance.py",
         "tests/test_aitp_pm_deploy_surfaces.py",
@@ -345,13 +346,13 @@ def test_m0_5_classification_audit_covers_current_core_without_behavior_change()
         return set(items)
 
     capability_classes = {
-        "core": classified_items(r"2\.1 Core \(53\)"),
+        "core": classified_items(r"2\.1 Core \(59\)"),
         "vertical_extension": classified_items(r"2\.2 Vertical Extension \(89\)"),
         "maintenance": classified_items(r"2\.3 Maintenance \(43\)"),
         "migration": classified_items(r"2\.4 Migration \(43\)"),
     }
     assert {name: len(items) for name, items in capability_classes.items()} == {
-        "core": 53,
+        "core": 59,
         "vertical_extension": 89,
         "maintenance": 43,
         "migration": 43,
@@ -361,11 +362,11 @@ def test_m0_5_classification_audit_covers_current_core_without_behavior_change()
 
     registered_capabilities = set(capability_specs())
     registered_capabilities.discard("harness_feedback_problem_dossier")
-    assert len(registered_capabilities) == 228
+    assert len(registered_capabilities) == 234
     assert classified_capabilities == registered_capabilities
 
     family_classes = {
-        "core": classified_items(r"3\.1 Core \(19\)"),
+        "core": classified_items(r"3\.1 Core \(25\)"),
         "vertical_extension": classified_items(r"3\.2 Vertical Extension \(19\)"),
         "migration": classified_items(r"3\.3 Migration \(4\)"),
         "soft_deprecation_candidate": classified_items(
@@ -373,7 +374,7 @@ def test_m0_5_classification_audit_covers_current_core_without_behavior_change()
         ),
     }
     assert {name: len(items) for name, items in family_classes.items()} == {
-        "core": 19,
+        "core": 25,
         "vertical_extension": 19,
         "migration": 4,
         "soft_deprecation_candidate": 4,
@@ -387,7 +388,8 @@ def test_m0_5_classification_audit_covers_current_core_without_behavior_change()
         "Status: reviewed classification baseline plus accepted vertical extensions; "
         "CR1 changed compact visibility for six maintenance capabilities, and the "
         "new-software vertical added three full-surface human-gated Skill lifecycle "
-        "capabilities."
+        "capabilities. M1 then added six host-neutral lifecycle capabilities and six "
+        "trust-neutral core record families."
     ) in normalized
     assert "## 6. Resolved Review Decisions" in report
     assert "bounded scanner closure does not convert candidate counts into a no-bypass proof" in normalized
@@ -440,12 +442,12 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
 
     writer_rows_by_class = {
         "canonical_record_or_repository": writer_rows(
-            r"4\.1 Canonical Record Or Repository \(49\)"
+            r"4\.1 Canonical Record Or Repository \(56\)"
         ),
         "derived_index_or_surface": writer_rows(
-            r"4\.2 Derived Index Or Surface \(21\)"
+            r"4\.2 Derived Index Or Surface \(25\)"
         ),
-        "host_or_runtime": writer_rows(r"4\.3 Host Or Runtime \(14\)"),
+        "host_or_runtime": writer_rows(r"4\.3 Host Or Runtime \(16\)"),
         "migration_or_legacy_compat": writer_rows(
             r"4\.4 Migration Or Legacy Compatibility \(28\)"
         ),
@@ -455,9 +457,9 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
     }
     writer_classes = stable_classes(writer_rows_by_class)
     assert {name: len(items) for name, items in writer_classes.items()} == {
-        "canonical_record_or_repository": 49,
-        "derived_index_or_surface": 21,
-        "host_or_runtime": 14,
+        "canonical_record_or_repository": 56,
+        "derived_index_or_surface": 25,
+        "host_or_runtime": 16,
         "migration_or_legacy_compat": 28,
         "shared_storage_primitive": 2,
     }
@@ -466,7 +468,7 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
 
     audit = build_runtime_capability_audit(repo_root)
     audited = {row["stable_signature"] for row in audit["writers"]}
-    assert audit["inventory"]["writer_count"] == 114
+    assert audit["inventory"]["writer_count"] == 127
     assert classified == audited
 
     direct_rows_by_class = {

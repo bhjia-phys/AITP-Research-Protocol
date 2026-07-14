@@ -250,6 +250,10 @@ def _capability_inventory(directory: Path) -> dict[str, list[str]]:
                 directory / "capability_surface_contracts.py",
                 "_RULES",
             ),
+            *_mapping_key_assignment(
+                directory / "lifecycle_surface_contracts.py",
+                "_RULES",
+            ),
         }
     )
     registry_data = directory / "capability_registry_data.py"

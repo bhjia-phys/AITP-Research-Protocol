@@ -45,7 +45,12 @@ from brain.v5.paths import WorkspacePaths
 from brain.v5.query_index import build_query_index, load_query_manifest
 from brain.v5.record_envelope import RecordActor
 from brain.v5.record_repository import RecordRepository
-from brain.v5.research_retrieval import RetrievalResult, query_records
+from brain.v5.research_retrieval import (
+    QuerySnapshotSession,
+    ResearchQuery,
+    RetrievalResult,
+    query_records,
+)
 from brain.v5.research_scope import ScopeResolution, resolve_session_scope
 
 
@@ -162,6 +167,7 @@ def compile_research_context(
     *,
     query_fn: QueryFunction = query_records,
     repository: RecordRepository | None = None,
+    query_session: QuerySnapshotSession | None = None,
 ) -> ContextBundle:
     """Compile one trust-neutral context through the fixed disclosure ladder."""
 
@@ -182,6 +188,7 @@ def compile_research_context(
             include_discovery=request.include_cross_topic_discovery,
             focus_set_ref=request.focus_set_ref,
             program_id=request.program_id,
+            query_session=query_session,
         )
     except (TypeError, ValueError, RuntimeError) as exc:
         raise ContextCompilationError(
@@ -215,11 +222,23 @@ def compile_research_context(
     if request.disclosure_level == "exact_expansion":
         result, expansion = _exact_disclosure_result(ws, request)
     else:
+        effective_query_fn = query_fn
+        if query_session is not None and query_fn is query_records:
+            def effective_query_fn(
+                workspace: WorkspacePaths,
+                query: ResearchQuery,
+            ) -> RetrievalResult:
+                return query_records(
+                    workspace,
+                    query,
+                    query_session=query_session,
+                )
+
         result = _scoped_retrieval_result(
             ws,
             request,
             scope,
-            query_fn=query_fn,
+            query_fn=effective_query_fn,
         )
         blocked_explicit_refs = result.blocked_explicit_refs
         result = result.result

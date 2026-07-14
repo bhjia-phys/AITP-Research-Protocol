@@ -90,7 +90,20 @@ class RetrievalResult:
     can_update_claim_trust: bool = False
 
 
-def query_records(ws: WorkspacePaths, query: ResearchQuery) -> RetrievalResult:
+@dataclass
+class QuerySnapshotSession:
+    """One coherent index snapshot shared only within a bounded read request."""
+
+    snapshot: EffectiveIndexSnapshot | None = None
+    allow_pointer_bound_cache: bool = False
+
+
+def query_records(
+    ws: WorkspacePaths,
+    query: ResearchQuery,
+    *,
+    query_session: QuerySnapshotSession | None = None,
+) -> RetrievalResult:
     """Query derived metadata while preserving stale and malformed boundaries."""
 
     if query.offset < 0 or query.limit < 1:
@@ -109,13 +122,28 @@ def query_records(ws: WorkspacePaths, query: ResearchQuery) -> RetrievalResult:
     )
     checked_families = tuple(sorted(checked_set)) or all_families
     unchecked = tuple(family for family in all_families if family not in checked_families)
-    try:
-        index = load_effective_query_index(
-            ws,
-            allow_cached=query.verification_mode == "orientation",
-        )
-    except (IndexIntegrityError, OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
-        index = _fail_closed_index_snapshot(ws, all_families, exc)
+    index = query_session.snapshot if query_session is not None else None
+    if index is None:
+        try:
+            index = load_effective_query_index(
+                ws,
+                allow_cached=(
+                    query_session.allow_pointer_bound_cache
+                    if query_session is not None
+                    else query.verification_mode == "orientation"
+                ),
+            )
+        except (
+            IndexIntegrityError,
+            OSError,
+            ValueError,
+            TypeError,
+            KeyError,
+            json.JSONDecodeError,
+        ) as exc:
+            index = _fail_closed_index_snapshot(ws, all_families, exc)
+        if query_session is not None:
+            query_session.snapshot = index
     freshness = (
         scoped_index_freshness(ws, index, checked_families)
         if query.verification_mode == "strong"

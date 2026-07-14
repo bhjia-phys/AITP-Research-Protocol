@@ -79,20 +79,30 @@ must follow the reviewed skill-candidate/install/use lifecycle.
   archived legacy write E2E failures are not release defects.
 - **Milestones vs gates**: The implementation roadmap uses M0-M6. "Gate" is
   reserved for real human/trust/validation/mutation checkpoints in research.
-- **M0.5 complexity freeze**: M0 is accepted, but M1-M6 are not automatic
-  implementation checklists. First classify and reduce capabilities, families,
-  writers, imports, legacy dependencies, compact exposure, and logical shard
-  complexity; then retain abstractions only when a real research vertical or
-  required compatibility fixture owns them.
+- **M0.5 complexity freeze**: M0 and M1 are accepted, but M2-M6 are not
+  automatic implementation checklists. First classify and reduce capabilities,
+  families, writers, imports, legacy dependencies, compact exposure, and
+  logical shard complexity; then retain abstractions only when a real research
+  vertical or required compatibility fixture owns them.
 - **Writer-audit lower bound**: Preserve the historical M0 111-row named-helper
-  baseline while classifying the current 114-row inventory separately from the
+  baseline while classifying the current 127-row inventory separately from the
   164-row direct-mutation inventory. The latter
   covers literal path/open/copy/rename/SQL mechanisms in declared production
-  trees and excludes tests. Its bounded policy currently parses 573/573
+  trees and excludes tests. Its bounded policy currently parses 609/609
   declared production Python files with zero errors, so
   `bounded_coverage_complete` is true. Universal `coverage_complete` remains
   false for dynamic/reflected/native I/O. Do not sum call sites into a semantic
   writer claim or use bounded closure as a repository-wide no-bypass proof.
+- **M1 lifecycle boundary**: Keep `SessionBinding` single-topic; use reviewed
+  `session_focus_sets`, `research_programs`, and `cross_topic_relations` as
+  sidecars. Cross-topic material requires target revalidation and never
+  transfers claim trust. Persist `session_closeouts`, `recall_audits`, and at
+  most one coalesced `recording_candidate_batch` at durable moments; compile
+  resume/startup views as trust-neutral projections. Raw recording staging is
+  runtime-only, and real-store focus/program migration remains review-only
+  until an explicit repository write is approved. A startup/resume request may
+  share one coherent `QuerySnapshotSession`; do not reuse it across requests as
+  a truth cache.
 - **Vertical writer closure**: LibRPA, QFT/QG fixture, new-software, and
   multi-topic E2E tests compare complete canonical before/after byte snapshots
   with successful `RecordRepository` create/revision/archive receipts. This

@@ -11,7 +11,11 @@ from brain.v5.paths import WorkspacePaths
 from brain.v5.query_index_snapshot import load_effective_query_index, scoped_index_freshness
 from brain.v5.record_envelope import RecordActor
 from brain.v5.record_repository import RecordRepository
-from brain.v5.research_retrieval import ResearchQuery, query_records
+from brain.v5.research_retrieval import (
+    QuerySnapshotSession,
+    ResearchQuery,
+    query_records,
+)
 from brain.v5.session_resume_rendering import (
     bounded_closeout_lanes,
     canonical_resume_boundary_json,
@@ -39,6 +43,7 @@ def build_session_resume_card(
         raise ValueError("session_id must be non-empty")
     if not 128 <= max_tokens <= 800:
         raise ValueError("max_tokens must be between 128 and 800")
+    query_session = QuerySnapshotSession(allow_pointer_bound_cache=True)
     context = compile_research_context(
         ws,
         ContextRequest(
@@ -49,8 +54,13 @@ def build_session_resume_card(
             candidate_limit=6,
             record_limit=40,
         ),
+        query_session=query_session,
     )
-    closeout, closeout_ref, lookup = _latest_closeout(ws, session_id)
+    closeout, closeout_ref, lookup = _latest_closeout(
+        ws,
+        session_id,
+        query_session=query_session,
+    )
     if closeout is None:
         card = _fallback_card(context, lookup)
     else:
@@ -61,6 +71,8 @@ def build_session_resume_card(
 def _latest_closeout(
     ws: WorkspacePaths,
     session_id: str,
+    *,
+    query_session: QuerySnapshotSession,
 ) -> tuple[SessionCloseoutRecord | None, str, dict[str, Any]]:
     result = query_records(
         ws,
@@ -72,6 +84,7 @@ def _latest_closeout(
             fallback_max_records=500,
             verification_mode="strong",
         ),
+        query_session=query_session,
     )
     lookup = {
         "exhaustive": bool(result.coverage.exhaustive and not result.truncated),
