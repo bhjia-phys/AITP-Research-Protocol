@@ -14,3 +14,5 @@ _load_module_shards(
     ),
 )
 del _load_module_shards
+
+from brain.v5.recording_batches import recording_batch_handoff

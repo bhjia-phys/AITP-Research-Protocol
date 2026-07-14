@@ -958,6 +958,7 @@ Commit message: `v5: add persisted deep recall coverage`.
 **Files:**
 - Create: `brain/v5/recording_batches.py`
 - Create: `brain/v5/recording_batch_contracts.py`
+- Create: `brain/v5/recording_batch_storage.py`
 - Create: `tests/test_v5_recording_batches.py`
 - Modify: `brain/v5/recording_navigator.py`
 - Modify: `brain/v5/moment_policy.py`
@@ -990,15 +991,15 @@ class StagedCandidate:
     can_update_claim_trust: bool = False
 ```
 
-- [ ] **Step 1: Write failing staging/dedup tests**
+- [x] **Step 1: Write failing staging/dedup tests**
 
 Test same semantic key/source refs idempotency, different sources, expiry,
 supersession, rejection, resume, corrupt staging diagnostics, and one batch per
 milestone.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
-- [ ] **Step 3: Implement normalized runtime staging**
+- [x] **Step 3: Implement normalized runtime staging**
 
 Accepted candidate classes are `definition`, `formula`, `convention`,
 `relation`, `derivation`, `interpretation`, `analogy`, `conjecture`,
@@ -1006,26 +1007,44 @@ Accepted candidate classes are `definition`, `formula`, `convention`,
 `workflow_candidate`. Each candidate declares source refs, missing
 prerequisites, dedup key, expiry, and `trust_effect=none`.
 
-- [ ] **Step 4: Implement durable batch coalescing**
+- [x] **Step 4: Implement durable batch coalescing**
 
 Sort/deduplicate candidates by semantic key and normalized source refs. Use a
 deterministic batch id from session/milestone. Persist only the coalesced batch;
 write a runtime receipt for included/rejected/expired staging ids.
 
-- [ ] **Step 5: Enforce forbidden downstream writes**
+- [x] **Step 5: Enforce forbidden downstream writes**
 
 Tests monkeypatch evidence, trust, memory, skill proposal, and install writers
 to fail if called. `coalesce_recording_batch` must still pass.
 
-- [ ] **Step 6: Integrate moment and closeout policy**
+- [x] **Step 6: Integrate moment and closeout policy**
 
 Moment decisions stage candidates silently; milestone/closeout produces at
 most one review batch by default. Recording navigator returns the batch ref,
 not one prompt per candidate.
 
-- [ ] **Step 7: Run recording regressions and commit**
+- [x] **Step 7: Run recording regressions and commit**
 
 Commit message: `v5: coalesce recording candidates for review`.
+
+Implementation evidence (2026-07-14): runtime candidates are normalized into
+one atomic JSON file per session/dedup identity, and only one deterministic
+`recording_candidate_batch` crosses the canonical repository boundary for a
+milestone. Rejection, expiry, supersession, resume, corrupt-file diagnostics,
+and post-canonical interruption recovery remain runtime state; replay repairs
+runtime inclusion from the canonical batch before considering later work.
+Moment and closeout integration is a thin re-export over the existing compat
+modules and does not modify legacy L0-L4 write behavior.
+
+Verification: Task 5 behavior `7 passed`; repository/lifecycle/recording/
+architecture regression `84 passed`; query-lock plus selected adapter
+regression `21 passed`. A broader process/public/runtime/route/lane slice
+reported `52 passed, 2 failed`: both failures are the pre-existing M0.5
+classification snapshot lagging the already implemented M1 registry and writer
+inventory (46 vs 52 families, 114 vs 127 writers). Task 7 now owns refreshing
+that exact inventory after Task 6 freezes the M1 public surface; the checks must
+not be deleted or weakened.
 
 ## Task 6: Lifecycle MCP, CLI, Capability, And Compact Entry
 
@@ -1086,6 +1105,8 @@ Commit message: `v5: expose host-neutral session lifecycle`.
 - Create: `tests/test_v5_gate1_lifecycle_e2e.py`
 - Create: `docs/superpowers/progress/2026-07-10-aitp-gate-1-release-audit.md`
 - Modify: `README.md`
+- Modify: `tests/test_v5_test_lanes.py`
+- Modify: `docs/superpowers/progress/2026-07-11-aitp-m0-5-classification-audit.md`
 - Modify: `docs/superpowers/plans/2026-07-09-aitp-final-research-lifecycle-roadmap.md`
 - Modify: `docs/superpowers/plans/2026-07-10-aitp-gate-1-lifecycle-context.md`
 
@@ -1105,6 +1126,10 @@ without writing them. Existing sessions remain valid with no focus sidecar.
 
 Run all new tests plus M0 foundation/compatibility lanes. Run the slow
 adapter lane separately. Record exact commands, counts, and durations.
+After Task 6 freezes the M1 surface, refresh the exact M0.5 family and writer
+classification inventory for approved M1 additions. Preserve exhaustive set
+equality and stable writer signatures; do not convert the checks to lower
+bounds or exclude the new lifecycle modules.
 
 - [ ] **Step 4: Run real-store read-only start/resume benchmark**
 
