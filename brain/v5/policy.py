@@ -40,6 +40,8 @@ _TRUST_CHANGING_ACTIONS = {
 }
 _CANONICAL_EXECUTION_ACTIONS = {
     "accept_execution_baseline",
+    "approve_scope_revalidation",
+    "execute_bound_tool",
     "record_code_state_v2",
     "record_execution_environment",
     "record_monitor_snapshot_v2",
@@ -55,6 +57,11 @@ _SUMMARY_SOURCE_KINDS = {
     "task_plan",
     "findings",
     "progress",
+}
+_BOUND_CHECKPOINT_ACTIONS = {
+    "accept_execution_baseline",
+    "approve_scope_revalidation",
+    "execute_bound_tool",
 }
 
 
@@ -109,10 +116,20 @@ def evaluate_policy(
     _guard_summary_surface_cannot_drive_trust_update(decision, action, ctx)
     _guard_adversarial_trust_change_requires_checkpoint(decision, action, risk_level, ctx)
 
-    if action == "accept_execution_baseline" and ctx.get("human_checkpoint_approved") is not True:
+    if action in _BOUND_CHECKPOINT_ACTIONS and ctx.get("human_checkpoint_approved") is not True:
+        policy_id = (
+            "baseline_acceptance_requires_human_checkpoint"
+            if action == "accept_execution_baseline"
+            else "bound_execution_action_requires_human_checkpoint"
+        )
+        message = (
+            "execution baseline acceptance requires an approved human checkpoint"
+            if action == "accept_execution_baseline"
+            else "bound execution actions require an approved human checkpoint"
+        )
         decision.add_block(
-            "baseline_acceptance_requires_human_checkpoint",
-            "execution baseline acceptance requires an approved human checkpoint",
+            policy_id,
+            message,
             "request_human_checkpoint",
             severity="hard_block",
         )

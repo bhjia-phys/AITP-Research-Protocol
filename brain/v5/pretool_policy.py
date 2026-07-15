@@ -22,6 +22,8 @@ from brain.v5.workspace import get_claim, get_session_binding
 
 _CONTEXT_ACTIONS = {
     "accept_execution_baseline",
+    "approve_scope_revalidation",
+    "execute_bound_tool",
     "record_code_state_v2",
     "record_execution_environment",
     "record_monitor_snapshot_v2",

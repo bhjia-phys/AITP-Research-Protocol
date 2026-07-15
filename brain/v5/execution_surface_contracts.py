@@ -58,6 +58,48 @@ _READ = {
     ),
 }
 
+_GATED = {
+    "execution_request_bound_checkpoint": (
+        (
+            "status",
+            "session_id",
+            "claim_id",
+            "checkpoint_id",
+            "request_ref",
+            "binding",
+            "pre_tool_decision",
+        ),
+        "typed_records",
+    ),
+    "execution_decide_bound_checkpoint": (
+        (
+            "status",
+            "session_id",
+            "claim_id",
+            "request_ref",
+            "decision_ref",
+            "binding",
+            "pre_tool_decision",
+        ),
+        "typed_records_and_host_attestation",
+    ),
+    "execution_apply_bound_action": (
+        (
+            "status",
+            "session_id",
+            "claim_id",
+            "action",
+            "request_ref",
+            "decision_ref",
+            "result_refs",
+            "application_receipt_ref",
+            "replayed",
+            "pre_tool_decision",
+        ),
+        "typed_records_and_host_attestation",
+    ),
+}
+
 
 def execution_operation_specs() -> dict[str, ExecutionOperationSpec]:
     specs = {
@@ -70,6 +112,16 @@ def execution_operation_specs() -> dict[str, ExecutionOperationSpec]:
         )
         for operation, (required, truth_source) in _READ.items()
     }
+    specs.update({
+        operation: ExecutionOperationSpec(
+            operation=operation,
+            mcp_name=f"aitp_v5_{operation}",
+            state_effect="kernel_write",
+            required_result_fields=required,
+            truth_source=truth_source,
+        )
+        for operation, (required, truth_source) in _GATED.items()
+    })
     return specs
 
 
@@ -129,12 +181,13 @@ def validate_execution_operation_result(
         result.add(f"{path}.state_effect", f"must be {spec.state_effect!r}")
     if payload.get("can_update_claim_trust") is not False:
         result.add(f"{path}.can_update_claim_trust", "must be false")
-    if payload.get("can_update_kernel_state") is not False:
-        result.add(f"{path}.can_update_kernel_state", "must be false")
-    if payload.get("writes_records") is not False:
-        result.add(f"{path}.writes_records", "must be false")
-    if payload.get("orientation_only") is not True:
-        result.add(f"{path}.orientation_only", "must be true")
+    kernel_write = spec.state_effect == "kernel_write"
+    if payload.get("can_update_kernel_state") is not kernel_write:
+        result.add(f"{path}.can_update_kernel_state", f"must be {kernel_write!r}")
+    if payload.get("writes_records") is not kernel_write:
+        result.add(f"{path}.writes_records", f"must be {kernel_write!r}")
+    if payload.get("orientation_only") is not (not kernel_write):
+        result.add(f"{path}.orientation_only", f"must be {not kernel_write!r}")
     operation_result = payload.get("result")
     if not isinstance(operation_result, dict):
         result.add(f"{path}.result", "must be a mapping")
@@ -142,7 +195,10 @@ def validate_execution_operation_result(
     for field in spec.required_result_fields:
         if field not in operation_result:
             result.add(f"{path}.result.{field}", "is required")
-    _validate_read_result(operation, operation_result, result, f"{path}.result")
+    if kernel_write:
+        _validate_gated_result(operation, operation_result, result, f"{path}.result")
+    else:
+        _validate_read_result(operation, operation_result, result, f"{path}.result")
     return result
 
 
@@ -231,12 +287,170 @@ def _validate_read_result(
                 result.add(f"{path}.{field}", "must be a boolean")
 
 
-def _validate_pin(value: Any, result: ContractResult, path: str) -> None:
+def _validate_gated_result(
+    operation: str,
+    value: dict[str, Any],
+    result: ContractResult,
+    path: str,
+) -> None:
+    if not isinstance(value.get("status"), str) or not value.get("status"):
+        result.add(f"{path}.status", "must be a non-empty string")
+    for field in ("session_id", "claim_id"):
+        if not isinstance(value.get(field), str) or not value.get(field):
+            result.add(f"{path}.{field}", "must be a non-empty string")
+    _validate_pre_tool(value.get("pre_tool_decision"), result, f"{path}.pre_tool_decision")
+    if operation == "execution_request_bound_checkpoint":
+        _validate_pin(
+            value.get("request_ref"),
+            result,
+            f"{path}.request_ref",
+            expected_kind="human_checkpoint",
+        )
+        request_ref = value.get("request_ref")
+        if isinstance(request_ref, dict):
+            expected_id = request_ref.get("record_ref", "").partition(":")[2]
+            if value.get("checkpoint_id") != expected_id:
+                result.add(f"{path}.checkpoint_id", "must match request_ref")
+        _validate_binding(value.get("binding"), result, f"{path}.binding")
+        _validate_pre_tool_binding(
+            value,
+            result,
+            path,
+            expected_action="request_human_checkpoint",
+        )
+    elif operation == "execution_decide_bound_checkpoint":
+        request_ref = value.get("request_ref")
+        decision_ref = value.get("decision_ref")
+        _validate_pin(request_ref, result, f"{path}.request_ref", expected_kind="human_checkpoint")
+        _validate_pin(decision_ref, result, f"{path}.decision_ref", expected_kind="human_checkpoint")
+        if isinstance(request_ref, dict) and isinstance(decision_ref, dict):
+            if decision_ref.get("record_ref") != request_ref.get("record_ref"):
+                result.add(f"{path}.decision_ref.record_ref", "must match request_ref")
+            if decision_ref.get("revision") != request_ref.get("revision", 0) + 1:
+                result.add(f"{path}.decision_ref.revision", "must supersede request revision")
+        _validate_binding(value.get("binding"), result, f"{path}.binding")
+        _validate_pre_tool_binding(
+            value,
+            result,
+            path,
+            expected_action="decide_human_checkpoint",
+        )
+    elif operation == "execution_apply_bound_action":
+        action = value.get("action")
+        allowed = {
+            "accept_execution_baseline": {"execution_baseline"},
+            "approve_scope_revalidation": {"scope_revalidation_decision"},
+            "execute_bound_tool": {"tool_run", "validation_result"},
+        }
+        if action not in allowed:
+            result.add(f"{path}.action", "must be a supported bound action")
+        _validate_pin(value.get("request_ref"), result, f"{path}.request_ref", expected_kind="human_checkpoint")
+        _validate_pin(value.get("decision_ref"), result, f"{path}.decision_ref", expected_kind="human_checkpoint")
+        request_ref = value.get("request_ref")
+        decision_ref = value.get("decision_ref")
+        if isinstance(request_ref, dict) and isinstance(decision_ref, dict):
+            if decision_ref.get("record_ref") != request_ref.get("record_ref"):
+                result.add(f"{path}.decision_ref.record_ref", "must match request_ref")
+            if decision_ref.get("revision") != request_ref.get("revision", 0) + 1:
+                result.add(f"{path}.decision_ref.revision", "must supersede request revision")
+        refs = value.get("result_refs")
+        _validate_pin_list(refs, result, f"{path}.result_refs")
+        if action in allowed and isinstance(refs, list):
+            kinds = {
+                item.get("record_ref", "").partition(":")[0]
+                for item in refs
+                if isinstance(item, dict)
+            }
+            expected_count = len(allowed[action])
+            if kinds != allowed[action] or len(refs) != expected_count:
+                result.add(f"{path}.result_refs", "must match the bound action result families")
+        _validate_pin(
+            value.get("application_receipt_ref"),
+            result,
+            f"{path}.application_receipt_ref",
+            expected_kind="checkpoint_application_receipt",
+        )
+        if not isinstance(value.get("replayed"), bool):
+            result.add(f"{path}.replayed", "must be a boolean")
+        _validate_pre_tool_binding(value, result, path, expected_action=str(action or ""))
+
+
+def _validate_binding(value: Any, result: ContractResult, path: str) -> None:
+    if not isinstance(value, dict):
+        result.add(path, "must be a checkpoint binding mapping")
+        return
+    _validate_pin(value.get("intent"), result, f"{path}.intent")
+    _validate_pin_list(value.get("subjects"), result, f"{path}.subjects")
+    for field in ("action", "effect_policy", "replay_policy"):
+        if not isinstance(value.get(field), str) or not value.get(field):
+            result.add(f"{path}.{field}", "must be a non-empty string")
+    for field in ("action_payload_hash", "request_hash"):
+        if not isinstance(value.get(field), str) or not _SHA256.fullmatch(value[field]):
+            result.add(f"{path}.{field}", "must be lowercase sha256")
+    _validate_string_list(value.get("target_scope_refs"), result, f"{path}.target_scope_refs")
+
+
+def _validate_pre_tool(value: Any, result: ContractResult, path: str) -> None:
+    if not isinstance(value, dict):
+        result.add(path, "must be a pre-tool decision mapping")
+        return
+    if value.get("block") is not False:
+        result.add(f"{path}.block", "must be false")
+    if value.get("truth_source") != "typed_records":
+        result.add(f"{path}.truth_source", "must be typed_records")
+    if value.get("can_update_kernel_state") is not False:
+        result.add(f"{path}.can_update_kernel_state", "must be false")
+    if value.get("can_update_claim_trust") is not False:
+        result.add(f"{path}.can_update_claim_trust", "must be false")
+
+
+def _validate_pre_tool_binding(
+    value: dict[str, Any],
+    result: ContractResult,
+    path: str,
+    *,
+    expected_action: str,
+) -> None:
+    pre_tool = value.get("pre_tool_decision")
+    if not isinstance(pre_tool, dict):
+        return
+    for field in ("session_id", "claim_id"):
+        if pre_tool.get(field) != value.get(field):
+            result.add(f"{path}.pre_tool_decision.{field}", f"must match {field}")
+    if pre_tool.get("action") != expected_action:
+        result.add(f"{path}.pre_tool_decision.action", "must match the facade action")
+    if expected_action in {
+        "accept_execution_baseline",
+        "approve_scope_revalidation",
+        "execute_bound_tool",
+    }:
+        decision_ref = value.get("decision_ref")
+        expected_checkpoint = (
+            decision_ref.get("record_ref", "").partition(":")[2]
+            if isinstance(decision_ref, dict)
+            else ""
+        )
+        if pre_tool.get("human_checkpoint_id") != expected_checkpoint:
+            result.add(
+                f"{path}.pre_tool_decision.human_checkpoint_id",
+                "must match decision_ref",
+            )
+
+
+def _validate_pin(
+    value: Any,
+    result: ContractResult,
+    path: str,
+    *,
+    expected_kind: str = "",
+) -> None:
     if not isinstance(value, dict):
         result.add(path, "must be an exact pin mapping")
         return
     if not _typed_ref(value.get("record_ref")):
         result.add(f"{path}.record_ref", "must be a typed record ref")
+    elif expected_kind and value["record_ref"].partition(":")[0] != expected_kind:
+        result.add(f"{path}.record_ref", f"must use {expected_kind!r} family")
     if not isinstance(value.get("content_hash"), str) or not _SHA256.fullmatch(value["content_hash"]):
         result.add(f"{path}.content_hash", "must be lowercase sha256")
     revision = value.get("revision")

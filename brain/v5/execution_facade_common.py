@@ -44,17 +44,18 @@ def coerce_pins(values: Any, field_name: str) -> tuple[PinnedRecordRef, ...]:
 
 def execution_result(operation: str, value: Any) -> dict[str, Any]:
     spec = execution_operation_specs()[operation]
+    kernel_write = spec.state_effect == "kernel_write"
     payload = {
         "ok": True,
         "kind": "execution_operation_result",
         "operation": operation,
         "state_effect": spec.state_effect,
-        "writes_records": False,
+        "writes_records": kernel_write,
         "result": jsonable(value),
         "truth_source": spec.truth_source,
         "summary_inputs_trusted": False,
-        "orientation_only": True,
-        "can_update_kernel_state": False,
+        "orientation_only": not kernel_write,
+        "can_update_kernel_state": kernel_write,
         "can_update_claim_trust": False,
     }
     return require_valid_execution_operation_result(payload)

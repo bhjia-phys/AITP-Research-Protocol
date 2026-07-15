@@ -15,6 +15,9 @@ _OPERATIONS = {
     "execution_project_maturity": "read_only",
     "execution_build_formula_code_capsule": "read_only",
     "execution_project_derivation_status": "read_only",
+    "execution_request_bound_checkpoint": "kernel_write",
+    "execution_decide_bound_checkpoint": "kernel_write",
+    "execution_apply_bound_action": "kernel_write",
 }
 
 
