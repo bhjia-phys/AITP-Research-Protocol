@@ -359,9 +359,11 @@ class ExecutionEnvironmentRecord:
     container_digests: list[str] = field(default_factory=list)
     lock_digests: list[str] = field(default_factory=list)
     scheduler: dict = field(default_factory=dict)
+    executable_paths: dict = field(default_factory=dict)
     executable_hashes: dict = field(default_factory=dict)
     redacted_environment: dict = field(default_factory=dict)
-    source_refs: list[str] = field(default_factory=list)
+    source_refs: list[dict] = field(default_factory=list)
+    created_at: str = ""
     kind: str = "execution_environment"
 
 

@@ -52,6 +52,7 @@ _REGISTRY_ROWS: tuple[tuple[str, str, str | None, str], ...] = (
     ("code_workspaces", "code_workspace", "CodeWorkspaceRecord", "workspace_id"),
     ("cross_topic_relations", "cross_topic_relation", "CrossTopicRelationRecord", "relation_id"),
     ("evidence", "evidence", "EvidenceRecord", "evidence_id"),
+    ("execution_environments", "execution_environment", "ExecutionEnvironmentRecord", "environment_id"),
     ("exploratory_records", "exploratory_record", "ExploratoryRecord", "record_id"),
     ("failure_mode_reviews", "failure_mode_review_result", "FailureModeReviewResultRecord", "result_id"),
     ("ideas", "idea", None, "idea_id"),
@@ -169,6 +170,7 @@ _SCHEMA_VERSIONS = {
     "checkpoint_application_receipts": "v2",
     "code_patch_manifests": "v2",
     "code_states": "v2",
+    "execution_environments": "v2",
     "monitor_snapshots": "v2",
     "scope_revalidation_decisions": "v2",
     "tool_recipes": "v2",
@@ -199,6 +201,9 @@ _DEPENDENCY_FIELDS = {
     ),
     "code_states": (
         "patch_manifest_ref",
+    ),
+    "execution_environments": (
+        "source_refs[].record_ref",
     ),
     "scope_revalidation_decisions": (
         "bridge_ref",
@@ -236,6 +241,7 @@ _APPEND_ONLY_FAMILIES = {
     "claim_statuses",
     "checkpoint_application_receipts",
     "code_patch_manifests",
+    "execution_environments",
     "failure_mode_reviews",
     "lifecycle_events",
     "monitor_snapshots",

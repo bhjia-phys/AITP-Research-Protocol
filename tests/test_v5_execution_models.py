@@ -256,7 +256,7 @@ def test_m2_foundation_registers_only_families_with_writers_in_this_slice():
             spec.participates_in
         )
 
-    assert "execution_environments" not in specs
+    assert specs["execution_environments"].record_class.__name__ == "ExecutionEnvironmentRecord"
     assert "execution_baselines" not in specs
 
 
