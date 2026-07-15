@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from brain.v5.paths import WorkspacePaths
+from brain.v5.pinned_record_refs import PinnedRecordRef, get_record_version, pin_current_record
 from brain.v5.physics_knowledge_models import INSIGHT_KINDS
 
 
@@ -16,7 +18,9 @@ class KnowledgeCandidate:
     candidate_id: str
     content_kinds: tuple[str, ...]
     statement: str
+    topic_id: str = ""
     source_refs: tuple[str, ...] = ()
+    grounding_pins: tuple[PinnedRecordRef, ...] = ()
     procedural_steps: tuple[str, ...] = ()
     validation_refs: tuple[str, ...] = ()
     applicability_boundary: str = ""
@@ -30,6 +34,18 @@ class CandidateRoute:
     eligible_for_skill: bool
     requires_human_review: bool = True
     evidence_role: str = "forbidden"
+    can_update_claim_trust: bool = False
+
+
+@dataclass(frozen=True)
+class CandidateDiagnostics:
+    candidate_id: str
+    lane: str
+    eligible_for_grounded_review: bool
+    missing_requirements: tuple[str, ...]
+    errors: tuple[str, ...]
+    checked_refs: tuple[str, ...]
+    writes_records: bool = False
     can_update_claim_trust: bool = False
 
 
@@ -66,4 +82,50 @@ def route_knowledge_candidate(candidate: KnowledgeCandidate) -> CandidateRoute:
         target_lanes=(lane,),
         split_required=False,
         eligible_for_skill=eligible,
+    )
+
+
+def diagnose_knowledge_candidate(
+    ws: WorkspacePaths,
+    candidate: KnowledgeCandidate,
+) -> CandidateDiagnostics:
+    route = route_knowledge_candidate(candidate)
+    asset_refs: list[str] = []
+    locations = []
+    checked: list[str] = []
+    errors: list[str] = []
+    for pin in candidate.grounding_pins:
+        checked.append(pin.record_ref)
+        try:
+            if pin_current_record(ws, pin.record_ref) != pin:
+                errors.append(f"stale_grounding_pin:{pin.record_ref}")
+                continue
+            version = get_record_version(ws, pin)
+        except (ValueError, RuntimeError):
+            errors.append(f"unresolved_grounding_pin:{pin.record_ref}")
+            continue
+        topic_id = str(getattr(version.record, "topic_id", "") or "")
+        if candidate.topic_id and topic_id and topic_id != candidate.topic_id:
+            errors.append(f"grounding_scope_mismatch:{pin.record_ref}")
+        if pin.record_ref.startswith("source_asset:"):
+            asset_refs.append(pin.record_ref)
+        elif pin.record_ref.startswith("reference_location:"):
+            locations.append(version.record)
+    missing = []
+    if not asset_refs:
+        missing.append("exact_source_asset_pin")
+    if not locations:
+        missing.append("exact_source_location_pin")
+    if asset_refs and any(location.source_ref not in asset_refs for location in locations):
+        errors.append("source_location_asset_mismatch")
+    eligible = bool(
+        route.lane == "grounded_knowledge" and not missing and not errors
+    )
+    return CandidateDiagnostics(
+        candidate_id=candidate.candidate_id,
+        lane=route.lane,
+        eligible_for_grounded_review=eligible,
+        missing_requirements=tuple(missing),
+        errors=tuple(errors),
+        checked_refs=tuple(checked),
     )
