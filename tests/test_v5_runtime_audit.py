@@ -2,6 +2,8 @@ import warnings
 from pathlib import Path
 
 from brain.v5.runtime_audit import (
+    _capability_rows,
+    _execution_capability_rows,
     build_runtime_capability_audit,
     render_runtime_capability_audit_markdown,
 )
@@ -185,6 +187,19 @@ def test_runtime_audit_reports_capability_surface_drift(tmp_path):
     assert capabilities["catalog_surface_not_public"] == ["missing_surface"]
     assert capabilities["compact_not_wrapped"] == ["aitp_v5_hidden"]
     assert capabilities["wrapped_not_catalog"] == ["aitp_v5_orphan"]
+
+
+def test_static_capability_audit_expands_execution_row_provider():
+    from brain.v5.capability_registry_data import MCP_ONLY_CAPABILITIES
+
+    source = Path(__file__).resolve().parents[1] / "brain" / "v5"
+    static_rows = _capability_rows(
+        source / "capability_registry_data.py",
+        "MCP_ONLY_CAPABILITIES",
+    )
+    static_rows.extend(_execution_capability_rows(source))
+
+    assert set(static_rows) == set(MCP_ONLY_CAPABILITIES)
 
 
 def test_runtime_audit_counts_explicitly_imported_mcp_exports(tmp_path):

@@ -239,23 +239,30 @@ def _capability_inventory(directory: Path) -> dict[str, list[str]]:
             and item.get("surface")
         }
     )
-    public_surfaces = sorted(
-        {
-            *(
-                surface
-                for path in _module_source_files(directory, "public_surfaces")
-                for surface in _string_sequence_assignment(path, "_PUBLIC_SURFACE_NAMES")
-            ),
-            *_mapping_key_assignment(
-                directory / "capability_surface_contracts.py",
-                "_RULES",
-            ),
-            *_mapping_key_assignment(
-                directory / "lifecycle_surface_contracts.py",
-                "_RULES",
-            ),
-        }
-    )
+    live_directory = Path(__file__).resolve().parent
+    auditing_live_runtime = directory.resolve() == live_directory
+    if auditing_live_runtime:
+        from brain.v5.public_surfaces import public_surface_names
+
+        public_surfaces = sorted(public_surface_names())
+    else:
+        public_surfaces = sorted(
+            {
+                *(
+                    surface
+                    for path in _module_source_files(directory, "public_surfaces")
+                    for surface in _string_sequence_assignment(path, "_PUBLIC_SURFACE_NAMES")
+                ),
+                *_mapping_key_assignment(
+                    directory / "capability_surface_contracts.py",
+                    "_RULES",
+                ),
+                *_mapping_key_assignment(
+                    directory / "lifecycle_surface_contracts.py",
+                    "_RULES",
+                ),
+            }
+        )
     registry_data = directory / "capability_registry_data.py"
     legacy_facade = directory / "codex_facade.py"
     facade_tools = sorted(set(_string_sequence_assignment(registry_data, "CODEX_FACADE_MCP_NAMES")) | set(_string_sequence_assignment(legacy_facade, "CODEX_FACADE_TOOLS")))
@@ -268,12 +275,21 @@ def _capability_inventory(directory: Path) -> dict[str, list[str]]:
             for name in _function_names(path, prefix="aitp_v5_")
         }
     )
-    registry_rows = _capability_rows(registry_data, "MCP_ONLY_CAPABILITIES")
-    optional_rows = _capability_rows(registry_data, "OPTIONAL_MCP_CAPABILITIES")
-    registry_rows.extend(row for row in optional_rows if row[1] in mcp_wrappers)
-    registry_operations = sorted({*catalog, *(row[0] for row in registry_rows)})
-    registry_mcp = sorted({*catalog_mcp, *(row[1] for row in registry_rows)})
-    registry_surfaces = sorted({*catalog_surfaces, *(row[3] for row in registry_rows)})
+    if auditing_live_runtime:
+        from brain.v5.capability_registry import capability_specs
+
+        registered = capability_specs()
+        registry_operations = sorted(registered)
+        registry_mcp = sorted({spec.mcp_name for spec in registered.values()})
+        registry_surfaces = sorted({spec.public_surface for spec in registered.values()})
+    else:
+        registry_rows = _capability_rows(registry_data, "MCP_ONLY_CAPABILITIES")
+        registry_rows.extend(_execution_capability_rows(directory))
+        optional_rows = _capability_rows(registry_data, "OPTIONAL_MCP_CAPABILITIES")
+        registry_rows.extend(row for row in optional_rows if row[1] in mcp_wrappers)
+        registry_operations = sorted({*catalog, *(row[0] for row in registry_rows)})
+        registry_mcp = sorted({*catalog_mcp, *(row[1] for row in registry_rows)})
+        registry_surfaces = sorted({*catalog_surfaces, *(row[3] for row in registry_rows)})
     return {
         "catalog_operations": sorted(str(key) for key in catalog),
         "catalog_mcp": catalog_mcp,
@@ -315,10 +331,53 @@ def _module_source_files(directory: Path, stem: str) -> list[Path]:
 
 
 def _capability_rows(path: Path, name: str) -> list[tuple[Any, ...]]:
-    value = _literal_named_assignment(path, name, default=())
-    if not isinstance(value, (list, tuple)):
+    if not path.exists():
         return []
-    return [tuple(row) for row in value if isinstance(row, (list, tuple)) and len(row) >= 4]
+    try:
+        tree = _parse_python(path)
+    except (SyntaxError, UnicodeDecodeError):
+        return []
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            targets, value = node.targets, node.value
+        elif isinstance(node, ast.AnnAssign):
+            targets, value = [node.target], node.value
+        else:
+            continue
+        if not any(isinstance(target, ast.Name) and target.id == name for target in targets):
+            continue
+        if not isinstance(value, (ast.Tuple, ast.List)):
+            return []
+        rows = []
+        for element in value.elts:
+            if isinstance(element, ast.Starred):
+                continue
+            try:
+                row = ast.literal_eval(element)
+            except (ValueError, TypeError):
+                continue
+            if isinstance(row, (list, tuple)) and len(row) >= 4:
+                rows.append(tuple(row))
+        return rows
+    return []
+
+
+def _execution_capability_rows(directory: Path) -> list[tuple[Any, ...]]:
+    path = directory / "execution_surface_contracts.py"
+    rows = []
+    for mapping_name, state_effect in (("_READ", "read_only"), ("_GATED", "kernel_write")):
+        for operation in _mapping_key_assignment(path, mapping_name):
+            rows.append(
+                (
+                    operation,
+                    f"aitp_v5_{operation}",
+                    f"aitp-v5 execution {operation} --payload-file <args>",
+                    "execution_operation_result",
+                    state_effect,
+                    "full",
+                )
+            )
+    return rows
 
 
 def _literal_named_assignment(path: Path, name: str, *, default: Any) -> Any:

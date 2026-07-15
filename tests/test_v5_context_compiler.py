@@ -148,6 +148,36 @@ def test_context_compiler_contract_rejects_trust_mutation(tmp_path):
     )
 
 
+def test_context_compiler_blocks_foreign_program_exact_operational_ref(tmp_path):
+    from brain.v5.context_compiler import ContextRequest, compile_research_context
+    from brain.v5.markdown import write_md
+    from brain.v5.query_index import build_query_index
+
+    ws, _claim = _seed_context_workspace(tmp_path)
+    foreign_ref = "execution_environment:foreign-program-env"
+    write_md(
+        ws.registry_dir("execution_environments") / "foreign-program-env.md",
+        {
+            "kind": "execution_environment",
+            "environment_id": "foreign-program-env",
+            "program_id": "foreign-program",
+            "host": "cluster",
+            "operating_system": "Linux",
+            "architecture": "x86_64",
+        },
+        "# Foreign Program Environment\n",
+    )
+    build_query_index(ws)
+
+    bundle = compile_research_context(
+        ws,
+        ContextRequest(session_id="session-qg", exact_refs=(foreign_ref,)),
+    )
+
+    assert foreign_ref not in bundle.record_refs
+    assert foreign_ref in bundle.scope["blocked_explicit_refs"]
+
+
 def test_context_compiler_preserves_rank_and_selects_diverse_candidate_families(tmp_path):
     from brain.v5.context_compiler import ContextRequest, compile_research_context
     from brain.v5.research_retrieval import (

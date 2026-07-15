@@ -52,6 +52,70 @@ def test_retrieval_filters_ranks_and_paginates_deterministically(tmp_path):
     assert [item.record_ref for item in second.items] == ["claim:c2"]
 
 
+def test_topic_query_only_includes_explicitly_allowlisted_unscoped_families(tmp_path):
+    from brain.v5.models import ExecutionEnvironmentRecord
+    from brain.v5.record_envelope import RecordActor
+    from brain.v5.record_repository import RecordRepository
+
+    ws = WorkspacePaths(tmp_path)
+    ws.ensure_layout()
+    _write_claim(ws, "c1", "qsgw", "solver execution is reproducible")
+    environment = ExecutionEnvironmentRecord(
+        environment_id="solver-env",
+        host="cluster",
+        operating_system="Linux",
+        architecture="x86_64",
+        executable_paths={"solver": "/opt/solver"},
+        executable_hashes={"solver": "a" * 64},
+    )
+    RecordRepository(
+        ws,
+        actor=RecordActor(actor_type="tool", actor_id="retrieval-test", host="pytest"),
+    ).write("execution_environments", environment)
+    write_md(
+        ws.registry_dir("execution_environments") / "other-program-env.md",
+        {
+            "kind": "execution_environment",
+            "environment_id": "other-program-env",
+            "program_id": "other-program",
+            "host": "cluster",
+            "operating_system": "Linux",
+            "architecture": "x86_64",
+            "executable_paths": {"solver": "/opt/solver"},
+            "executable_hashes": {"solver": "b" * 64},
+        },
+        "# Other Program Execution Environment\n",
+    )
+    build_query_index(ws)
+
+    excluded = query_records(
+        ws,
+        ResearchQuery(
+            text="execution",
+            topic_ids=("qsgw",),
+            families=("claims", "execution_environments"),
+        ),
+    )
+    included = query_records(
+        ws,
+        ResearchQuery(
+            text="execution",
+            topic_ids=("qsgw",),
+            families=("claims", "execution_environments"),
+            include_unscoped_families=("execution_environments",),
+        ),
+    )
+
+    assert [item.record_ref for item in excluded.items] == ["claim:c1"]
+    assert {item.record_ref for item in included.items} == {
+        "claim:c1",
+        "execution_environment:solver-env",
+    }
+    assert "execution_environment:other-program-env" not in {
+        item.record_ref for item in included.items
+    }
+
+
 def test_retrieval_propagates_malformed_coverage_and_excluded_exact_refs(tmp_path):
     ws = WorkspacePaths(tmp_path)
     ws.ensure_layout()

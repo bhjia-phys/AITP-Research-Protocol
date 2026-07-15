@@ -20,7 +20,13 @@ from brain.v5.research_scope import ScopeResolution
 QueryFunction = Callable[[WorkspacePaths, ResearchQuery], RetrievalResult]
 
 _GLOBAL_OPERATIONAL_FAMILIES = frozenset(
-    {"code_states", "contexts", "research_programs", "tool_recipes"}
+    {
+        "code_states",
+        "contexts",
+        "execution_environments",
+        "research_programs",
+        "tool_recipes",
+    }
 )
 
 
@@ -65,6 +71,9 @@ def scoped_retrieval_result(
             exact_refs=primary_exact,
             topic_ids=(scope.primary_topic_id,),
             families=tuple(dict.fromkeys(request.families)),
+            include_unscoped_families=tuple(
+                sorted(_GLOBAL_OPERATIONAL_FAMILIES.intersection(request.families))
+            ),
             limit=primary_limit,
             verification_mode="orientation",
         ),
@@ -121,6 +130,10 @@ def _partition_explicit_refs(
             allowed.append(ref)
             continue
         if item.topic_id and item.topic_id != scope.primary_topic_id:
+            blocked.append(ref)
+            continue
+        item_program_id = str(item.record.get("program_id") or "")
+        if item_program_id and item_program_id != scope.program_id:
             blocked.append(ref)
             continue
         if not item.topic_id and item.family not in _GLOBAL_OPERATIONAL_FAMILIES:
@@ -185,6 +198,7 @@ def exact_disclosure_result(
         "surface": "record_refs",
         "refs": [item.record_ref for item in result.items],
         "requested_refs": list(bounded),
+        "requested_pins": [asdict(pin) for pin in exact_pins],
         "requested_ref_count": len(requested),
         "bounded_ref_count": len(bounded),
         "input_truncated": input_truncated,

@@ -25,6 +25,7 @@ from brain.v5.query_index_locking import (
     acquire_index_build_lease,
     acquire_ranked_lock,
     held_ranked_lock_names,
+    _windows_comparison_path,
 )
 from brain.v5.record_envelope import RecordActor
 from brain.v5.record_repository import RecordRepository
@@ -80,6 +81,23 @@ def test_ranked_lock_rejects_same_lock_reentrancy(tmp_path):
         with pytest.raises(LockReentrancyError, match="reentrant"):
             with acquire_ranked_lock(ws, "canonical-mutation"):
                 pass
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows extended path contract")
+def test_windows_lock_containment_normalizes_extended_path_prefix():
+    root = _windows_comparison_path(Path(r"C:\workspace\.aitp\runtime\locks"))
+    drive_candidate = _windows_comparison_path(
+        Path(r"\\?\C:\workspace\.aitp\runtime\locks\query-index\mutation.lock")
+    )
+    unc_root = _windows_comparison_path(Path(r"\\server\share\.aitp\runtime\locks"))
+    unc_candidate = _windows_comparison_path(
+        Path(r"\\?\UNC\server\share\.aitp\runtime\locks\query-index\mutation.lock")
+    )
+
+    assert drive_candidate.relative_to(root)
+    assert unc_candidate.relative_to(unc_root)
+    assert drive_candidate == root / "query-index" / "mutation.lock"
+    assert unc_candidate == unc_root / "query-index" / "mutation.lock"
 
 
 def test_kernel_releases_lock_when_owner_process_terminates(tmp_path):

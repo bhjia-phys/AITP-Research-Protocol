@@ -6,7 +6,7 @@ import errno
 import os
 import threading
 import time
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 from brain.v5.paths import WorkspacePaths
 
@@ -304,14 +304,34 @@ def _validated_lock_path(ws: WorkspacePaths, path: Path) -> Path:
     lock_root = (ws.root / "runtime" / "locks").resolve()
     candidate = path.resolve()
     try:
-        candidate.relative_to(lock_root)
+        if os.name == "nt":
+            _windows_comparison_path(candidate).relative_to(
+                _windows_comparison_path(lock_root)
+            )
+        else:
+            candidate.relative_to(lock_root)
     except ValueError as exc:
         raise ValueError(f"ranked lock path escaped runtime locks: {candidate}") from exc
     return candidate
 
 
+def _windows_comparison_path(path: Path) -> PureWindowsPath:
+    text = str(path)
+    lowered = text.casefold()
+    if lowered.startswith("\\\\?\\unc\\"):
+        text = "\\\\" + text[8:]
+    elif lowered.startswith("\\\\?\\"):
+        text = text[4:]
+    return PureWindowsPath(text)
+
+
 def _process_lock_for(path: Path) -> threading.Lock:
-    key = str(path.resolve()).casefold() if os.name == "nt" else str(path.resolve())
+    resolved = path.resolve()
+    key = (
+        str(_windows_comparison_path(resolved)).casefold()
+        if os.name == "nt"
+        else str(resolved)
+    )
     with _registry_guard:
         return _process_locks.setdefault(key, threading.Lock())
 

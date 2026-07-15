@@ -8,8 +8,8 @@ new-software vertical added three full-surface human-gated Skill lifecycle
 capabilities. M1 then added six host-neutral lifecycle capabilities and six
 trust-neutral core record families.
 
-Writer scan status: all 127 current named-helper rows (111 at the M0 baseline)
-and all 164 current direct
+Writer scan status: all 146 current named-helper rows (111 at the M0 baseline)
+and all 168 current direct
 mutation rows are classified; scan coverage remains explicitly incomplete.
 
 Source baseline: accepted M0 staged core plus generation 11/schema-v2 real-store index.
@@ -109,7 +109,7 @@ Review notes:
 - query index build is derived state and core infrastructure, not a scientific
   write.
 
-### 2.2 Vertical Extension (89)
+### 2.2 Vertical Extension (102)
 
 ```text
 acquire_arxiv_source_asset
@@ -127,6 +127,17 @@ curated_rag_corpus
 curated_rag_promotion_draft
 curated_rag_search
 execute_tool
+execution_apply_bound_action
+execution_assess_baseline_readiness
+execution_assess_scope
+execution_build_compute_intake
+execution_build_formula_code_capsule
+execution_decide_bound_checkpoint
+execution_get_record_version
+execution_project_derivation_status
+execution_project_maturity
+execution_request_bound_checkpoint
+execution_resolve_effective_attempt
 harness_feedback_seed_bundle
 host_agnostic_moment_policy
 hpc_cockpit
@@ -141,6 +152,7 @@ list_authorities
 list_domain_packs
 list_knowledge_connector_bindings
 list_knowledge_connectors
+list_monitor_history
 list_tool_executors
 literature_comparison_draft
 literature_corpus_extraction_artifact
@@ -164,6 +176,7 @@ record_final_output_profile
 record_lane_exemplar
 record_librpa_code_backed_algorithm_exemplar
 record_literature_candidate
+record_monitor_snapshot_v2
 record_object_relation
 record_physics_object
 record_qft_qg_source_reconstruction_exemplar
@@ -372,7 +385,7 @@ above but remain available.
 ### 2.6 Independent Protected Extension
 
 `harness_feedback_problem_dossier` is present only through protected user work
-in the primary worktree. It is excluded from the 234-capability staged core and from
+in the primary worktree. It is excluded from the 247-capability staged core and from
 this staging scope. Its intended lifecycle is a vertical extension with human
 review, not a reason to retain `harness_feedback_seed_bundle` automatically.
 
@@ -381,13 +394,13 @@ Capability accounting:
 | Class | Count |
 |---|---:|
 | Core | 59 |
-| Vertical extension | 89 |
+| Vertical extension | 102 |
 | Maintenance | 43 |
 | Migration | 43 |
 | Soft deprecated classification | 0 |
 | Maintenance tools soft-deprecated from compact | 6 |
-| Current staged core | 234 |
-| Current classified core plus verticals | 234 |
+| Current staged core | 247 |
+| Current classified core plus verticals | 247 |
 
 ## 3. Record-Family Candidates
 
@@ -421,13 +434,21 @@ validation_contracts
 validation_results
 ```
 
-### 3.2 Vertical Extension (19)
+### 3.2 Vertical Extension (28)
 
 ```text
 authorities
+artifact_blob_receipts
 benchmarks
+checkpoint_application_receipts
+code_patch_manifests
 code_states
 code_workspaces
+derivation_chains
+derivation_reviews
+derivation_steps
+execution_baselines
+execution_environments
 exploratory_records
 lane_contracts
 monitor_snapshots
@@ -438,6 +459,7 @@ questions
 research_run_events
 research_runs
 routes
+scope_revalidation_decisions
 sensemaking_reports
 skill_patch_proposals
 source_reconstruction_reviews
@@ -478,18 +500,18 @@ Their concepts overlap existing exploratory records, research routes/intents,
 artifacts, validation, and closeout. They remain registered/readable during the
 review but may not receive new writes or be used to justify new APIs.
 
-Family accounting totals 52 with no unclassified family.
+Family accounting totals 61 with no unclassified family.
 
 ## 4. Writer Classification
 
-The current runtime audit reports 127 recognized semantic repository writes
+The current runtime audit reports 146 recognized semantic repository writes
 and low-level helper calls. Every reported call is classified below by its current storage role,
 not by the capability name or intended future architecture. A canonical row is
 a writer-convergence target even when it writes a non-registry canonical family
 or a topic-local mirror. A migration row may write a typed migration record but
 does not belong to the production research lifecycle.
 
-### 4.1 Canonical Record Or Repository (56)
+### 4.1 Canonical Record Or Repository (74)
 
 ~~~text
 brain/v5/_compat_shards/active_claim_focus/part_02.py:_write_rebind_audit:273:write_record | families=active_claim_rebind_audits | dynamic=false
@@ -498,8 +520,27 @@ brain/v5/_compat_shards/lifecycle_events/part_01.py:_rewrite_subject_frontmatter
 brain/v5/_compat_shards/lifecycle_events/part_01.py:_append_cross_topic_pointer:215:write_record | families=- | dynamic=false
 brain/v5/_compat_shards/research_state/part_01.py:update_claim_status:211:write_record | families=claim_statuses | dynamic=false
 brain/v5/authorities.py:record_authority:76:write_record | families=authorities | dynamic=false
+brain/v5/artifact_blobs.py:_record_local_blob:98:repository_write | families=artifact_blob_receipts | dynamic=false
+brain/v5/artifact_blobs.py:record_external_artifact_receipt:187:repository_write | families=artifact_blob_receipts | dynamic=false
+brain/v5/bound_execution.py:_execute_and_write:294:repository_write | families=tool_runs | dynamic=false
+brain/v5/bound_execution.py:_execute_and_write:328:repository_write | families=validation_results | dynamic=false
+brain/v5/checkpoint_bindings.py:request_bound_checkpoint:157:repository_write | families=checkpoints | dynamic=false
+brain/v5/checkpoint_transactions.py:apply_bound_checkpoint_action:199:repository_write | families=checkpoint_application_receipts | dynamic=false
+brain/v5/checkpoint_transactions.py:_record_failed_application:241:repository_write | families=checkpoint_application_receipts | dynamic=false
 brain/v5/code.py:record_code_workspace:55:write_record | families=code_workspaces | dynamic=false
+brain/v5/code_patch_manifests.py:_write_manifest:170:repository_write | families=code_patch_manifests | dynamic=false
+brain/v5/derivation_reviews.py:_write_review:346:repository_write | families=derivation_reviews | dynamic=false
+brain/v5/derivations.py:record_derivation_step:43:repository_write | families=derivation_steps | dynamic=false
+brain/v5/derivations.py:record_derivation_chain:70:repository_write | families=derivation_chains | dynamic=false
 brain/v5/exploration.py:record_exploratory_record:102:repository_write | families=exploratory_records | dynamic=false
+brain/v5/execution_baselines.py:write_result:175:repository_write | families=execution_baselines | dynamic=false
+brain/v5/execution_environments.py:record_execution_environment:43:repository_write | families=execution_environments | dynamic=false
+brain/v5/execution_writers.py:record_code_state_v2:49:repository_write | families=code_states | dynamic=false
+brain/v5/execution_writers.py:record_tool_recipe_compat:62:repository_write | families=tool_recipes | dynamic=false
+brain/v5/execution_writers.py:write_tool_run_compat:78:repository_write | families=tool_runs | dynamic=false
+brain/v5/execution_writers.py:record_tool_recipe_v2:91:repository_write | families=tool_recipes | dynamic=false
+brain/v5/execution_writers.py:record_tool_run_v2:121:repository_write | families=tool_runs | dynamic=false
+brain/v5/formula_code_map.py:record_formula_code_relation:83:repository_write | families=object_relations | dynamic=false
 brain/v5/harness_feedback.py:record_monitor_snapshot:29:write_record | families=monitor_snapshots | dynamic=false
 brain/v5/harness_feedback.py:record_skill_patch_proposal:49:write_record | families=skill_patch_proposals | dynamic=false
 brain/v5/lane_contracts.py:record_lane_contract:67:write_record | families=lane_contracts | dynamic=false
@@ -507,6 +548,8 @@ brain/v5/memory.py:create_promotion_packet:118:repository_write | families=promo
 brain/v5/memory.py:apply_promotion_packet:170:repository_write | families=memory_entries | dynamic=false
 brain/v5/memory.py:apply_promotion_packet:183:repository_write | families=promotion_packets | dynamic=false
 brain/v5/memory.py:apply_promotion_packet:194:repository_write | families=memory_entries | dynamic=false
+brain/v5/monitor_snapshots.py:record_monitor_snapshot_v2:86:repository_write | families=monitor_snapshots | dynamic=false
+brain/v5/monitor_snapshots.py:record_monitor_snapshot_v2:103:repository_write | families=monitor_snapshots | dynamic=false
 brain/v5/physics_objects.py:record_physics_object:41:repository_write | families=physics_objects | dynamic=false
 brain/v5/physics_objects.py:record_object_relation:93:repository_write | families=object_relations | dynamic=false
 brain/v5/proof_obligations.py:create_proof_obligation:81:repository_write | families=proof_obligations | dynamic=false
@@ -523,6 +566,7 @@ brain/v5/research_scope.py:record_cross_topic_relation:97:repository_write | fam
 brain/v5/research_runs.py:record_research_run_event:251:write_record | families=- | dynamic=false
 brain/v5/research_runs.py:_write_run:281:write_record | families=- | dynamic=false
 brain/v5/routes.py:_write_route:135:write_record | families=routes | dynamic=false
+brain/v5/scope_revalidation.py:write_result:179:repository_write | families=scope_revalidation_decisions | dynamic=false
 brain/v5/sensemaking.py:record_sensemaking_report:39:write_record | families=sensemaking_reports | dynamic=false
 brain/v5/session_lifecycle.py:record_session_closeout:186:repository_write | families=session_closeouts | dynamic=false
 brain/v5/source_reconstruction_review.py:record_source_reconstruction_review_result:171:write_record | families=source_reconstruction_reviews | dynamic=false
@@ -536,16 +580,12 @@ brain/v5/_compat_shards/quiet_checkpoint/part_01.py:apply_quiet_checkpoint_batch
 brain/v5/_compat_shards/source_assets/part_01.py:register_source_asset:176:repository_write | families=source_assets | dynamic=false
 brain/v5/checkpoints.py:request_human_checkpoint:42:repository_write | families=checkpoints | dynamic=false
 brain/v5/checkpoints.py:decide_human_checkpoint:97:repository_write | families=checkpoints | dynamic=false
-brain/v5/code.py:record_code_state:111:repository_write | families=code_states | dynamic=false
 brain/v5/evidence.py:record_artifact_ref:71:repository_write | families=artifacts | dynamic=false
 brain/v5/evidence.py:record_evidence:147:repository_write | families=evidence | dynamic=false
 brain/v5/failure_mode_review.py:record_failure_mode_review_result:127:repository_write | families=failure_mode_reviews | dynamic=false
 brain/v5/references.py:record_reference_location:60:repository_write | families=reference_locations | dynamic=false
 brain/v5/skill_candidates.py:propose_procedural_skill:84:repository_write | families=skill_patch_proposals | dynamic=false
 brain/v5/skill_candidates.py:apply_project_skill:166:repository_write | families=skill_patch_proposals | dynamic=false
-brain/v5/tools.py:register_tool_recipe:44:repository_write | families=tool_recipes | dynamic=false
-brain/v5/tool_run_transitions.py:create_or_merge_tool_run:126:repository_write | families=tool_runs | dynamic=false
-brain/v5/tool_run_transitions.py:merge_tool_run_links:166:repository_write | families=tool_runs | dynamic=false
 brain/v5/validation.py:create_validation_contract:62:repository_write | families=validation_contracts | dynamic=false
 brain/v5/validation.py:record_validation_result:137:repository_write | families=validation_results | dynamic=false
 ~~~
@@ -580,10 +620,11 @@ brain/v5/workspace_recovery_audit.py:write_workspace_recovery_audit:165:write_te
 brain/v5/workspace_recovery_audit.py:write_workspace_recovery_audit:169:write_text_atomic | families=- | dynamic=false
 ~~~
 
-### 4.3 Host Or Runtime (16)
+### 4.3 Host Or Runtime (17)
 
 ~~~text
 brain/v5/_compat_shards/lane_exemplars/part_01.py:record_lane_exemplar:119:write_md | families=- | dynamic=false
+brain/v5/checkpoint_transactions.py:_write_journal:367:write_text_atomic | families=- | dynamic=false
 brain/v5/domain_packs.py:register_domain_pack:150:write_record | families=- | dynamic=false
 brain/v5/domain_skill_shims.py:_materialize_or_preview_shim:169:write_text_atomic | families=- | dynamic=false
 brain/v5/knowledge_connector_bindings.py:_write_bindings:158:write_text_atomic | families=- | dynamic=false
@@ -682,7 +723,7 @@ A second conservative AST scanner is now represented separately by
 `direct_mutation_candidates`. It excludes tests and recognizes direct
 `write_text`/`write_bytes`, literal write-mode `open`, write-flag `os.open`,
 `shutil` copy/move, `os` rename/replace, and literal SQL mutations. On the
-current repository it finds 164 additional mutation candidates across 63
+current repository it finds 168 additional mutation candidates across 63
 production files:
 
 - 118 direct path writes, 21 write-mode opens, 15 copy/move calls, and 10
@@ -700,7 +741,7 @@ silently added to the canonical-bypass count or ignored because they are not
 named helpers.
 
 The expanded runtime-audit contract now publishes two distinct closure facts.
-All 608 Python files under the declared production source prefixes are
+All 642 Python files under the declared production source prefixes are
 enumerated and parsed with zero errors, so
 `writer_scan_policy.bounded_coverage_complete` is true. Dynamic/aliased APIs,
 non-literal database mutations, unrecognized helpers, reflection, and native
@@ -714,9 +755,13 @@ These classes describe current target ownership. They do not authorize a
 mutation, make a derived file canonical, or make an archived legacy writer part
 of the production lifecycle.
 
-### 4.6.1 Canonical Blob Or Record (3)
+### 4.6.1 Canonical Blob Or Record (7)
 
 ~~~text
+brain/v5/artifact_blobs.py:_stage_source_blob:239:NamedTemporaryFile | families=- | dynamic=false
+brain/v5/artifact_blobs.py:_stage_source_blob:263:replace | families=- | dynamic=false
+brain/v5/artifact_blobs.py:_store_blob_content:284:NamedTemporaryFile | families=- | dynamic=false
+brain/v5/artifact_blobs.py:_store_blob_content:296:replace | families=- | dynamic=false
 brain/v5/_compat_shards/source_assets/part_02.py:_store_acquired_blob:369:copyfile | mechanism=copy_or_move | target=tmp_path
 brain/v5/_compat_shards/source_assets/part_02.py:_store_acquired_blob:370:replace | mechanism=rename_or_replace | target=destination
 brain/v5/code.py:_write_patch_artifact_file:288:write_text | mechanism=direct_path_write | target=patch_path
@@ -917,7 +962,7 @@ brain/v5/_compat_shards/source_assets/part_02.py:_fetch_pdf_to_temp:273:copyfile
 brain/v5/_compat_shards/source_assets/part_02.py:_download_pdf_to_temp:313:open | mechanism=direct_open_write | target=tmp_path
 ~~~
 
-Direct mutation accounting totals 164 with no unclassified row. The three
+Direct mutation accounting totals 168 with no unclassified row. The three
 transient rows may create only temporary acquisition files; the final blob move
 and its typed metadata/receipt have separate ownership. Host/maintenance and
 derived rows remain outside canonical trust, while migration or archived legacy
@@ -930,13 +975,13 @@ rows remain outside normal production research writes.
 - final M1 foundation lane: 186 passed, 1 skipped;
 - exact capability/family and writer/direct-mutation classification tests:
   2 passed;
-- current direct-mutation classification: 164 of 164 rows, no duplicate or
+- current direct-mutation classification: 168 of 168 rows, no duplicate or
   unclassified signature;
-- current named-helper classification: 127 of 127 rows; the preserved M0
+- current named-helper classification: 146 of 146 rows; the preserved M0
   lower-bound baseline was 111;
 - production-tree probe: no filesystem import aliases, dynamic open modes, or
   SQL execute calls were found;
-- `writer_scan_policy.bounded_coverage_complete`: true for 609/609 declared
+- `writer_scan_policy.bounded_coverage_complete`: true for 642/642 declared
   production Python files with zero parse errors;
 - `writer_scan_policy.coverage_complete`: false, because absence of arbitrary
   dynamic, reflected, custom, or native mutation helpers is not statically
@@ -1022,10 +1067,10 @@ record_toy_numeric_finite_size_exemplar
 research_cockpit_compact
 ```
 
-For record families, retain the 25 core, 19 vertical, and four migration
+For record families, retain the 25 core, 28 vertical, and four migration
 registrations under their existing write/read policies. The eight zero-record
 core/vertical families remain frozen until a concrete event proves their
 contract; four zero-record unimplemented-layout families remain soft-deprecation candidates.
-All 127 helper-writer and 164 direct-mutation rows retain the ownership classes
+All 146 helper-writer and 168 direct-mutation rows retain the ownership classes
 in section 4. Migration/archived rows do not re-enter production, and bounded
 scanner closure does not convert candidate counts into a no-bypass proof.

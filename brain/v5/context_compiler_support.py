@@ -9,6 +9,41 @@ from typing import Any, Mapping
 from brain.v5.research_retrieval import RetrievalResult
 
 
+DEFAULT_CONTEXT_FAMILIES = (
+    "artifacts",
+    "artifact_blob_receipts",
+    "checkpoint_application_receipts",
+    "checkpoints",
+    "claim_statuses",
+    "claims",
+    "code_states",
+    "code_patch_manifests",
+    "derivation_chains",
+    "derivation_reviews",
+    "derivation_steps",
+    "evidence",
+    "execution_baselines",
+    "execution_environments",
+    "exploratory_records",
+    "object_relations",
+    "monitor_snapshots",
+    "physics_objects",
+    "proof_obligations",
+    "quiet_checkpoints",
+    "reference_locations",
+    "research_run_events",
+    "research_runs",
+    "routes",
+    "sensemaking_reports",
+    "scope_revalidation_decisions",
+    "source_assets",
+    "tool_recipes",
+    "tool_runs",
+    "validation_contracts",
+    "validation_results",
+)
+
+
 _TOKEN_RE = re.compile(
     r"[A-Za-z0-9_]+(?:[.+-][A-Za-z0-9_]+)*|[\u3400-\u4dbf\u4e00-\u9fff]|[^\s]"
 )
@@ -116,13 +151,23 @@ def candidate_summary(
         "process_family": item.family
         in {
             "artifacts",
+            "artifact_blob_receipts",
+            "checkpoint_application_receipts",
             "checkpoints",
+            "code_patch_manifests",
             "code_states",
+            "derivation_chains",
+            "derivation_reviews",
+            "derivation_steps",
             "evidence",
+            "execution_baselines",
+            "execution_environments",
+            "monitor_snapshots",
             "quiet_checkpoints",
             "research_run_events",
             "research_runs",
             "routes",
+            "scope_revalidation_decisions",
             "tool_runs",
             "validation_results",
         },

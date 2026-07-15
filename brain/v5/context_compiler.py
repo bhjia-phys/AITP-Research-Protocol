@@ -10,6 +10,7 @@ from brain.v5.indexed_topic_snapshot import (
 )
 from brain.v5.context_selection import candidate_not_shown, select_candidate_summaries
 from brain.v5.context_compiler_support import (
+    DEFAULT_CONTEXT_FAMILIES,
     boundary as _boundary,
     bounded_markdown as _bounded_markdown,
     candidate_summary as _candidate_summary,
@@ -55,29 +56,7 @@ from brain.v5.research_retrieval import (
 from brain.v5.research_scope import ScopeResolution, resolve_session_scope
 
 
-_DEFAULT_CONTEXT_FAMILIES = (
-    "artifacts",
-    "checkpoints",
-    "claim_statuses",
-    "claims",
-    "code_states",
-    "evidence",
-    "exploratory_records",
-    "object_relations",
-    "physics_objects",
-    "proof_obligations",
-    "quiet_checkpoints",
-    "reference_locations",
-    "research_run_events",
-    "research_runs",
-    "routes",
-    "sensemaking_reports",
-    "source_assets",
-    "tool_recipes",
-    "tool_runs",
-    "validation_contracts",
-    "validation_results",
-)
+_DEFAULT_CONTEXT_FAMILIES = DEFAULT_CONTEXT_FAMILIES
 class ContextCompilationError(RuntimeError):
     """Raised when the requested session cannot anchor a bounded context."""
 

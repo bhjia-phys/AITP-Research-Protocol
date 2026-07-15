@@ -34,6 +34,7 @@ class ResearchQuery:
     exact_refs: tuple[str, ...] = ()
     topic_ids: tuple[str, ...] = ()
     program_ids: tuple[str, ...] = ()
+    include_unscoped_families: tuple[str, ...] = ()
     session_ids: tuple[str, ...] = ()
     families: tuple[str, ...] = ()
     statuses: tuple[str, ...] = ()
@@ -115,6 +116,7 @@ def query_records(
     if not isinstance(query.exact_only, bool):
         raise ValueError("exact_only must be a boolean")
     selected_families = tuple(sorted(set(query.families)))
+    unscoped_families = frozenset(query.include_unscoped_families)
     all_families = tuple(sorted(record_family_specs()))
     checked_set = set(selected_families)
     checked_set.update(
@@ -238,7 +240,12 @@ def query_records(
             program_match = bool(
                 query.program_ids and row.get("program_id", "") in query.program_ids
             )
-            if not topic_match and not program_match:
+            unscoped_match = bool(
+                row["family"] in unscoped_families
+                and not row["topic_id"]
+                and not row.get("program_id", "")
+            )
+            if not topic_match and not program_match and not unscoped_match:
                 continue
         if query.session_ids and row.get("session_id", "") not in query.session_ids:
             continue
@@ -373,7 +380,7 @@ def _exact_item(
     )
     result = repo.read(ref)
     if result.status == "found":
-        record = asdict(result.record) if is_dataclass(result.record) else dict(result.record)
+        record = _canonical_read_payload(result)
     else:
         indexed = indexed_by_ref.get(ref)
         if indexed is None:
@@ -397,7 +404,7 @@ def _exact_item_from_repository(
 ) -> RetrievalItem | None:
     result = repository.read(ref)
     if result.status == "found":
-        record = asdict(result.record) if is_dataclass(result.record) else dict(result.record)
+        record = _canonical_read_payload(result)
     elif (
         result.issue is not None
         and result.issue.error_type in {"TypeError", "ValueError"}
@@ -418,6 +425,13 @@ def _exact_item_from_repository(
         total_score=10_000,
         record=record,
     )
+
+
+def _canonical_read_payload(result: Any) -> dict[str, Any]:
+    """Preserve canonical envelope metadata alongside the typed payload."""
+
+    record = asdict(result.record) if is_dataclass(result.record) else dict(result.record)
+    return {**dict(result.frontmatter or {}), **record}
 
 
 def _family_for_ref(ref: str) -> str:

@@ -16,6 +16,8 @@ _HIGH_VALUE_FAMILY_QUOTAS = (
     ("tool_runs", 1),
     ("code_states", 1),
     ("artifacts", 1),
+    ("execution_baselines", 1),
+    ("derivation_chains", 1),
     ("source_assets", 2),
     ("reference_locations", 1),
     ("proof_obligations", 1),
