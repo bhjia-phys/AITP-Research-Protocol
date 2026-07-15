@@ -140,7 +140,7 @@ must generate their workspace directories and cover typed-ref resolution,
 inventory, lifecycle, index, and strict repository reads before their writers
 are enabled.
 
-- [ ] **Step 1: Write failing schema-v1/v2 compatibility tests**
+- [x] **Step 1: Write failing schema-v1/v2 compatibility tests**
 
 Instantiate every current schema-v1 shape unchanged. Instantiate v2 records and
 assert exact structured argv, parameter provenance, environment ref, scheduler,
@@ -179,12 +179,12 @@ refs, decision, expiry, and supersession. Context/execution consumers resolve
 the exact decision ref; bridge presence or a bare checkpoint never implies
 target validation.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run execution-model, record-family, envelope, and real-shape compatibility
 fixtures. Expected: new fields/classes/families are absent.
 
-- [ ] **Step 3: Implement v2 dataclasses with old fields first**
+- [x] **Step 3: Implement v2 dataclasses with old fields first**
 
 `ToolRecipeRecord` adds defaulted fields: `recipe_version`,
 `software_constraints`, `command_template`, `parameter_schema`, `parameter_roles`,
@@ -242,7 +242,7 @@ hash, output-manifest hash, failure-contract hash, and checked artifact hashes.
 Legacy results remain readable but cannot satisfy v2 baseline readiness without
 these bindings.
 
-- [ ] **Step 4a: Implement content-addressed artifact and checkpoint action transactions**
+- [x] **Step 4a: Implement content-addressed artifact and checkpoint action transactions**
 
 Local artifact bytes are atomically copied to a SHA-256-addressed workspace blob
 store; external-only bytes require an immutable-storage receipt with object
@@ -285,7 +285,7 @@ ValidationResult refs plus `checkpoint_application_receipt_ref` and
 `checkpoint_application_receipt_hash`. It has no ambient shell authority and is
 the only M4 handoff for arbitrary Skill validation commands.
 
-- [ ] **Step 4: Add environment/baseline models and families**
+- [x] **Step 4: Add environment/baseline models and families**
 
 `ExecutionEnvironmentRecord` records host/cluster, OS/architecture, compiler,
 MPI, math libraries, modules, package versions, container/lock digests,
@@ -307,12 +307,12 @@ discarded. The checkpoint-application receipt is
 written after the baseline result and pins that result, so it remains outside
 the result's closure and no hash cycle is introduced.
 
-- [ ] **Step 5: Re-export v2 classes after model compatibility shards**
+- [x] **Step 5: Re-export v2 classes after model compatibility shards**
 
 Do not edit generated model shards. `models.py` imports the focused v2 classes
 after loading compatibility shards so existing imports retain the same names.
 
-- [ ] **Step 6: Run GREEN, architecture, and index tests; commit**
+- [x] **Step 6: Run GREEN, architecture, and index tests; commit**
 
 Commit message: `v5: add execution memory v2 models`.
 
@@ -341,13 +341,13 @@ Commit message: `v5: add execution memory v2 models`.
 - Produces: `project_execution_maturity(ws, run_ref) -> ExecutionMaturityProjection`
 - Produces: `accept_execution_baseline(ws, request, *, actor) -> BaselineAcceptanceResult`
 
-- [ ] **Step 1: Write failing redaction and maturity tests**
+- [x] **Step 1: Write failing redaction and maturity tests**
 
 Test environment keys matching token/password/key/credential patterns,
 configured sensitive argv positions, URI credentials, and an explicit
 allowlist. Assert redacted values never enter canonical Markdown.
 
-- [ ] **Step 2: Write failing reproducibility tests**
+- [x] **Step 2: Write failing reproducibility tests**
 
 Cover clean exact commit, dirty worktree with patch, dirty worktree without
 patch, missing executable hash, missing environment, failed output manifest,
@@ -367,13 +367,13 @@ foreign topic/program/claim negatives for every baseline dependency. Baseline,
 context, and facade code must import this evaluator and may not duplicate its
 family/scope matrix.
 
-- [ ] **Step 3: Implement repository writers and compatibility wrappers**
+- [x] **Step 3: Implement repository writers and compatibility wrappers**
 
 Keep `register_tool_recipe`, `record_tool_run`, and `record_code_state` public
 signatures working; route their canonical persistence through the v2 repository
 writers. Explicit revisions replace current backfill-overwrite behavior.
 
-- [ ] **Step 4: Implement baseline preflight**
+- [x] **Step 4: Implement baseline preflight**
 
 Require `recorded_maturity=reproducible_candidate`, exact recipe/run/environment/code
 version refs and frozen dependency hashes, role-labelled artifact byte hashes,
@@ -383,7 +383,7 @@ and a decided human checkpoint whose action/subjects/request hash exactly bind
 the proposed baseline. Every validation result must bind the exact run, recipe
 version/hash, executor version/hash, output manifest, and failure-mode contract.
 
-- [ ] **Step 4a: Gate every new canonical writer through policy**
+- [x] **Step 4a: Gate every new canonical writer through policy**
 
 Add baseline/environment/recipe/run writes to pre-tool policy, adapter
 protocols, bridge schemas, and negative replay/mismatch tests. Task 4 separately
@@ -391,7 +391,7 @@ adds monitor actions and Task 6 adds derivation actions when those writers exist
 CapabilitySpec state effects remain descriptive metadata, not the enforcement
 mechanism.
 
-- [ ] **Step 5: Prove trust isolation**
+- [x] **Step 5: Prove trust isolation**
 
 Baseline acceptance updates execution maturity only. Monkeypatch claim/evidence
 trust writers to fail if called; baseline tests must pass.
@@ -402,7 +402,7 @@ trust writers to fail if called; baseline tests must pass.
 receipt ref/hash. Context, cockpit, facade, and Skill applicability consume
 `project_execution_maturity`, never a raw run field.
 
-- [ ] **Step 6: Run tool/code/checkpoint/repository regressions; commit**
+- [x] **Step 6: Run tool/code/checkpoint/repository regressions; commit**
 
 Commit message: `v5: enforce reproducible execution baselines`.
 
@@ -419,35 +419,35 @@ Commit message: `v5: enforce reproducible execution baselines`.
 - Produces: `build_compute_run_intake(request: ComputeRunIntakeRequest) ->
   ComputeRunIntakeReport`
 
-- [ ] **Step 1: Write failing deterministic fixture tests**
+- [x] **Step 1: Write failing deterministic fixture tests**
 
 Fixtures cover a local completed run, Slurm remote manifest, partial running
 job, missing executable hash, failed job, and inaccessible URI. Assert stable
 candidate JSON and explicit missing fields.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
-- [ ] **Step 3: Implement collector-manifest ingestion**
+- [x] **Step 3: Implement collector-manifest ingestion**
 
 Inputs include URI, host/cluster, scheduler/job id, collector id/version,
 captured time, code/executable hashes, input/output manifests, resource
 accounting, lane, and optional topic/claim/run refs. Direct SSH/scheduler access
 is adapter responsibility; the kernel consumes an exact collector manifest.
 
-- [ ] **Step 4: Build typed prefill candidates only**
+- [x] **Step 4: Build typed prefill candidates only**
 
 Return tool-run, artifact, monitor, environment, and validation-checklist
 candidates plus checked/missing fields. Set `writes_records=False`,
 `orientation_only=True`, and `can_update_claim_trust=False`.
 
-- [ ] **Step 5: Preserve NiO only as compute-intake fixture data**
+- [x] **Step 5: Preserve NiO only as compute-intake fixture data**
 
 Keep the existing NiO collector material as test/example data for the generic
 intake builder; no production constant chooses NiO or a fixed path. Do not add
 compute intake, monitor, baseline, or Skill behavior to Harness Feedback. M5
 removes its legacy case-specific runtime and retains only a problem dossier.
 
-- [ ] **Step 6: Run intake/harness tests and commit**
+- [x] **Step 6: Run intake/harness tests and commit**
 
 Commit message: `v5: generalize compute run intake`.
 
@@ -468,19 +468,19 @@ Commit message: `v5: generalize compute run intake`.
 - Projects via `effective_attempts.py`:
   `resolve_effective_attempt_state(ws, tool_run_ref) -> EffectiveAttemptState`
 
-- [ ] **Step 1: Write failing immutability/order tests**
+- [x] **Step 1: Write failing immutability/order tests**
 
 Same snapshot id plus identical content is idempotent; conflicting content is
 rejected. Sequence must increase per run. Earlier scheduler observations remain
 readable after later snapshots.
 
-- [ ] **Step 2: Implement repository writer and history projection**
+- [x] **Step 2: Implement repository writer and history projection**
 
 Snapshot id is deterministic from tool run, collector, captured time, and
 sequence. Never revise a snapshot in place. A later observation links the
 previous snapshot but does not supersede its factual observation.
 
-- [ ] **Step 3: Test remote partial-state boundary**
+- [x] **Step 3: Test remote partial-state boundary**
 
 `COMPLETED` scheduler state without required outputs/validation remains process
 completion only and cannot mark a run accepted or scientific evidence.
@@ -494,7 +494,7 @@ decide active/completed/accepted state.
 Register monitor-snapshot write/read capabilities and pre-tool/bridge policy in
 this task, with public-surface and scope-mismatch tests.
 
-- [ ] **Step 4: Run monitor/HPC regressions and commit**
+- [x] **Step 4: Run monitor/HPC regressions and commit**
 
 Commit message: `v5: persist immutable monitor history`.
 
@@ -511,7 +511,7 @@ Commit message: `v5: persist immutable monitor history`.
 - Produces: `record_formula_code_relation(ws, relation, *, actor) -> WriteResult`
 - Produces: `build_code_edit_execution_capsule(ws, request) -> dict[str, Any]`
 
-- [ ] **Step 1: Write failing LibRPA mapping tests**
+- [x] **Step 1: Write failing LibRPA mapping tests**
 
 Cover `implemented_by`, `controlled_by_parameter`, `approximated_by`,
 `discretized_by`, `normalizes_as`, `produces_observable`, and `validated_by`.
@@ -520,14 +520,14 @@ scope, assumptions, source refs, tests, and applicability boundary. Formula,
 code-state, tests, and accepted baseline refs are hash-pinned. Reject a current
 ref whose content has changed since relation review.
 
-- [ ] **Step 2: Use current object relations with a structured metadata contract**
+- [x] **Step 2: Use current object relations with a structured metadata contract**
 
 Do not add a parallel knowledge graph. Persist formula-code links as
 `ObjectRelationRecord` with the allowed relation type and structured metadata
 keys: `formula_ref`, `code_state_ref`, `module`, `function`, `parameter`,
 `output`, `normalization`, `test_refs`, and `known_failures`.
 
-- [ ] **Step 3: Implement bounded edit capsule**
+- [x] **Step 3: Implement bounded edit capsule**
 
 Retrieve formula/symbol, code location, exact commit/patch, parameter role,
 tests, known failures, accepted baseline, and exact expansion refs. A stale code
@@ -537,7 +537,7 @@ Add foreign-topic/claim negative tests. A reviewed M1 bridge may expose the
 relation as orientation, but target-side code/baseline revalidation is required
 before use and claim-trust transfer remains forbidden.
 
-- [ ] **Step 4: Run physics-object/context/code tests and commit**
+- [x] **Step 4: Run physics-object/context/code tests and commit**
 
 Commit message: `v5: connect formulas to exact code states`.
 
@@ -568,28 +568,28 @@ Commit message: `v5: connect formulas to exact code states`.
 - Produces: `project_derivation_status(ws, chain_ref) -> DerivationStatusProjection`
 - Adds family: `derivation_reviews`
 
-- [ ] **Step 1: Write failing model/DAG tests**
+- [x] **Step 1: Write failing model/DAG tests**
 
 A chain records target, assumptions, conventions, framework, regime, ordered
 step refs, open gaps, checks, source refs, and status. A step records input and
 output expressions, justification type, dependencies, invoked knowledge refs,
 source anchors, local checks, unresolved conditions, and status.
 
-- [ ] **Step 2: Test cycles, missing refs, unresolved conditions, and scope**
+- [x] **Step 2: Test cycles, missing refs, unresolved conditions, and scope**
 
 Reject cycles and cross-chain dependencies without an explicit imported-chain
 ref. A derivation with open gaps cannot have status `structurally_closed`.
 Reject foreign topic/program/claim dependencies unless the imported-chain ref
 binds origin hashes and a M1 bridge; target review remains required.
 
-- [ ] **Step 3: Implement additive families and repository writers**
+- [x] **Step 3: Implement additive families and repository writers**
 
 Add `derivation_chains` and `derivation_steps` with `trust_effect=none` until a
 separate validation/evidence path uses them. Writers validate the complete DAG
 against pinned refs before accepting `structurally_closed`. `reviewed` and
 `validated` are not chain writer statuses.
 
-- [ ] **Step 3a: Add hash-bound derivation review and reconstruction coverage**
+- [x] **Step 3a: Add hash-bound derivation review and reconstruction coverage**
 
 Review records bind chain/step content hashes, exact source anchors,
 validation/tool-run check refs, reviewer/checkpoint, decision, and scope.
@@ -604,13 +604,13 @@ revision uses explicit supersession. Register chain/step/review writers and
 status projection in capability/public-surface/pre-tool/bridge contracts in this
 task, including foreign-scope and stale-hash negatives.
 
-- [ ] **Step 4: Implement reviewable legacy migration**
+- [x] **Step 4: Implement reviewable legacy migration**
 
 Read legacy DAG artifacts, preserve exact source path/hash and original text,
 emit candidate records plus unresolved mappings, and write nothing unless an
 explicit reviewed apply request is supplied.
 
-- [ ] **Step 5: Run derivation, registry, index, and context tests; commit**
+- [x] **Step 5: Run derivation, registry, index, and context tests; commit**
 
 Commit message: `v5: add inspectable formal derivations`.
 
@@ -629,17 +629,19 @@ Commit message: `v5: add inspectable formal derivations`.
 - Modify: `brain/v5/mcp_tools.py`
 - Modify: `brain/v5/cli.py`
 - Modify: `brain/v5/context_compiler.py`
-- Modify: `README.md`
+- Deferred: `README.md` reconciliation remains with the protected concurrent
+  documentation change and is not part of this release candidate.
 - Modify: `docs/superpowers/plans/2026-07-09-aitp-final-research-lifecycle-roadmap.md`
 
-- [ ] **Step 1: Register full-surface execution capabilities**
+- [x] **Step 1: Register bounded full-surface execution capabilities**
 
-Expose pinned version read, bound checkpoint request/decide/apply, artifact
-capture/resolve, code-patch capture, scope revalidation, registered bound tool
-execution, environment/recipe/run, effective attempt/maturity, intake, monitor,
-baseline readiness/acceptance, formula-code capsule, derivation/review/status,
-and migration dry-run. Give every operation exact CapabilitySpec effects, deep
-public validators, pre-tool/bridge policy where stateful, and CLI/MCP parity.
+Expose eight exact read/projection operations plus the three host-bound
+checkpoint request/decide/apply operations through full MCP and CLI. Keep
+artifact, patch, environment, recipe, run, monitor, baseline, derivation,
+review, and migration writers internal to repository services; exposing those
+direct writers would bypass host provenance and pre-tool binding. Give every
+public operation exact CapabilitySpec effects, deep public validators,
+pre-tool/bridge policy where stateful, and CLI/MCP parity.
 `BoundExecutionReceipt` is a derived validated surface backed by pinned
 ToolRun, ValidationResult, and `CheckpointApplicationReceiptRecord` canonical
 records, including the checkpoint-application receipt ref/hash, not a parallel
@@ -648,7 +650,7 @@ record family. Context compilation and execution facades use
 compact visibility by default. Loader files receive only narrow focused-module
 imports.
 
-- [ ] **Step 2: Add LibRPA/HPC vertical acceptance**
+- [x] **Step 2: Add LibRPA/HPC vertical acceptance**
 
 Record exact commit/patch, script, structured parameters, environment, remote
 job, immutable monitor history, artifacts, validation, and accepted baseline.
@@ -657,35 +659,35 @@ This is deterministic contract/fixture acceptance. It must not be labeled real
 LibRPA/HPC operational acceptance; M6 requires a hash-pinned real collector
 manifest/read-only topic probe.
 
-- [ ] **Step 3: Add formal-derivation vertical acceptance**
+- [x] **Step 3: Add formal-derivation vertical acceptance**
 
 Build a source-anchored QFT/QG derivation chain with conventions, a failed
 step, open gap, and later repaired step. Assert no hidden reasoning text or
 claim-trust mutation is stored.
 
-- [ ] **Step 4: Run M0-M2 lanes and real-store compatibility audit**
+- [x] **Step 4: Run M0-M2 lanes and real-store compatibility audit**
 
 All objects in the recorded pre-Gate-2 audit remain readable.
 Capability/family/public-surface/policy drift is zero,
 architecture limits are unchanged, and canonical hashes change only for
 explicit test fixtures or approved new records.
 
-- [ ] **Step 5: Update docs, write release audit, verify staged tree, and commit**
+- [x] **Step 5: Update docs, write release audit, verify staged tree, and commit**
 
 Commit message: `v5: complete M2 reproducible execution`.
 
 ## M2 Completion Checklist
 
-- [ ] A validated accepted run is reproducible from exact structured records.
-- [ ] Every accepted baseline resolves every frozen dependency by ref and hash.
-- [ ] Dirty code without a patch is visibly non-reproducible.
-- [ ] Secrets are redacted before persistence.
-- [ ] Remote partial state is never reported as scientific completion.
-- [ ] Monitor observations are immutable and ordered.
-- [ ] Formula-code context resolves formula, code, parameters, tests, and baseline.
-- [ ] Derivation DAGs preserve assumptions, conventions, checks, and open gaps.
-- [ ] Structural closure is distinct from reviewed/validated derivation status.
-- [ ] Existing execution ids and schema-v1 records remain readable.
-- [ ] No execution/context/derivation surface updates claim trust directly.
-- [ ] M2 is labeled fixture-contract complete only; real LibRPA/HPC
+- [x] A validated accepted run is reproducible from exact structured records.
+- [x] Every accepted baseline resolves every frozen dependency by ref and hash.
+- [x] Dirty code without a patch is visibly non-reproducible.
+- [x] Secrets are redacted before persistence.
+- [x] Remote partial state is never reported as scientific completion.
+- [x] Monitor observations are immutable and ordered.
+- [x] Formula-code context resolves formula, code, parameters, tests, and baseline.
+- [x] Derivation DAGs preserve assumptions, conventions, checks, and open gaps.
+- [x] Structural closure is distinct from reviewed/validated derivation status.
+- [x] Existing execution ids and schema-v1 records remain readable.
+- [x] No execution/context/derivation surface updates claim trust directly.
+- [x] M2 is labeled fixture-contract complete only; real LibRPA/HPC
   acceptance remains a mandatory M6 decision input.

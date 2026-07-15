@@ -695,6 +695,11 @@ focus set, research program, closeout, recording batch, or claim-trust state.
 
 **Detailed plan:** `docs/superpowers/plans/2026-07-10-aitp-gate-2-execution-derivation.md`
 
+**Status (2026-07-15): fixture-contract complete.** The reviewed implementation
+and acceptance evidence are recorded in
+`docs/superpowers/progress/2026-07-10-aitp-gate-2-release-audit.md`. Real
+LibRPA/HPC operational acceptance remains a mandatory M6 probe.
+
 **Milestone outcome:** Important computations and software use can be reproduced from
 exact code, scripts, parameters, environment, outputs, and validation; formal
 derivations have inspectable DAG records.
@@ -732,54 +737,54 @@ derivations have inspectable DAG records.
 - Extends: `ToolRecipeRecord`, `ToolRunRecord`, `CodeStateRecord`,
   `ArtifactRecord`, and `HumanCheckpointRecord`
 
-- [ ] Add recipe versions, parameter roles/schema, scripts, environment,
+- [x] Add recipe versions, parameter roles/schema, scripts, environment,
   failures, stop rules, validation, and applicability.
-- [ ] Add structured argv, cwd, actual parameters, hashes, timestamps, outputs,
+- [x] Add structured argv, cwd, actual parameters, hashes, timestamps, outputs,
   validation refs, monitors, and skill usage to runs.
-- [ ] Keep legacy bare ids readable but require typed recipe/code/environment/
+- [x] Keep legacy bare ids readable but require typed recipe/code/environment/
   artifact/validation/monitor/skill refs for v2 reproducibility gates.
-- [ ] Restrict new `ToolRunRecord.recorded_maturity` writes to `diagnostic`,
+- [x] Restrict new `ToolRunRecord.recorded_maturity` writes to `diagnostic`,
   `reproducible_candidate`, or `superseded`; never write `accepted_baseline`
   into a ToolRun or its legacy `maturity` compatibility alias.
-- [ ] Derive `ExecutionMaturityProjection.effective_maturity`; only an active
+- [x] Derive `ExecutionMaturityProjection.effective_maturity`; only an active
   immutable `ExecutionBaselineRecord` may project `accepted_baseline`, with the
   ToolRun left unchanged.
-- [ ] Freeze a recursive `FrozenDependencyManifest` by typed
+- [x] Freeze a recursive `FrozenDependencyManifest` by typed
   ref/content-hash/revision, including every declared transitive edge and
   terminal blob/patch receipt; support exact archived reads and prohibit latest,
   path, URI, worktree, or tuple-based implicit lookup during replay.
-- [ ] Require every reproducibility-eligible `ArtifactRecord` to pin one
+- [x] Require every reproducibility-eligible `ArtifactRecord` to pin one
   `ArtifactBlobReceiptRecord` by `artifact_blob_receipt_ref` and
   `artifact_blob_receipt_hash`; require every dirty `CodeStateRecord` to pin one
   `CodePatchManifestRecord` by `patch_manifest_ref` and `patch_manifest_hash`.
   Each paired hash is the target record's `record_content_hash`, distinct from
   artifact byte hashes and patch-entry byte hashes.
-- [ ] Pin/resolve/rehash required local bytes or approved immutable external
+- [x] Pin/resolve/rehash required local bytes or approved immutable external
   storage receipts; reference-only mutable paths cannot satisfy replay.
-- [ ] Make immutable `CheckpointApplicationReceiptRecord` the sole application/
+- [x] Make immutable `CheckpointApplicationReceiptRecord` the sole application/
   consumption fact. Its deterministic id includes action payload hash and pinned
   intent, subjects, request, and decision; its immutable payload pins those
   refs/hashes plus result, terminal status, timestamps, and errors. Only
   `status=applied` proves consumption. New checkpoint writes omit
   `consumed_by_ref`; legacy values are read-only projections, and no application
   path mutates a checkpoint again.
-- [ ] Require exact run/recipe/executor/output/failure-contract validation and a
+- [x] Require exact run/recipe/executor/output/failure-contract validation and a
   subject/request-hash-bound checkpoint for accepted baseline.
-- [ ] Cover staged/unstaged/deleted/binary/submodule/required-untracked bytes in
+- [x] Cover staged/unstaged/deleted/binary/submodule/required-untracked bytes in
   dirty snapshots or retain `non_reproducible`.
-- [ ] Persist exact validation contract/run/recipe/executor/output/failure-mode
+- [x] Persist exact validation contract/run/recipe/executor/output/failure-mode
   bindings and enforce the per-family topic/program/claim scope matrix.
-- [ ] Implement the matrix once in `assess_execution_scope(...)`; baseline,
+- [x] Implement the matrix once in `assess_execution_scope(...)`; baseline,
   context, and facade consumers call it directly and pass explicit pinned
   `ScopeRevalidationDecisionRecord` refs rather than rediscovering decisions.
-- [ ] Provide a registered-executor high-risk `BoundExecutionReceipt` that pins
+- [x] Provide a registered-executor high-risk `BoundExecutionReceipt` that pins
   ToolRun, ValidationResult, and checkpoint-application receipt refs/hashes for
   later Skill validation, plus explicit target-scope revalidation records.
-- [ ] Register `artifact_blob_receipts`, `code_patch_manifests`,
+- [x] Register `artifact_blob_receipts`, `code_patch_manifests`,
   `checkpoint_application_receipts`, and `scope_revalidation_decisions` in
   `RecordFamilySpec`, typed-ref resolution, inventory, lifecycle/index coverage,
   and generated workspace layout before enabling their writers.
-- [ ] Redact secrets before environment/argv persistence.
+- [x] Redact secrets before environment/argv persistence.
 
 ### Task 2.2: Generic Local And Remote Compute Intake
 
@@ -795,12 +800,12 @@ derivations have inspectable DAG records.
 - Consumes local paths or remote URIs, scheduler/job metadata, and collector
   manifests.
 
-- [ ] Generalize compute intake independently; NiO is fixture data and Harness
+- [x] Generalize compute intake independently; NiO is fixture data and Harness
   Feedback owns no execution/monitor behavior.
-- [ ] Capture collector version, captured time, code/executable hashes, input and
+- [x] Capture collector version, captured time, code/executable hashes, input and
   output manifests, resources, lane, and missing fields.
-- [ ] Return typed prefill candidates without creating scientific evidence.
-- [ ] Test local, Slurm remote, partial, missing, and failed intake.
+- [x] Return typed prefill candidates without creating scientific evidence.
+- [x] Test local, Slurm remote, partial, missing, and failed intake.
 
 ### Task 2.3: Immutable Monitor Snapshots
 
@@ -811,11 +816,11 @@ derivations have inspectable DAG records.
 - Create: `brain/v5/monitor_snapshots.py`
 - Create: `tests/test_v5_monitor_snapshots.py`
 
-- [ ] Extend existing `MonitorSnapshotRecord`; do not duplicate it.
-- [ ] Add capture time, sequence, collector id, remote URI, and immutable id.
-- [ ] Preserve scheduler state as process evidence only.
-- [ ] Link snapshots to tool runs without overwriting earlier observations.
-- [ ] Resolve effective attempt/supersession, latest monitor state, partial
+- [x] Extend existing `MonitorSnapshotRecord`; do not duplicate it.
+- [x] Add capture time, sequence, collector id, remote URI, and immutable id.
+- [x] Preserve scheduler state as process evidence only.
+- [x] Link snapshots to tool runs without overwriting earlier observations.
+- [x] Resolve effective attempt/supersession, latest monitor state, partial
   outputs, and final/diagnostic lane eligibility in both cockpit and baseline.
 
 ### Task 2.4: Formula-Code Relations
@@ -830,10 +835,10 @@ derivations have inspectable DAG records.
 - Produces typed relations for implementation, parameters, approximations,
   normalization, observables, and validation.
 
-- [ ] Require code-state or exact source refs for code mappings.
-- [ ] Record formula/symbol, module/function, parameter, output, and scope.
-- [ ] Compile a bounded code-edit execution capsule.
-- [ ] Test LibRPA Hamiltonian/sigcmat-style mappings and stale code states.
+- [x] Require code-state or exact source refs for code mappings.
+- [x] Record formula/symbol, module/function, parameter, output, and scope.
+- [x] Compile a bounded code-edit execution capsule.
+- [x] Test LibRPA Hamiltonian/sigcmat-style mappings and stale code states.
 
 ### Task 2.5: Formal Derivation Records And Legacy Migration
 
@@ -857,29 +862,29 @@ derivations have inspectable DAG records.
 - Produces: `project_derivation_status(...) -> DerivationStatusProjection`
 - Produces: `migrate_legacy_derivation_candidates(...) -> MigrationReport`
 
-- [ ] Represent target, assumptions, conventions, regime, dependencies, source
+- [x] Represent target, assumptions, conventions, regime, dependencies, source
   anchors, checks, gaps, and status.
-- [ ] Preserve inspectable derivation artifacts without storing hidden
+- [x] Preserve inspectable derivation artifacts without storing hidden
   chain-of-thought.
-- [ ] Import legacy derivation DAGs through reviewable migration reports.
-- [ ] Test cycles, missing dependencies, unresolved steps, and source-local
+- [x] Import legacy derivation DAGs through reviewable migration reports.
+- [x] Test cycles, missing dependencies, unresolved steps, and source-local
   reconstruction.
-- [ ] Separate `structurally_closed` from hash-bound reviewed/validated status
+- [x] Separate `structurally_closed` from hash-bound reviewed/validated status
   and integrate derivations into source-reconstruction review.
-- [ ] Reject foreign-topic dependencies without explicit bridge and target-side
+- [x] Reject foreign-topic dependencies without explicit bridge and target-side
   revalidation.
 
 ### M2 Acceptance
 
-- [ ] A validated run can be reproduced from exact structured records.
-- [ ] Current-record revisions cannot change an accepted baseline's frozen
+- [x] A validated run can be reproduced from exact structured records.
+- [x] Current-record revisions cannot change an accepted baseline's frozen
   meaning, and generic/replayed checkpoints cannot approve it.
-- [ ] Bare legacy ids or unhashed paths cannot satisfy reproducibility.
-- [ ] Dirty code without a patch is visibly non-reproducible.
-- [ ] Remote partial state is not reported as completion.
-- [ ] Formula-code context resolves theory, source, code, parameter, and tests.
-- [ ] Derivation chains preserve assumptions and open gaps.
-- [ ] M2 proves deterministic contract readiness; real LibRPA/HPC acceptance
+- [x] Bare legacy ids or unhashed paths cannot satisfy reproducibility.
+- [x] Dirty code without a patch is visibly non-reproducible.
+- [x] Remote partial state is not reported as completion.
+- [x] Formula-code context resolves theory, source, code, parameter, and tests.
+- [x] Derivation chains preserve assumptions and open gaps.
+- [x] M2 proves deterministic contract readiness; real LibRPA/HPC acceptance
   remains a mandatory M6 probe.
 
 ## 9. M3: Grounded Knowledge, Speculative Insight, And Hybrid RAG
