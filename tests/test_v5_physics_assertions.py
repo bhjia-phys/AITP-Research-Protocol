@@ -58,6 +58,24 @@ def test_insight_model_is_explicitly_speculative_and_non_evidence():
         )
 
 
+def test_procedural_skill_distillation_explicitly_excludes_m3_knowledge_families(tmp_path):
+    from brain.v5.skill_distillation import build_procedural_skill_candidates
+    from brain.v5.workspace import create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "qg", context_id="formal-theory", title="Quantum gravity")
+
+    report = build_procedural_skill_candidates(ws, topic_id="qg")
+
+    assert {
+        "physics_assertion",
+        "insight",
+        "derivation_chain",
+        "derivation_step",
+        "derivation_review",
+    }.issubset(set(report["excluded_record_kinds"]))
+
+
 def test_assertion_writer_rejects_unresolved_grounding_before_write(tmp_path):
     from brain.v5.models import PhysicsAssertionRecord
     from brain.v5.physics_assertions import record_physics_assertion

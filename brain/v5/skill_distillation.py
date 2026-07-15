@@ -124,6 +124,11 @@ def build_procedural_skill_candidates(
         "excluded_record_kinds": [
             "physics_object",
             "object_relation",
+            "physics_assertion",
+            "insight",
+            "derivation_chain",
+            "derivation_step",
+            "derivation_review",
             "exploratory_record",
             "sensemaking_report",
         ],

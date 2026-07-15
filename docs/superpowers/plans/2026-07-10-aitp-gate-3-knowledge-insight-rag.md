@@ -180,14 +180,14 @@ Commit message: `v5: evolve physics knowledge records`.
 - Consumes: exact `scope_revalidation_decision:` refs from M2 for
   cross-topic target inclusion.
 
-- [ ] **Step 1: Write failing routing tests**
+- [x] **Step 1: Write failing routing tests**
 
 Definitions, formulas, conventions, relations, and derivations route to grounded
 knowledge. Interpretation, analogy, conjecture, failed route, counterexample,
 bridge, and open direction route to insight. Procedural repeatable workflows
 route to M4 Skill candidates. Mixed candidates require explicit splitting.
 
-- [ ] **Step 2: Remove physics-semantic fragments from skill distillation**
+- [x] **Step 2: Remove physics-semantic fragments from skill distillation**
 
 Add a regression test that `research_distillation` cannot emit a Skill candidate
 for a definition, formula, derivation, interpretation, or insight.

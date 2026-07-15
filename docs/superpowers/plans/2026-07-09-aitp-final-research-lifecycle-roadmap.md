@@ -938,11 +938,11 @@ through auditable hybrid lanes and exposed through bounded context.
 - Produces candidate extraction, diagnostics, batch review, rejection, and
   promotion operations.
 
-- [ ] Route definitions, formulas, conventions, relations, and derivations to
+- [x] Route definitions, formulas, conventions, relations, and derivations to
   knowledge candidates.
-- [ ] Route interpretation, analogy, conjecture, failed route, counterexample,
+- [x] Route interpretation, analogy, conjecture, failed route, counterexample,
   bridge, and open direction to speculative candidates.
-- [ ] Remove physics-semantic fragments from the skill path.
+- [x] Remove physics-semantic fragments from the skill path.
 - [ ] Require exact grounding refs for grounded promotion.
 - [ ] Keep reviewed insight non-evidence and able only to motivate research
   questions, routes, obligations, and checks.

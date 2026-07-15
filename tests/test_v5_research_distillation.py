@@ -67,7 +67,8 @@ def test_research_distillation_compiles_qsgw_method_candidate_from_run_journal(t
     assert payload["can_update_claim_trust"] is False
     candidate = payload["candidates"][0]
     assert candidate["candidate_kind"] == "method_capsule_candidate"
-    assert candidate["can_draft_reusable_block"] is True
+    assert candidate["knowledge_route"] == "mixed_split_required"
+    assert candidate["can_draft_reusable_block"] is False
     assert candidate["can_materialize_without_human_review"] is False
     assert candidate["can_promote_claim_trust"] is False
     assert candidate["missing_requirements"] == []
@@ -171,5 +172,7 @@ def test_research_distillation_cli_and_mcp_return_valid_public_surface(tmp_path,
     assert cli_payload["kind"] == "research_distillation_candidates"
     assert mcp_payload["kind"] == "research_distillation_candidates"
     assert cli_payload["candidates"][0]["candidate_kind"] == "physics_semantic_fragment_candidate"
+    assert cli_payload["candidates"][0]["knowledge_route"] == "grounded_or_insight_review"
+    assert cli_payload["candidates"][0]["can_draft_reusable_block"] is False
     assert cli_payload["candidates"][0]["can_promote_claim_trust"] is False
     assert mcp_payload["candidates"][0]["orientation_only"] is True
