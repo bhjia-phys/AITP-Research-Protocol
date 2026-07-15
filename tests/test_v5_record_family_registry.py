@@ -47,7 +47,7 @@ def test_record_family_registry_contract_is_self_consistent():
 
     assert payload["ok"] is True
     assert payload["errors"] == []
-    assert payload["registry_family_count"] == 54
+    assert payload["registry_family_count"] == 57
     assert payload["special_family_count"] == 4
     assert payload["truth_source"] == "record_family_specs"
     assert payload["can_update_kernel_state"] is False
@@ -60,6 +60,24 @@ def test_record_family_registry_contract_is_self_consistent():
     assert "id" in record_family_specs()["claims"].legacy_id_fields
     assert "reference_location_id" in record_family_specs()["reference_locations"].legacy_id_fields
     assert "validation_result_id" in record_family_specs()["validation_results"].legacy_id_fields
+
+
+def test_derivation_families_are_exact_trust_neutral_and_review_supersedes_append_only():
+    specs = record_family_specs()
+
+    for family in ("derivation_chains", "derivation_steps", "derivation_reviews"):
+        spec = specs[family]
+        assert spec.record_class is not None
+        assert spec.schema_version == "v2"
+        assert spec.trust_effect == "none"
+        assert {"exact_ref", "inventory", "query_index", "context_compiler"} <= set(
+            spec.participates_in
+        )
+        assert spec.dependency_fields
+    assert specs["derivation_reviews"].record_role == "review_record"
+    assert specs["derivation_reviews"].lifecycle_policy == "append_only"
+    assert specs["derivation_chains"].lifecycle_policy == "append_revision"
+    assert specs["derivation_steps"].lifecycle_policy == "append_revision"
 
 
 def test_m1_lifecycle_families_are_trust_neutral_and_exact_expandable():

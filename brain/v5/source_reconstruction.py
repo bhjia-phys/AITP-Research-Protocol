@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
+from brain.v5.derivation_reconstruction import (
+    build_derivation_coverage_batch,
+    recommended_derivation_actions,
+)
 from brain.v5.models import (
     ClaimRecord,
     EvidenceRecord,
@@ -92,6 +96,7 @@ def build_source_reconstruction_review_packet(ws: WorkspacePaths, *, claim_id: s
         )
         for component in audit["required_components"]
     ]
+    derivation_actions = recommended_derivation_actions(audit["derivation_coverage"])
     return {
         "ok": True,
         "kind": "source_reconstruction_review_packet",
@@ -104,13 +109,13 @@ def build_source_reconstruction_review_packet(ws: WorkspacePaths, *, claim_id: s
         "typed_records": typed,
         "component_reviews": component_reviews,
         "review_scope": "source_stack_reconstruction_before_trust_promotion",
-        "requires_human_or_adversarial_review": bool(missing),
+        "requires_human_or_adversarial_review": bool(missing or derivation_actions),
         "recommended_actions": _unique([
             action
             for item in component_reviews
             if item["status"] == "missing"
             for action in item["recommended_actions"]
-        ]),
+        ] + derivation_actions),
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
         "orientation_only": True,
@@ -131,6 +136,7 @@ def audit_source_reconstruction_batch(ws: WorkspacePaths, claim_ids: list[str]) 
     objects_by_topic = _group_by_topic(_legacy_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord))
     relations = _legacy_records(ws.registry_dir("object_relations"), ObjectRelationRecord)
     contracts_by_claim = _group_by_claim(_legacy_records(ws.registry_dir("validation_contracts"), ValidationContractRecord))
+    derivation_by_claim = build_derivation_coverage_batch(ws, list(claims_by_id.values()))
     audits = {}
     for claim_id in wanted:
         claim = claims_by_id.get(claim_id) or get_claim(ws, claim_id)
@@ -146,6 +152,7 @@ def audit_source_reconstruction_batch(ws: WorkspacePaths, claim_ids: list[str]) 
                 if record.topic_id == topic_id and (not record.claim_id or record.claim_id == claim_id)
             ],
             contracts=contracts_by_claim.get(claim_id, []),
+            derivation_coverage=derivation_by_claim[claim_id],
         )
     return audits
 
@@ -306,10 +313,10 @@ def _manifest_item(claim: ClaimRecord, audit: dict, *, has_direct_reference: boo
             name for name in audit["required_components"] if name not in set(missing_components)
         ],
         "source_refs": list(audit["source_refs"]),
-        "recommended_actions": _recommended_actions_for_missing(
+        "recommended_actions": _unique(_recommended_actions_for_missing(
             missing_components,
             has_direct_reference=has_direct_reference,
-        ),
+        ) + recommended_derivation_actions(audit["derivation_coverage"])),
         "audit_cli": f"aitp-v5 source reconstruction-audit --claim {claim.claim_id}",
         "audit_mcp": "aitp_v5_audit_source_reconstruction",
         "review_packet_cli": f"aitp-v5 source reconstruction-review --claim {claim.claim_id}",
@@ -351,6 +358,7 @@ def _audit_claim_source_reconstruction(
     objects: list[PhysicsObjectRecord],
     relations: list[ObjectRelationRecord],
     contracts: list[ValidationContractRecord],
+    derivation_coverage: dict,
 ) -> dict:
     topic_id = claim.topic_id
     source_refs = _source_refs(evidence, references, objects, relations)
@@ -376,6 +384,7 @@ def _audit_claim_source_reconstruction(
         "missing_components": missing,
         "components": components,
         "source_refs": source_refs,
+        "derivation_coverage": derivation_coverage,
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
         "can_update_claim_trust": False,

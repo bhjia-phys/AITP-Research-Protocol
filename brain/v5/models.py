@@ -39,3 +39,8 @@ from brain.v5.execution_models import (  # noqa: E402 - compatibility shards loa
     ValidationContractRecord,
     ValidationResultRecord,
 )
+from brain.v5.derivation_models import (  # noqa: E402 - compatibility shards load first.
+    DerivationChainRecord,
+    DerivationReviewRecord,
+    DerivationStepRecord,
+)

@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
 
+from brain.v5.derivation_reconstruction import recommended_derivation_actions
 from brain.v5.ids import prefixed_id
 from brain.v5.models import (
     ClaimRecord,
@@ -61,11 +62,7 @@ def build_source_reconstruction_review_manifest(ws: WorkspacePaths) -> dict:
         "claim_count": len(items),
         "review_progress": _review_progress(items),
         "items": items,
-        "next_actions": [
-            f"source_reconstruction_review:{item['claim_id']}"
-            for item in items
-            if item["review_status"] in {"pending", "needs_revision", "inconclusive"}
-        ],
+        "next_actions": _manifest_next_actions(items),
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
         "orientation_only": True,
@@ -95,11 +92,7 @@ def build_source_reconstruction_review_slice(
         "claim_count": len(items),
         "review_progress": _review_progress(items),
         "items": items,
-        "next_actions": [
-            f"source_reconstruction_review:{item['claim_id']}"
-            for item in items
-            if item["review_status"] in {"pending", "needs_revision", "inconclusive"}
-        ],
+        "next_actions": _manifest_next_actions(items),
     }
 
 
@@ -195,6 +188,7 @@ def _review_manifest_item(
         "claim_statement": claim.statement,
         "source_reconstruction_status": "complete" if audit["complete"] else "incomplete",
         "missing_components": list(audit["missing_components"]),
+        "derivation_coverage": audit["derivation_coverage"],
         "review_status": review_status,
         "review_result_ids": [review.result_id for review in reviews],
         "latest_review_result": _review_payload(latest) if latest else {},
@@ -232,6 +226,21 @@ def _review_next_actions(review_status: str, audit: dict, remaining_actions: lis
         actions.extend(remaining_actions or ["complete_source_reconstruction_review"])
     if not audit["complete"]:
         actions.append("complete_source_reconstruction")
+    actions.extend(recommended_derivation_actions(audit["derivation_coverage"]))
+    return _unique(actions)
+
+
+def _manifest_next_actions(items: list[dict]) -> list[str]:
+    actions = [
+        f"source_reconstruction_review:{item['claim_id']}"
+        for item in items
+        if item["review_status"] in {"pending", "needs_revision", "inconclusive"}
+    ]
+    actions.extend(
+        f"{action}:{item['claim_id']}"
+        for item in items
+        for action in recommended_derivation_actions(item["derivation_coverage"])
+    )
     return _unique(actions)
 
 
