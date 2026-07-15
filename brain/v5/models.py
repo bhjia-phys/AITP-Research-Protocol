@@ -51,3 +51,6 @@ from brain.v5.physics_knowledge_models import (  # noqa: E402 - compatibility sh
     PhysicsAssertionRecord,
     PhysicsObjectRecord,
 )
+from brain.v5.record_lifecycle_models import (  # noqa: E402 - replace shard-compatible v1.
+    LifecycleEventRecord,
+)

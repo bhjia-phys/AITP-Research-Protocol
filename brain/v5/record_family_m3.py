@@ -11,7 +11,10 @@ M3_RECORD_ROLES = {
     "knowledge_review_decisions": "review_record",
 }
 
-M3_SCHEMA_VERSIONS = {family: "v2" for family, *_rest in M3_REGISTRY_ROWS}
+M3_SCHEMA_VERSIONS = {
+    **{family: "v2" for family, *_rest in M3_REGISTRY_ROWS},
+    "lifecycle_events": "v2",
+}
 
 M3_DEPENDENCY_FIELDS = {
     "insights": (
@@ -19,6 +22,10 @@ M3_DEPENDENCY_FIELDS = {
         "source_refs", "review_decision_ref.record_ref",
     ),
     "knowledge_review_decisions": ("checkpoint_ref.record_ref", "source_refs[].record_ref", "supersedes_decision_ref.record_ref"),
+    "lifecycle_events": (
+        "subject_ref.record_ref", "replacement_ref_pin.record_ref",
+        "supersedes_event_ref.record_ref",
+    ),
     "physics_assertions": (
         "object_ref", "source_asset_refs", "source_location_refs",
         "contradiction_refs", "supersedes_assertion_ref", "review_decision_ref.record_ref",
