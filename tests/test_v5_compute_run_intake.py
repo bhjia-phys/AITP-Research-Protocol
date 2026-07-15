@@ -57,6 +57,7 @@ def test_completed_local_intake_builds_trust_neutral_prefill_candidates() -> Non
     assert report.candidates["execution_environment"]["executable_hashes"] == {
         "/opt/librpa/bin/librpa": "3" * 64
     }
+    assert report.candidates["monitor_snapshot"]["snapshot_id"] == ""
     assert report.candidates["validation_checklist"]["status"] == "not_checked"
 
 

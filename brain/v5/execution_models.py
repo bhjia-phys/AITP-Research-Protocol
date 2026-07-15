@@ -151,6 +151,8 @@ class MonitorSnapshotRecord:
     resource_usage: dict = field(default_factory=dict)
     immutable: bool = True
     previous_snapshot_ref: str = ""
+    previous_snapshot_hash: str = ""
+    previous_snapshot_revision: int = 0
     tool_run_ref: str = ""
     tool_run_hash: str = ""
     tool_run_revision: int = 0

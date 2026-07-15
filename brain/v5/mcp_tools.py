@@ -41,6 +41,10 @@ from brain.v5.mcp_session_lifecycle import (
     aitp_v5_session_start,
     aitp_v5_stage_recording_candidate,
 )
+from brain.v5.mcp_monitor_snapshots import (
+    aitp_v5_list_monitor_history,
+    aitp_v5_record_monitor_snapshot_v2,
+)
 
 
 def aitp_v5_propose_detected_procedural_skill(

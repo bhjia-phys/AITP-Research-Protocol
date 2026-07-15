@@ -211,11 +211,21 @@ def test_execution_v2_actions_reject_summary_sources_and_unreviewed_baseline(tmp
         claim_id=claim.claim_id,
         source_kind="typed_records",
     )
+    monitor = evaluate_context_pre_tool_policy(
+        ws,
+        session_id="s1",
+        action="record_monitor_snapshot_v2",
+        claim_id=claim.claim_id,
+        source_kind="task_plan",
+        orientation_only=True,
+    )
 
     assert environment["block"] is True
     assert environment["policy_reasons"][0]["policy_id"] == "no_summary_surface_as_truth_source"
     assert baseline["block"] is True
     assert baseline["policy_reasons"][0]["policy_id"] == "baseline_acceptance_requires_human_checkpoint"
+    assert monitor["block"] is True
+    assert monitor["policy_reasons"][0]["policy_id"] == "no_summary_surface_as_truth_source"
 
 
 def test_cli_context_pre_tool_policy_returns_contract_payload(tmp_path, capsys):

@@ -24,6 +24,7 @@ _CONTEXT_ACTIONS = {
     "accept_execution_baseline",
     "record_code_state_v2",
     "record_execution_environment",
+    "record_monitor_snapshot_v2",
     "record_tool_recipe_v2",
     "record_tool_run_v2",
     "record_code_state",

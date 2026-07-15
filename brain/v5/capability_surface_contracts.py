@@ -125,6 +125,33 @@ _RULES = {
         ("ok", "session_id", "topic_id", "coverage", "markdown"),
         "research_context_bundle",
     ),
+    "monitor_snapshot_write_result": SurfaceRule(
+        "canonical immutable monitor snapshot write result",
+        (
+            "ok",
+            "snapshot_id",
+            "record_ref",
+            "content_hash",
+            "revision",
+            "writes_records",
+            "can_update_claim_trust",
+        ),
+        "monitor_snapshot_write_result",
+    ),
+    "monitor_history": SurfaceRule(
+        "read-only ordered process observations for one exact tool run",
+        (
+            "ok",
+            "status",
+            "tool_run_ref",
+            "snapshot_refs",
+            "snapshots",
+            "errors",
+            "can_update_kernel_state",
+            "can_update_claim_trust",
+        ),
+        "monitor_history",
+    ),
 }
 
 
@@ -165,6 +192,18 @@ def validate_capability_surface(
     for field in rule.required:
         if field not in candidate:
             result.add(f"{path}.{field}", "is required")
+    if surface_name in {"monitor_snapshot_write_result", "monitor_history"}:
+        if candidate.get("can_update_claim_trust") is not False:
+            result.add(
+                f"{path}.can_update_claim_trust",
+                "must be false for process-only monitor surfaces",
+            )
+    if surface_name == "monitor_snapshot_write_result":
+        if candidate.get("writes_records") is not True:
+            result.add(f"{path}.writes_records", "must be true for the write result")
+    if surface_name == "monitor_history":
+        if candidate.get("can_update_kernel_state") is not False:
+            result.add(f"{path}.can_update_kernel_state", "must be false for read history")
     return result
 
 

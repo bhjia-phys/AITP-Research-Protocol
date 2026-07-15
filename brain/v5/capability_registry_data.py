@@ -293,6 +293,7 @@ MCP_ONLY_CAPABILITIES = (
     ("codex_tool_catalog", "aitp_v5_codex_tool_catalog", None, "codex_mcp_surface_catalog", "read_only", "compact"),
     ("create_claim", "aitp_v5_create_claim", None, "claim_record", "kernel_write", "full"),
     ("create_topic", "aitp_v5_create_topic", None, "topic_record", "kernel_write", "full"),
+    ("list_monitor_history", "aitp_v5_list_monitor_history", None, "monitor_history", "read_only", "full"),
     ("init_workspace", "aitp_v5_init_workspace", "aitp-v5 init <base>", "workspace_initialization", "kernel_write", "full"),
     ("curated_legacy_topics", "aitp_v5_list_curated_legacy_topics", None, "curated_legacy_topic_catalog", "read_only", "full"),
     ("migrate_curated_legacy_topic", "aitp_v5_migrate_curated_legacy_topic_to_v5", None, "legacy_migration_result", "kernel_write", "full"),
@@ -304,6 +305,7 @@ MCP_ONLY_CAPABILITIES = (
     ("exact_record_expansion", "aitp_v5_exact_expand_records", "aitp-v5 query exact --ref claim:c1", "research_retrieval_result", "read_only", "full"),
     ("research_context_compile", "aitp_v5_compile_research_context", "aitp-v5 context compile <session-id>", "research_context_bundle", "read_only", "full"),
     ("propose_detected_procedural_skill", "aitp_v5_propose_detected_procedural_skill", None, "skill_patch_proposal_record", "kernel_write", "full"),
+    ("record_monitor_snapshot_v2", "aitp_v5_record_monitor_snapshot_v2", None, "monitor_snapshot_write_result", "kernel_write", "full"),
     ("request_skill_install_review", "aitp_v5_request_skill_install_review", None, "human_checkpoint_record", "kernel_write", "full"),
 )
 

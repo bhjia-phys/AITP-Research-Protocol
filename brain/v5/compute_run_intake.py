@@ -184,7 +184,7 @@ def _build_candidates(
         },
     }
     monitor = {
-        "snapshot_id": _candidate_id("monitor", run_id, captured_at),
+        "snapshot_id": "",
         "topic_id": str(run.get("topic_id") or ""),
         "claim_id": str(run.get("claim_id") or ""),
         "tool_run_id": run_id,
@@ -194,6 +194,7 @@ def _build_candidates(
         "collector_id": str(collector.get("id") or ""),
         "collector_version": str(collector.get("version") or ""),
         "captured_at": captured_at,
+        "sequence": 0,
         "remote_uri": source_uri if source.get("kind") == "remote" else "",
         "resource_usage": dict(_mapping(run.get("resources"))),
         "immutable": True,

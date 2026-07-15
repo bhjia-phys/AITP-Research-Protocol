@@ -1,7 +1,7 @@
-"""Tests for the AITP v5 HPC cockpit surface (tool_run-based, lane-contract-aware).
+"""Tests for the AITP v5 HPC cockpit surface (monitor-based, lane-contract-aware).
 
-This replaces the earlier parallel-family design. HPC job state lives in
-``tool_run`` records; these tests cover immutable forward attempt chains,
+This replaces the earlier parallel-family design. HPC job observations live in
+immutable ``monitor_snapshot`` records; these tests cover forward attempt chains,
 scientific_run_id inheritance, lane contracts, the orientation-only
 cockpit aggregation, and the code_state / artifact back-link helpers.
 """
@@ -27,6 +27,38 @@ def _setup_workspace(tmp_path: Path):
         active_uncertainty="Dataset generation not complete.",
     )
     return ws, claim
+
+
+def _record_monitor(ws, run, state: str):
+    from datetime import UTC, datetime
+
+    from brain.v5.models import MonitorSnapshotRecord
+    from brain.v5.monitor_snapshots import record_monitor_snapshot_v2
+    from brain.v5.pinned_record_refs import pin_current_record
+    from brain.v5.record_envelope import RecordActor
+
+    run_ref = pin_current_record(ws, f"tool_run:{run.run_id}")
+    return record_monitor_snapshot_v2(
+        ws,
+        MonitorSnapshotRecord(
+            snapshot_id="",
+            topic_id=run.topic_id,
+            claim_id=run.claim_id,
+            tool_run_id=run.run_id,
+            run_dir=str(run.inputs.get("remote_dir") or ""),
+            job_id=str(run.outputs.get("slurm_job_id") or ""),
+            scheduler_state={"state": state},
+            captured_at=datetime.now(UTC).isoformat(),
+            sequence=1,
+            collector_id="pytest-slurm-monitor",
+            collector_version="1.0.0",
+            immutable=True,
+            tool_run_ref=run_ref.record_ref,
+            tool_run_hash=run_ref.content_hash,
+            tool_run_revision=run_ref.revision,
+        ),
+        actor=RecordActor(actor_type="tool", actor_id="hpc-cockpit-test", host="pytest"),
+    )
 
 
 def test_tool_run_supersession_is_forward_only_and_hash_protected(tmp_path):
@@ -536,18 +568,20 @@ def test_hpc_cockpit_aggregates_runs(tmp_path):
         outputs={"slurm_job_id": "200"}, evidence_status="submitted_pending",
         scientific_run_id="run-A", lane="diagnostic",
     )
-    record_tool_run(
+    j2 = record_tool_run(
         ws, recipe_id="gw-submit-v2", tool_family="hpc_workflow", tool_name="sbatch",
         topic_id="si8-gw", claim_id=claim.claim_id, inputs={"remote_dir": "/r2"},
         outputs={"slurm_job_id": "201"}, evidence_status="running",
         scientific_run_id="run-A", supersedes=j1.run_id, lane="diagnostic",
     )
-    record_tool_run(
+    j3 = record_tool_run(
         ws, recipe_id="gw-fail", tool_family="hpc_workflow", tool_name="sbatch",
         topic_id="si8-gw", claim_id=claim.claim_id, inputs={"remote_dir": "/r3"},
         outputs={"slurm_job_id": "202"}, evidence_status="failed_setup",
         scientific_run_id="run-B", lane="diagnostic",
     )
+    _record_monitor(ws, j2, "RUNNING")
+    _record_monitor(ws, j3, "FAILED")
     record_lane_contract(
         ws, topic_id="si8-gw", campaign="archivefaithful",
         forbidden_roots=["/bad"], trust_update_forbidden=True,
@@ -579,10 +613,10 @@ def test_hpc_cockpit_preserves_superseded_failure_history(tmp_path):
         topic_id="si8-gw",
         claim_id=claim.claim_id,
         outputs={"slurm_job_id": "500"},
-        evidence_status="failed_runtime",
+        evidence_status="completed",
         scientific_run_id="run-A",
     )
-    record_tool_run(
+    successor = record_tool_run(
         ws,
         recipe_id="gw-submit-v2",
         tool_family="hpc_workflow",
@@ -593,10 +627,14 @@ def test_hpc_cockpit_preserves_superseded_failure_history(tmp_path):
         evidence_status="completed",
         supersedes=failed.run_id,
     )
+    _record_monitor(ws, failed, "FAILED")
+    _record_monitor(ws, successor, "COMPLETED")
 
     cockpit = build_hpc_cockpit(ws, "si8-gw")
 
     assert [item["scheduler_job_id"] for item in cockpit["failure_history"]] == ["500"]
+    assert cockpit["failure_history"][0]["scheduler_status"] == "failed"
+    assert cockpit["failure_history"][0]["evidence_status"] == "completed"
     assert [item["scheduler_job_id"] for item in cockpit["effective_attempts"]] == ["501"]
 
 
@@ -696,11 +734,12 @@ def test_hpc_cockpit_mcp_surface(tmp_path):
     from brain.v5.tools import record_tool_run
 
     ws, claim = _setup_workspace(tmp_path)
-    record_tool_run(
+    run = record_tool_run(
         ws, recipe_id="r", tool_family="hpc_workflow", tool_name="sbatch",
         topic_id="si8-gw", claim_id=claim.claim_id, outputs={"slurm_job_id": "400"},
         evidence_status="running", lane="diagnostic",
     )
+    _record_monitor(ws, run, "RUNNING")
     aitp_v5_record_lane_contract(
         str(ws.root), topic_id="si8-gw", campaign="bench", final_allowlist=["c", "bp"],
     )

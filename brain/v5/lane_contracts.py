@@ -9,13 +9,66 @@ evidence; they cannot update claim trust.
 
 from __future__ import annotations
 
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from typing import Any
 
 from brain.v5.ids import prefixed_id
-from brain.v5.models import LaneContractRecord
+from brain.v5.models import LaneContractRecord, ToolRunRecord
 from brain.v5.paths import WorkspacePaths
 from brain.v5.store import list_records, write_record
+
+
+@dataclass(frozen=True)
+class RunLaneAssessment:
+    status: str
+    reasons: tuple[str, ...] = ()
+    can_update_claim_trust: bool = False
+
+
+def assess_run_lane(
+    run: ToolRunRecord,
+    contract: LaneContractRecord | None,
+) -> RunLaneAssessment:
+    """Fail-closed final-lane eligibility under one topic-local contract."""
+
+    lane = str(run.lane or "").strip().lower()
+    if lane in {"diagnostic", "exploratory"}:
+        return RunLaneAssessment(status="diagnostic_only")
+    if lane != "final":
+        return RunLaneAssessment(status="unsupported", reasons=("unsupported run lane",))
+    if contract is None:
+        return RunLaneAssessment(status="final_eligible")
+    root = _run_root(run)
+    for forbidden in contract.forbidden_roots:
+        normalized = str(forbidden).rstrip("/\\")
+        if normalized and (root == normalized or root.startswith(normalized + "/") or root.startswith(normalized + "\\")):
+            return RunLaneAssessment(
+                status="blocked",
+                reasons=(f"run root is under forbidden root {forbidden}",),
+            )
+    if contract.final_allowlist:
+        lane_key = str(
+            run.actual_parameters.get("lane_key")
+            or run.inputs.get("lane_key")
+            or run.outputs.get("lane_key")
+            or ""
+        )
+        if lane_key not in contract.final_allowlist:
+            return RunLaneAssessment(
+                status="blocked",
+                reasons=(f"run lane key {lane_key or '<missing>'} is not in the final allowlist",),
+            )
+    return RunLaneAssessment(status="final_eligible")
+
+
+def _run_root(run: ToolRunRecord) -> str:
+    return str(
+        run.cwd
+        or run.inputs.get("remote_dir")
+        or run.inputs.get("run_dir")
+        or run.inputs.get("root")
+        or ""
+    ).rstrip("/\\")
 
 
 def record_lane_contract(

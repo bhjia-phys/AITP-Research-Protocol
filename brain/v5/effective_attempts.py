@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
-from datetime import UTC, datetime
 from typing import Any, Mapping, Sequence
 
 from brain.v5.artifact_blobs import resolve_artifact_bytes
+from brain.v5.lane_contracts import assess_run_lane, get_effective_lane_contract
 from brain.v5.models import ArtifactRecord, MonitorSnapshotRecord, ToolRunRecord
+from brain.v5.monitor_snapshots import list_monitor_history
 from brain.v5.paths import WorkspacePaths
 from brain.v5.pinned_record_refs import (
     PinnedRecordRef,
@@ -64,8 +65,7 @@ def resolve_effective_attempt_state(
 
     repository = _repository(ws)
     run_report = repository.list("tool_runs")
-    monitor_report = repository.list("monitor_snapshots")
-    read_errors = [*_issues(run_report.malformed), *_issues(monitor_report.malformed)]
+    read_errors = [*_issues(run_report.malformed)]
     runs = {
         record.run_id: record
         for record in run_report.records
@@ -134,17 +134,17 @@ def resolve_effective_attempt_state(
 
     leaf = runs[leaf_id]
     effective_pin = pins[leaf_id]
-    monitor_pin, monitor, monitor_errors = _latest_monitor(
-        ws,
-        monitor_report.records,
-        leaf,
-        effective_pin,
-    )
+    monitor_pin, monitor, monitor_errors = _latest_monitor(ws, leaf, effective_pin)
     reasons = list(topology_reasons)
     reasons.extend(monitor_errors)
     scheduler_status = _scheduler_status(monitor)
     output_status = _output_status(ws, leaf)
-    lane_status = _lane_status(leaf.lane)
+    lane_assessment = assess_run_lane(
+        leaf,
+        get_effective_lane_contract(ws, leaf.topic_id),
+    )
+    lane_status = lane_assessment.status
+    reasons.extend(lane_assessment.reasons)
 
     if topology == "superseded":
         reasons.append("requested run is superseded")
@@ -173,6 +173,7 @@ def resolve_effective_attempt_state(
         leaf=leaf,
         eligible=eligible,
         reasons=reasons,
+        lane_status=lane_status,
     )
 
 
@@ -292,37 +293,15 @@ def _legacy_reverse_state(
 
 def _latest_monitor(
     ws: WorkspacePaths,
-    records: Sequence[Any],
     run: ToolRunRecord,
     run_pin: PinnedRecordRef,
 ) -> tuple[PinnedRecordRef | None, MonitorSnapshotRecord | None, list[str]]:
-    candidates = [
-        record
-        for record in records
-        if isinstance(record, MonitorSnapshotRecord) and record.tool_run_id == run.run_id
-    ]
-    if not candidates:
+    history = list_monitor_history(ws, run_pin)
+    if history.status == "malformed":
+        return None, None, list(history.errors)
+    if not history.records:
         return None, None, ["no monitor snapshot exists for the effective attempt"]
-    candidates.sort(key=lambda item: (item.sequence, _timestamp(item.captured_at), item.snapshot_id))
-    latest = candidates[-1]
-    if (
-        not latest.immutable
-        or latest.sequence < 1
-        or not latest.captured_at
-        or not latest.collector_id
-        or not latest.collector_version
-        or latest.topic_id != run.topic_id
-        or latest.claim_id != run.claim_id
-        or latest.tool_run_ref != run_pin.record_ref
-        or latest.tool_run_hash != run_pin.content_hash
-        or latest.tool_run_revision != run_pin.revision
-    ):
-        return None, latest, ["latest monitor snapshot is not immutable and scoped"]
-    try:
-        pin = pin_current_record(ws, f"monitor_snapshot:{latest.snapshot_id}")
-    except Exception as exc:  # noqa: BLE001
-        return None, latest, [f"latest monitor snapshot cannot be pinned: {exc}"]
-    return pin, latest, []
+    return history.latest_snapshot_ref, history.records[-1], []
 
 
 def _scheduler_status(monitor: MonitorSnapshotRecord | None) -> str:
@@ -417,6 +396,7 @@ def _state(
     eligible: bool,
     reasons: Sequence[str],
     read_errors: Sequence[str] = (),
+    lane_status: str = "",
 ) -> EffectiveAttemptState:
     return EffectiveAttemptState(
         requested_run_ref=requested_pin,
@@ -431,7 +411,7 @@ def _state(
         scheduler_status=scheduler_status,
         output_status=output_status,
         lane=leaf.lane,
-        lane_status=_lane_status(leaf.lane),
+        lane_status=lane_status or _lane_status(leaf.lane),
         recorded_maturity=leaf.recorded_maturity,
         attempt_eligible=eligible,
         blocking_reasons=tuple(dict.fromkeys(reasons)),
@@ -487,13 +467,3 @@ def _repository(ws: WorkspacePaths) -> RecordRepository:
 
 def _issues(issues: Sequence[Any]) -> list[str]:
     return [f"{item.path}: {item.error_type}: {item.message}" for item in issues]
-
-
-def _timestamp(value: str) -> datetime:
-    try:
-        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-    except ValueError:
-        return datetime.min.replace(tzinfo=UTC)
-    if parsed.tzinfo is None:
-        return datetime.min.replace(tzinfo=UTC)
-    return parsed.astimezone(UTC)

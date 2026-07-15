@@ -7,38 +7,22 @@ not superseded), active jobs, failure history, lane distribution, provenance
 gaps (runs missing code-state/artifact back-links), the lane contract, next
 valid actions, and which conclusions are/are not allowed.
 
-It never becomes a truth source and never updates claim trust. HPC job state
-lives in ``tool_run`` records; this cockpit only reads them.
+It never becomes a truth source and never updates claim trust. Scheduler state
+comes from immutable monitor snapshots; mutable run status is display-only.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
+from brain.v5.effective_attempts import EffectiveAttemptState, resolve_effective_attempt_state
 from brain.v5.lane_contracts import get_effective_lane_contract
+from brain.v5.monitor_snapshots import list_monitor_history
 from brain.v5.models import ClaimRecord, ToolRunRecord
 from brain.v5.paths import WorkspacePaths
+from brain.v5.pinned_record_refs import pin_current_record
 from brain.v5.store import list_records
 
-# evidence_status values that mean the scheduler job is still in flight.
-_ACTIVE_EVIDENCE_STATUSES = {
-    "submitted_pending",
-    "running",
-    "submitted",
-    "pending",
-    "resumed",
-    "queued",
-}
-# evidence_status values that mean the run failed before producing evidence.
-_FAILURE_EVIDENCE_STATUSES = {
-    "failed",
-    "failed_setup",
-    "failed_runtime",
-    "application_failure",
-    "cancelled",
-    "cancelled_before_start",
-    "dependency_never_satisfied",
-}
 _LANES = ("final", "diagnostic", "exploratory")
 
 
@@ -68,31 +52,38 @@ def build_hpc_cockpit(ws: WorkspacePaths, topic_id: str) -> dict[str, Any]:
         if run.run_id not in superseded_ids and not getattr(run, "superseded_by", "")
     ]
 
-    active_jobs = [
-        _run_brief(run, successor_by_prior.get(run.run_id, ""))
+    state_errors: list[str] = []
+    states = {
+        run.run_id: _effective_state(ws, run, state_errors)
         for run in current_runs
-        if run.evidence_status in _ACTIVE_EVIDENCE_STATUSES
+    }
+    active_jobs = [
+        _run_brief(run, successor_by_prior.get(run.run_id, ""), states[run.run_id])
+        for run in current_runs
+        if states[run.run_id] is not None
+        and states[run.run_id].scheduler_status == "active"
     ]
     current_failures = [
-        _run_brief(run, successor_by_prior.get(run.run_id, ""))
+        _run_brief(run, successor_by_prior.get(run.run_id, ""), states[run.run_id])
         for run in current_runs
-        if run.evidence_status in _FAILURE_EVIDENCE_STATUSES
+        if states[run.run_id] is not None
+        and states[run.run_id].scheduler_status == "failed"
     ]
-    failures = [
-        _run_brief(run, successor_by_prior.get(run.run_id, ""))
-        for run in all_runs
-        if run.evidence_status in _FAILURE_EVIDENCE_STATUSES
-    ]
+    failures = _failure_history(ws, all_runs, successor_by_prior, states)
 
     lane_counts = {lane: 0 for lane in _LANES}
     missing_code_state: list[str] = []
     missing_artifacts: list[str] = []
+    missing_monitor: list[str] = []
     for run in current_runs:
         lane_counts[run.lane] = lane_counts.get(run.lane, 0) + 1
         if not run.code_state_ids:
             missing_code_state.append(run.run_id)
         if not run.artifact_ids:
             missing_artifacts.append(run.run_id)
+        state = states[run.run_id]
+        if state is None or state.latest_monitor_ref is None:
+            missing_monitor.append(run.run_id)
 
     effective_attempts = [
         {
@@ -103,6 +94,11 @@ def build_hpc_cockpit(ws: WorkspacePaths, topic_id: str) -> dict[str, Any]:
             "run_dir": _run_dir(run),
             "scheduler_job_id": _scheduler_job_id(run),
             "supersedes": run.supersedes,
+            "scheduler_status": states[run.run_id].scheduler_status if states[run.run_id] else "unknown",
+            "output_status": states[run.run_id].output_status if states[run.run_id] else "unknown",
+            "lane_status": states[run.run_id].lane_status if states[run.run_id] else "unsupported",
+            "attempt_eligible": states[run.run_id].attempt_eligible if states[run.run_id] else False,
+            "blocking_reasons": list(states[run.run_id].blocking_reasons) if states[run.run_id] else ["effective attempt state is unreadable"],
         }
         for run in current_runs
     ]
@@ -122,6 +118,7 @@ def build_hpc_cockpit(ws: WorkspacePaths, topic_id: str) -> dict[str, Any]:
         failures=current_failures,
         missing_code_state=missing_code_state,
         missing_artifacts=missing_artifacts,
+        missing_monitor=missing_monitor,
         lane_counts=lane_counts,
         has_claim=bool(current_claim),
         has_runs=bool(current_runs),
@@ -131,6 +128,9 @@ def build_hpc_cockpit(ws: WorkspacePaths, topic_id: str) -> dict[str, Any]:
         failures=current_failures,
         lane_counts=lane_counts,
         lane_contract=lane_contract,
+        eligible_attempts=sum(
+            1 for state in states.values() if state is not None and state.attempt_eligible
+        ),
     )
 
     payload = {
@@ -145,7 +145,9 @@ def build_hpc_cockpit(ws: WorkspacePaths, topic_id: str) -> dict[str, Any]:
         "provenance_gaps": {
             "missing_code_state_run_ids": missing_code_state,
             "missing_artifact_run_ids": missing_artifacts,
+            "missing_monitor_run_ids": missing_monitor,
         },
+        "state_errors": state_errors,
         "lane_contract": lane_contract,
         "next_valid_actions": next_actions,
         "conclusions_allowed": allowed,
@@ -163,8 +165,12 @@ def build_hpc_cockpit(ws: WorkspacePaths, topic_id: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-def _run_brief(run: ToolRunRecord, derived_successor_id: str = "") -> dict[str, Any]:
-    return {
+def _run_brief(
+    run: ToolRunRecord,
+    derived_successor_id: str = "",
+    state: EffectiveAttemptState | None = None,
+) -> dict[str, Any]:
+    payload = {
         "run_id": run.run_id,
         "scientific_run_id": run.scientific_run_id,
         "recipe_id": run.recipe_id,
@@ -178,6 +184,76 @@ def _run_brief(run: ToolRunRecord, derived_successor_id: str = "") -> dict[str, 
         "has_code_state": bool(run.code_state_ids),
         "has_artifacts": bool(run.artifact_ids),
     }
+    if state is not None:
+        payload.update(
+            scheduler_status=state.scheduler_status,
+            output_status=state.output_status,
+            lane_status=state.lane_status,
+            attempt_eligible=state.attempt_eligible,
+            blocking_reasons=list(state.blocking_reasons),
+            latest_monitor_ref=(
+                state.latest_monitor_ref.record_ref if state.latest_monitor_ref else ""
+            ),
+        )
+    return payload
+
+
+def _effective_state(
+    ws: WorkspacePaths,
+    run: ToolRunRecord,
+    errors: list[str],
+) -> EffectiveAttemptState | None:
+    try:
+        return resolve_effective_attempt_state(
+            ws,
+            pin_current_record(ws, f"tool_run:{run.run_id}"),
+        )
+    except Exception as exc:  # noqa: BLE001 - cockpit remains a fail-closed read model.
+        errors.append(f"tool_run:{run.run_id}: {exc}")
+        return None
+
+
+def _observed_scheduler_status(ws: WorkspacePaths, run: ToolRunRecord) -> str:
+    try:
+        run_ref = pin_current_record(ws, f"tool_run:{run.run_id}")
+        history = list_monitor_history(ws, run_ref)
+    except Exception:  # noqa: BLE001
+        return "unknown"
+    if history.status == "malformed" or not history.records:
+        return "unknown"
+    raw = str(
+        history.records[-1].scheduler_state.get("state")
+        or history.records[-1].scheduler_state.get("status")
+        or ""
+    ).strip().lower()
+    if raw in {"failed", "failure", "cancelled", "canceled", "timeout", "timed_out", "node_fail", "out_of_memory"}:
+        return "failed"
+    if raw in {"pending", "queued", "submitted", "running", "resumed"}:
+        return "active"
+    if raw in {"completed", "complete", "succeeded", "success", "done"}:
+        return "completed"
+    return "unknown"
+
+
+def _failure_history(
+    ws: WorkspacePaths,
+    runs: list[ToolRunRecord],
+    successor_by_prior: dict[str, str],
+    states: dict[str, EffectiveAttemptState | None],
+) -> list[dict[str, Any]]:
+    failures: list[dict[str, Any]] = []
+    for run in runs:
+        observed = _observed_scheduler_status(ws, run)
+        if observed != "failed":
+            continue
+        brief = _run_brief(
+            run,
+            successor_by_prior.get(run.run_id, ""),
+            states.get(run.run_id),
+        )
+        brief["scheduler_status"] = observed
+        failures.append(brief)
+    return failures
 
 
 def _run_dir(run: ToolRunRecord) -> str:
@@ -220,6 +296,7 @@ def _derive_next_actions(
     failures: list[dict[str, Any]],
     missing_code_state: list[str],
     missing_artifacts: list[str],
+    missing_monitor: list[str],
     lane_counts: dict[str, int],
     has_claim: bool,
     has_runs: bool,
@@ -243,6 +320,10 @@ def _derive_next_actions(
         actions.append(
             f"attach artifact_ids for {len(missing_artifacts)} run(s) missing product provenance"
         )
+    if missing_monitor:
+        actions.append(
+            f"record immutable monitor snapshots for {len(missing_monitor)} run(s) missing scheduler observations"
+        )
     if not actions:
         if not has_runs:
             actions.append("no HPC tool runs recorded; record a job attempt via record_tool_run")
@@ -261,6 +342,7 @@ def _derive_conclusions(
     failures: list[dict[str, Any]],
     lane_counts: dict[str, int],
     lane_contract,
+    eligible_attempts: int,
 ) -> tuple[list[str], list[str]]:
     allowed: list[str] = []
     not_allowed: list[str] = []
@@ -281,9 +363,13 @@ def _derive_conclusions(
         not_allowed.append(
             "lane contract forbids trust updates for this topic until cleared"
         )
-    if lane_counts.get("final", 0) > 0 and not active_jobs and not failures:
+    if eligible_attempts > 0 and not active_jobs and not failures:
         allowed.append(
-            "at least one run is marked lane=final; trust still requires the existing validation/promotion surfaces"
+            "at least one effective attempt is execution-eligible; scientific trust still requires validation and checkpoint surfaces"
+        )
+    elif lane_counts.get("final", 0) > 0:
+        not_allowed.append(
+            "a final label alone is insufficient; no effective attempt satisfies immutable monitor, output, and lane checks"
         )
     if not allowed:
         allowed.append(
