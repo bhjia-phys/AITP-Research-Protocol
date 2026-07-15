@@ -381,15 +381,26 @@ class ExecutionBaselineRecord:
     claim_id: str
     run_ref: str
     frozen_dependencies: dict
+    run_hash: str = ""
+    run_revision: int = 0
     recipe_ref: str = ""
+    recipe_hash: str = ""
+    recipe_revision: int = 0
     code_state_ref: str = ""
+    code_state_hash: str = ""
+    code_state_revision: int = 0
     environment_ref: str = ""
+    environment_hash: str = ""
+    environment_revision: int = 0
     input_artifact_refs: list[str] = field(default_factory=list)
     output_artifact_refs: list[str] = field(default_factory=list)
-    validation_refs: list[str] = field(default_factory=list)
-    monitor_refs: list[str] = field(default_factory=list)
+    validation_refs: list[dict] = field(default_factory=list)
+    monitor_refs: list[dict] = field(default_factory=list)
     non_claims: list[str] = field(default_factory=list)
     acceptance_checkpoint_ref: str = ""
+    acceptance_checkpoint_hash: str = ""
+    acceptance_checkpoint_revision: int = 0
     checkpoint_application_receipt_ref: str = ""
     status: str = "active"
+    created_at: str = ""
     kind: str = "execution_baseline"
