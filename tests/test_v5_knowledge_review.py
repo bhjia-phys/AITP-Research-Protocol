@@ -61,7 +61,14 @@ def _grounding(ws):
     )
 
 
-def _checkpoint(ws, candidate, *, verified=True):
+def _checkpoint(
+    ws,
+    candidate,
+    *,
+    verified=True,
+    decision="approve",
+    checkpoint_id="knowledge-review-checkpoint",
+):
     from brain.v5.knowledge_review import knowledge_candidate_hash
     from brain.v5.models import HumanCheckpointRecord
     from brain.v5.pinned_record_refs import PinnedRecordRef
@@ -71,20 +78,20 @@ def _checkpoint(ws, candidate, *, verified=True):
     result = RecordRepository(ws, actor=_actor()).write(
         "checkpoints",
         HumanCheckpointRecord(
-            checkpoint_id="knowledge-review-checkpoint",
+            checkpoint_id=checkpoint_id,
             topic_id="qg",
             claim_id="",
             reason="Review one exact knowledge candidate.",
             requested_by="pytest",
             options=["approve", "reject", "revise"],
             status="decided",
-            decision="approve",
+            decision=decision,
             rationale="The candidate boundary and source requirements were inspected.",
             decided_by="reviewer",
             decision_verified=verified,
             decision_verification="hmac_sha256_v1" if verified else "",
             decision_receipt_hash=f"sha256:{'a' * 64}" if verified else "",
-            decision_receipt_nonce="knowledge-review-nonce" if verified else "",
+            decision_receipt_nonce=f"{checkpoint_id}-nonce" if verified else "",
             can_authorize_trust=verified,
             action="review_knowledge_candidate",
             subject_refs=[{"candidate_id": candidate.candidate_id, "candidate_hash": candidate_hash}],
@@ -159,9 +166,73 @@ def test_knowledge_review_decision_is_append_only_and_trust_neutral(tmp_path):
     assert loaded.record.decision == "approve"
     assert loaded.record.rationale == "The candidate boundary and source requirements were inspected."
     assert loaded.record.reviewer == "reviewer"
+    assert loaded.record.candidate_payload["statement"] == candidate.statement
+    assert loaded.record.candidate_payload["framework"] == "algebraic QFT"
     assert loaded.record.can_update_claim_trust is False
     assert spec_for_family("knowledge_review_decisions").lifecycle_policy == "append_only"
     assert spec_for_family("knowledge_review_decisions").trust_effect == "none"
+
+
+def test_knowledge_review_replacement_is_exact_append_only_supersession(tmp_path):
+    from brain.v5.knowledge_review import (
+        record_knowledge_review_decision,
+        supersede_knowledge_review_decision,
+    )
+    from brain.v5.pinned_record_refs import PinnedRecordRef
+    from brain.v5.record_repository import RecordRepository
+    from brain.v5.workspace import create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "qg", context_id="formal-theory", title="Quantum gravity")
+    candidate = _candidate(_grounding(ws))
+    prior = record_knowledge_review_decision(
+        ws,
+        candidate,
+        checkpoint_ref=_checkpoint(ws, candidate),
+        decision="approve",
+        actor=_actor(),
+    )
+    prior_pin = PinnedRecordRef(prior.record_ref, prior.content_hash, prior.revision)
+    revised = replace(candidate, statement="A revised, narrower local algebra definition.")
+    replacement_checkpoint = _checkpoint(
+        ws,
+        revised,
+        decision="revise",
+        checkpoint_id="knowledge-review-replacement",
+    )
+
+    with pytest.raises(ValueError, match="use supersede"):
+        record_knowledge_review_decision(
+            ws,
+            revised,
+            checkpoint_ref=replacement_checkpoint,
+            decision="revise",
+            actor=_actor(),
+        )
+
+    replacement = supersede_knowledge_review_decision(
+        ws,
+        revised,
+        prior_decision_ref=prior_pin,
+        checkpoint_ref=replacement_checkpoint,
+        decision="revise",
+        actor=_actor(),
+    )
+    loaded = RecordRepository(ws, actor=_actor()).read(replacement.record_ref).record
+
+    assert loaded.supersedes_decision_ref == vars(prior_pin)
+    assert loaded.candidate_id == candidate.candidate_id
+    assert loaded.decision == "revise"
+
+    with pytest.raises(ValueError, match="already has a successor"):
+        supersede_knowledge_review_decision(
+            ws,
+            revised,
+            prior_decision_ref=prior_pin,
+            checkpoint_ref=replacement_checkpoint,
+            decision="revise",
+            actor=_actor(),
+        )
 
 
 @pytest.mark.parametrize(
@@ -191,6 +262,30 @@ def test_knowledge_review_cannot_bypass_procedural_skill_review(tmp_path, conten
             ws,
             candidate,
             checkpoint_ref=checkpoint,
+            decision="approve",
+            actor=_actor(),
+        )
+
+
+def test_knowledge_review_requires_one_semantic_item_per_decision(tmp_path):
+    from brain.v5.knowledge_candidates import KnowledgeCandidate
+    from brain.v5.knowledge_review import record_knowledge_review_decision
+    from brain.v5.workspace import create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "qg", context_id="formal-theory", title="Quantum gravity")
+    candidate = KnowledgeCandidate(
+        candidate_id="multi-insight-candidate",
+        content_kinds=("analogy", "conjecture"),
+        statement="One statement must not encode two review items.",
+        topic_id="qg",
+    )
+
+    with pytest.raises(ValueError, match="exactly one content kind"):
+        record_knowledge_review_decision(
+            ws,
+            candidate,
+            checkpoint_ref=_checkpoint(ws, candidate),
             decision="approve",
             actor=_actor(),
         )

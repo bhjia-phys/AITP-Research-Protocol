@@ -80,6 +80,13 @@ def test_derivation_families_are_exact_trust_neutral_and_review_supersedes_appen
     assert specs["derivation_steps"].lifecycle_policy == "append_revision"
 
 
+def test_m3_promoted_records_depend_on_exact_review_decision():
+    specs = record_family_specs()
+
+    for family in ("physics_assertions", "insights"):
+        assert "review_decision_ref.record_ref" in specs[family].dependency_fields
+
+
 def test_m1_lifecycle_families_are_trust_neutral_and_exact_expandable():
     specs = record_family_specs()
 

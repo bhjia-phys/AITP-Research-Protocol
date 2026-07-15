@@ -14,11 +14,14 @@ M3_RECORD_ROLES = {
 M3_SCHEMA_VERSIONS = {family: "v2" for family, *_rest in M3_REGISTRY_ROWS}
 
 M3_DEPENDENCY_FIELDS = {
-    "insights": ("grounding_refs", "inferred_from_refs", "proof_obligation_refs", "source_refs"),
+    "insights": (
+        "grounding_refs", "inferred_from_refs", "proof_obligation_refs",
+        "source_refs", "review_decision_ref.record_ref",
+    ),
     "knowledge_review_decisions": ("checkpoint_ref.record_ref", "source_refs[].record_ref", "supersedes_decision_ref.record_ref"),
     "physics_assertions": (
         "object_ref", "source_asset_refs", "source_location_refs",
-        "contradiction_refs", "supersedes_assertion_ref",
+        "contradiction_refs", "supersedes_assertion_ref", "review_decision_ref.record_ref",
     ),
 }
 

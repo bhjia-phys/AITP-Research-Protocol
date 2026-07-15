@@ -19,6 +19,7 @@ class KnowledgeCandidate:
     content_kinds: tuple[str, ...]
     statement: str
     topic_id: str = ""
+    subject_ref: str = ""
     source_refs: tuple[str, ...] = ()
     grounding_pins: tuple[PinnedRecordRef, ...] = ()
     framework: str = ""

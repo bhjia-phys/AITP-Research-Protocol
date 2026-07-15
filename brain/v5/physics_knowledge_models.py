@@ -93,6 +93,7 @@ class PhysicsAssertionRecord:
     source_location_refs: list[str] = field(default_factory=list)
     contradiction_refs: list[str] = field(default_factory=list)
     supersedes_assertion_ref: str = ""
+    review_decision_ref: dict = field(default_factory=dict)
     review_status: str = "unreviewed"
     lifecycle_status: str = "active"
     can_update_claim_trust: bool = False
@@ -120,6 +121,7 @@ class InsightRecord:
     proof_obligation_refs: list[str] = field(default_factory=list)
     review_status: str = "unreviewed"
     checkpoint_id: str = ""
+    review_decision_ref: dict = field(default_factory=dict)
     lifecycle_status: str = "active"
     source_refs: list[str] = field(default_factory=list)
     created_at: str = ""
@@ -145,6 +147,7 @@ class KnowledgeReviewDecisionRecord:
     rationale: str
     reviewer: str
     checkpoint_ref: dict
+    candidate_payload: dict = field(default_factory=dict)
     source_refs: list[dict] = field(default_factory=list)
     lifecycle_status: str = "active"
     supersedes_decision_ref: dict = field(default_factory=dict)
