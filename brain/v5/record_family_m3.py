@@ -1,0 +1,25 @@
+"""Focused record-family metadata owned by the M3 knowledge vertical."""
+
+M3_REGISTRY_ROWS = (
+    ("insights", "insight", "InsightRecord", "insight_id"),
+    ("knowledge_review_decisions", "knowledge_review_decision", "KnowledgeReviewDecisionRecord", "decision_id"),
+    ("physics_assertions", "physics_assertion", "PhysicsAssertionRecord", "assertion_id"),
+)
+
+M3_RECORD_ROLES = {
+    "insights": "orientation_only_record",
+    "knowledge_review_decisions": "review_record",
+}
+
+M3_SCHEMA_VERSIONS = {family: "v2" for family, *_rest in M3_REGISTRY_ROWS}
+
+M3_DEPENDENCY_FIELDS = {
+    "insights": ("grounding_refs", "inferred_from_refs", "proof_obligation_refs", "source_refs"),
+    "knowledge_review_decisions": ("checkpoint_ref.record_ref", "source_refs[].record_ref", "supersedes_decision_ref.record_ref"),
+    "physics_assertions": (
+        "object_ref", "source_asset_refs", "source_location_refs",
+        "contradiction_refs", "supersedes_assertion_ref",
+    ),
+}
+
+M3_APPEND_ONLY_FAMILIES = frozenset({"knowledge_review_decisions"})

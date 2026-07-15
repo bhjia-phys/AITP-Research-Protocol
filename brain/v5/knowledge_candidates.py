@@ -21,6 +21,9 @@ class KnowledgeCandidate:
     topic_id: str = ""
     source_refs: tuple[str, ...] = ()
     grounding_pins: tuple[PinnedRecordRef, ...] = ()
+    framework: str = ""
+    regime: str = ""
+    conventions: tuple[str, ...] = ()
     procedural_steps: tuple[str, ...] = ()
     validation_refs: tuple[str, ...] = ()
     applicability_boundary: str = ""
@@ -116,6 +119,10 @@ def diagnose_knowledge_candidate(
         missing.append("exact_source_asset_pin")
     if not locations:
         missing.append("exact_source_location_pin")
+    if route.lane == "grounded_knowledge" and not candidate.framework.strip():
+        missing.append("framework")
+    if route.lane == "grounded_knowledge" and not candidate.regime.strip():
+        missing.append("regime")
     if asset_refs and any(location.source_ref not in asset_refs for location in locations):
         errors.append("source_location_asset_mismatch")
     eligible = bool(

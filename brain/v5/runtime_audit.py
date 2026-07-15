@@ -9,6 +9,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable
 
+from brain.v5.runtime_audit_static import layout_families as _layout_families
 from brain.v5.writer_scan import (
     direct_mutation_rows,
     helper_writer_rows,
@@ -151,37 +152,6 @@ def _classify_path(relative: str, planned: set[str], *, parse_error: str) -> str
 def _is_legacy_or_domain_surface(relative: str) -> bool:
     name = Path(relative).name.lower()
     return name.startswith("legacy_") or "/domain_" in f"/{relative.lower()}"
-
-
-def _layout_families(path: Path, *, registry_path: Path | None = None) -> list[str]:
-    if not path.exists():
-        return []
-    tree = _parse_python(path)
-    for node in tree.body:
-        if not isinstance(node, (ast.Assign, ast.AnnAssign)):
-            continue
-        targets = node.targets if isinstance(node, ast.Assign) else [node.target]
-        if not any(isinstance(target, ast.Name) and target.id == "_LAYOUT_DIRS" for target in targets):
-            continue
-        try:
-            value = ast.literal_eval(node.value)
-        except (ValueError, TypeError):
-            break
-        return sorted(
-            item.removeprefix("registry/")
-            for item in value
-            if isinstance(item, str) and item.startswith("registry/")
-        )
-    if registry_path is None:
-        return []
-    rows = _literal_named_assignment(registry_path, "_REGISTRY_ROWS", default=())
-    if not isinstance(rows, (list, tuple)):
-        return []
-    return sorted(
-        row[0]
-        for row in rows
-        if isinstance(row, (list, tuple)) and row and isinstance(row[0], str)
-    )
 
 
 def _literal_registry_families(directory: Path) -> tuple[list[str], dict[str, list[str]]]:

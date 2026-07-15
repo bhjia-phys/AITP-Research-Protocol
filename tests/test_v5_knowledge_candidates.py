@@ -128,11 +128,23 @@ def test_grounded_candidate_requires_exact_asset_and_location_pins(tmp_path):
     ws, pins = _grounding_fixture(tmp_path)
     missing = diagnose_knowledge_candidate(
         ws,
-        _candidate("definition", topic_id="qg", source_refs=("source_asset:haag-book",)),
+        _candidate(
+            "definition",
+            topic_id="qg",
+            framework="algebraic QFT",
+            regime="continuum local net",
+            source_refs=("source_asset:haag-book",),
+        ),
     )
     grounded = diagnose_knowledge_candidate(
         ws,
-        _candidate("definition", topic_id="qg", grounding_pins=pins),
+        _candidate(
+            "definition",
+            topic_id="qg",
+            framework="algebraic QFT",
+            regime="continuum local net",
+            grounding_pins=pins,
+        ),
     )
 
     assert missing.eligible_for_grounded_review is False
@@ -175,7 +187,13 @@ def test_grounded_candidate_rejects_location_bound_to_another_asset(tmp_path):
 
     diagnostics = diagnose_knowledge_candidate(
         ws,
-        _candidate("definition", topic_id="qg", grounding_pins=(pins[0], revised_pin)),
+        _candidate(
+            "definition",
+            topic_id="qg",
+            framework="algebraic QFT",
+            regime="continuum local net",
+            grounding_pins=(pins[0], revised_pin),
+        ),
     )
 
     assert diagnostics.eligible_for_grounded_review is False

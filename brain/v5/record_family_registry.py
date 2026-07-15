@@ -6,6 +6,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from brain.v5 import models
+from brain.v5.record_family_m3 import (
+    M3_APPEND_ONLY_FAMILIES, M3_DEPENDENCY_FIELDS, M3_RECORD_ROLES,
+    M3_REGISTRY_ROWS, M3_SCHEMA_VERSIONS,
+)
 
 
 @dataclass(frozen=True)
@@ -60,7 +64,6 @@ _REGISTRY_ROWS: tuple[tuple[str, str, str | None, str], ...] = (
     ("exploratory_records", "exploratory_record", "ExploratoryRecord", "record_id"),
     ("failure_mode_reviews", "failure_mode_review_result", "FailureModeReviewResultRecord", "result_id"),
     ("ideas", "idea", None, "idea_id"),
-    ("insights", "insight", "InsightRecord", "insight_id"),
     ("intents", "research_intent", None, "intent_id"),
     ("lane_contracts", "lane_contract", "LaneContractRecord", "contract_id"),
     ("legacy_l2_seed_group_reviews", "legacy_l2_seed_group_review_result", "LegacyL2SeedGroupReviewResultRecord", "review_id"),
@@ -71,7 +74,6 @@ _REGISTRY_ROWS: tuple[tuple[str, str, str | None, str], ...] = (
     ("monitor_snapshots", "monitor_snapshot", "MonitorSnapshotRecord", "snapshot_id"),
     ("object_relations", "object_relation", "ObjectRelationRecord", "relation_id"),
     ("outputs", "output", None, "output_id"),
-    ("physics_assertions", "physics_assertion", "PhysicsAssertionRecord", "assertion_id"),
     ("physics_objects", "physics_object", "PhysicsObjectRecord", "object_id"),
     ("promotion_packets", "promotion_packet", "PromotionPacketRecord", "packet_id"),
     ("proof_obligations", "proof_obligation", "ProofObligationRecord", "obligation_id"),
@@ -96,7 +98,7 @@ _REGISTRY_ROWS: tuple[tuple[str, str, str | None, str], ...] = (
     ("trust_updates", "trust_update", "TrustUpdateRecord", "update_id"),
     ("validation_contracts", "validation_contract", "ValidationContractRecord", "contract_id"),
     ("validation_results", "validation_result", "ValidationResultRecord", "result_id"),
-)
+) + M3_REGISTRY_ROWS
 
 _SPECIAL_ROWS: tuple[tuple[str, str, str, str, str, str], ...] = (
     ("contexts", "context", "ContextRecord", "context_id", "contexts/<context_id>/context.md", "context"),
@@ -146,7 +148,6 @@ _RECORD_ROLES = {
     "code_patch_manifests": "immutable_provenance_record",
     "cross_topic_relations": "orientation_only_record",
     "derivation_reviews": "review_record",
-    "insights": "orientation_only_record",
     "quiet_checkpoints": "process_record",
     "recall_audits": "process_record",
     "recording_candidate_batches": "process_record",
@@ -162,6 +163,7 @@ _RECORD_ROLES = {
     "sessions": "runtime_binding",
     "source_assets": "orientation_only_record",
 }
+_RECORD_ROLES.update(M3_RECORD_ROLES)
 _SURFACES = {
     "quiet_checkpoints": "quiet_checkpoint_batch",
     "sessions": "session_binding",
@@ -183,15 +185,14 @@ _SCHEMA_VERSIONS = {
     "derivation_steps": "v2",
     "execution_environments": "v2",
     "execution_baselines": "v2",
-    "insights": "v2",
     "monitor_snapshots": "v2",
-    "physics_assertions": "v2",
     "scope_revalidation_decisions": "v2",
     "tool_recipes": "v2",
     "tool_runs": "v2",
     "validation_contracts": "v2",
     "validation_results": "v2",
 }
+_SCHEMA_VERSIONS.update(M3_SCHEMA_VERSIONS)
 
 _DEPENDENCY_FIELDS = {
     "artifact_blob_receipts": (
@@ -251,11 +252,6 @@ _DEPENDENCY_FIELDS = {
         "run_ref",
         "validation_refs[].record_ref",
     ),
-    "insights": ("grounding_refs", "inferred_from_refs", "proof_obligation_refs", "source_refs"),
-    "physics_assertions": (
-        "object_ref", "source_asset_refs", "source_location_refs",
-        "contradiction_refs", "supersedes_assertion_ref",
-    ),
     "scope_revalidation_decisions": (
         "bridge_ref",
         "checkpoint_refs[].record_ref",
@@ -284,6 +280,7 @@ _DEPENDENCY_FIELDS = {
         "tool_run_ref",
     ),
 }
+_DEPENDENCY_FIELDS.update(M3_DEPENDENCY_FIELDS)
 
 _LIFECYCLE_FAMILIES = {"claims", "evidence"}
 _APPEND_ONLY_FAMILIES = {
@@ -308,7 +305,7 @@ _APPEND_ONLY_FAMILIES = {
     "trust_updates",
     "cross_topic_relations",
     "derivation_reviews",
-}
+} | M3_APPEND_ONLY_FAMILIES
 _BOUNDED_AUTO_WRITE_FAMILIES = {
     "monitor_snapshots",
     "recall_audits",

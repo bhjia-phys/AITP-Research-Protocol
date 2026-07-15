@@ -132,3 +132,27 @@ class InsightRecord:
             raise ValueError("insight_kind is not an allowed speculative insight kind")
         if self.evidence_role != "forbidden" or self.can_update_claim_trust:
             raise ValueError("insight is non-evidence and cannot update claim trust")
+
+
+@dataclass
+class KnowledgeReviewDecisionRecord:
+    decision_id: str
+    candidate_id: str
+    candidate_hash: str
+    candidate_lane: str
+    topic_id: str
+    decision: str
+    rationale: str
+    reviewer: str
+    checkpoint_ref: dict
+    source_refs: list[dict] = field(default_factory=list)
+    lifecycle_status: str = "active"
+    supersedes_decision_ref: dict = field(default_factory=dict)
+    can_update_claim_trust: bool = False
+    kind: str = "knowledge_review_decision"
+
+    def __post_init__(self) -> None:
+        if self.decision not in {"approve", "reject", "revise"}:
+            raise ValueError("knowledge review decision must be approve, reject, or revise")
+        if self.can_update_claim_trust:
+            raise ValueError("knowledge review decisions cannot update claim trust")

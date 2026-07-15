@@ -4,6 +4,7 @@ from pathlib import Path
 from brain.v5.runtime_audit import (
     _capability_rows,
     _execution_capability_rows,
+    _layout_families,
     build_runtime_capability_audit,
     render_runtime_capability_audit_markdown,
 )
@@ -42,6 +43,48 @@ def test_runtime_audit_finds_registry_drift_and_classifies_every_file(tmp_path):
     assert payload["record_families"]["used_not_layout"] == ["insights"]
     assert payload["inventory"]["classification_counts"]["directly_touched_by_plan"] == 1
     assert all(row["classification"] for row in payload["files"])
+
+
+def test_static_layout_audit_includes_focused_m3_family_rows(tmp_path):
+    root = tmp_path / "brain" / "v5"
+    root.mkdir(parents=True)
+    paths = root / "paths.py"
+    registry = root / "record_family_registry.py"
+    paths.write_text('_LAYOUT_DIRS = [*("registry/" + item for item in ())]\n', encoding="utf-8")
+    registry.write_text(
+        '_REGISTRY_ROWS = (("claims", "claim", "ClaimRecord", "claim_id"),)\n',
+        encoding="utf-8",
+    )
+    (root / "record_family_m3.py").write_text(
+        'M3_REGISTRY_ROWS = (("insights", "insight", "InsightRecord", "insight_id"),)\n',
+        encoding="utf-8",
+    )
+
+    assert _layout_families(paths, registry_path=registry) == ["claims", "insights"]
+
+
+def test_static_layout_audit_does_not_treat_four_row_container_as_a_row(tmp_path):
+    root = tmp_path / "brain" / "v5"
+    root.mkdir(parents=True)
+    paths = root / "paths.py"
+    registry = root / "record_family_registry.py"
+    paths.write_text('_LAYOUT_DIRS = tuple()\n', encoding="utf-8")
+    registry.write_text(
+        "_REGISTRY_ROWS = (\n"
+        '    ("claims", "claim", "ClaimRecord", "claim_id"),\n'
+        '    ("evidence", "evidence", "EvidenceRecord", "evidence_id"),\n'
+        '    ("ideas", "idea", None, "idea_id"),\n'
+        '    ("outputs", "output", None, "output_id"),\n'
+        ")\n",
+        encoding="utf-8",
+    )
+
+    assert _layout_families(paths, registry_path=registry) == [
+        "claims",
+        "evidence",
+        "ideas",
+        "outputs",
+    ]
 
 
 def test_runtime_audit_reports_actual_workspace_families(tmp_path):
