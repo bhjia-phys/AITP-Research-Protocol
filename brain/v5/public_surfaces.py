@@ -19,14 +19,24 @@ from brain.v5.lifecycle_surface_contracts import (
     lifecycle_surface_purposes as _lifecycle_surface_purposes,
     lifecycle_surface_validators as _lifecycle_surface_validators,
 )
+from brain.v5.execution_surface_contracts import (
+    execution_surface_names as _execution_surface_names,
+    execution_surface_purposes as _execution_surface_purposes,
+    execution_surface_validators as _execution_surface_validators,
+)
 
 
 _PUBLIC_SURFACE_NAMES = tuple(
-    dict.fromkeys((*_PUBLIC_SURFACE_NAMES, *_lifecycle_surface_names()))
+    dict.fromkeys((
+        *_PUBLIC_SURFACE_NAMES,
+        *_lifecycle_surface_names(),
+        *_execution_surface_names(),
+    ))
 )
 _PUBLIC_SURFACE_PURPOSES = {
     **_PUBLIC_SURFACE_PURPOSES,
     **_lifecycle_surface_purposes(),
+    **_execution_surface_purposes(),
 }
 _validators_without_lifecycle = _validators
 
@@ -34,4 +44,5 @@ _validators_without_lifecycle = _validators
 def _validators():
     validators = _validators_without_lifecycle()
     validators.update(_lifecycle_surface_validators())
+    validators.update(_execution_surface_validators())
     return validators

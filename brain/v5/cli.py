@@ -22,6 +22,11 @@ from brain.v5.cli_session_lifecycle import (
     dispatch_session_lifecycle as _dispatch_session_lifecycle,
     is_session_lifecycle_command as _is_session_lifecycle_command,
 )
+from brain.v5.cli_execution import (
+    add_execution_parser as _add_execution_parser,
+    dispatch_execution_command as _dispatch_execution_command,
+    is_execution_command as _is_execution_command,
+)
 
 
 _add_parser_section_04_without_lifecycle = _add_parser_section_04
@@ -30,12 +35,15 @@ _add_parser_section_04_without_lifecycle = _add_parser_section_04
 def _add_parser_section_04(sp):
     _add_parser_section_04_without_lifecycle(sp)
     _add_session_lifecycle_parsers(sp)
+    _add_execution_parser(sp)
 
 
 _dispatch_without_lifecycle = _dispatch
 
 
 def _dispatch(args):
+    if _is_execution_command(args):
+        return _dispatch_execution_command(args)
     if _is_session_lifecycle_command(args):
         return _dispatch_session_lifecycle(args)
     return _dispatch_without_lifecycle(args)

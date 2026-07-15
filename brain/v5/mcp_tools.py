@@ -45,6 +45,16 @@ from brain.v5.mcp_monitor_snapshots import (
     aitp_v5_list_monitor_history,
     aitp_v5_record_monitor_snapshot_v2,
 )
+from brain.v5.mcp_execution import (
+    aitp_v5_execution_assess_baseline_readiness,
+    aitp_v5_execution_assess_scope,
+    aitp_v5_execution_build_compute_intake,
+    aitp_v5_execution_build_formula_code_capsule,
+    aitp_v5_execution_get_record_version,
+    aitp_v5_execution_project_derivation_status,
+    aitp_v5_execution_project_maturity,
+    aitp_v5_execution_resolve_effective_attempt,
+)
 
 
 def aitp_v5_propose_detected_procedural_skill(
