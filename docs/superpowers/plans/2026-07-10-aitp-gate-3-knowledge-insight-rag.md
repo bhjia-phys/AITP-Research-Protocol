@@ -89,7 +89,7 @@ version, and temp root. Collection-only success is not execution evidence.
 - Adds families: `physics_assertions`, `insights`
 - Produces: `audit_physics_knowledge_v1_compatibility(ws) -> MigrationReport`
 
-- [ ] **Step 1: Write failing schema compatibility tests**
+- [x] **Step 1: Write failing schema compatibility tests**
 
 Current v1 constructors and all real-store object/relation records must still
 load. V2 object tests require `scope_kind`, `scope_ref`, `knowledge_role`,
@@ -103,7 +103,7 @@ exact source-location refs, review state, contradiction refs, and
 revision/supersession lineage. Two sources or conventions may assert different
 definitions without duplicating or mutating object identity.
 
-- [ ] **Step 2: Write failing relation/insight boundary tests**
+- [x] **Step 2: Write failing relation/insight boundary tests**
 
 V2 relations require typed subject/object refs, direction, conditions,
 framework/regime, contradiction state, exact source refs, status, and
@@ -111,13 +111,13 @@ framework/regime, contradiction state, exact source refs, status, and
 analogy, conjecture, failed-route lesson, counterexample direction, conceptual
 bridge, and open research direction.
 
-- [ ] **Step 3: Implement compatibility-defaulted focused models**
+- [x] **Step 3: Implement compatibility-defaulted focused models**
 
 Re-export v2 object/relation names after the model compatibility shards. Keep
 legacy `subject_id`/`object_id`; derive typed refs only as compatibility
 orientation until explicitly reviewed. New enveloped writes require v2 fields.
 
-- [ ] **Step 3a: Implement assertion writers and field-level provenance**
+- [x] **Step 3a: Implement assertion writers and field-level provenance**
 
 New definitions, equations, convention-dependent properties, and source claims
 write `PhysicsAssertionRecord`; they do not merge into the object identity
@@ -125,7 +125,7 @@ record. Relation assertions retain exact source locations and revision links.
 Compatibility migration emits candidates from legacy inline assertions and
 never auto-reviews them.
 
-- [ ] **Step 4: Implement `InsightRecord`**
+- [x] **Step 4: Implement `InsightRecord`**
 
 Fields: insight id/kind/statement, topic/program scope, grounding refs,
 inferred-from refs, framework/regime, speculation level, counterevidence,
@@ -133,12 +133,12 @@ falsifiers/discriminating checks, open proof-obligation refs, review status,
 checkpoint id, lifecycle status, source refs, created time, and fixed
 `can_update_claim_trust=False`.
 
-- [ ] **Step 5: Add migration audit without canonical rewrites**
+- [x] **Step 5: Add migration audit without canonical rewrites**
 
 Report exact v1 records, compatibility-derived fields, missing v2 review data,
 and candidate revisions. Do not auto-fill source assertions or review status.
 
-- [ ] **Step 6: Run object/relation/registry/index tests and commit**
+- [x] **Step 6: Run object/relation/registry/index tests and commit**
 
 Commit message: `v5: evolve physics knowledge records`.
 

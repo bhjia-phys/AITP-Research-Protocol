@@ -905,12 +905,12 @@ through auditable hybrid lanes and exposed through bounded context.
 - Modify: `brain/v5/models.py`
 - Modify: `brain/v5/physics_objects.py`
 
-- [ ] Keep stable object identity separate from source/convention-specific
+- [x] Keep stable object identity separate from source/convention-specific
   `PhysicsAssertionRecord` definitions, equations, properties, and revisions.
-- [ ] Add typed subject/object refs, conditions, contradiction, source, status,
+- [x] Add typed subject/object refs, conditions, contradiction, source, status,
   and transfer policy to relations.
-- [ ] Preserve legacy ids and fields through schema-v1 readers.
-- [ ] Allow domain-specific vocabularies without a mandatory universal ontology.
+- [x] Preserve legacy ids and fields through schema-v1 readers.
+- [x] Allow domain-specific vocabularies without a mandatory universal ontology.
 
 ### Task 3.2: Knowledge And Insight Candidate Pipeline
 

@@ -44,3 +44,9 @@ from brain.v5.derivation_models import (  # noqa: E402 - compatibility shards lo
     DerivationReviewRecord,
     DerivationStepRecord,
 )
+from brain.v5.physics_knowledge_models import (  # noqa: E402 - compatibility shards load first.
+    InsightRecord,
+    ObjectRelationRecord,
+    PhysicsAssertionRecord,
+    PhysicsObjectRecord,
+)
