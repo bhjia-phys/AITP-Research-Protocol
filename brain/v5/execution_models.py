@@ -23,6 +23,7 @@ class CodeStateRecord:
     known_divergence: str = ""
     patch_manifest_ref: str = ""
     patch_manifest_hash: str = ""
+    patch_manifest_revision: int = 0
     kind: str = "code_state"
 
 
@@ -82,8 +83,14 @@ class ToolRunRecord:
     input_hashes: dict = field(default_factory=dict)
     script_hashes: dict = field(default_factory=dict)
     recipe_ref: str = ""
+    recipe_hash: str = ""
+    recipe_revision: int = 0
     code_state_ref: str = ""
+    code_state_hash: str = ""
+    code_state_revision: int = 0
     environment_ref: str = ""
+    environment_hash: str = ""
+    environment_revision: int = 0
     executor_id: str = ""
     executor_version: str = ""
     executor_hash: str = ""

@@ -12,6 +12,7 @@ from typing import Any
 from dataclasses import asdict
 
 from brain.v5.models import ToolRecipeRecord, ToolRunRecord
+from brain.v5.execution_writers import record_tool_recipe_compat
 from brain.v5.paths import WorkspacePaths
 from brain.v5.record_envelope import RecordActor
 from brain.v5.record_repository import RecordRepository
@@ -52,10 +53,14 @@ def register_tool_recipe(
         expected_outputs=expected_outputs or [],
         invariants=invariants or [],
     )
-    _repository(ws, actor_id="register_tool_recipe").write(
-        "tool_recipes",
+    record_tool_recipe_compat(
+        ws,
         record,
-        body=f"# Tool Recipe\n\n{purpose}\n",
+        actor=RecordActor(
+            actor_type="tool",
+            actor_id="register_tool_recipe",
+            host="aitp-v5",
+        ),
     )
     return record
 

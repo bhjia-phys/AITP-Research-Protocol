@@ -8,6 +8,7 @@ from typing import Any
 
 from brain.v5.ids import prefixed_id
 from brain.v5.models import ToolRunRecord
+from brain.v5.execution_writers import write_tool_run_compat
 from brain.v5.record_envelope import canonical_record_hash
 from brain.v5.record_repository import (
     RecordCollisionError,
@@ -123,7 +124,7 @@ def create_or_merge_tool_run(
         current = repository.read(f"tool_run:{record.run_id}")
         if current.status == "not_found":
             try:
-                repository.write("tool_runs", record, body=body)
+                write_tool_run_compat(repository, record, body=body)
                 return record
             except RecordCollisionError:
                 continue
@@ -163,8 +164,8 @@ def merge_tool_run_links(
         record.code_state_ids = merged_code_states
         record.artifact_ids = merged_artifacts
         try:
-            repository.write(
-                "tool_runs",
+            write_tool_run_compat(
+                repository,
                 record,
                 body=body,
                 policy=WritePolicy(mode="revision", expected_hash=expected_hash),

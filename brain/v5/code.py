@@ -10,6 +10,7 @@ from pathlib import Path
 from brain.v5.evidence import record_artifact_ref
 from brain.v5.ids import prefixed_id, short_hash
 from brain.v5.models import CodeStateRecord, CodeWorkspaceRecord
+from brain.v5.execution_writers import record_code_state_v2
 from brain.v5.paths import WorkspacePaths
 from brain.v5.record_envelope import RecordActor
 from brain.v5.record_repository import RecordRepository
@@ -76,6 +77,9 @@ def record_code_state(
     runtime_environment: dict | None = None,
     linked_records: dict | None = None,
     known_divergence: str = "",
+    patch_manifest_ref: str = "",
+    patch_manifest_hash: str = "",
+    patch_manifest_revision: int = 0,
 ) -> CodeStateRecord:
     """Record the exact code state used for a code-dependent result."""
 
@@ -107,22 +111,19 @@ def record_code_state(
         runtime_environment=runtime_environment or {},
         linked_records=linked_records or {},
         known_divergence=known_divergence,
+        patch_manifest_ref=patch_manifest_ref,
+        patch_manifest_hash=patch_manifest_hash,
+        patch_manifest_revision=patch_manifest_revision,
     )
-    RecordRepository(
+    record_code_state_v2(
         ws,
+        record,
         actor=RecordActor(
             actor_type="tool",
             actor_id="record_code_state",
             host="aitp",
         ),
-    ).write(
-        "code_states",
-        record,
-        body=(
-            "# Code State\n\n"
-            f"Repository: `{repo_id}`\n\n"
-            f"Upstream: `{upstream_remote}/{upstream_branch}` at `{upstream_commit}`\n"
-        ),
+        strict_reproducibility=False,
     )
     return record
 
