@@ -12,6 +12,7 @@ _NON_REGISTRY_LAYOUT_DIRS = [
     "contexts",
     "topics",
     "source_blobs",
+    "blobs/sha256",
     "memory/l2/entries",
     "memory/l2/graph",
     "memory/l2/conflicts",

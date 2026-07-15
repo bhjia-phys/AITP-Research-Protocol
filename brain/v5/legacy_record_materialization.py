@@ -37,6 +37,7 @@ def materialize_record_class(
     values = dict(frontmatter)
     if record_class.__name__ == "ToolRunRecord":
         _tool_run_supersession_compat(values)
+        _tool_run_execution_aliases(values)
     legacy = allow_legacy and _is_pre_envelope_record(values)
     configured_id, configured_aliases = _ID_FIELDS.get(
         record_class.__name__,
@@ -177,6 +178,11 @@ def _tool_run_supersession_compat(values: dict[str, Any]) -> None:
             continue
         values["supersedes_run_id"] = candidate
         return
+
+
+def _tool_run_execution_aliases(values: dict[str, Any]) -> None:
+    if not values.get("recorded_maturity") and values.get("maturity"):
+        values["recorded_maturity"] = str(values["maturity"])
 
 
 def _validation_result_defaults(values: dict[str, Any]) -> None:

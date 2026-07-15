@@ -29,6 +29,7 @@ class RecordFamilySpec:
     storage_scope: str = "registry"
     record_role: str = "typed_record"
     surface: str = ""
+    dependency_fields: tuple[str, ...] = ()
 
     @property
     def is_registry_family(self) -> bool:
@@ -37,13 +38,16 @@ class RecordFamilySpec:
 
 _REGISTRY_ROWS: tuple[tuple[str, str, str | None, str], ...] = (
     ("active_claim_rebind_audits", "active_claim_rebind_audit", "ActiveClaimRebindAuditRecord", "audit_id"),
+    ("artifact_blob_receipts", "artifact_blob_receipt", "ArtifactBlobReceiptRecord", "receipt_id"),
     ("artifacts", "artifact", "ArtifactRecord", "artifact_id"),
     ("attempts", "attempt", None, "attempt_id"),
     ("authorities", "authority", "AuthorityRecord", "authority_id"),
     ("benchmarks", "benchmark", "BenchmarkRecord", "benchmark_id"),
+    ("checkpoint_application_receipts", "checkpoint_application_receipt", "CheckpointApplicationReceiptRecord", "application_id"),
     ("checkpoints", "human_checkpoint", "HumanCheckpointRecord", "checkpoint_id"),
     ("claim_statuses", "claim_status", "ClaimStatusRecord", "status_id"),
     ("claims", "claim", "ClaimRecord", "claim_id"),
+    ("code_patch_manifests", "code_patch_manifest", "CodePatchManifestRecord", "manifest_id"),
     ("code_states", "code_state", "CodeStateRecord", "code_state_id"),
     ("code_workspaces", "code_workspace", "CodeWorkspaceRecord", "workspace_id"),
     ("cross_topic_relations", "cross_topic_relation", "CrossTopicRelationRecord", "relation_id"),
@@ -73,6 +77,7 @@ _REGISTRY_ROWS: tuple[tuple[str, str, str | None, str], ...] = (
     ("research_programs", "research_program", "ResearchProgramRecord", "program_id"),
     ("research_runs", "research_run", "ResearchRunRecord", "run_id"),
     ("routes", "research_route", "ResearchRouteRecord", "route_id"),
+    ("scope_revalidation_decisions", "scope_revalidation_decision", "ScopeRevalidationDecisionRecord", "decision_id"),
     ("sensemaking_reports", "sensemaking_report", "SensemakingReportRecord", "report_id"),
     ("session_closeouts", "session_closeout", "SessionCloseoutRecord", "closeout_id"),
     ("session_focus_sets", "session_focus_set", "SessionFocusSetRecord", "focus_set_id"),
@@ -128,7 +133,10 @@ _REF_KINDS = {
     "source_reconstruction_reviews": "source_reconstruction_review",
 }
 _RECORD_ROLES = {
+    "artifact_blob_receipts": "immutable_blob_receipt",
     "authorities": "orientation_only_record",
+    "checkpoint_application_receipts": "authorization_receipt_record",
+    "code_patch_manifests": "immutable_provenance_record",
     "cross_topic_relations": "orientation_only_record",
     "quiet_checkpoints": "process_record",
     "recall_audits": "process_record",
@@ -138,6 +146,7 @@ _RECORD_ROLES = {
     "research_run_events": "process_event_record",
     "research_runs": "process_record",
     "routes": "orientation_only_record",
+    "scope_revalidation_decisions": "review_record",
     "sensemaking_reports": "orientation_only_record",
     "session_closeouts": "process_record",
     "session_focus_sets": "process_record",
@@ -154,19 +163,86 @@ _LEGACY_ID_FIELDS = {
     "validation_results": ("validation_result_id",),
 }
 _SCHEMA_VERSIONS = {
+    "artifact_blob_receipts": "v2",
+    "artifacts": "v2",
     "checkpoints": "v2",
+    "checkpoint_application_receipts": "v2",
+    "code_patch_manifests": "v2",
+    "code_states": "v2",
+    "monitor_snapshots": "v2",
+    "scope_revalidation_decisions": "v2",
+    "tool_recipes": "v2",
+    "tool_runs": "v2",
+    "validation_contracts": "v2",
+    "validation_results": "v2",
+}
+
+_DEPENDENCY_FIELDS = {
+    "artifact_blob_receipts": (
+        "availability_verification_ref",
+    ),
+    "artifacts": (
+        "artifact_blob_receipt_ref",
+        "provenance_refs",
+    ),
+    "checkpoint_application_receipts": (
+        "intent_ref",
+        "request_ref",
+        "decision_ref",
+        "result_ref",
+        "subject_refs[].record_ref",
+    ),
+    "code_patch_manifests": (
+        "entries[].blob_receipt_ref",
+        "entries[].index_blob_receipt_ref",
+        "source_refs[].record_ref",
+    ),
+    "code_states": (
+        "patch_manifest_ref",
+    ),
+    "scope_revalidation_decisions": (
+        "bridge_ref",
+        "checkpoint_refs[].record_ref",
+        "evidence_refs[].record_ref",
+        "source_refs[].record_ref",
+        "validation_refs[].record_ref",
+    ),
+    "tool_runs": (
+        "artifact_refs",
+        "code_state_ref",
+        "environment_ref",
+        "input_manifest[].artifact_ref",
+        "monitor_snapshot_refs",
+        "output_manifest[].artifact_ref",
+        "recipe_ref",
+        "skill_usage_refs",
+        "validation_result_refs",
+    ),
+    "tool_recipes": (
+        "script_refs",
+        "validation_contract_refs",
+    ),
+    "validation_results": (
+        "contract_ref",
+        "recipe_ref",
+        "tool_run_ref",
+    ),
 }
 
 _LIFECYCLE_FAMILIES = {"claims", "evidence"}
 _APPEND_ONLY_FAMILIES = {
     "active_claim_rebind_audits",
+    "artifact_blob_receipts",
     "claim_statuses",
+    "checkpoint_application_receipts",
+    "code_patch_manifests",
     "failure_mode_reviews",
     "lifecycle_events",
     "monitor_snapshots",
     "recall_audits",
     "recording_candidate_batches",
     "research_programs",
+    "scope_revalidation_decisions",
     "research_run_events",
     "session_closeouts",
     "session_focus_sets",
@@ -287,6 +363,7 @@ def _registry_spec(
         participates_in=frozenset(participates),
         record_role=_RECORD_ROLES.get(family, "typed_record"),
         surface=_SURFACES.get(family, f"{kind}_record"),
+        dependency_fields=_DEPENDENCY_FIELDS.get(family, ()),
     )
 
 
@@ -323,6 +400,7 @@ def _special_spec(
         storage_scope=scope,
         record_role=_RECORD_ROLES.get(family, "typed_record"),
         surface=_SURFACES.get(family, f"{kind}_record"),
+        dependency_fields=_DEPENDENCY_FIELDS.get(family, ()),
     )
 
 

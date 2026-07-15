@@ -23,3 +23,19 @@ from brain.v5.lifecycle_models import (  # noqa: E402 - compatibility shards loa
     SessionCloseoutRecord,
     SessionFocusSetRecord,
 )
+from brain.v5.execution_models import (  # noqa: E402 - compatibility shards load first.
+    ArtifactBlobReceiptRecord,
+    ArtifactRecord,
+    CheckpointApplicationReceiptRecord,
+    CodePatchManifestRecord,
+    CodeStateRecord,
+    ExecutionBaselineRecord,
+    ExecutionEnvironmentRecord,
+    HumanCheckpointRecord,
+    MonitorSnapshotRecord,
+    ScopeRevalidationDecisionRecord,
+    ToolRecipeRecord,
+    ToolRunRecord,
+    ValidationContractRecord,
+    ValidationResultRecord,
+)
