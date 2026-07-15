@@ -192,6 +192,32 @@ def test_context_pre_tool_policy_blocks_l2_promotion_without_evidence(tmp_path):
     assert require_valid_public_surface("pre_tool_policy_decision", {"ok": True, **payload})["ok"] is True
 
 
+def test_execution_v2_actions_reject_summary_sources_and_unreviewed_baseline(tmp_path):
+    from brain.v5.pretool_policy import evaluate_context_pre_tool_policy
+
+    ws, claim = _seed_claim(tmp_path)
+    environment = evaluate_context_pre_tool_policy(
+        ws,
+        session_id="s1",
+        action="record_execution_environment",
+        claim_id=claim.claim_id,
+        source_kind="task_plan",
+        orientation_only=True,
+    )
+    baseline = evaluate_context_pre_tool_policy(
+        ws,
+        session_id="s1",
+        action="accept_execution_baseline",
+        claim_id=claim.claim_id,
+        source_kind="typed_records",
+    )
+
+    assert environment["block"] is True
+    assert environment["policy_reasons"][0]["policy_id"] == "no_summary_surface_as_truth_source"
+    assert baseline["block"] is True
+    assert baseline["policy_reasons"][0]["policy_id"] == "baseline_acceptance_requires_human_checkpoint"
+
+
 def test_cli_context_pre_tool_policy_returns_contract_payload(tmp_path, capsys):
     from brain.v5.public_surfaces import require_valid_public_surface
 

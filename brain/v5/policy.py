@@ -38,6 +38,13 @@ _TRUST_CHANGING_ACTIONS = {
     "validate_claim",
     "promote_to_l2",
 }
+_CANONICAL_EXECUTION_ACTIONS = {
+    "accept_execution_baseline",
+    "record_code_state_v2",
+    "record_execution_environment",
+    "record_tool_recipe_v2",
+    "record_tool_run_v2",
+}
 _SUMMARY_SOURCE_KINDS = {
     "authority_record",
     "authority_registry",
@@ -101,6 +108,14 @@ def evaluate_policy(
     _guard_summary_surface_cannot_drive_trust_update(decision, action, ctx)
     _guard_adversarial_trust_change_requires_checkpoint(decision, action, risk_level, ctx)
 
+    if action == "accept_execution_baseline" and ctx.get("human_checkpoint_approved") is not True:
+        decision.add_block(
+            "baseline_acceptance_requires_human_checkpoint",
+            "execution baseline acceptance requires an approved human checkpoint",
+            "request_human_checkpoint",
+            severity="hard_block",
+        )
+
     if action in {"validate_claim", "promote_to_l2"}:
         _guard_code_method_requires_code_state(decision, claim, states)
 
@@ -134,7 +149,7 @@ def _guard_summary_surface_cannot_drive_trust_update(
     action: str,
     context: dict[str, Any],
 ) -> None:
-    if action not in _TRUST_CHANGING_ACTIONS:
+    if action not in _TRUST_CHANGING_ACTIONS | _CANONICAL_EXECUTION_ACTIONS:
         return
     source_kind = str(context.get("source_kind", "")).strip().lower()
     orientation_only = context.get("orientation_only")
