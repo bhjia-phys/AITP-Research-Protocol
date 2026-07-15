@@ -41,6 +41,7 @@ from brain.v5.context_recall import (
     RecallContextFacts,
     build_recall_context_facts,
 )
+from brain.v5.formula_code_contracts import context_request_for_code_edit_capsule
 from brain.v5.paths import WorkspacePaths
 from brain.v5.query_index import build_query_index, load_query_manifest
 from brain.v5.record_envelope import RecordActor
@@ -93,6 +94,7 @@ class ContextRequest:
     include_cross_topic_discovery: bool = False
     recall_audit_ref: str = ""
     exact_refs: tuple[str, ...] = ()
+    exact_pins: tuple[Any, ...] = ()
     families: tuple[str, ...] = _DEFAULT_CONTEXT_FAMILIES
     max_tokens: int = 1200
     max_bytes: int = 6000

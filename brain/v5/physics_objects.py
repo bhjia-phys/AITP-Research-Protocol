@@ -107,7 +107,7 @@ def list_object_relations_for_claim(ws: WorkspacePaths, claim_id: str) -> list[O
 
 
 def object_relation_brief_payload(relation: ObjectRelationRecord) -> dict:
-    return {
+    payload = {
         "relation_id": relation.relation_id,
         "relation_type": relation.relation_type,
         "subject_id": relation.subject_id,
@@ -116,6 +116,22 @@ def object_relation_brief_payload(relation: ObjectRelationRecord) -> dict:
         "failure_modes": list(relation.failure_modes),
         "status": relation.status,
     }
+    metadata = relation.metadata if isinstance(relation.metadata, dict) else {}
+    if metadata.get("schema_version") == "formula-code-relation/v1":
+        code_state_ref = metadata.get("code_state_ref")
+        payload["formula_code"] = {
+            "module": str(metadata.get("module") or ""),
+            "function": str(metadata.get("function") or ""),
+            "parameter": str(metadata.get("parameter") or ""),
+            "output": str(metadata.get("output") or ""),
+            "applicability_boundary": str(metadata.get("applicability_boundary") or ""),
+            "code_state_ref": (
+                str(code_state_ref.get("record_ref") or "")
+                if isinstance(code_state_ref, dict)
+                else ""
+            ),
+        }
+    return payload
 
 
 def _repository(ws: WorkspacePaths, actor_id: str) -> RecordRepository:

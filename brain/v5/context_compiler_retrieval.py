@@ -8,6 +8,7 @@ from typing import Any, Callable
 from brain.v5.context_compiler_support import unique_refs
 from brain.v5.context_disclosure import startup_support_refs
 from brain.v5.paths import WorkspacePaths
+from brain.v5.pinned_record_refs import PinnedRecordRef, pin_current_record
 from brain.v5.research_retrieval import (
     ResearchQuery,
     RetrievalResult,
@@ -141,6 +142,15 @@ def exact_disclosure_result(
     request: Any,
 ) -> tuple[RetrievalResult, dict[str, Any]]:
     requested = unique_refs(list(request.exact_refs))
+    exact_pins = tuple(getattr(request, "exact_pins", ()))
+    if exact_pins:
+        if any(not isinstance(pin, PinnedRecordRef) for pin in exact_pins):
+            raise ValueError("exact expansion pins must be PinnedRecordRef values")
+        if tuple(pin.record_ref for pin in exact_pins) != tuple(request.exact_refs):
+            raise ValueError("exact expansion pins must match requested refs")
+        for pin in exact_pins:
+            if pin_current_record(ws, pin.record_ref) != pin:
+                raise ValueError(f"exact expansion pin is stale: {pin.record_ref}")
     bounded = requested[:50]
     page_size = min(request.record_limit, 20)
     page = bounded[request.record_offset : request.record_offset + page_size]
