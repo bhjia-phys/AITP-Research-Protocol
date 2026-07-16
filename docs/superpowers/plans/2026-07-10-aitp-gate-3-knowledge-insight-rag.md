@@ -248,7 +248,7 @@ the Evidence/trust/pre-tool/promotion/validation core passed 162 tests; the
 checkpoint/source-policy consumer suite passed 102 tests; and the focused CLI,
 adapter, runtime, capability, compact-surface, and architecture suite passed 61
 tests. These are overlapping scoped suites, not additive full-suite counts.
-Tasks 3 and 4 are complete. Task 5 and overall M3 acceptance remain open.
+Tasks 3, 4, and 5 are complete. Task 6 and overall M3 acceptance remain open.
 
 ## Task 3: Versioned Source Shelf And Structured Ingestion
 
@@ -488,6 +488,8 @@ Commit message: `v5: add auditable hybrid knowledge retrieval`.
 **Files:**
 - Create: `brain/v5/knowledge_context.py`
 - Create: `brain/v5/knowledge_context_contracts.py`
+- Create: `brain/v5/knowledge_context_integration.py`
+- Create: `brain/v5/knowledge_context_render.py`
 - Create: `tests/test_v5_knowledge_context.py`
 - Modify: `brain/v5/context_compiler.py`
 - Modify: `brain/v5/context_pack.py`
@@ -497,7 +499,7 @@ Commit message: `v5: add auditable hybrid knowledge retrieval`.
 - Produces: `KnowledgeContextRequest`, `KnowledgeContextSlice`
 - Produces: `compile_knowledge_context(ws, request) -> KnowledgeContextSlice`
 
-- [ ] **Step 1: Write failing separation/budget tests**
+- [x] **Step 1: Write failing separation/budget tests**
 
 Grounded knowledge, exact source anchors, derivation dependencies, and
 speculative insight have distinct headings and machine fields. Startup remains
@@ -505,18 +507,18 @@ under 800 estimated tokens; a normal knowledge expansion remains under 1,500.
 Assert shared `KnowledgeSnapshotLineage`, selected-family content verification,
 component failures, lane quotas, exact pagination, bytes, and token allocation.
 
-- [ ] **Step 2: Add framework/regime/convention boundary**
+- [x] **Step 2: Add framework/regime/convention boundary**
 
 For QFT/QG, every result declares framework, regime, convention compatibility,
 grounding state, speculation level, checked scope, and exact expansion handles.
 
-- [ ] **Step 3: Add exact expansion kinds**
+- [x] **Step 3: Add exact expansion kinds**
 
 Support source asset/location, passage/equation anchor, physics object,
 relation, derivation chain/step, insight, and formula-code refs. Derived passage
 refs resolve through a generation plus canonical source-location ref.
 
-- [ ] **Step 4: Integrate into the unified context compiler**
+- [x] **Step 4: Integrate into the unified context compiler**
 
 The main compiler requests a knowledge slice only when objective/focus requires
 it. It never loads all source passages or all insight. Retrieval errors and
@@ -529,9 +531,39 @@ cannot transfer claim trust. Imported content leaves the orientation-only lane
 only after the compiler resolves a valid, unexpired, unsuperseded exact
 revalidation decision ref.
 
-- [ ] **Step 5: Run context/retrieval/trust tests and commit**
+- [x] **Step 5: Run context/retrieval/trust tests and commit**
 
 Commit message: `v5: compile bounded physics knowledge context`.
+
+**Task 5 implementation evidence (2026-07-16):**
+
+- Commit: `f69ec03c` (`v5: compile bounded physics knowledge context`).
+- `KnowledgeContextRequest` and `KnowledgeContextSlice` compile one immutable,
+  trust-neutral snapshot into distinct grounded, source, insight, and
+  orientation sections. Startup is capped below `800` estimated tokens and a
+  normal slice below `1,500`; byte limits, per-lane token allocation, component
+  status, lane quotas, pagination, and both retrieval/render omissions remain
+  machine-readable.
+- Every entry carries framework, regime, conventions, compatibility decisions,
+  grounding state, speculation level, scope lane, content hash, and an exact
+  expansion handle. Source passage/equation handles bind the shelf generation,
+  passage hash, canonical source asset, and canonical source-location refs.
+- Exact expansion covers source assets/locations, passages/equations, physics
+  objects/assertions/relations, derivation chains/steps, insight, and reviewed
+  formula-code relations with explicit formula and code-state edges.
+- Normal and exact paths share one scope/compatibility policy. Primary entries
+  precede reviewed program/shared and optional discovery entries; foreign
+  topic-local insight is blocked, and all imported content remains
+  orientation-only without claim-trust transfer.
+- The unified research compiler performs no knowledge retrieval without an
+  explicit typed request. Paper, paired-paper, multi-paper, and derivation
+  profiles request a bounded slice only when a real objective/user goal exists;
+  top-level compiler and context-pack contracts reject trust-bearing or
+  hash-inconsistent nested knowledge payloads.
+- A staged candidate reconstructed from the Git index in system Temp passed
+  `127` focused tests with `1` intentional skip in `31.18 s`, including context,
+  retrieval, source shelf, formula-code, trust contracts, performance, and
+  architecture boundaries. No real canonical research record was written.
 
 ## Task 6: Facade, Evaluation, And M3 Acceptance
 
