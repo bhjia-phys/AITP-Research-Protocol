@@ -7,7 +7,11 @@ import json
 from typing import Any, Iterable, Mapping, Sequence
 
 from brain.v5.paths import WorkspacePaths
-from brain.v5.query_index_snapshot import load_effective_query_index, scoped_index_freshness
+from brain.v5.query_index_snapshot import (
+    load_effective_query_index,
+    scoped_index_freshness,
+    scoped_index_orientation,
+)
 from brain.v5.source_shelf_storage import hash_json
 from brain.v5.knowledge_snapshot_edges import (
     link_types as _link_types,
@@ -41,6 +45,8 @@ class KnowledgeSnapshotLineage:
     source_shelf_generation: str = ""
     source_shelf_passages_hash: str = ""
     source_shelf_topic_id: str = ""
+    excluded_unscoped_counts: dict[str, int] = field(default_factory=dict)
+    freshness_mode: str = "strong"
     scope_fresh: bool = False
     scope_content_verified: bool = False
     dirty_families: tuple[str, ...] = ()
@@ -81,6 +87,17 @@ class KnowledgeSnapshotLineage:
             self.scope_content_verified, bool
         ):
             raise TypeError("knowledge snapshot freshness flags must be boolean")
+        if any(
+            not isinstance(family, str)
+            or not family.strip()
+            or isinstance(count, bool)
+            or not isinstance(count, int)
+            or count < 1
+            for family, count in self.excluded_unscoped_counts.items()
+        ):
+            raise ValueError("knowledge snapshot unscoped counts are invalid")
+        if self.freshness_mode not in {"orientation", "strong"}:
+            raise ValueError("knowledge snapshot freshness mode is invalid")
         if self.snapshot_hash and not _digest(self.snapshot_hash):
             raise ValueError("knowledge snapshot hash is invalid")
 
@@ -146,19 +163,40 @@ def build_knowledge_snapshot(
     selected_families: Iterable[str] = DEFAULT_KNOWLEDGE_FAMILIES,
     source_shelf_generation: str = "",
     source_shelf_topic_id: str = "",
+    freshness_mode: str = "strong",
 ) -> KnowledgeSnapshot:
     """Bind canonical query-index rows and one optional exact source shelf."""
 
+    if freshness_mode not in {"orientation", "strong"}:
+        raise ValueError("knowledge snapshot freshness_mode is unsupported")
     families = tuple(sorted(set(selected_families)))
-    snapshot = load_effective_query_index(ws)
-    freshness = scoped_index_freshness(ws, snapshot, families)
-    rows = [
+    snapshot = load_effective_query_index(ws, allow_cached=True)
+    freshness = (
+        scoped_index_orientation(ws, snapshot, families)
+        if freshness_mode == "orientation"
+        else scoped_index_freshness(ws, snapshot, families)
+    )
+    projected_rows = [
         _row_from_index_document(document)
         for document in snapshot.documents
         if document.get("family") in families
     ]
+    rows = []
+    excluded_unscoped_counts: dict[str, int] = {}
+    for row in projected_rows:
+        if str(row.get("topic_id") or "").strip():
+            rows.append(row)
+            continue
+        family = str(row.get("family") or "unknown")
+        excluded_unscoped_counts[family] = excluded_unscoped_counts.get(family, 0) + 1
     errors = list(snapshot.read_errors)
     errors.extend(freshness.diagnostics)
+    if excluded_unscoped_counts:
+        detail = ", ".join(
+            f"{family}={count}"
+            for family, count in sorted(excluded_unscoped_counts.items())
+        )
+        errors.append(f"excluded unscoped knowledge rows: {detail}")
     for family in families:
         malformed = int(snapshot.malformed_family_counts.get(family, 0))
         if malformed:
@@ -201,6 +239,8 @@ def build_knowledge_snapshot(
         source_shelf_generation=shelf_generation,
         source_shelf_passages_hash=shelf_passages_hash,
         source_shelf_topic_id=shelf_topic,
+        excluded_unscoped_counts=dict(sorted(excluded_unscoped_counts.items())),
+        freshness_mode=freshness_mode,
         scope_fresh=freshness.scope_fresh,
         scope_content_verified=freshness.scope_content_verified,
         dirty_families=tuple(freshness.dirty_families),

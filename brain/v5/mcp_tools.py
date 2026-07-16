@@ -59,6 +59,17 @@ from brain.v5.mcp_execution import (
     aitp_v5_execution_request_bound_checkpoint,
 )
 from brain.v5.mcp_promotion import aitp_v5_request_promotion_checkpoint
+from brain.v5.mcp_knowledge import (
+    aitp_v5_knowledge_build_discovery_request,
+    aitp_v5_knowledge_build_source_shelf,
+    aitp_v5_knowledge_compile_context,
+    aitp_v5_knowledge_diagnose_candidate,
+    aitp_v5_knowledge_get_source_shelf,
+    aitp_v5_knowledge_normalize_discovery_result,
+    aitp_v5_knowledge_promote_candidate,
+    aitp_v5_knowledge_query,
+    aitp_v5_knowledge_record_review,
+)
 
 
 def aitp_v5_propose_detected_procedural_skill(

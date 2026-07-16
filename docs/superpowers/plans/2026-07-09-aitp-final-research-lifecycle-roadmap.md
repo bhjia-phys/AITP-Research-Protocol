@@ -891,6 +891,12 @@ derivations have inspectable DAG records.
 
 **Detailed plan:** `docs/superpowers/plans/2026-07-10-aitp-gate-3-knowledge-insight-rag.md`
 
+**Status (2026-07-16): fixture-contract complete.** The full-only knowledge
+façade, QFT/QG fixture vertical, real-store index compatibility audit, and
+performance evidence are recorded in
+`docs/superpowers/progress/2026-07-10-aitp-gate-3-release-audit.md`. Real
+formal-theory source-memory acceptance remains a mandatory M6 probe.
+
 **Milestone outcome:** High-quality sources and accumulated research compile into
 source-grounded physics knowledge plus separately labeled insights, retrieved
 through auditable hybrid lanes and exposed through bounded context.
@@ -968,19 +974,19 @@ through auditable hybrid lanes and exposed through bounded context.
 - Modify: `brain/v5/lifecycle_events.py`
 - Create: `tests/test_v5_source_shelf.py`
 
-- [ ] Preserve source identity, URI, hash, access/license note, reader version,
+- [x] Preserve source identity, URI, hash, access/license note, reader version,
   curation rationale, and local source-asset refs.
-- [ ] Chunk around definitions, equations, theorem/proposition labels,
+- [x] Chunk around definitions, equations, theorem/proposition labels,
   derivation steps, figures, caveats, and bibliography anchors.
-- [ ] Store equation labels, symbols, assumptions, and nearby prose as fields.
-- [ ] Keep copyrighted-source handling conservative and source-local.
-- [ ] Record extraction failures and stale source versions.
-- [ ] Require typed acquisition allow/deny/review receipts with access/license,
+- [x] Store equation labels, symbols, assumptions, and nearby prose as fields.
+- [x] Keep copyrighted-source handling conservative and source-local.
+- [x] Record extraction failures and stale source versions.
+- [x] Require typed acquisition allow/deny/review receipts with access/license,
   storage permission, acquired byte hash, and dedup identity; URI-only metadata
   cannot satisfy grounding.
-- [ ] Make source reconstruction resolve every asserted anchor to a hash-pinned
+- [x] Make source reconstruction resolve every asserted anchor to a hash-pinned
   asset/location; record presence or arbitrary labels cannot pass.
-- [ ] Turn persisted knowledge gaps into budgeted host/connector discovery
+- [x] Turn persisted knowledge gaps into budgeted host/connector discovery
   requests; keep snippets and unacquired results process-only.
 
 ### Task 3.4: Hybrid Retrieval And Evaluation
@@ -994,17 +1000,17 @@ through auditable hybrid lanes and exposed through bounded context.
 - Create: `tests/test_v5_knowledge_retrieval.py`
 - Create: `tests/fixtures/v5_retrieval/`
 
-- [ ] Implement fielded lexical/BM25-style ranking as the deterministic
+- [x] Implement fielded lexical/BM25-style ranking as the deterministic
   baseline.
-- [ ] Add optional dense retrieval behind a disposable index interface.
-- [ ] Add formula-normalized and graph-dependency retrieval.
-- [ ] Fuse independent rankings and expose component scores.
-- [ ] Keep grounded and speculative result lanes separate.
-- [ ] Bind all components to one record/shelf snapshot and expose stale/dirty/
+- [x] Add optional dense retrieval behind a disposable index interface.
+- [x] Add formula-normalized and graph-dependency retrieval.
+- [x] Fuse independent rankings and expose component scores.
+- [x] Keep grounded and speculative result lanes separate.
+- [x] Bind all components to one record/shelf snapshot and expose stale/dirty/
   errors, fixed tie rules, lane quotas, token allocation, and pagination.
-- [ ] Hard-filter incompatible framework/regime/conventions from default context;
+- [x] Hard-filter incompatible framework/regime/conventions from default context;
   comparison intent uses a separate lane.
-- [ ] Measure recall, contamination, exact-anchor recovery, convention mismatch,
+- [x] Measure recall, contamination, exact-anchor recovery, convention mismatch,
   and reasoning-intensive retrieval on versioned fixtures.
 
 ### Task 3.5: Knowledge Context Slice
@@ -1017,31 +1023,31 @@ through auditable hybrid lanes and exposed through bounded context.
 - Modify: `brain/v5/context_pack.py`
 - Modify: `brain/v5/context_profiles.py`
 
-- [ ] Add grounded knowledge, source anchors, derivation dependencies, and
+- [x] Add grounded knowledge, source anchors, derivation dependencies, and
   visibly separated insight to context profiles.
 - [x] Add QFT/QG framework, regime, convention, and speculation boundaries.
-- [ ] Add exact expansion for source, equation, derivation, object, relation,
+- [x] Add exact expansion for source, equation, derivation, object, relation,
   and insight refs.
-- [ ] Enforce context token budgets and retrieval coverage.
+- [x] Enforce context token budgets and retrieval coverage.
 
 ### M3 Acceptance
 
-- [ ] Grounded nodes have exact source or derivation grounding.
-- [ ] Insights never appear as evidence or claim support.
-- [ ] Object identity/assertion lineage, acquisition policy, source
+- [x] Grounded nodes have exact source or derivation grounding.
+- [x] Insights never appear as evidence or claim support.
+- [x] Object identity/assertion lineage, acquisition policy, source
   reconstruction, and evidence admissibility are enforced end to end.
-- [ ] Evidence separates support basis from trace context and persists a
+- [x] Evidence separates support basis from trace context and persists a
   payload-hash-bound policy audit.
-- [ ] Review revise/demote/invalidate/supersede and target-scope revalidation
+- [x] Review revise/demote/invalidate/supersede and target-scope revalidation
   have exact records, hashes, and lifecycle behavior.
 - [x] QFT/QG fixtures distinguish source results, interpretations, and
   conjectures.
-- [ ] Hybrid retrieval improves target recall without hiding component scores or
+- [x] Hybrid retrieval improves target recall without hiding component scores or
   coverage.
-- [ ] Deleting all derived indexes leaves canonical knowledge intact.
-- [ ] Formula/graph/dense sidecar failures degrade visibly without false
+- [x] Deleting all derived indexes leaves canonical knowledge intact.
+- [x] Formula/graph/dense sidecar failures degrade visibly without false
   deterministic or exhaustive claims.
-- [ ] M3 proves fixture-contract readiness only; real QFT/QG source-memory
+- [x] M3 proves fixture-contract readiness only; real QFT/QG source-memory
   acceptance remains mandatory in M6.
 
 ## 10. M4: Reviewed Skill Compilation, Installation, And Use

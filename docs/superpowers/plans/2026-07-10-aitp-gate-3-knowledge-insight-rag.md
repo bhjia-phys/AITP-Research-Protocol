@@ -248,7 +248,8 @@ the Evidence/trust/pre-tool/promotion/validation core passed 162 tests; the
 checkpoint/source-policy consumer suite passed 102 tests; and the focused CLI,
 adapter, runtime, capability, compact-surface, and architecture suite passed 61
 tests. These are overlapping scoped suites, not additive full-suite counts.
-Tasks 3, 4, and 5 are complete. Task 6 and overall M3 acceptance remain open.
+Tasks 3, 4, 5, and 6 are complete. M3 is fixture-contract complete; real
+formal-theory source-memory acceptance remains an M6 requirement.
 
 ## Task 3: Versioned Source Shelf And Structured Ingestion
 
@@ -582,7 +583,7 @@ Commit message: `v5: compile bounded physics knowledge context`.
 - Modify: `README.md`
 - Modify: `docs/superpowers/plans/2026-07-09-aitp-final-research-lifecycle-roadmap.md`
 
-- [ ] **Step 1: Register discovery/candidate/review/shelf/retrieval/context capabilities**
+- [x] **Step 1: Register discovery/candidate/review/shelf/retrieval/context capabilities**
 
 Assign read/runtime/kernel state effects precisely. Keep maintenance writes off
 the compact surface; compact entry receives only bounded names/refs/context.
@@ -592,7 +593,7 @@ Register deep validators, evidence-basis and pre-tool policy coverage, CLI/MCP
 parity, and explicit compact visibility for every operation. Loader files receive
 only focused-module imports.
 
-- [ ] **Step 2: Add QFT/quantum-gravity vertical acceptance**
+- [x] **Step 2: Add QFT/quantum-gravity vertical acceptance**
 
 Ingest source-local notes and papers with conflicting conventions, extract
 objects/relations/derivation candidates, review one grounded record and one
@@ -602,46 +603,79 @@ This proves deterministic fixture-contract readiness only. It is not the real
 QFT/QG acceptance claim; M6 must consume hash-pinned real source assets and
 exact location receipts.
 
-- [ ] **Step 3: Add contamination and missing-source failure cases**
+- [x] **Step 3: Add contamination and missing-source failure cases**
 
 Wrong-framework but lexically similar passages are excluded from default context
 and appear only in an explicit comparison/contradiction lane. Missing or stale
 sources make coverage incomplete and forbid source-exhaustive language.
 
-- [ ] **Step 4: Run M0-M3 test lanes and real-store compatibility audit**
+- [x] **Step 4: Run M0-M3 test lanes and real-store compatibility audit**
 
 All pre-Gate-3 records remain readable. Retrieval fixtures meet versioned
 thresholds, capability/family drift is zero, and architecture limits are
 unchanged.
 
-- [ ] **Step 5: Update docs, release audit, staged verification, and commit**
+- [x] **Step 5: Update docs, release audit, staged verification, and commit**
 
 Commit message: `v5: complete M3 physics knowledge and insight`.
 
 ## M3 Completion Checklist
 
-- [ ] Physics object/relation v1 records remain readable under v2.
-- [ ] Grounded knowledge requires exact source identity and location.
-- [ ] Source reconstruction cannot pass on unresolved labels or record presence.
-- [ ] Physics object identity and source/convention assertions are separate.
-- [ ] Insight is visibly speculative and never evidence.
-- [ ] Evidence intake rejects insight/search/summary/Skill and unresolved
+- [x] Physics object/relation v1 records remain readable under v2.
+- [x] Grounded knowledge requires exact source identity and location.
+- [x] Source reconstruction cannot pass on unresolved labels or record presence.
+- [x] Physics object identity and source/convention assertions are separate.
+- [x] Insight is visibly speculative and never evidence.
+- [x] Evidence intake rejects insight/search/summary/Skill and unresolved
   knowledge as sole claim-support basis.
-- [ ] Evidence v2 separates support basis from trace context and persists a
+- [x] Evidence v2 separates support basis from trace context and persists a
   policy-versioned, payload-hash-bound per-ref audit.
-- [ ] Hash-bound review, revise, demote, invalidate, supersede, and target-scope
+- [x] Hash-bound review, revise, demote, invalidate, supersede, and target-scope
   revalidation preserve old versions and exact lifecycle refs.
-- [ ] Physics semantic content cannot enter the Skill path.
-- [ ] Source shelf versions identity, hash, extraction, access, and failures.
-- [ ] Lexical, formula, graph, and optional dense components expose scores and coverage.
-- [ ] Grounded and speculative lanes remain separate through fusion/context.
-- [ ] QFT/QG context preserves framework, regime, conventions, and source anchors.
-- [ ] A persisted knowledge gap can trigger bounded literature discovery, but
+- [x] Physics semantic content cannot enter the Skill path.
+- [x] Source shelf versions identity, hash, extraction, access, and failures.
+- [x] Lexical, formula, graph, and optional dense components expose scores and coverage.
+- [x] Grounded and speculative lanes remain separate through fusion/context.
+- [x] QFT/QG context preserves framework, regime, conventions, and source anchors.
+- [x] A persisted knowledge gap can trigger bounded literature discovery, but
   search snippets/results cannot bypass source acquisition or review.
-- [ ] Retrieval quality and contamination are measured on versioned fixtures.
-- [ ] Formula/graph/dense sidecar deletion, corruption, timeout, and
+- [x] Retrieval quality and contamination are measured on versioned fixtures.
+- [x] Formula/graph/dense sidecar deletion, corruption, timeout, and
   nondeterminism degrade visibly without hidden scans or false deterministic
   labels.
-- [ ] M3 is fixture-contract complete only; real formal-theory acceptance is
+- [x] M3 is fixture-contract complete only; real formal-theory acceptance is
   a mandatory M6 decision input.
-- [ ] No knowledge/RAG/context operation updates claim trust directly.
+- [x] No knowledge/RAG/context operation updates claim trust directly.
+
+**Task 6 implementation evidence (2026-07-16):**
+
+- Nine full-only MCP/CLI operations cover candidate diagnosis, review,
+  promotion, source-shelf build/read, bounded discovery request/result,
+  lineage-bound hybrid retrieval, and bounded context. State effects are six
+  read-only, one derived runtime write, and two checkpoint-gated canonical
+  writes; compact remains exactly ten tools.
+- One deep `knowledge_operation_result` contract rejects nested trust or
+  evidence authority and verifies exact checkpoint/decision/result pins,
+  source-shelf generations, retrieval/context hashes, and discovery
+  non-acquisition boundaries.
+- Public knowledge query and startup context use fast orientation freshness by
+  default and cannot make exhaustive absence claims. Explicit
+  `verification_mode=strong` retains content-verified semantics.
+- The QFT/QG fixture reviews and promotes one grounded definition and one
+  insight, retrieves by concept/formula, excludes a lexically similar wrong
+  framework, and fails closed on missing or changed sources without Evidence or
+  trust writes.
+- The authorized real-store rebuild produced generation 15 over 9,947 records
+  with zero malformed records/issues and an unchanged canonical watermark.
+  Cold QG orientation retrieval took 4.135 s; warm startup context took 0.565 s
+  and 110 estimated tokens. Fifty unscoped legacy code states are explicitly
+  excluded and reported, so coverage remains partial rather than silently
+  exhaustive.
+- The final worktree-wide M3 regression selected 24 knowledge, source,
+  evidence, query-index, capability, public-surface, and architecture test
+  files; all 346 tests passed in isolated system Temp storage.
+- An isolated candidate exported from the Git index passed the corresponding
+  345-test M3 suite and three native MCP protocol smokes. The one extra
+  worktree test belongs to an unstaged concurrent query-index test change.
+- Detailed evidence is in
+  `docs/superpowers/progress/2026-07-10-aitp-gate-3-release-audit.md`.

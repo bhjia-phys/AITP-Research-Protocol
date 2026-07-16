@@ -419,6 +419,8 @@ def _component_result(
         ),
         "source_shelf_generation": snapshot.lineage.source_shelf_generation,
         "source_shelf_passages_hash": snapshot.lineage.source_shelf_passages_hash,
+        "excluded_unscoped_counts": dict(snapshot.lineage.excluded_unscoped_counts),
+        "freshness_mode": snapshot.lineage.freshness_mode,
     }
     basis = {
         "component": component,

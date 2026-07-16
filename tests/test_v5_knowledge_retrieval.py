@@ -114,6 +114,56 @@ def test_knowledge_snapshot_lineage_requires_exact_generations_and_watermarks():
         )
 
 
+def test_workspace_snapshot_reports_unscoped_legacy_code_states_without_cross_topic_leak(
+    tmp_path,
+):
+    from brain.v5.execution_models import CodeStateRecord
+    from brain.v5.knowledge_query import retrieve_knowledge
+    from brain.v5.knowledge_retrieval import KnowledgeQuery
+    from brain.v5.knowledge_snapshot import build_knowledge_snapshot
+    from brain.v5.query_index import build_query_index
+    from brain.v5.record_envelope import RecordActor
+    from brain.v5.record_repository import RecordRepository
+    from brain.v5.workspace import create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "qg", context_id="formal-theory", title="Quantum gravity")
+    RecordRepository(
+        ws,
+        actor=RecordActor(actor_type="tool", actor_id="unscoped-code-test", host="pytest"),
+    ).write(
+        "code_states",
+        CodeStateRecord(
+            code_state_id="legacy-global-code-state",
+            repo_id="LibRPA",
+            upstream_remote="origin",
+            upstream_branch="main",
+            upstream_commit="a" * 40,
+            local_branch="main",
+            worktree_path="/work/LibRPA",
+            dirty=False,
+        ),
+    )
+    build_query_index(ws)
+
+    snapshot = build_knowledge_snapshot(ws)
+    result = retrieve_knowledge(
+        ws,
+        KnowledgeQuery(text="LibRPA code state", topic_id="qg"),
+    )
+
+    assert "code_state:legacy-global-code-state" not in {
+        item.record_ref for item in snapshot.items
+    }
+    assert snapshot.lineage.excluded_unscoped_counts == {"code_states": 1}
+    assert any("unscoped" in error for error in snapshot.lineage.errors)
+    assert result.coverage.complete is False
+    assert result.coverage.checked_scope["excluded_unscoped_counts"] == {
+        "code_states": 1
+    }
+    assert result.can_claim_no_result is False
+
+
 def test_fielded_lexical_is_deterministic_and_filters_wrong_framework():
     from brain.v5.knowledge_retrieval import search_fielded_lexical
 

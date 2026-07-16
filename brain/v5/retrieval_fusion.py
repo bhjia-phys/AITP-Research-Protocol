@@ -353,6 +353,10 @@ def fuse_knowledge_rankings(
             "source_shelf_passages_hash": lineage_coverage.get(
                 "source_shelf_passages_hash", ""
             ),
+            "excluded_unscoped_counts": dict(
+                lineage_coverage.get("excluded_unscoped_counts") or {}
+            ),
+            "freshness_mode": lineage_coverage.get("freshness_mode", "strong"),
             "components": {
                 result.component: {
                     "version": result.version,

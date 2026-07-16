@@ -132,6 +132,10 @@ def test_startup_knowledge_context_stays_under_800_tokens(tmp_path):
     assert result.mode == "startup"
     assert result.estimated_tokens <= result.max_tokens <= 800
     assert result.coverage["pagination"]["limit"] <= 4
+    assert result.snapshot_lineage["freshness_mode"] == "orientation"
+    assert result.snapshot_lineage["scope_content_verified"] is False
+    assert result.coverage["complete"] is False
+    assert result.partial is True
     assert result.can_update_claim_trust is False
 
 

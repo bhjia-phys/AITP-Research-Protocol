@@ -6,14 +6,12 @@ from dataclasses import asdict
 from typing import Any, Sequence
 
 from brain.v5.context_compiler_support import estimate_context_tokens
-from brain.v5.formula_retrieval import search_formula
-from brain.v5.graph_retrieval import search_graph
 from brain.v5.knowledge_retrieval import (
     KnowledgeQuery,
     KnowledgeRetrievalHit,
     eligible_knowledge_items,
-    search_fielded_lexical,
 )
+from brain.v5.knowledge_query import retrieve_knowledge_snapshot
 from brain.v5.knowledge_context_contracts import (
     KnowledgeContextEntry,
     KnowledgeContextRequest,
@@ -31,8 +29,6 @@ from brain.v5.paths import WorkspacePaths
 from brain.v5.retrieval_fusion import (
     DEFAULT_FUSION_POLICY,
     DenseRetrievalAdapter,
-    fuse_knowledge_rankings,
-    search_dense_optional,
 )
 from brain.v5.source_shelf_storage import hash_json
 
@@ -50,18 +46,18 @@ def compile_knowledge_context(
         ws,
         source_shelf_generation=request.source_shelf_generation,
         source_shelf_topic_id=request.source_shelf_topic_id,
+        freshness_mode="orientation" if request.mode == "startup" else "strong",
     )
     if request.mode == "exact_expansion":
         candidates, coverage = _exact_candidates(snapshot, request, max_results)
     else:
         query = _retrieval_query(request, max_results)
-        components = (
-            search_fielded_lexical(snapshot, query),
-            search_formula(snapshot, query),
-            search_graph(snapshot, query, workspace=ws),
-            search_dense_optional(snapshot, query, dense_adapter),
+        fused = retrieve_knowledge_snapshot(
+            snapshot,
+            query,
+            workspace=ws,
+            dense_adapter=dense_adapter,
         )
-        fused = fuse_knowledge_rankings(components, query)
         candidates = _entries_from_hits(snapshot, fused.hits, request)
         coverage = asdict(fused.coverage)
         coverage["lane_quotas"] = dict(DEFAULT_FUSION_POLICY["lane_quotas"])
