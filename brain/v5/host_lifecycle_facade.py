@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Literal, Mapping
 
+from brain.v5.host_lifecycle_contracts import HostLifecycleDispatch, HostLifecycleEvent
+
 
 HOST_LIFECYCLE_CAPABILITY_SCHEMA_VERSION = "host_lifecycle_capability_matrix/v1"
 
@@ -251,7 +253,12 @@ _HOSTS = MappingProxyType(
             _CODEX_EVENTS,
             ("session_start", "prompt_submit", "session_end"),
             (
-                _fallback("prompt_submit", "aitp_v5_codex_enter", "read_only", "read_only"),
+                _fallback(
+                    "prompt_submit",
+                    "aitp_v5_codex_enter",
+                    "read_only",
+                    "runtime_receipt_only",
+                ),
                 _fallback("session_end", "plan_session_closeout", "human_review_required", "plan_only"),
             ),
         ),
@@ -264,7 +271,18 @@ _HOSTS = MappingProxyType(
             _OPENCODE_EVENTS,
             ("session_start", "prompt_submit", "session_end"),
             (
-                _fallback("session_end", "plan_session_closeout", "human_review_required", "plan_only"),
+                _fallback(
+                    "prompt_submit",
+                    "begin_research_turn",
+                    "read_only",
+                    "runtime_receipt_only",
+                ),
+                _fallback(
+                    "session_end",
+                    "plan_session_closeout",
+                    "human_review_required",
+                    "plan_only",
+                ),
             ),
             (
                 "experimental.chat.system.transform: stale full-skill injection; "
@@ -297,12 +315,46 @@ def host_lifecycle_capability(host: str) -> HostLifecycleCapability:
         raise ValueError(f"unsupported host: {host!r}") from exc
 
 
+def normalize_host_lifecycle_event(host, native_event, payload, *, session_id):
+    from brain.v5.host_lifecycle_dispatch import (
+        normalize_host_lifecycle_event as _normalize,
+    )
+
+    return _normalize(host, native_event, payload, session_id=session_id)
+
+
+def begin_research_turn(ws, event, *, deliver_context=None):
+    from brain.v5.host_lifecycle_dispatch import begin_research_turn as _begin
+
+    return _begin(ws, event, deliver_context=deliver_context)
+
+
+def closeout_session(ws, event, *, actor=None):
+    from brain.v5.host_lifecycle_dispatch import closeout_session as _closeout
+
+    return _closeout(ws, event, actor=actor)
+
+
+def dispatch_host_lifecycle_event(ws, event, *, actor=None, deliver_context=None):
+    from brain.v5.host_lifecycle_dispatch import (
+        dispatch_host_lifecycle_event as _dispatch,
+    )
+
+    return _dispatch(ws, event, actor=actor, deliver_context=deliver_context)
+
+
 __all__ = [
     "HOST_LIFECYCLE_CAPABILITY_SCHEMA_VERSION",
     "HostLifecycleCapability",
+    "HostLifecycleDispatch",
     "HostLifecycleFallbackDescriptor",
     "HostLifecycleCapabilityMatrix",
+    "HostLifecycleEvent",
     "HostLifecycleEventCapability",
+    "begin_research_turn",
+    "closeout_session",
+    "dispatch_host_lifecycle_event",
     "host_lifecycle_capability",
     "host_lifecycle_capability_matrix",
+    "normalize_host_lifecycle_event",
 ]

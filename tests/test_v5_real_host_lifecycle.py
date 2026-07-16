@@ -271,10 +271,18 @@ def test_fallback_descriptors_bind_unsupported_events_to_nonautomatic_boundaries
         "claude_code": (("session_end", "plan_session_closeout", "human_review_required", "plan_only"),),
         "kimi_code": (("session_end", "plan_session_closeout", "human_review_required", "plan_only"),),
         "codex": (
-            ("prompt_submit", "aitp_v5_codex_enter", "read_only", "read_only"),
+            (
+                "prompt_submit",
+                "aitp_v5_codex_enter",
+                "read_only",
+                "runtime_receipt_only",
+            ),
             ("session_end", "plan_session_closeout", "human_review_required", "plan_only"),
         ),
-        "opencode": (("session_end", "plan_session_closeout", "human_review_required", "plan_only"),),
+        "opencode": (
+            ("prompt_submit", "begin_research_turn", "read_only", "runtime_receipt_only"),
+            ("session_end", "plan_session_closeout", "human_review_required", "plan_only"),
+        ),
     }
 
     for host_name, expected_fallbacks in expected.items():
@@ -305,3 +313,315 @@ def test_host_lifecycle_capability_rejects_invalid_host_values_with_stable_value
 
     with pytest.raises(ValueError, match=r"^unsupported host: "):
         host_lifecycle_capability(host)
+
+
+def test_normalized_host_event_uses_stable_identity_and_allowlisted_payload_only():
+    from brain.v5.host_lifecycle_facade import normalize_host_lifecycle_event
+
+    event = normalize_host_lifecycle_event(
+        "claude_code",
+        "SessionStart",
+        {
+            "event_id": "evt-start-1",
+            "host_session_id": "claude-session-1",
+            "occurred_at": "2026-07-16T12:00:00Z",
+            "topic_id": "librpa-gw",
+            "research_relevant": True,
+            "context_profile": "startup_orientation",
+            "objective_text": "Continue the verified GW workflow.",
+            "user_goal": "Recover the exact prior calculation boundary.",
+            "subject_refs": ["claim:claim-librpa"],
+            "raw_prompt": "must not survive normalization",
+            "tool_input": {"secret": "must not survive normalization"},
+        },
+        session_id="s1",
+    )
+
+    assert event.event_id == "evt-start-1"
+    assert event.logical_event == "session_start"
+    assert event.native_event == "SessionStart"
+    assert event.host_session_id == "claude-session-1"
+    assert event.session_id == "s1"
+    assert event.topic_id == "librpa-gw"
+    assert event.automatic is True
+    assert event.origin == "host_native"
+    assert event.subject_refs == ("claim:claim-librpa",)
+    assert event.objective_payload == {
+        "context_profile": "startup_orientation",
+        "objective_text": "Continue the verified GW workflow.",
+        "research_relevant": True,
+        "user_goal": "Recover the exact prior calculation boundary.",
+    }
+    assert event.process_payload == {}
+    assert "raw_prompt" not in repr(event)
+    assert "secret" not in repr(event)
+
+
+@pytest.mark.parametrize(
+    ("host", "native_event"),
+    [
+        ("claude_code", "PostToolUse"),
+        ("kimi_code", "PostToolUse"),
+        ("codex", "PostToolUse"),
+        ("opencode", "tool.execute.after"),
+    ],
+)
+def test_automatic_post_tool_normalization_requires_stable_native_event_identity(host, native_event):
+    from brain.v5.host_lifecycle_facade import normalize_host_lifecycle_event
+
+    with pytest.raises(ValueError, match="stable event_id"):
+        normalize_host_lifecycle_event(
+            host,
+            native_event,
+            {
+                "host_session_id": f"{host}-session",
+                "tool_name": "pytest",
+                "status": "completed",
+            },
+            session_id="s1",
+        )
+
+
+def test_explicit_first_turn_and_closeout_fallbacks_remain_nonautomatic():
+    from brain.v5.host_lifecycle_facade import normalize_host_lifecycle_event
+
+    codex_start = normalize_host_lifecycle_event(
+        "codex",
+        "aitp_v5_codex_enter",
+        {
+            "event_id": "evt-codex-enter-1",
+            "host_session_id": "codex-session-1",
+            "research_relevant": True,
+        },
+        session_id="s1",
+    )
+    closeout = normalize_host_lifecycle_event(
+        "opencode",
+        "plan_session_closeout",
+        {
+            "event_id": "evt-closeout-1",
+            "host_session_id": "opencode-session-1",
+        },
+        session_id="s1",
+    )
+
+    assert (codex_start.logical_event, codex_start.automatic, codex_start.origin) == (
+        "prompt_submit",
+        False,
+        "explicit_fallback",
+    )
+    assert (closeout.logical_event, closeout.automatic, closeout.origin) == (
+        "session_end",
+        False,
+        "explicit_fallback",
+    )
+
+
+def test_begin_research_turn_requires_existing_binding_and_never_selects_a_topic(tmp_path, monkeypatch):
+    from brain.v5.host_lifecycle_facade import begin_research_turn, normalize_host_lifecycle_event
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+    event = normalize_host_lifecycle_event(
+        "codex",
+        "aitp_v5_codex_enter",
+        {
+            "event_id": "evt-unbound-1",
+            "host_session_id": "codex-session-1",
+            "topic_id": "librpa-gw",
+            "research_relevant": True,
+        },
+        session_id="missing-session",
+    )
+
+    def fail_prepare(*args, **kwargs):
+        raise AssertionError("unbound lifecycle event must not compile context")
+
+    monkeypatch.setattr("brain.v5.host_lifecycle_dispatch.prepare_context_injection", fail_prepare)
+    result = begin_research_turn(ws, event)
+
+    assert result.status == "unbound_session"
+    assert result.operation == "orientation_required"
+    assert result.topic_id == ""
+    assert result.reason_codes == ("session_binding_not_found",)
+    assert result.receipt_id == ""
+    assert result.canonical_write is False
+    assert not ws.session_path("missing-session").exists()
+
+
+def test_begin_research_turn_uses_bound_topic_and_ephemeral_delivery(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    from brain.v5.host_lifecycle_facade import begin_research_turn, normalize_host_lifecycle_event
+    from brain.v5.workspace import get_session_binding
+
+    ws, _ = _seed_session(tmp_path)
+    delivered = []
+    captured = {}
+
+    def prepare(ws_arg, request, *, deliver=None):
+        captured["workspace"] = ws_arg
+        captured["request"] = request
+        if deliver is not None:
+            deliver("bounded context body")
+        return SimpleNamespace(receipt_id="ctx-receipt-1", injection_status="injected")
+
+    monkeypatch.setattr("brain.v5.host_lifecycle_dispatch.prepare_context_injection", prepare)
+    event = normalize_host_lifecycle_event(
+        "claude_code",
+        "SessionStart",
+        {
+            "event_id": "evt-bound-1",
+            "host_session_id": "claude-session-1",
+            "topic_id": "librpa-gw",
+            "research_relevant": True,
+            "context_profile": "startup_orientation",
+            "objective_text": "Continue the verified GW workflow.",
+        },
+        session_id="s1",
+    )
+    before = get_session_binding(ws, "s1")
+
+    result = begin_research_turn(ws, event, deliver_context=delivered.append)
+    after = get_session_binding(ws, "s1")
+
+    request = captured["request"]
+    assert captured["workspace"] == ws
+    assert request.event_id == "evt-bound-1"
+    assert request.event_type == "SessionStart"
+    assert request.host == "claude_code"
+    assert request.host_session_id == "claude-session-1"
+    assert request.session_id == "s1"
+    assert request.topic_id == "librpa-gw"
+    assert request.context_profile == "startup_orientation"
+    assert request.host_supports_session_start is True
+    assert delivered == ["bounded context body"]
+    assert result.status == "context_injected"
+    assert result.receipt_id == "ctx-receipt-1"
+    assert "bounded context body" not in repr(result)
+    assert before == after
+
+
+def test_begin_research_turn_rejects_topic_mismatch_without_rebinding(tmp_path, monkeypatch):
+    from brain.v5.host_lifecycle_facade import begin_research_turn, normalize_host_lifecycle_event
+    from brain.v5.workspace import get_session_binding
+
+    ws, _ = _seed_session(tmp_path)
+    event = normalize_host_lifecycle_event(
+        "claude_code",
+        "SessionStart",
+        {
+            "event_id": "evt-topic-mismatch-1",
+            "host_session_id": "claude-session-1",
+            "topic_id": "another-topic",
+            "research_relevant": True,
+        },
+        session_id="s1",
+    )
+
+    def fail_prepare(*args, **kwargs):
+        raise AssertionError("mismatched topic must not compile context")
+
+    monkeypatch.setattr("brain.v5.host_lifecycle_dispatch.prepare_context_injection", fail_prepare)
+    result = begin_research_turn(ws, event)
+
+    assert result.status == "binding_mismatch"
+    assert result.reason_codes == ("event_topic_does_not_match_session_binding",)
+    assert get_session_binding(ws, "s1").topic_id == "librpa-gw"
+
+
+def test_codex_first_turn_prepares_real_bounded_receipt_without_canonical_change(tmp_path):
+    from brain.v5.host_lifecycle_facade import begin_research_turn, normalize_host_lifecycle_event
+    from brain.v5.query_index import current_canonical_watermark
+
+    ws, _ = _seed_session(tmp_path)
+    event = normalize_host_lifecycle_event(
+        "codex",
+        "aitp_v5_codex_enter",
+        {
+            "event_id": "evt-codex-real-enter-1",
+            "host_session_id": "codex-real-session-1",
+            "research_relevant": True,
+            "objective_text": "Recover the exact LibRPA GW boundary.",
+            "raw_host_payload": "do-not-persist-host-secret",
+        },
+        session_id="s1",
+    )
+    before = current_canonical_watermark(ws)
+
+    result = begin_research_turn(ws, event)
+
+    assert result.status == "context_prepared"
+    assert result.receipt_status == "prepared"
+    assert result.receipt_id.startswith("context-injection-")
+    assert result.runtime_write is True
+    assert result.canonical_write is False
+    assert current_canonical_watermark(ws) == before
+    runtime_text = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in (ws.root / "runtime").rglob("*")
+        if path.is_file()
+    )
+    assert "do-not-persist-host-secret" not in runtime_text
+
+
+def test_dispatch_keeps_pre_post_and_closeout_at_their_declared_boundaries(tmp_path, monkeypatch):
+    from brain.v5.host_lifecycle_facade import (
+        closeout_session,
+        dispatch_host_lifecycle_event,
+        normalize_host_lifecycle_event,
+    )
+
+    ws, _ = _seed_session(tmp_path)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("bounded host dispatch crossed a forbidden writer boundary")
+
+    monkeypatch.setattr("brain.v5.lifecycle_facade.apply_session_closeout", forbidden)
+    monkeypatch.setattr("brain.v5.lifecycle_facade.plan_session_closeout", forbidden)
+    monkeypatch.setattr("brain.v5.research_moment_application.apply_research_moment_decision", forbidden)
+
+    pre = normalize_host_lifecycle_event(
+        "codex",
+        "PreToolUse",
+        {"event_id": "evt-pre-1", "host_session_id": "codex-session-1", "tool_name": "pytest"},
+        session_id="s1",
+    )
+    post = normalize_host_lifecycle_event(
+        "codex",
+        "PostToolUse",
+        {
+            "event_id": "evt-post-1",
+            "host_session_id": "codex-session-1",
+            "tool_name": "pytest",
+            "status": "completed",
+        },
+        session_id="s1",
+    )
+    closeout = normalize_host_lifecycle_event(
+        "codex",
+        "plan_session_closeout",
+        {"event_id": "evt-closeout-2", "host_session_id": "codex-session-1"},
+        session_id="s1",
+    )
+
+    pre_result = dispatch_host_lifecycle_event(ws, pre)
+    post_result = dispatch_host_lifecycle_event(ws, post)
+    closeout_result = closeout_session(ws, closeout)
+
+    assert (pre_result.status, pre_result.operation, pre_result.canonical_write) == (
+        "policy_only",
+        "delegate_existing_pre_tool_policy",
+        False,
+    )
+    assert (post_result.status, post_result.operation, post_result.canonical_write) == (
+        "trace_only",
+        "delegate_existing_post_tool_trace",
+        False,
+    )
+    assert (closeout_result.status, closeout_result.operation, closeout_result.canonical_write) == (
+        "plan_only",
+        "plan_session_closeout",
+        False,
+    )
+    assert closeout_result.reason_codes == ("human_review_required", "automatic_closeout_unsupported")
