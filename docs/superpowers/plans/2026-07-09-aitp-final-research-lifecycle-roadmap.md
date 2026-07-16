@@ -1217,7 +1217,34 @@ skills/context, and records its own friction without taking engineering authorit
 - [x] Skip low-value tool noise and recursive semantic-tool capture.
 - [x] Test objective auto-writes separately from scientific promotion.
 
-### Task 5.2: Real Host Lifecycle Integration
+### Task 5.2a: Shared Bounded Context Injection
+
+**Files:**
+- Create: `brain/v5/context_injection_events.py`
+- Create: `brain/v5/context_injection_contracts.py`
+- Create: `brain/v5/context_injection_compilation.py`
+- Create: `brain/v5/context_injection_receipt_validation.py`
+- Create: `brain/v5/context_injection_storage.py`
+- Create: `tests/test_v5_context_injection_events.py`
+- Modify: `brain/v5/hook_protocol_contracts.py`
+- Modify: `brain/v5/query_index_locking.py`
+
+- [x] Use first relevant prompt as ResearchTurnStart when SessionStart is absent.
+- [x] Compile startup and normal context only through the existing bounded
+  context compiler.
+- [x] Keep exact named 800/4000 and 1500/7500 token/byte ceilings; hosts may
+  request smaller budgets only.
+- [x] Persist SHA-256-namespaced runtime receipts without full context text.
+- [x] Persist delivery-started before invoking the host and require exact
+  acknowledgement before retrying an uncertain delivery.
+- [x] Bind reinjection to selected-family state/content tokens, effective scope,
+  selected refs, request content, and rendered content rather than a global
+  watermark change alone.
+- [x] Reject traversal, reserved names, non-NFC ids, long ids, and symlink
+  escapes; bind every receipt field into an integrity hash and keep receipts
+  trust-neutral.
+
+### Task 5.2b: Real Host Lifecycle Integration
 
 **Files:**
 - Modify: `hooks/aitp_v5_claude_hook.py`
@@ -1237,7 +1264,6 @@ skills/context, and records its own friction without taking engineering authorit
 - Modify: `brain/v5/hook_smoke_coverage.py`
 - Modify: `brain/v5/codex_facade.py`
 - Modify: `tests/test_aitp_pm_deploy_surfaces.py`
-- Create: `brain/v5/context_injection_events.py`
 - Create: `tests/test_v5_real_host_lifecycle.py`
 
 - [ ] Map native hooks to host-neutral research events.

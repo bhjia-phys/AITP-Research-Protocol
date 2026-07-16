@@ -52,7 +52,7 @@ receipt path, bytes/tokens, and temp root. Unavailable is never passed.
 - Create: `brain/v5/research_moment_validation.py`
 - Create: `brain/v5/research_moment_application.py`
 - Create: `tests/test_v5_research_moments.py`
-- Modify: `brain/v5/query_index_locking.py` (one generic rank-0 runtime
+- Modify: `brain/v5/query_index_locking.py` (one generic outer rank -1 runtime
   transaction name; canonical writer locks remain unchanged)
 - Keep unchanged: `brain/v5/moment_policy.py` (existing graph-orientation
   policy) and `brain/v5/recording_navigator.py` (existing recording workflow).
@@ -110,17 +110,21 @@ Commit message: `v5: add bounded research moment controller`.
 
 **Files:**
 - Create: `brain/v5/context_injection_events.py`
+- Create: `brain/v5/context_injection_contracts.py`
+- Create: `brain/v5/context_injection_compilation.py`
+- Create: `brain/v5/context_injection_receipt_validation.py`
+- Create: `brain/v5/context_injection_storage.py`
 - Create: `tests/test_v5_context_injection_events.py`
 - Modify: `brain/v5/hook_protocol_contracts.py`
-- Modify: `brain/v5/codex_facade.py`
 
 **Interfaces:**
 - Produces: `ContextInjectionRequest`, `ContextInjectionReceipt`
 - Produces: `prepare_context_injection(ws, request) -> ContextInjectionReceipt`
+- Produces: `acknowledge_context_injection_delivery(...) -> ContextInjectionReceipt`
 - Runtime path:
   `.aitp/runtime/context_injections/<digest-prefix>/<namespace-sha256>.json`
 
-- [ ] **Step 1: Write failing budget/fingerprint tests**
+- [x] **Step 1: Write failing budget/fingerprint tests**
 
 Receipt records host/event/session/topic/focus, context profile, effective
 base/delta lineage, selected-family state/content tokens, dirty families,
@@ -135,20 +139,20 @@ receipt, never as path components. Resolve under the runtime root and reject
 containment/symlink escape. Test separators, `..`, absolute syntax, Unicode
 normalization, Windows reserved names, long ids, and malicious host payloads.
 
-- [ ] **Step 2: Implement first-relevant-turn semantics**
+- [x] **Step 2: Implement first-relevant-turn semantics**
 
 If the host lacks process-level SessionStart, the first request classified as
 research relevant becomes ResearchTurnStart. Setup, greetings, and unrelated
 coding prompts do not trigger scientific retrieval.
 
-- [ ] **Step 3: Compile via the one lifecycle/context path**
+- [x] **Step 3: Compile via the one lifecycle/context path**
 
 Resolve focus, resume, recall requirements, grounded/insight lanes, execution
 capsule, and applicable Skill names/versions through existing services. Enforce
 the exact named `startup_orientation` and `normal_research` token and UTF-8 byte
 ceilings plus exact expansion handles; hosts may request smaller limits only.
 
-- [ ] **Step 4: Persist idempotent runtime receipts**
+- [x] **Step 4: Persist idempotent runtime receipts**
 
 Same workspace/host/session/event/profile/focus/effective-scope/content
 fingerprint returns unchanged.
@@ -157,7 +161,13 @@ process-family write does not. Global watermark remains audit metadata but is
 not by itself a reinjection trigger. Runtime receipts have no claim-trust
 authority.
 
-- [ ] **Step 5: Run context/startup/facade tests and commit**
+The selected-family state token is checked first; content is rescanned only for
+a selected family whose state token changed. Full context text is delivered
+through `prepared -> delivery_started -> injected`; it is never copied into the
+receipt. An uncertain callback outcome is not retried until the host
+acknowledges the exact delivery-attempt digest.
+
+- [x] **Step 5: Run context/startup/facade tests and commit**
 
 Commit message: `v5: audit bounded context injections`.
 
@@ -180,6 +190,7 @@ Commit message: `v5: audit bounded context injections`.
 - Modify: `brain/v5/hook_install_audit.py`
 - Modify: `brain/v5/host_readiness.py`
 - Modify: `brain/v5/hook_smoke_coverage.py`
+- Modify: `brain/v5/codex_facade.py`
 - Modify: `tests/test_aitp_pm_deploy_surfaces.py`
 - Create: `brain/v5/host_lifecycle_facade.py`
 - Create: `tests/test_v5_real_host_lifecycle.py`

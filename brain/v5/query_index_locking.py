@@ -12,8 +12,9 @@ from brain.v5.paths import WorkspacePaths
 
 
 LOCK_RANKS = {
+    # Runtime receipts may wrap an initial base build and later canonical writes.
+    "runtime-transaction": -1,
     "base-build": 0,
-    "runtime-transaction": 0,
     "canonical-mutation": 1,
     "canonical-record": 2,
     "delta-manifest": 3,
