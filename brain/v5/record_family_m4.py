@@ -37,6 +37,12 @@ M4_REGISTRY_ROWS = (
         "SkillInstallReceiptRecord",
         "receipt_id",
     ),
+    (
+        "skill_usage_records",
+        "skill_usage",
+        "SkillUsageRecord",
+        "usage_id",
+    ),
 )
 
 M4_RECORD_ROLES = {
@@ -46,14 +52,18 @@ M4_RECORD_ROLES = {
     "skill_proposals": "candidate_record",
     "skill_install_plans": "review_intent_record",
     "skill_install_receipts": "authorization_receipt_record",
+    "skill_usage_records": "execution_provenance_record",
+    "skill_patch_proposals": "candidate_record",
 }
 M4_SCHEMA_VERSIONS = {family: "v2" for family, *_rest in M4_REGISTRY_ROWS}
+M4_SCHEMA_VERSIONS["skill_patch_proposals"] = "v2"
 M4_CANDIDATE_ONLY_FAMILIES = frozenset({
-    "skill_distillation_candidates", "skill_proposals",
+    "skill_distillation_candidates", "skill_proposals", "skill_patch_proposals",
 })
 M4_APPEND_ONLY_FAMILIES = frozenset({
     "skill_install_plans", "skill_install_receipts", "skill_package_artifacts",
-    "skill_proposals", "skill_readiness_reports",
+    "skill_proposals", "skill_readiness_reports", "skill_usage_records",
+    "skill_patch_proposals",
 })
 
 M4_DEPENDENCY_FIELDS = {
@@ -94,6 +104,7 @@ M4_DEPENDENCY_FIELDS = {
     "skill_install_plans": (
         "proposal_ref.record_ref",
         "package_artifact_ref.record_ref",
+        "patch_proposal_ref.record_ref",
     ),
     "skill_install_receipts": (
         "plan_ref.record_ref",
@@ -101,5 +112,20 @@ M4_DEPENDENCY_FIELDS = {
         "package_artifact_ref.record_ref",
         "checkpoint_request_ref.record_ref",
         "checkpoint_decision_ref.record_ref",
+        "patch_proposal_ref.record_ref",
+    ),
+    "skill_usage_records": (
+        "install_receipt_ref.record_ref",
+        "proposal_ref.record_ref",
+        "package_artifact_ref.record_ref",
+        "consuming_tool_run_ref.record_ref",
+        "consuming_baseline_ref.record_ref",
+        "validation_refs[].record_ref",
+        "failure_refs[].record_ref",
+    ),
+    "skill_patch_proposals": (
+        "old_package_proposal_ref.record_ref",
+        "new_package_proposal_ref.record_ref",
+        "source_usage_refs[].record_ref",
     ),
 }

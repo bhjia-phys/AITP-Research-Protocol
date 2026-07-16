@@ -200,8 +200,8 @@ def materialize_plan(
             diff_hash=plan.diff_hash,
             validation_policy_hash=plan.validation_policy_hash,
             validation_results=list(journal.get("validation_results") or []),
-            status="completed",
-            completed_at=utc(now).isoformat(),
+            status="completed", completed_at=utc(now).isoformat(),
+            patch_proposal_ref=dict(plan.patch_proposal_ref),
         )
         require_valid_skill_install_receipt(receipt)
         write = RecordRepository(ws, actor=actor).write(
@@ -296,7 +296,7 @@ def validate_install_receipt(
         plan.expected_before_hash,
         plan.expected_after_hash,
         plan.diff_hash,
-        plan.validation_policy_hash,
+        plan.validation_policy_hash, plan.patch_proposal_ref,
         "completed",
     )
     actual = (
@@ -317,7 +317,7 @@ def validate_install_receipt(
         record.before_hash,
         record.after_hash,
         record.diff_hash,
-        record.validation_policy_hash,
+        record.validation_policy_hash, record.patch_proposal_ref,
         record.status,
     )
     if actual != expected:

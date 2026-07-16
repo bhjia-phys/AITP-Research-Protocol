@@ -461,24 +461,26 @@ canonical research record or real derived index was modified.
 
 **Interfaces:**
 - Produces: `SkillUsageRecord`, `SkillPatchProposalRecord`
-- Adds families: `skill_usage_records`, `skill_patch_proposals`
+- Adds family: `skill_usage_records`; upgrades the existing compatibility
+  `skill_patch_proposals` family to the exact M4 evidence contract
 - Produces: `match_applicable_skills(ws, request) -> SkillApplicabilityResult`
 - Produces: `record_skill_usage(ws, record, *, actor) -> WriteResult`
-- Produces: `build_skill_patch_proposal(ws, usage_refs) -> SkillPatchProposalRecord`
+- Produces: `build_skill_patch_proposal(ws, usage_refs, *, proposed_package_ref,
+  patch_summary, patch_diff, actor) -> SkillPatchProposalRecord`
 
-- [ ] **Step 1: Write failing selector tests**
+- [x] **Step 1: Write failing selector tests**
 
 Match domain, task, software, repository, code path/symbol, physics object,
 formula, parameter, environment/cluster, focus ref, topic/program, required
 inputs, and exclusions. Return selector-level reasons and confidence; never use
 claim trust as an applicability shortcut.
 
-- [ ] **Step 2: Separate derived matching from reviewed overrides**
+- [x] **Step 2: Separate derived matching from reviewed overrides**
 
 Default matches are derived and orientation-only. A canonical override requires
 a reviewed relation/checkpoint with scope, reason, expiry, and source refs.
 
-- [ ] **Step 3: Record exact use**
+- [x] **Step 3: Record exact use**
 
 Usage contains skill id/version/package hash, session/topic/focus, consuming
 tool run/baseline, selected selectors, parameters, outcome, validations,
@@ -486,7 +488,7 @@ failure refs, created time, and `can_update_claim_trust=False`. ToolRun and
 ExecutionBaseline store the usage ref. Skill package, run, baseline, validation,
 and failure dependencies are pinned by ref/content hash.
 
-- [ ] **Step 4: Build evidence-backed patch proposals**
+- [x] **Step 4: Build evidence-backed patch proposals**
 
 New validated success may clarify steps; validated failure may add a stop rule
 or boundary; changed software/code may update selectors. Proposal records exact
@@ -495,14 +497,33 @@ review status. No patch applies from this function.
 Harness Feedback cases are inadmissible patch evidence and cannot call this
 builder.
 
-- [ ] **Step 5: Reuse the same install checkpoint path for patch application**
+- [x] **Step 5: Reuse the same install checkpoint path for patch application**
 
 Patch approval action is `apply_aitp_skill_patch` and binds old/new package
 hashes, diff, and target. Readback/rollback rules match installation.
 
-- [ ] **Step 6: Run applicability/usage/patch/execution tests and commit**
+- [x] **Step 6: Run applicability/usage/patch/execution tests and commit**
 
 Commit message: `v5: track skill applicability and exact use`.
+
+Implementation state before the final staged-tree check: applicability scans
+only completed receipts whose current target tree and managed manifest still
+match; draft proposals and superseded receipts are not advertised. Derived
+selector matches are orientation-only, while overrides require exact source and
+validation refs, explicit target scope, expiry, and a verified
+`approve_scope_revalidation` checkpoint. `SkillUsageRecord` is append-only and
+pins package/run/baseline/validation/failure versions before adding trust-neutral
+consumer backlinks. `SkillPatchProposalRecord` retains legacy read fields but
+the M4 lane additionally binds exact source usages, old/new proposals and hashes,
+a deterministic structured diff, and review-only status. Patch deployment is a
+monotonic upgrade through the existing journal, readback, receipt, compensation,
+recovery, and replay path; no second filesystem writer was added.
+The final focused worktree lane passed 169 tests. An exact Git-index export,
+which excludes all protected and concurrent unstaged changes, passed 165 tests
+in system Temp. The M0.5 audit now classifies 73 families, 164 helper writers,
+and the unchanged 173 direct-mutation candidates; all Task 5 source modules are
+at or below the 500-line architecture limit. No real canonical research record
+or real derived index was modified.
 
 ## Task 6: Skill Facade And M4 Acceptance
 

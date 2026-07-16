@@ -38,6 +38,7 @@ from brain.v5.skill_install_planning import (
     skill_install_checkpoint_request,
     target_scopes,
 )
+from brain.v5.skill_patch_install_planning import build_skill_patch_install_plan
 
 
 @dataclass(frozen=True)
@@ -186,10 +187,13 @@ def _binding_for_plan(
         raise ValueError("Skill install checkpoint action does not match the plan")
     if record.payload_hash != expected_payload_hash:
         raise ValueError("Skill install checkpoint payload does not match the plan")
-    expected_subjects = tuple(sorted((
+    expected_subjects_list = [
         coerce_pin(plan.proposal_ref),
         coerce_pin(plan.package_artifact_ref),
-    )))
+    ]
+    if plan.patch_proposal_ref:
+        expected_subjects_list.append(coerce_pin(plan.patch_proposal_ref))
+    expected_subjects = tuple(sorted(expected_subjects_list))
     actual_subjects = tuple(sorted(coerce_pin(item) for item in record.subject_refs))
     if actual_subjects != expected_subjects:
         raise ValueError("Skill install checkpoint subjects do not match the plan")

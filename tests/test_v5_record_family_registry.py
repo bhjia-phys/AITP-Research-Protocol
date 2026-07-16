@@ -47,7 +47,7 @@ def test_record_family_registry_contract_is_self_consistent():
 
     assert payload["ok"] is True
     assert payload["errors"] == []
-    assert payload["registry_family_count"] == 68
+    assert payload["registry_family_count"] == 69
     assert payload["special_family_count"] == 4
     assert payload["truth_source"] == "record_family_specs"
     assert payload["can_update_kernel_state"] is False
@@ -163,6 +163,36 @@ def test_m4_skill_proposals_are_append_only_candidates_without_trust_authority()
         "environment_refs[].record_ref",
         "source_refs[].record_ref",
     } <= set(spec.dependency_fields)
+
+
+def test_m4_skill_usage_and_patch_records_pin_execution_and_package_evidence():
+    specs = record_family_specs()
+    usage = specs["skill_usage_records"]
+    patch = specs["skill_patch_proposals"]
+
+    assert usage.schema_version == "v2"
+    assert usage.trust_effect == "none"
+    assert usage.record_role == "execution_provenance_record"
+    assert usage.lifecycle_policy == "append_only"
+    assert {
+        "install_receipt_ref.record_ref",
+        "proposal_ref.record_ref",
+        "package_artifact_ref.record_ref",
+        "consuming_tool_run_ref.record_ref",
+        "consuming_baseline_ref.record_ref",
+        "validation_refs[].record_ref",
+        "failure_refs[].record_ref",
+    } <= set(usage.dependency_fields)
+
+    assert patch.schema_version == "v2"
+    assert patch.trust_effect == "candidate_only"
+    assert patch.record_role == "candidate_record"
+    assert patch.lifecycle_policy == "append_only"
+    assert {
+        "old_package_proposal_ref.record_ref",
+        "new_package_proposal_ref.record_ref",
+        "source_usage_refs[].record_ref",
+    } <= set(patch.dependency_fields)
 
 
 def test_m1_lifecycle_families_are_trust_neutral_and_exact_expandable():

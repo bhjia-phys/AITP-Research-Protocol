@@ -367,7 +367,7 @@ def test_m0_5_classification_audit_covers_current_core_without_behavior_change()
 
     family_classes = {
         "core": classified_items(r"3\.1 Core \(25\)"),
-        "vertical_extension": classified_items(r"3\.2 Vertical Extension \(39\)"),
+        "vertical_extension": classified_items(r"3\.2 Vertical Extension \(40\)"),
         "migration": classified_items(r"3\.3 Migration \(4\)"),
         "soft_deprecation_candidate": classified_items(
             r"3\.4 Soft-Deprecation Candidates \(4\)"
@@ -375,7 +375,7 @@ def test_m0_5_classification_audit_covers_current_core_without_behavior_change()
     }
     assert {name: len(items) for name, items in family_classes.items()} == {
         "core": 25,
-        "vertical_extension": 39,
+        "vertical_extension": 40,
         "migration": 4,
         "soft_deprecation_candidate": 4,
     }
@@ -394,14 +394,16 @@ def test_m0_5_classification_audit_covers_current_core_without_behavior_change()
         "candidate, readiness, package-artifact, and proposal families without compact "
         "or install authority. M4 Task 4 adds one immutable deployment-plan family and "
         "one immutable deployment-receipt family; host intent transitions remain runtime "
-        "journals rather than canonical research families."
+        "journals rather than canonical research families. M4 Task 5 adds one exact "
+        "Skill-usage family plus evidence-backed patch planning through the existing "
+        "deployment transaction; it adds no compact capability or direct mutation path."
     ) in normalized
     assert "## 6. Resolved Review Decisions" in report
     assert "bounded scanner closure does not convert candidate counts into a no-bypass proof" in normalized
-    assert "all 161 current named-helper rows" in normalized
+    assert "all 164 current named-helper rows" in normalized
     assert "all 173 current direct" in normalized
     assert "257-capability staged core" in normalized
-    assert "716/716 declared production Python files" in normalized
+    assert "719/719 declared production Python files" in normalized
 
 
 def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
@@ -451,7 +453,7 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
 
     writer_rows_by_class = {
         "canonical_record_or_repository": writer_rows(
-            r"4\.1 Canonical Record Or Repository \(85\)"
+            r"4\.1 Canonical Record Or Repository \(88\)"
         ),
         "derived_index_or_surface": writer_rows(
             r"4\.2 Derived Index Or Surface \(29\)"
@@ -466,7 +468,7 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
     }
     writer_classes = stable_classes(writer_rows_by_class)
     assert {name: len(items) for name, items in writer_classes.items()} == {
-        "canonical_record_or_repository": 85,
+        "canonical_record_or_repository": 88,
         "derived_index_or_surface": 29,
         "host_or_runtime": 17,
         "migration_or_legacy_compat": 28,
@@ -477,7 +479,7 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
 
     audit = build_runtime_capability_audit(repo_root)
     audited = {row["stable_signature"] for row in audit["writers"]}
-    assert audit["inventory"]["writer_count"] == 161
+    assert audit["inventory"]["writer_count"] == 164
     assert classified == audited
 
     direct_rows_by_class = {

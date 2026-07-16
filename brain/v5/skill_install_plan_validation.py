@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
+from brain.v5.models import SkillPatchProposalRecord
+from brain.v5.pinned_record_refs import get_record_version
 from brain.v5.skill_install_plan_derivations import (
     checkpoint_action_for,
     diff_projection_for,
@@ -50,6 +52,24 @@ def validate_loaded_skill_install_plan(ws, pin, plan) -> None:
     )
     if actual_source != expected_source:
         raise ValueError("Skill install plan identity disagrees with its pinned proposal")
+    patch_pin = None
+    if plan.patch_proposal_ref:
+        patch_pin = coerce_pin(plan.patch_proposal_ref)
+        patch = get_record_version(ws, patch_pin).record
+        if not isinstance(patch, SkillPatchProposalRecord):
+            raise ValueError("Skill install patch ref is invalid")
+        from brain.v5.skill_usage import validate_skill_patch_proposal
+
+        validate_skill_patch_proposal(ws, patch)
+        if (
+            patch.new_package_proposal_ref != asdict(proposal_pin)
+            or patch.skill_id != proposal.skill_id
+            or patch.proposed_version != proposal.semantic_version
+            or patch.new_package_hash != proposal.package_hash
+            or plan.old_package_hash != patch.old_package_hash
+            or plan.new_package_hash != patch.new_package_hash
+        ):
+            raise ValueError("Skill install patch identity disagrees with its pinned proposal")
 
     root, target = target_paths(plan.target_root, plan.name)
     if str(root) != plan.target_root or str(target) != plan.target_path:
@@ -83,13 +103,19 @@ def validate_loaded_skill_install_plan(ws, pin, plan) -> None:
         existing_semantic_version=plan.existing_semantic_version,
         existing_package_hash=plan.existing_package_hash,
         validation_policy_hash=validation_policy_hash,
+        patch_proposal_ref=asdict(patch_pin) if patch_pin is not None else None,
+        old_package_hash=plan.old_package_hash,
+        new_package_hash=plan.new_package_hash,
     )
     identity = plan_identity_for(projection, proposal_pin, artifact_pin)
     if plan.diff_hash != identity["diff_hash"] or plan.plan_id != plan_id_for(identity):
         raise ValueError("Skill install plan derived identity is invalid")
     if plan.plan_id != pin.record_ref.partition(":")[2]:
         raise ValueError("Skill install plan record identity is invalid")
-    if plan.checkpoint_action != checkpoint_action_for(plan.operation):
+    if plan.checkpoint_action != checkpoint_action_for(
+        plan.operation,
+        is_patch=patch_pin is not None,
+    ):
         raise ValueError("Skill install plan checkpoint action is invalid")
     if plan.action_payload != checkpoint_request_payload(plan):
         raise ValueError("Skill install plan action payload is invalid")

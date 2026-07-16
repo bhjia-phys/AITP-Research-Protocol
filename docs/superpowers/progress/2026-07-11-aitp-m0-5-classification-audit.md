@@ -11,9 +11,11 @@ source-memory capabilities/families; M4 Tasks 1-3 added procedural Skill
 candidate, readiness, package-artifact, and proposal families without compact
 or install authority. M4 Task 4 adds one immutable deployment-plan family and
 one immutable deployment-receipt family; host intent transitions remain runtime
-journals rather than canonical research families.
+journals rather than canonical research families. M4 Task 5 adds one exact
+Skill-usage family plus evidence-backed patch planning through the existing
+deployment transaction; it adds no compact capability or direct mutation path.
 
-Writer scan status: all 161 current named-helper rows (111 at the M0 baseline)
+Writer scan status: all 164 current named-helper rows (111 at the M0 baseline)
 and all 173 current direct
 mutation rows are classified; scan coverage remains explicitly incomplete.
 
@@ -449,7 +451,7 @@ validation_contracts
 validation_results
 ```
 
-### 3.2 Vertical Extension (39)
+### 3.2 Vertical Extension (40)
 
 ```text
 authorities
@@ -486,6 +488,7 @@ skill_package_artifacts
 skill_patch_proposals
 skill_proposals
 skill_readiness_reports
+skill_usage_records
 source_acquisition_decisions
 source_acquisition_receipts
 source_reconstruction_reviews
@@ -525,18 +528,18 @@ Their concepts overlap existing exploratory records, research routes/intents,
 artifacts, validation, and closeout. They remain registered/readable during the
 review but may not receive new writes or be used to justify new APIs.
 
-Family accounting totals 72 with no unclassified family.
+Family accounting totals 73 with no unclassified family.
 
 ## 4. Writer Classification
 
-The current runtime audit reports 161 recognized semantic repository writes
+The current runtime audit reports 164 recognized semantic repository writes
 and low-level helper calls. Every reported call is classified below by its current storage role,
 not by the capability name or intended future architecture. A canonical row is
 a writer-convergence target even when it writes a non-registry canonical family
 or a topic-local mirror. A migration row may write a typed migration record but
 does not belong to the production research lifecycle.
 
-### 4.1 Canonical Record Or Repository (85)
+### 4.1 Canonical Record Or Repository (88)
 
 ~~~text
 brain/v5/_compat_shards/active_claim_focus/part_02.py:_write_rebind_audit:273:write_record | families=active_claim_rebind_audits | dynamic=false
@@ -612,6 +615,9 @@ brain/v5/references.py:record_reference_location:60:repository_write | families=
 brain/v5/skill_candidates.py:propose_procedural_skill:84:repository_write | families=skill_patch_proposals | dynamic=false
 brain/v5/skill_install_materialization.py:materialize_plan:156:repository_write | families=skill_install_receipts | dynamic=false
 brain/v5/skill_install_planning.py:_record_plan:232:repository_write | families=skill_install_plans | dynamic=false
+brain/v5/skill_usage.py:record_skill_usage:44:repository_write | families=skill_usage_records | dynamic=false
+brain/v5/skill_usage.py:build_skill_patch_proposal:182:repository_write | families=skill_patch_proposals | dynamic=false
+brain/v5/skill_usage.py:_link_usage:395:repository_write | families=- | dynamic=true
 brain/v5/validation.py:create_validation_contract:62:repository_write | families=validation_contracts | dynamic=false
 brain/v5/validation.py:record_validation_result:137:repository_write | families=validation_results | dynamic=false
 brain/v5/knowledge_lifecycle.py:record_knowledge_lifecycle_event:78:repository_write | families=lifecycle_events | dynamic=false
@@ -1022,11 +1028,11 @@ rows remain outside normal production research writes.
   2 passed;
 - current direct-mutation classification: 173 of 173 rows, no duplicate or
   unclassified signature;
-- current named-helper classification: 161 of 161 rows; the preserved M0
+- current named-helper classification: 164 of 164 rows; the preserved M0
   lower-bound baseline was 111;
 - production-tree probe: no filesystem import aliases, dynamic open modes, or
   SQL execute calls were found;
-- `writer_scan_policy.bounded_coverage_complete`: true for 716/716 declared
+- `writer_scan_policy.bounded_coverage_complete`: true for 719/719 declared
   production Python files with zero parse errors;
 - `writer_scan_policy.coverage_complete`: false, because absence of arbitrary
   dynamic, reflected, custom, or native mutation helpers is not statically
@@ -1116,6 +1122,6 @@ For record families, retain the 25 core, 37 vertical, and four migration
 registrations under their existing write/read policies. New vertical families
 remain owned by their M3/M4 acceptance journeys; four zero-record
 unimplemented-layout families remain soft-deprecation candidates.
-All 161 helper-writer and 173 direct-mutation rows retain the ownership classes
+All 164 helper-writer and 173 direct-mutation rows retain the ownership classes
 in section 4. Migration/archived rows do not re-enter production, and bounded
 scanner closure does not convert candidate counts into a no-bypass proof.

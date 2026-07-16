@@ -1143,14 +1143,29 @@ host-neutral skill packages linked to their source research and actual usage.
 - Create: `tests/test_v5_skill_applicability.py`
 - Modify: `brain/v5/models.py`
 
-- [ ] Derive applicability from domain/task/software/repository/code-path/
+- [x] Derive applicability from domain/task/software/repository/code-path/
   physics-object/focus selectors.
-- [ ] Store canonical applicability only for reviewed overrides.
-- [ ] Record skill id/version usage on tool runs and execution baselines.
-- [ ] Generate patch proposals from new validated success, failure, or boundary
+- [x] Store canonical applicability only for reviewed overrides.
+- [x] Record skill id/version usage on tool runs and execution baselines.
+- [x] Generate patch proposals from new validated success, failure, or boundary
   evidence.
-- [ ] Reject Harness Feedback as Skill candidate/patch evidence.
-- [ ] Require review before patch application.
+- [x] Reject Harness Feedback as Skill candidate/patch evidence.
+- [x] Require review before patch application.
+
+Task 4.4 now matches only completed, byte-current project-local installs and
+returns selector-level orientation reasons without loading Skill bodies. Exact
+usage pins the installed receipt, proposal, package artifact, consuming run and
+optional baseline, validations, failures, selectors, and parameters; run and
+baseline revisions carry a trust-neutral usage backlink. Reviewed applicability
+exceptions reuse expiring `ScopeRevalidationDecisionRecord` plus a verified
+scope-revalidation checkpoint instead of creating a stale topic-by-Skill
+matrix. Patch proposals re-prove exact historical usage and old/new package
+identities, reject the Harness Feedback compatibility lane, and produce no
+write outside canonical candidate storage. Applying a patch requires the same
+recoverable Task 4.3 transaction with action `apply_aitp_skill_patch`, binding
+the patch ref, old/new hashes, package bytes, target, diff, validators, and
+receipt. Historical usage remains verifiable after upgrade while applicability
+advertises only the one currently materialized version.
 
 ### M4 Acceptance
 

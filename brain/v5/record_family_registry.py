@@ -251,6 +251,7 @@ _DEPENDENCY_FIELDS = {
         "monitor_refs[].record_ref",
         "recipe_ref",
         "run_ref",
+        "skill_usage_refs",
         "validation_refs[].record_ref",
     ),
     "scope_revalidation_decisions": (

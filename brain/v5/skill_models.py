@@ -260,6 +260,9 @@ class SkillInstallPlanRecord:
     validation_policy: dict
     validation_policy_hash: str
     action_payload: dict
+    patch_proposal_ref: dict = field(default_factory=dict)
+    old_package_hash: str = ""
+    new_package_hash: str = ""
     created_at: str = ""
     immutable: bool = True
     requires_human_review: bool = True
@@ -274,6 +277,7 @@ class SkillInstallPlanRecord:
             "install_aitp_skill",
             "overwrite_aitp_skill",
             "rollback_aitp_skill",
+            "apply_aitp_skill_patch",
         }
         if self.checkpoint_action not in allowed_actions:
             raise ValueError("Skill install plan checkpoint action is invalid")
@@ -306,6 +310,7 @@ class SkillInstallReceiptRecord:
     validation_results: list[dict]
     status: str
     completed_at: str
+    patch_proposal_ref: dict = field(default_factory=dict)
     can_update_claim_trust: bool = False
     kind: str = "skill_install_receipt"
 
@@ -316,6 +321,85 @@ class SkillInstallReceiptRecord:
             raise ValueError("Skill install receipt operation is invalid")
         if self.can_update_claim_trust:
             raise ValueError("Skill install receipts cannot update claim trust")
+
+
+@dataclass(frozen=True)
+class SkillUsageRecord:
+    usage_id: str
+    skill_id: str
+    skill_name: str
+    semantic_version: str
+    package_hash: str
+    install_receipt_ref: dict
+    proposal_ref: dict
+    package_artifact_ref: dict
+    session_id: str
+    topic_id: str
+    focus_ref: str
+    consuming_tool_run_ref: dict
+    selected_selectors: dict
+    parameters: dict
+    outcome: str
+    validation_refs: list[dict]
+    failure_refs: list[dict]
+    consuming_baseline_ref: dict = field(default_factory=dict)
+    created_at: str = ""
+    can_update_claim_trust: bool = False
+    kind: str = "skill_usage"
+
+    def __post_init__(self) -> None:
+        if self.outcome not in {"success", "failure", "boundary_observed", "unresolved"}:
+            raise ValueError("Skill usage outcome is invalid")
+        if self.can_update_claim_trust:
+            raise ValueError("Skill usage cannot update claim trust")
+
+
+@dataclass
+class SkillPatchProposalRecord:
+    """M4 patch intent with defaults that preserve legacy feedback readability."""
+
+    proposal_id: str
+    skill_name: str
+    current_version: str
+    proposed_version: str
+    patch_summary: str
+    patch_body: str
+    topic_ids: list[str] = field(default_factory=list)
+    supporting_records: list[str] = field(default_factory=list)
+    applicability: list[str] = field(default_factory=list)
+    preconditions: list[str] = field(default_factory=list)
+    validation_refs: list[Any] = field(default_factory=list)
+    execution_refs: list[Any] = field(default_factory=list)
+    source_refs: list[Any] = field(default_factory=list)
+    artifact_ids: list[str] = field(default_factory=list)
+    installation_target: str = "project"
+    review_checkpoint_id: str = ""
+    approved_content_hash: str = ""
+    trust_level: str = "open"
+    review_status: str = "draft"
+    application_status: str = "not_applied"
+    requires_human_review: bool = True
+    can_update_claim_trust: bool = False
+    summary_inputs_trusted: bool = False
+    orientation_only: bool = True
+    skill_id: str = ""
+    old_package_hash: str = ""
+    new_package_hash: str = ""
+    old_package_proposal_ref: dict = field(default_factory=dict)
+    new_package_proposal_ref: dict = field(default_factory=dict)
+    source_usage_refs: list[dict] = field(default_factory=list)
+    failure_refs: list[dict] = field(default_factory=list)
+    patch_diff: list[dict] = field(default_factory=list)
+    diff_hash: str = ""
+    evidence_lane: str = "legacy_compat"
+    created_at: str = ""
+    kind: str = "skill_patch_proposal"
+
+    def __post_init__(self) -> None:
+        if not self.requires_human_review:
+            raise ValueError("Skill patch proposals require human review")
+        if self.can_update_claim_trust:
+            raise ValueError("Skill patch proposals cannot update claim trust")
 
 
 @dataclass(frozen=True)

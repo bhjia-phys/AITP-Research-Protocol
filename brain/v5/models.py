@@ -66,7 +66,9 @@ from brain.v5.skill_models import (  # noqa: E402 - typed M4 reviewed-Skill reco
     SkillInstallPlanRecord,
     SkillInstallReceiptRecord,
     SkillPackageArtifactRecord,
+    SkillPatchProposalRecord,
     SkillProposalRecord,
     SkillReadinessReportRecord,
+    SkillUsageRecord,
     SkillValidationExecutionRequest,
 )

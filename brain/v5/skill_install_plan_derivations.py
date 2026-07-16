@@ -31,7 +31,11 @@ def validation_policy_for(commands: Sequence[Mapping[str, Any]]):
     return policy, payload
 
 
-def checkpoint_action_for(operation: str) -> str:
+def checkpoint_action_for(operation: str, *, is_patch: bool = False) -> str:
+    if is_patch:
+        if operation != "upgrade":
+            raise ValueError("Skill patch plans must be monotonic upgrades")
+        return "apply_aitp_skill_patch"
     if operation == "rollback":
         return "rollback_aitp_skill"
     if operation in {"reinstall", "upgrade", "overwrite"}:
@@ -57,8 +61,11 @@ def diff_projection_for(
     existing_semantic_version: str,
     existing_package_hash: str,
     validation_policy_hash: str,
+    patch_proposal_ref: Mapping[str, Any] | None = None,
+    old_package_hash: str = "",
+    new_package_hash: str = "",
 ) -> dict[str, Any]:
-    return {
+    projection = {
         "operation": operation,
         "skill_id": skill_id,
         "semantic_version": semantic_version,
@@ -74,6 +81,15 @@ def diff_projection_for(
         "existing_package_hash": existing_package_hash,
         "validation_policy_hash": validation_policy_hash,
     }
+    if patch_proposal_ref:
+        projection.update(
+            {
+                "patch_proposal_ref": dict(patch_proposal_ref),
+                "old_package_hash": old_package_hash,
+                "new_package_hash": new_package_hash,
+            }
+        )
+    return projection
 
 
 def plan_identity_for(diff_projection, proposal_pin, artifact_pin) -> dict[str, Any]:

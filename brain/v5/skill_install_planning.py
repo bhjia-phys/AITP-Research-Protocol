@@ -116,11 +116,14 @@ def skill_install_checkpoint_request(
     plan_ref: PinnedRecordRef | Mapping[str, Any],
 ) -> dict[str, Any]:
     pin, plan = load_plan(ws, plan_ref)
+    subjects = [coerce_pin(plan.proposal_ref), coerce_pin(plan.package_artifact_ref)]
+    if plan.patch_proposal_ref:
+        subjects.append(coerce_pin(plan.patch_proposal_ref))
     return {
         "action": plan.checkpoint_action,
         "action_payload": dict(plan.action_payload),
         "intent_ref": pin,
-        "subject_refs": [coerce_pin(plan.proposal_ref), coerce_pin(plan.package_artifact_ref)],
+        "subject_refs": subjects,
         "target_scope_refs": target_scopes(plan, pin),
         "effect_policy": EFFECT_POLICY,
         "replay_policy": REPLAY_POLICY,
@@ -143,6 +146,9 @@ def _record_plan(
     hosts: Sequence[str],
     before_hash: str,
     existing_manifest: Mapping[str, Any],
+    patch_pin: PinnedRecordRef | None = None,
+    old_package_hash: str = "",
+    new_package_hash: str = "",
 ) -> SkillInstallPlanRecord:
     del manifest
     normalized_hosts = sorted({str(host).strip() for host in hosts if str(host).strip()})
@@ -153,7 +159,7 @@ def _record_plan(
     if not policy.requires_m2_execution:
         validate_staged_skill_package(files, proposal.validation_commands)
     validation_policy_hash = sha256_json(validation_policy)
-    checkpoint_action = checkpoint_action_for(operation)
+    checkpoint_action = checkpoint_action_for(operation, is_patch=patch_pin is not None)
     existing_skill_id = str(existing_manifest.get("skill_id") or "")
     existing_semantic_version = str(existing_manifest.get("semantic_version") or "")
     existing_package_hash = str(existing_manifest.get("package_hash") or "")
@@ -172,6 +178,9 @@ def _record_plan(
         existing_semantic_version=existing_semantic_version,
         existing_package_hash=existing_package_hash,
         validation_policy_hash=validation_policy_hash,
+        patch_proposal_ref=asdict(patch_pin) if patch_pin is not None else None,
+        old_package_hash=old_package_hash,
+        new_package_hash=new_package_hash,
     )
     identity = plan_identity_for(diff_projection, proposal_pin, artifact_pin)
     diff_hash = identity["diff_hash"]
@@ -195,6 +204,14 @@ def _record_plan(
         "validation_policy": validation_policy,
         "validation_policy_hash": validation_policy_hash,
     }
+    if patch_pin is not None:
+        action_payload.update(
+            {
+                "patch_proposal_ref": asdict(patch_pin),
+                "old_package_hash": old_package_hash,
+                "new_package_hash": new_package_hash,
+            }
+        )
     record = SkillInstallPlanRecord(
         plan_id=plan_id,
         operation=operation,
@@ -219,6 +236,9 @@ def _record_plan(
         validation_policy=validation_policy,
         validation_policy_hash=validation_policy_hash,
         action_payload=action_payload,
+        patch_proposal_ref=asdict(patch_pin) if patch_pin is not None else {},
+        old_package_hash=old_package_hash,
+        new_package_hash=new_package_hash,
     )
     require_valid_skill_install_plan(record)
     RecordRepository(ws, actor=actor).write(
@@ -265,7 +285,7 @@ def load_plan(ws: WorkspacePaths, value):
 
 
 def checkpoint_request_payload(plan: SkillInstallPlanRecord) -> dict[str, Any]:
-    return {
+    payload = {
         "plan_id": plan.plan_id,
         "operation": plan.operation,
         "skill_id": plan.skill_id,
@@ -284,6 +304,15 @@ def checkpoint_request_payload(plan: SkillInstallPlanRecord) -> dict[str, Any]:
         "validation_policy": dict(plan.validation_policy),
         "validation_policy_hash": plan.validation_policy_hash,
     }
+    if plan.patch_proposal_ref:
+        payload.update(
+            {
+                "patch_proposal_ref": dict(plan.patch_proposal_ref),
+                "old_package_hash": plan.old_package_hash,
+                "new_package_hash": plan.new_package_hash,
+            }
+        )
+    return payload
 
 
 def _install_operation(proposal, *, before_hash, existing_manifest):
@@ -394,11 +423,14 @@ def files_tree_hash(files: Mapping[str, bytes]) -> str:
 
 
 def target_scopes(plan, plan_pin):
-    return [
+    scopes = [
         plan_pin.record_ref,
         f"project-root:{plan.target_root}",
         f"project-skill-path:{plan.target_path}",
     ]
+    if plan.patch_proposal_ref:
+        scopes.append(coerce_pin(plan.patch_proposal_ref).record_ref)
+    return scopes
 
 
 def coerce_pin(value):

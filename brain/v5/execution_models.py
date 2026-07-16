@@ -403,6 +403,7 @@ class ExecutionBaselineRecord:
     acceptance_checkpoint_hash: str = ""
     acceptance_checkpoint_revision: int = 0
     checkpoint_application_receipt_ref: str = ""
+    skill_usage_refs: list[str] = field(default_factory=list)
     status: str = "active"
     created_at: str = ""
     kind: str = "execution_baseline"

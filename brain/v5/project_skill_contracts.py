@@ -192,6 +192,7 @@ def validate_skill_install_plan(value: Any, *, path: str = "skill_install_plan")
         result.add(f"{path}.operation", "must be a supported deployment operation")
     if payload.get("checkpoint_action") not in {
         "install_aitp_skill", "overwrite_aitp_skill", "rollback_aitp_skill",
+        "apply_aitp_skill_patch",
     }:
         result.add(f"{path}.checkpoint_action", "must be a Skill deployment checkpoint action")
     for field in (
@@ -201,6 +202,10 @@ def validate_skill_install_plan(value: Any, *, path: str = "skill_install_plan")
         _require_sha(payload.get(field), f"{path}.{field}", result)
     for field in ("proposal_ref", "package_artifact_ref"):
         _validate_pinned_ref(payload.get(field), f"{path}.{field}", result)
+    if payload.get("checkpoint_action") == "apply_aitp_skill_patch":
+        _validate_pinned_ref(payload.get("patch_proposal_ref"), f"{path}.patch_proposal_ref", result)
+        _require_sha(payload.get("old_package_hash"), f"{path}.old_package_hash", result)
+        _require_sha(payload.get("new_package_hash"), f"{path}.new_package_hash", result)
     for field in ("validation_policy", "action_payload"):
         _require_mapping(payload.get(field), f"{path}.{field}", result)
     for field in ("hosts", "validation_commands"):
@@ -243,6 +248,8 @@ def validate_skill_install_receipt(value: Any, *, path: str = "skill_install_rec
         "checkpoint_decision_ref",
     ):
         _validate_pinned_ref(payload.get(field), f"{path}.{field}", result)
+    if payload.get("patch_proposal_ref"):
+        _validate_pinned_ref(payload.get("patch_proposal_ref"), f"{path}.patch_proposal_ref", result)
     for field in ("hosts", "validation_results"):
         _require_list(payload.get(field), f"{path}.{field}", result)
     _reject_nested_authority(payload, path, result)
