@@ -1,0 +1,261 @@
+{
+  "schema_version": "aitp.v5.knowledge-retrieval-fixture.v1",
+  "fixture_id": "qft-qg-hybrid-retrieval-v1",
+  "policy": {
+    "lexical": {
+      "version": "fielded-bm25.v1",
+      "k1": 1.2,
+      "b": 0.75,
+      "field_weights": {
+        "canonical_name": 4.0,
+        "aliases": 3.0,
+        "formula": 4.0,
+        "framework": 2.5,
+        "regime": 2.5,
+        "assumptions": 1.5,
+        "non_claims": 1.0,
+        "source_anchors": 1.0,
+        "relation": 2.0,
+        "statement": 2.5,
+        "passage_text": 2.0
+      }
+    },
+    "formula": {
+      "version": "formula-normalization.v1",
+      "exact_weight": 8.0,
+      "token_weight": 2.0
+    },
+    "graph": {
+      "version": "typed-graph.v1",
+      "max_depth": 2,
+      "max_visited": 64,
+      "depth_decay": 0.6
+    },
+    "fusion": {
+      "version": "rrf.v1",
+      "rrf_k": 60,
+      "component_weights": {
+        "lexical": 1.0,
+        "formula": 1.0,
+        "graph": 1.2,
+        "dense": 0.5
+      },
+      "lane_quotas": {
+        "grounded": 6,
+        "insight": 2,
+        "discovery": 2,
+        "comparison": 2
+      }
+    }
+  },
+  "acceptance_thresholds": {
+    "recall_at_3": 0.8,
+    "mrr": 0.8,
+    "ndcg_at_3": 0.75,
+    "exact_anchor_recovery": 1.0,
+    "wrong_framework_contamination": 0.0,
+    "grounded_insight_cross_contamination": 0.0
+  },
+  "documents": [
+    {
+      "record_ref": "physics_assertion:qg-generalized-entropy",
+      "record_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+      "revision": 1,
+      "family": "physics_assertions",
+      "topic_id": "qg",
+      "program_id": "qg-program",
+      "lane": "grounded",
+      "framework": "semiclassical gravity",
+      "regime": "island formula",
+      "conventions": ["outward-normal", "hbar-one"],
+      "fields": {
+        "canonical_name": ["generalized entropy"],
+        "aliases": ["S_gen", "generalized-entropy functional"],
+        "formula": ["S_gen = A/(4 G_N) + S_bulk"],
+        "assumptions": ["semiclassical bulk effective field theory"],
+        "non_claims": ["not a microscopic entropy formula"],
+        "source_anchors": ["reference_location:qg-generalized-entropy-page"],
+        "statement": ["The generalized entropy adds area and bulk entropy terms."]
+      },
+      "links": ["physics_object:qg-island", "source_passage:qg-engelhardt-wall"],
+      "link_types": {
+        "physics_object:qg-island": ["assertion_object"],
+        "source_passage:qg-engelhardt-wall": ["source_anchor"]
+      }
+    },
+    {
+      "record_ref": "physics_assertion:qg-worldsheet-entropy",
+      "record_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+      "revision": 1,
+      "family": "physics_assertions",
+      "topic_id": "qg",
+      "program_id": "qg-program",
+      "lane": "grounded",
+      "framework": "worldsheet string theory",
+      "regime": "critical string",
+      "conventions": ["lorentzian-worldsheet"],
+      "fields": {
+        "canonical_name": ["worldsheet entropy"],
+        "aliases": ["generalized entropy"],
+        "formula": ["S_ws = -Tr rho log rho"],
+        "statement": ["A nearby terminology collision in a different framework."]
+      },
+      "links": []
+    },
+    {
+      "record_ref": "physics_object:qg-island",
+      "record_hash": "3333333333333333333333333333333333333333333333333333333333333333",
+      "revision": 1,
+      "family": "physics_objects",
+      "topic_id": "qg",
+      "program_id": "qg-program",
+      "lane": "grounded",
+      "framework": "semiclassical gravity",
+      "regime": "island formula",
+      "conventions": ["outward-normal"],
+      "fields": {
+        "canonical_name": ["entanglement island"],
+        "aliases": ["island", "quantum extremal region"],
+        "statement": ["A bulk region selected by generalized-entropy extremization."]
+      },
+      "links": ["object_relation:qg-island-extremizes"],
+      "link_types": {
+        "object_relation:qg-island-extremizes": ["object_relation"]
+      }
+    },
+    {
+      "record_ref": "object_relation:qg-island-extremizes",
+      "record_hash": "4444444444444444444444444444444444444444444444444444444444444444",
+      "revision": 1,
+      "family": "object_relations",
+      "topic_id": "qg",
+      "program_id": "qg-program",
+      "lane": "grounded",
+      "framework": "semiclassical gravity",
+      "regime": "island formula",
+      "conventions": ["outward-normal"],
+      "fields": {
+        "relation": ["The QES extremizes generalized entropy."],
+        "formula": ["delta S_gen = 0"],
+        "assumptions": ["fixed semiclassical saddle"]
+      },
+      "links": ["physics_assertion:qg-generalized-entropy", "derivation_step:qg-qes-variation"],
+      "link_types": {
+        "physics_assertion:qg-generalized-entropy": ["relation_target"],
+        "derivation_step:qg-qes-variation": ["derivation_dependency"]
+      }
+    },
+    {
+      "record_ref": "derivation_step:qg-qes-variation",
+      "record_hash": "5555555555555555555555555555555555555555555555555555555555555555",
+      "revision": 1,
+      "family": "derivation_steps",
+      "topic_id": "qg",
+      "program_id": "qg-program",
+      "lane": "grounded",
+      "framework": "semiclassical gravity",
+      "regime": "island formula",
+      "conventions": ["outward-normal"],
+      "fields": {
+        "formula": ["delta(A/(4 G_N) + S_bulk) = 0"],
+        "statement": ["Vary the generalized entropy to obtain the QES condition."],
+        "source_anchors": ["reference_location:qg-qes-variation"]
+      },
+      "links": ["physics_assertion:qg-generalized-entropy"],
+      "link_types": {
+        "physics_assertion:qg-generalized-entropy": ["invoked_knowledge"]
+      }
+    },
+    {
+      "record_ref": "physics_assertion:qg-extrinsic-curvature-plus",
+      "record_hash": "6666666666666666666666666666666666666666666666666666666666666666",
+      "revision": 1,
+      "family": "physics_assertions",
+      "topic_id": "qg",
+      "program_id": "qg-program",
+      "lane": "grounded",
+      "framework": "semiclassical gravity",
+      "regime": "timelike cutoff wall",
+      "conventions": ["outward-normal"],
+      "fields": {
+        "canonical_name": ["extrinsic curvature"],
+        "formula": ["K_ab = h_a^c h_b^d nabla_c n_d"],
+        "statement": ["Extrinsic curvature with outward-pointing normal."]
+      },
+      "links": []
+    },
+    {
+      "record_ref": "physics_assertion:qg-extrinsic-curvature-minus",
+      "record_hash": "7777777777777777777777777777777777777777777777777777777777777777",
+      "revision": 1,
+      "family": "physics_assertions",
+      "topic_id": "qg",
+      "program_id": "qg-program",
+      "lane": "grounded",
+      "framework": "semiclassical gravity",
+      "regime": "timelike cutoff wall",
+      "conventions": ["inward-normal"],
+      "fields": {
+        "canonical_name": ["extrinsic curvature"],
+        "formula": ["K_ab = - h_a^c h_b^d nabla_c n_d"],
+        "statement": ["Opposite-sign convention for inward-pointing normal."]
+      },
+      "links": []
+    },
+    {
+      "record_ref": "insight:qg-ensemble-analogy",
+      "record_hash": "8888888888888888888888888888888888888888888888888888888888888888",
+      "revision": 1,
+      "family": "insights",
+      "topic_id": "qg",
+      "program_id": "qg-program",
+      "lane": "insight",
+      "framework": "semiclassical gravity",
+      "regime": "replica wormholes",
+      "conventions": [],
+      "fields": {
+        "canonical_name": ["ensemble analogy"],
+        "statement": ["Replica-wormhole averaging may be analogous to an ensemble description."],
+        "non_claims": ["This analogy is not evidence for an actual ensemble dual."]
+      },
+      "links": ["physics_assertion:qg-generalized-entropy"],
+      "link_types": {
+        "physics_assertion:qg-generalized-entropy": ["source_supports"]
+      }
+    },
+    {
+      "record_ref": "source_passage:qg-engelhardt-wall",
+      "record_hash": "9999999999999999999999999999999999999999999999999999999999999999",
+      "revision": 1,
+      "family": "source_shelf_passages",
+      "topic_id": "qg",
+      "program_id": "qg-program",
+      "lane": "source",
+      "framework": "semiclassical gravity",
+      "regime": "island formula",
+      "conventions": [],
+      "fields": {
+        "passage_text": ["The generalized entropy is the area term plus bulk entropy; the QES prescription is semiclassical and inherits caveats from the bulk effective theory."],
+        "source_anchors": ["reference_location:qg-engelhardt-wall"]
+      },
+      "links": ["physics_assertion:qg-generalized-entropy"]
+    },
+    {
+      "record_ref": "physics_assertion:ads-shared-extremization",
+      "record_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "revision": 1,
+      "family": "physics_assertions",
+      "topic_id": "ads-cft",
+      "program_id": "qg-program",
+      "lane": "grounded",
+      "framework": "semiclassical gravity",
+      "regime": "island formula",
+      "conventions": ["outward-normal"],
+      "fields": {
+        "canonical_name": ["shared extremization result"],
+        "statement": ["A foreign-topic result requiring target-side revalidation."]
+      },
+      "links": []
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "schema_version": "aitp.v5.knowledge-retrieval-queries.v1",
+  "queries": [
+    {
+      "query_id": "generalized-entropy-definition",
+      "text": "generalized entropy area bulk entropy",
+      "topic_id": "qg",
+      "framework": "semiclassical gravity",
+      "regime": "island formula",
+      "intent": "default",
+      "judgments": {
+        "physics_assertion:qg-generalized-entropy": 3,
+        "source_passage:qg-engelhardt-wall": 2,
+        "derivation_step:qg-qes-variation": 1
+      }
+    },
+    {
+      "query_id": "outward-extrinsic-curvature",
+      "text": "extrinsic curvature outward normal",
+      "formula": "K_ab = h_a^c h_b^d nabla_c n_d",
+      "topic_id": "qg",
+      "framework": "semiclassical gravity",
+      "regime": "timelike cutoff wall",
+      "conventions": ["outward-normal"],
+      "intent": "default",
+      "judgments": {
+        "physics_assertion:qg-extrinsic-curvature-plus": 3
+      }
+    },
+    {
+      "query_id": "qes-dependency",
+      "text": "QES variation dependency",
+      "topic_id": "qg",
+      "framework": "semiclassical gravity",
+      "regime": "island formula",
+      "seed_refs": ["physics_object:qg-island"],
+      "intent": "dependency",
+      "judgments": {
+        "object_relation:qg-island-extremizes": 3,
+        "derivation_step:qg-qes-variation": 3,
+        "physics_assertion:qg-generalized-entropy": 2
+      }
+    },
+    {
+      "query_id": "replica-ensemble-insight",
+      "text": "replica wormhole ensemble analogy",
+      "topic_id": "qg",
+      "framework": "semiclassical gravity",
+      "regime": "replica wormholes",
+      "intent": "insight",
+      "judgments": {
+        "insight:qg-ensemble-analogy": 3
+      }
+    }
+  ]
+}

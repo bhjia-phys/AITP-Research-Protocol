@@ -44,7 +44,12 @@ def _approval_receipt(
     return {**payload, "signature": hmac.new(secret, encoded, hashlib.sha256).hexdigest()}
 
 
-def _seed_scope_proposal(tmp_path, monkeypatch):
+def _seed_scope_proposal(
+    tmp_path,
+    monkeypatch,
+    *,
+    allowed_operations=("execute_bound_tool",),
+):
     from brain.v5.checkpoint_bindings import (
         decide_bound_checkpoint,
         request_bound_checkpoint,
@@ -118,7 +123,7 @@ def _seed_scope_proposal(tmp_path, monkeypatch):
         target_claim_id=target_claim.claim_id,
         target_program_id="",
         target_scope_refs=("topic:target-topic", f"claim:{target_claim.claim_id}"),
-        allowed_operations=("execute_bound_tool",),
+        allowed_operations=allowed_operations,
         applicability_conditions=("target regression passes",),
         validation_refs=(validation_pin,),
         evidence_refs=(),
