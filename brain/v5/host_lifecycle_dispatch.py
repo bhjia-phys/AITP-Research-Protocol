@@ -40,6 +40,49 @@ _PROCESS_TEXT_FIELDS = frozenset(
         "tool_run_ref",
     }
 )
+_OPERATION_ALLOWLIST = MappingProxyType(
+    {
+        "session_start": MappingProxyType(
+            {"prepare_context_injection": "runtime_write"}
+        ),
+        "prompt_submit": MappingProxyType(
+            {"prepare_context_injection": "runtime_write"}
+        ),
+        "pre_tool": MappingProxyType(
+            {"delegate_existing_pre_tool_policy": "read_only"}
+        ),
+        "post_tool": MappingProxyType(
+            {
+                "append_hook_trace_event": "runtime_write",
+                "delegate_existing_post_tool_trace": "read_only",
+                "dispatch_validated_research_moment": "policy_bounded_write",
+            }
+        ),
+        "session_end": MappingProxyType({"plan_session_closeout": "read_only"}),
+    }
+)
+
+
+def host_lifecycle_operation_allowlist() -> Mapping[str, Mapping[str, str]]:
+    """Return the immutable operation/effect boundary for normalized host events."""
+
+    return _OPERATION_ALLOWLIST
+
+
+def authorize_host_lifecycle_operation(
+    event: HostLifecycleEvent,
+    operation: str,
+) -> str:
+    """Return the declared effect or fail closed before any host-driven action."""
+
+    _require_event(event)
+    operation = _required_text(operation, "operation")
+    effect = _OPERATION_ALLOWLIST.get(event.logical_event, {}).get(operation)
+    if effect is None:
+        raise PermissionError(
+            f"operation {operation!r} is not allowed for {event.logical_event!r}"
+        )
+    return effect
 
 
 def normalize_host_lifecycle_event(
@@ -129,6 +172,7 @@ def begin_research_turn(
         raise ValueError("begin_research_turn requires a start or prompt event")
     if deliver_context is not None and not callable(deliver_context):
         raise TypeError("deliver_context must be callable")
+    authorize_host_lifecycle_operation(event, "prepare_context_injection")
     binding, failure = _bound_session(ws, event)
     if failure is not None:
         return failure
@@ -203,6 +247,7 @@ def closeout_session(
         raise ValueError("closeout_session requires a session_end event")
     if event.automatic:
         raise ValueError("automatic session closeout is not supported")
+    authorize_host_lifecycle_operation(event, "plan_session_closeout")
     binding, failure = _bound_session(ws, event)
     if failure is not None:
         return failure
@@ -233,6 +278,9 @@ def dispatch_host_lifecycle_event(
     if failure is not None:
         return failure
     if event.logical_event == "pre_tool":
+        authorize_host_lifecycle_operation(
+            event, "delegate_existing_pre_tool_policy"
+        )
         return _dispatch(
             event,
             topic_id=binding.topic_id,
@@ -241,6 +289,9 @@ def dispatch_host_lifecycle_event(
             reason_codes=("existing_host_policy_owner",),
         )
     if event.logical_event == "post_tool":
+        authorize_host_lifecycle_operation(
+            event, "delegate_existing_post_tool_trace"
+        )
         return _dispatch(
             event,
             topic_id=binding.topic_id,
@@ -383,8 +434,10 @@ def _require_event(event: HostLifecycleEvent) -> None:
 __all__ = [
     "HostLifecycleDispatch",
     "HostLifecycleEvent",
+    "authorize_host_lifecycle_operation",
     "begin_research_turn",
     "closeout_session",
     "dispatch_host_lifecycle_event",
+    "host_lifecycle_operation_allowlist",
     "normalize_host_lifecycle_event",
 ]

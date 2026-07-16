@@ -343,6 +343,22 @@ def dispatch_host_lifecycle_event(ws, event, *, actor=None, deliver_context=None
     return _dispatch(ws, event, actor=actor, deliver_context=deliver_context)
 
 
+def host_lifecycle_operation_allowlist():
+    from brain.v5.host_lifecycle_dispatch import (
+        host_lifecycle_operation_allowlist as _allowlist,
+    )
+
+    return _allowlist()
+
+
+def authorize_host_lifecycle_operation(event, operation):
+    from brain.v5.host_lifecycle_dispatch import (
+        authorize_host_lifecycle_operation as _authorize,
+    )
+
+    return _authorize(event, operation)
+
+
 __all__ = [
     "HOST_LIFECYCLE_CAPABILITY_SCHEMA_VERSION",
     "HostLifecycleCapability",
@@ -351,10 +367,12 @@ __all__ = [
     "HostLifecycleCapabilityMatrix",
     "HostLifecycleEvent",
     "HostLifecycleEventCapability",
+    "authorize_host_lifecycle_operation",
     "begin_research_turn",
     "closeout_session",
     "dispatch_host_lifecycle_event",
     "host_lifecycle_capability",
     "host_lifecycle_capability_matrix",
+    "host_lifecycle_operation_allowlist",
     "normalize_host_lifecycle_event",
 ]

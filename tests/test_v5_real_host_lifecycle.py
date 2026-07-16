@@ -625,3 +625,131 @@ def test_dispatch_keeps_pre_post_and_closeout_at_their_declared_boundaries(tmp_p
         False,
     )
     assert closeout_result.reason_codes == ("human_review_required", "automatic_closeout_unsupported")
+
+
+def test_host_lifecycle_operation_allowlist_excludes_high_authority_writers():
+    from brain.v5.host_lifecycle_facade import (
+        authorize_host_lifecycle_operation,
+        host_lifecycle_operation_allowlist,
+        normalize_host_lifecycle_event,
+    )
+
+    allowlist = host_lifecycle_operation_allowlist()
+    assert allowlist["session_start"] == {"prepare_context_injection": "runtime_write"}
+    assert allowlist["prompt_submit"] == {"prepare_context_injection": "runtime_write"}
+    assert allowlist["pre_tool"] == {
+        "delegate_existing_pre_tool_policy": "read_only"
+    }
+    assert allowlist["session_end"] == {"plan_session_closeout": "read_only"}
+    assert allowlist["post_tool"] == {
+        "append_hook_trace_event": "runtime_write",
+        "delegate_existing_post_tool_trace": "read_only",
+        "dispatch_validated_research_moment": "policy_bounded_write",
+    }
+    with pytest.raises(TypeError):
+        allowlist["post_tool"]["record_evidence"] = "canonical_write"
+
+    event = normalize_host_lifecycle_event(
+        "codex",
+        "PostToolUse",
+        {
+            "event_id": "evt-allowlist-1",
+            "host_session_id": "codex-session-1",
+            "tool_name": "pytest",
+            "status": "completed",
+        },
+        session_id="s1",
+    )
+    assert (
+        authorize_host_lifecycle_operation(
+            event, "delegate_existing_post_tool_trace"
+        )
+        == "read_only"
+    )
+    for forbidden in (
+        "accept_execution_baseline",
+        "apply_promotion_packet",
+        "apply_project_skill",
+        "apply_session_closeout",
+        "apply_skill_install_plan",
+        "apply_trust_update",
+        "attach_artifact_auto",
+        "bind_session",
+        "capture_code_state_auto",
+        "capture_source_asset_auto",
+        "capture_tool_run_auto",
+        "confirm_active_claim_rebind",
+        "record_evidence",
+        "stage_semantic_candidate",
+    ):
+        with pytest.raises(PermissionError, match="not allowed"):
+            authorize_host_lifecycle_operation(event, forbidden)
+
+
+def test_all_normalized_host_paths_pass_high_authority_writer_sentinels(
+    tmp_path, monkeypatch
+):
+    from brain.v5.host_lifecycle_facade import (
+        dispatch_host_lifecycle_event,
+        normalize_host_lifecycle_event,
+    )
+    from brain.v5.query_index import current_canonical_watermark
+
+    ws, _ = _seed_session(tmp_path)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("host lifecycle invoked a high-authority writer")
+
+    for target in (
+        "brain.v5.evidence.record_evidence",
+        "brain.v5.trust_updates.apply_trust_update",
+        "brain.v5.memory.apply_promotion_packet",
+        "brain.v5.skill_candidates.apply_project_skill",
+        "brain.v5.skill_install_transactions.apply_skill_install_plan",
+        "brain.v5.execution_baselines.accept_execution_baseline",
+        "brain.v5.active_claim_focus.confirm_active_claim_rebind",
+        "brain.v5.workspace.bind_session",
+        "brain.v5.lifecycle_facade.apply_session_closeout",
+    ):
+        monkeypatch.setattr(target, forbidden)
+
+    native_paths = (
+        ("claude_code", "SessionStart"),
+        ("claude_code", "PreToolUse"),
+        ("claude_code", "PostToolUse"),
+        ("kimi_code", "SessionStart"),
+        ("kimi_code", "PreToolUse"),
+        ("kimi_code", "PostToolUse"),
+        ("codex", "PreToolUse"),
+        ("codex", "PostToolUse"),
+        ("codex", "aitp_v5_codex_enter"),
+        ("opencode", "tool.execute.before"),
+        ("opencode", "tool.execute.after"),
+        ("opencode", "begin_research_turn"),
+        ("opencode", "plan_session_closeout"),
+    )
+    before = current_canonical_watermark(ws)
+    results = []
+    for number, (host, native_event) in enumerate(native_paths, start=1):
+        event = normalize_host_lifecycle_event(
+            host,
+            native_event,
+            {
+                "event_id": f"evt-sentinel-{number}",
+                "host_session_id": f"{host}-sentinel-session",
+                "research_relevant": True,
+                "tool_name": "pytest",
+                "status": "completed",
+            },
+            session_id="s1",
+        )
+        results.append(dispatch_host_lifecycle_event(ws, event))
+
+    assert {result.status for result in results} == {
+        "context_prepared",
+        "plan_only",
+        "policy_only",
+        "trace_only",
+    }
+    assert all(result.canonical_write is False for result in results)
+    assert current_canonical_watermark(ws) == before
