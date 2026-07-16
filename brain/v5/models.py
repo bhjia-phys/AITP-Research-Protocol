@@ -57,3 +57,7 @@ from brain.v5.record_lifecycle_models import (  # noqa: E402 - replace shard-com
 from brain.v5.evidence_basis_models import (  # noqa: E402 - replace shard-compatible v1.
     EvidenceRecord,
 )
+from brain.v5.source_acquisition_models import (  # noqa: E402 - typed M3 process records.
+    SourceAcquisitionDecisionRecord,
+    SourceAcquisitionReceiptRecord,
+)

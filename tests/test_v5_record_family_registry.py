@@ -47,7 +47,7 @@ def test_record_family_registry_contract_is_self_consistent():
 
     assert payload["ok"] is True
     assert payload["errors"] == []
-    assert payload["registry_family_count"] == 60
+    assert payload["registry_family_count"] == 62
     assert payload["special_family_count"] == 4
     assert payload["truth_source"] == "record_family_specs"
     assert payload["can_update_kernel_state"] is False
@@ -85,6 +85,23 @@ def test_m3_promoted_records_depend_on_exact_review_decision():
 
     for family in ("physics_assertions", "insights"):
         assert "review_decision_ref.record_ref" in specs[family].dependency_fields
+
+
+def test_m3_source_acquisition_families_are_append_only_and_receipts_pin_decisions():
+    specs = record_family_specs()
+
+    for family in ("source_acquisition_decisions", "source_acquisition_receipts"):
+        spec = specs[family]
+        assert spec.schema_version == "v2"
+        assert spec.trust_effect == "none"
+        assert spec.lifecycle_policy == "append_only"
+        assert spec.record_role == "process_record"
+        assert {"exact_ref", "inventory", "query_index", "context_compiler"} <= set(
+            spec.participates_in
+        )
+    assert specs["source_acquisition_receipts"].dependency_fields == (
+        "decision_ref.record_ref",
+    )
 
 
 def test_m1_lifecycle_families_are_trust_neutral_and_exact_expandable():

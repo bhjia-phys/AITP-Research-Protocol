@@ -4,11 +4,15 @@ M3_REGISTRY_ROWS = (
     ("insights", "insight", "InsightRecord", "insight_id"),
     ("knowledge_review_decisions", "knowledge_review_decision", "KnowledgeReviewDecisionRecord", "decision_id"),
     ("physics_assertions", "physics_assertion", "PhysicsAssertionRecord", "assertion_id"),
+    ("source_acquisition_decisions", "source_acquisition_decision", "SourceAcquisitionDecisionRecord", "decision_id"),
+    ("source_acquisition_receipts", "source_acquisition_receipt", "SourceAcquisitionReceiptRecord", "receipt_id"),
 )
 
 M3_RECORD_ROLES = {
     "insights": "orientation_only_record",
     "knowledge_review_decisions": "review_record",
+    "source_acquisition_decisions": "process_record",
+    "source_acquisition_receipts": "process_record",
 }
 
 M3_SCHEMA_VERSIONS = {
@@ -30,6 +34,11 @@ M3_DEPENDENCY_FIELDS = {
         "object_ref", "source_asset_refs", "source_location_refs",
         "contradiction_refs", "supersedes_assertion_ref", "review_decision_ref.record_ref",
     ),
+    "source_acquisition_receipts": ("decision_ref.record_ref",),
 }
 
-M3_APPEND_ONLY_FAMILIES = frozenset({"knowledge_review_decisions"})
+M3_APPEND_ONLY_FAMILIES = frozenset({
+    "knowledge_review_decisions",
+    "source_acquisition_decisions",
+    "source_acquisition_receipts",
+})
