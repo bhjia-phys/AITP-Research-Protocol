@@ -14,7 +14,7 @@ from brain.v5.contracts import (
 )
 
 
-_STATE_EFFECTS = {"read_only_preview", "project_skill_shim_write"}
+_STATE_EFFECTS = {"read_only_preview", "checkpoint_required"}
 _SHIM_STATUSES = {
     "would_create",
     "would_update",
@@ -22,6 +22,7 @@ _SHIM_STATUSES = {
     "updated",
     "up_to_date",
     "blocked_existing",
+    "checkpoint_required",
 }
 _FORBIDDEN_USES = (
     "evidence_support",
@@ -49,7 +50,7 @@ def validate_domain_skill_shim_manifest(
     if payload.get("truth_source") != "builtin_domain_pack_skill_refs":
         result.add(f"{path}.truth_source", "must be 'builtin_domain_pack_skill_refs'")
     if payload.get("state_effect") not in _STATE_EFFECTS:
-        result.add(f"{path}.state_effect", "must be read_only_preview or project_skill_shim_write")
+        result.add(f"{path}.state_effect", "must be read_only_preview or checkpoint_required")
     for key in ("workspace_base", "output_root", "relative_output_root", "state_effect"):
         _require_nonempty_str(payload, key, path, result)
     for key in (
@@ -71,7 +72,7 @@ def validate_domain_skill_shim_manifest(
         for index, shim in enumerate(payload["shims"]):
             _validate_shim(shim, f"{path}.shims[{index}]", result)
     _validate_generation_policy(payload.get("generation_policy"), f"{path}.generation_policy", result)
-    for key in ("apply", "overwrite", "writes_project_files"):
+    for key in ("apply", "apply_requested", "overwrite", "writes_project_files"):
         if not isinstance(payload.get(key), bool):
             result.add(f"{path}.{key}", "must be a boolean")
     for key, expected in (
@@ -86,8 +87,10 @@ def validate_domain_skill_shim_manifest(
         _require_bool_value(payload.get(key), expected, f"{path}.{key}", result)
     if payload.get("state_effect") == "read_only_preview":
         _require_bool_value(payload.get("writes_project_files"), False, f"{path}.writes_project_files", result)
-    if payload.get("state_effect") == "project_skill_shim_write":
-        _require_bool_value(payload.get("apply"), True, f"{path}.apply", result)
+    if payload.get("state_effect") == "checkpoint_required":
+        _require_bool_value(payload.get("apply_requested"), True, f"{path}.apply_requested", result)
+        _require_bool_value(payload.get("apply"), False, f"{path}.apply", result)
+        _require_bool_value(payload.get("writes_project_files"), False, f"{path}.writes_project_files", result)
     return result
 
 
@@ -139,10 +142,11 @@ def _validate_generation_policy(value: Any, path: str, result: ContractResult) -
     _require_list(value.get("forbidden_uses"), f"{path}.forbidden_uses", result)
     for key in (
         "writes_only_project_shims",
-        "requires_explicit_apply",
-        "overwrite_requires_flag",
+        "requires_bound_install_checkpoint",
     ):
         _require_bool_value(value.get(key), True, f"{path}.{key}", result)
+    for key in ("requires_explicit_apply", "overwrite_requires_flag"):
+        _require_bool_value(value.get(key), False, f"{path}.{key}", result)
     _require_bool_value(value.get("copies_external_skill_content"), False, f"{path}.copies_external_skill_content", result)
     forbidden = value.get("forbidden_uses") if isinstance(value.get("forbidden_uses"), list) else []
     for item in _FORBIDDEN_USES:

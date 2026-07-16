@@ -367,7 +367,7 @@ def test_m0_5_classification_audit_covers_current_core_without_behavior_change()
 
     family_classes = {
         "core": classified_items(r"3\.1 Core \(25\)"),
-        "vertical_extension": classified_items(r"3\.2 Vertical Extension \(37\)"),
+        "vertical_extension": classified_items(r"3\.2 Vertical Extension \(39\)"),
         "migration": classified_items(r"3\.3 Migration \(4\)"),
         "soft_deprecation_candidate": classified_items(
             r"3\.4 Soft-Deprecation Candidates \(4\)"
@@ -375,7 +375,7 @@ def test_m0_5_classification_audit_covers_current_core_without_behavior_change()
     }
     assert {name: len(items) for name, items in family_classes.items()} == {
         "core": 25,
-        "vertical_extension": 37,
+        "vertical_extension": 39,
         "migration": 4,
         "soft_deprecation_candidate": 4,
     }
@@ -392,14 +392,16 @@ def test_m0_5_classification_audit_covers_current_core_without_behavior_change()
         "trust-neutral core record families. M3 added reviewed physics knowledge and "
         "source-memory capabilities/families; M4 Tasks 1-3 added procedural Skill "
         "candidate, readiness, package-artifact, and proposal families without compact "
-        "or install authority."
+        "or install authority. M4 Task 4 adds one immutable deployment-plan family and "
+        "one immutable deployment-receipt family; host intent transitions remain runtime "
+        "journals rather than canonical research families."
     ) in normalized
     assert "## 6. Resolved Review Decisions" in report
     assert "bounded scanner closure does not convert candidate counts into a no-bypass proof" in normalized
     assert "all 161 current named-helper rows" in normalized
-    assert "all 169 current direct" in normalized
+    assert "all 173 current direct" in normalized
     assert "257-capability staged core" in normalized
-    assert "709/709 declared production Python files" in normalized
+    assert "716/716 declared production Python files" in normalized
 
 
 def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
@@ -449,12 +451,12 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
 
     writer_rows_by_class = {
         "canonical_record_or_repository": writer_rows(
-            r"4\.1 Canonical Record Or Repository \(84\)"
+            r"4\.1 Canonical Record Or Repository \(85\)"
         ),
         "derived_index_or_surface": writer_rows(
             r"4\.2 Derived Index Or Surface \(29\)"
         ),
-        "host_or_runtime": writer_rows(r"4\.3 Host Or Runtime \(18\)"),
+        "host_or_runtime": writer_rows(r"4\.3 Host Or Runtime \(17\)"),
         "migration_or_legacy_compat": writer_rows(
             r"4\.4 Migration Or Legacy Compatibility \(28\)"
         ),
@@ -464,9 +466,9 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
     }
     writer_classes = stable_classes(writer_rows_by_class)
     assert {name: len(items) for name, items in writer_classes.items()} == {
-        "canonical_record_or_repository": 84,
+        "canonical_record_or_repository": 85,
         "derived_index_or_surface": 29,
-        "host_or_runtime": 18,
+        "host_or_runtime": 17,
         "migration_or_legacy_compat": 28,
         "shared_storage_primitive": 2,
     }
@@ -486,7 +488,7 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
             r"4\.6\.2 Derived Index Or Surface \(24\)"
         ),
         "host_runtime_or_maintenance": writer_rows(
-            r"4\.6\.3 Host Runtime Or Maintenance \(57\)"
+            r"4\.6\.3 Host Runtime Or Maintenance \(61\)"
         ),
         "migration_or_archived_legacy": writer_rows(
             r"4\.6\.4 Migration Or Archived Legacy \(75\)"
@@ -502,7 +504,7 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
     assert {name: len(items) for name, items in direct_classes.items()} == {
         "canonical_blob_or_record": 7,
         "derived_index_or_surface": 24,
-        "host_runtime_or_maintenance": 57,
+        "host_runtime_or_maintenance": 61,
         "migration_or_archived_legacy": 75,
         "shared_storage_primitive": 3,
         "transient_external_io": 3,
@@ -512,7 +514,7 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
     audited_direct = {
         row["stable_signature"] for row in audit["direct_mutation_candidates"]
     }
-    assert audit["inventory"]["direct_mutation_candidate_count"] == 169
+    assert audit["inventory"]["direct_mutation_candidate_count"] == 173
     assert classified_direct == audited_direct
     assert all(
         signature in direct_classes["migration_or_archived_legacy"]

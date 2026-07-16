@@ -63,7 +63,10 @@ from brain.v5.source_acquisition_models import (  # noqa: E402 - typed M3 proces
 )
 from brain.v5.skill_models import (  # noqa: E402 - typed M4 reviewed-Skill records.
     SkillDistillationCandidateRecord,
+    SkillInstallPlanRecord,
+    SkillInstallReceiptRecord,
     SkillPackageArtifactRecord,
     SkillProposalRecord,
     SkillReadinessReportRecord,
+    SkillValidationExecutionRequest,
 )

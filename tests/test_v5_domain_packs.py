@@ -213,7 +213,7 @@ def test_domain_pack_catalog_is_public_orientation_surface():
     assert formal["failure_taxonomy"][0]["failure_id"] == "implicit_definition_shift"
 
 
-def test_domain_skill_shim_manifest_previews_and_writes_project_skill_shims(tmp_path):
+def test_domain_skill_shim_manifest_previews_and_requires_bound_install(tmp_path):
     from brain.v5.domain_skill_shims import build_domain_skill_shim_manifest
     from brain.v5.public_surfaces import require_valid_public_surface
     from brain.v5.workspace import init_workspace
@@ -250,14 +250,12 @@ def test_domain_skill_shim_manifest_previews_and_writes_project_skill_shims(tmp_
         ),
     )
 
-    assert applied["state_effect"] == "project_skill_shim_write"
-    assert applied["writes_project_files"] is True
-    assert applied["write_count"] == 3
-    content = (output_root / "oh-my-librpa" / "SKILL.md").read_text(encoding="utf-8")
-    assert "name: oh-my-librpa" in content
-    assert "AITP Boundary" in content
-    assert "External skill content copied: `false`" in content
-    assert "tool_run" in content
+    assert applied["state_effect"] == "checkpoint_required"
+    assert applied["apply"] is False
+    assert applied["apply_requested"] is True
+    assert applied["writes_project_files"] is False
+    assert applied["write_count"] == 0
+    assert not (output_root / "oh-my-librpa" / "SKILL.md").exists()
 
     repeated = require_valid_public_surface(
         "domain_skill_shim_manifest",
@@ -270,7 +268,7 @@ def test_domain_skill_shim_manifest_previews_and_writes_project_skill_shims(tmp_
     )
 
     assert repeated["write_count"] == 0
-    assert {shim["status"] for shim in repeated["shims"]} == {"up_to_date"}
+    assert {shim["status"] for shim in repeated["shims"]} == {"would_create"}
 
 
 def test_domain_pack_cli_and_mcp_suggest_librpa_pack(tmp_path, capsys):

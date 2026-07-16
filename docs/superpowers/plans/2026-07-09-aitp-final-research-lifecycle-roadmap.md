@@ -1054,10 +1054,10 @@ through auditable hybrid lanes and exposed through bounded context.
 
 **Detailed plan:** `docs/superpowers/plans/2026-07-10-aitp-gate-4-skills.md`
 
-**Status (2026-07-16): in progress.** Tasks 4.1-4.2 and the host-neutral package
-preview/artifact/proposal portion of Task 4.3 are implemented. Transactional
-reviewed installation, applicability, exact usage, and patch feedback remain
-open.
+**Status (2026-07-16): in progress.** Tasks 4.1-4.3 are implemented, including
+host-neutral package artifacts and review-gated project-local deployment,
+rollback, compensation, and recovery. Applicability, exact usage, patch
+feedback, facade exposure, and M4 end-to-end acceptance remain open.
 
 **Milestone outcome:** Stable validated procedures become complete, reviewable,
 host-neutral skill packages linked to their source research and actual usage.
@@ -1096,9 +1096,17 @@ host-neutral skill packages linked to their source research and actual usage.
 - Create: `brain/v5/project_skill_packages.py`
 - Create: `brain/v5/project_skill_contracts.py`
 - Create: `brain/v5/skill_install_transactions.py`
+- Create: `brain/v5/skill_install_planning.py`
+- Create: `brain/v5/skill_install_materialization.py`
+- Create: `brain/v5/skill_install_plan_derivations.py`
+- Create: `brain/v5/skill_install_plan_validation.py`
+- Create: `brain/v5/skill_install_host_safety.py`
 - Create: `brain/v5/skill_validation_execution.py`
 - Create: `brain/v5/skill_package_artifacts.py`
 - Create: `tests/test_v5_project_skill_packages.py`
+- Create: `tests/test_v5_project_skill_install.py`
+- Create: `tests/test_v5_project_skill_install_security.py`
+- Create: `tests/test_v5_project_skill_rollback.py`
 - Modify: `brain/v5/domain_skill_shims.py`
 
 - [x] Build complete package previews with manifest, provenance, references,
@@ -1108,19 +1116,24 @@ host-neutral skill packages linked to their source research and actual usage.
 - [x] Store a canonical sorted package-tree manifest whose files resolve through
   M2 content-addressed blob receipts; reject symlinks/special files.
 - [x] Use a dedicated AITP-generated namespace.
-- [ ] Bind install/overwrite approval to a typed human checkpoint, hash, target,
+- [x] Bind install/overwrite approval to a typed human checkpoint, hash, target,
   and diff.
-- [ ] Run built-in declarative validators only; arbitrary commands use a
+- [x] Run built-in declarative validators only; arbitrary commands use a
   separate M2 high-risk execution request/receipt.
-- [ ] Route external domain-shim writes through the same project-root,
-  plan/checkpoint/receipt gate; legacy direct apply cannot bypass it.
-- [ ] Enforce immutable id/version/hash, idempotent reinstall, monotonic upgrade,
+- [x] Disable external domain-shim writes until represented by the same
+  project-root plan/checkpoint/receipt gate; legacy direct apply cannot bypass it.
+- [x] Enforce immutable id/version/hash, idempotent reinstall, monotonic upgrade,
   separately approved downgrade, and explicit history-preserving rollback.
-- [ ] Persist install intent before mutation, read back exact bytes, persist an
+- [x] Persist install intent before mutation, read back exact bytes, persist an
   immutable receipt, and compensate on receipt failure.
-- [ ] Model prepared/materialized/completed/compensated/recovery-required intent
-  transitions and deterministic resume/recovery; rollback is a canonical plan.
-- [ ] Materialize host-specific shims without changing canonical skill content.
+- [x] Re-derive plan/source/target/action/policy identity on load, revalidate
+  target and staging immediately before rename, and preserve the after-image
+  when a damaged backup makes automatic compensation unsafe.
+- [x] Model prepared/materialized/completed/compensated/recovery-required intent
+  transitions and deterministic resume/recovery; rollback is an operation of the
+  same canonical plan/receipt model.
+- [x] Keep one host-neutral project-local installed tree; host declarations are
+  receipt metadata and may not create divergent Skill copies.
 
 ### Task 4.4: Applicability, Usage, And Patch Loop
 
@@ -1147,12 +1160,12 @@ host-neutral skill packages linked to their source research and actual usage.
   checkpoints.
 - [ ] An applicable skill is discoverable at session start without loading every
   full skill body.
-- [ ] Skill installation and overwrite cannot occur without a typed approval.
-- [ ] Domain shims, rollback, downgrade, and reinstall cannot bypass the same
+- [x] Skill installation and overwrite cannot occur without a typed approval.
+- [x] Domain shims, rollback, downgrade, and reinstall cannot bypass the same
   transaction and checkpoint path.
-- [ ] Install readback cannot implicitly execute arbitrary generated scripts.
+- [x] Install readback cannot implicitly execute arbitrary generated scripts.
 - [ ] Actual use records the exact skill version.
-- [ ] Same id/version cannot map to different bytes and rollback preserves
+- [x] Same id/version cannot map to different bytes and rollback preserves
   immutable install history.
 
 ## 11. M5: Autonomous Research Moments, Hosts, And Feedback

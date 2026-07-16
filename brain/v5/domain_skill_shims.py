@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any
 
 from brain.v5.domain_packs import builtin_domain_packs
-from brain.v5.markdown import write_text_atomic
 from brain.v5.paths import WorkspacePaths
 
 
@@ -20,7 +19,7 @@ def build_domain_skill_shim_manifest(
     apply: bool = False,
     overwrite: bool = False,
 ) -> dict[str, Any]:
-    """Preview or write project-local SKILL.md shims from domain-pack skill refs."""
+    """Preview project-local shims; direct writes require the install transaction."""
 
     packs = builtin_domain_packs()
     selected_pack_ids = _selected_pack_ids(packs, pack_ids or [])
@@ -32,7 +31,7 @@ def build_domain_skill_shim_manifest(
         overwrite=overwrite,
     )
     shims = [
-        _materialize_or_preview_shim(shim, apply=apply, overwrite=overwrite)
+        _materialize_or_preview_shim(shim, apply=False, overwrite=overwrite)
         for shim in shim_specs
     ]
     write_count = sum(1 for shim in shims if shim["status"] in {"created", "updated"})
@@ -50,9 +49,10 @@ def build_domain_skill_shim_manifest(
         "shim_count": len(shims),
         "write_count": write_count,
         "blocked_count": blocked_count,
-        "apply": bool(apply),
+        "apply": False,
+        "apply_requested": bool(apply),
         "overwrite": bool(overwrite),
-        "state_effect": "project_skill_shim_write" if apply else "read_only_preview",
+        "state_effect": "checkpoint_required" if apply else "read_only_preview",
         "shims": shims,
         "required_followup_for_use": [
             "load the generated project-local shim only as orientation",
@@ -64,8 +64,9 @@ def build_domain_skill_shim_manifest(
             "default_output_root": ".agents/skills",
             "writes_only_project_shims": True,
             "copies_external_skill_content": False,
-            "requires_explicit_apply": True,
-            "overwrite_requires_flag": True,
+            "requires_explicit_apply": False,
+            "overwrite_requires_flag": False,
+            "requires_bound_install_checkpoint": True,
             "forbidden_uses": [
                 "evidence_support",
                 "source_support_result",
@@ -82,7 +83,7 @@ def build_domain_skill_shim_manifest(
         "can_create_evidence": False,
         "can_materialize_external_skill_content": False,
         "external_skill_content_copied": False,
-        "writes_project_files": bool(apply),
+        "writes_project_files": False,
     }
 
 
@@ -165,9 +166,7 @@ def _materialize_or_preview_shim(
     elif exists and not overwrite:
         status = "blocked_existing"
     else:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        write_text_atomic(path, content)
-        status = "updated" if exists else "created"
+        status = "checkpoint_required"
     payload = {
         key: value
         for key, value in spec.items()
@@ -180,7 +179,7 @@ def _materialize_or_preview_shim(
             "exists": exists,
             "existing_content_hash": existing_hash,
             "content_matches_existing": content_matches,
-            "write_executed": status in {"created", "updated"},
+            "write_executed": False,
             "write_blocked": status == "blocked_existing",
             "summary_inputs_trusted": False,
             "orientation_only": True,

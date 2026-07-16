@@ -8,13 +8,11 @@ from pathlib import Path
 import yaml
 
 from brain.v5.checkpoints import request_human_checkpoint
-from brain.v5.human_approval import checkpoint_can_authorize_trust
 from brain.v5.ids import prefixed_id
-from brain.v5.markdown import write_text_atomic
 from brain.v5.models import SkillPatchProposalRecord
 from brain.v5.paths import WorkspacePaths
 from brain.v5.record_envelope import RecordActor
-from brain.v5.record_repository import RecordRepository, WritePolicy
+from brain.v5.record_repository import RecordRepository
 
 
 _SKILL_NAME_RE = re.compile(r"^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$")
@@ -123,60 +121,13 @@ def apply_project_skill(
     proposal_id: str,
     checkpoint_id: str,
 ) -> dict[str, str | bool]:
-    """Install one exact approved proposal into the AITP project workspace."""
+    """Reject the retired one-file writer; M4 package transactions own installs."""
 
-    repository = _repository(ws, "apply_project_skill")
-    proposal_result = repository.read(f"skill_patch_proposal:{proposal_id}")
-    if proposal_result.status != "found" or not isinstance(
-        proposal_result.record, SkillPatchProposalRecord
-    ):
-        raise ValueError(f"skill proposal not found: {proposal_id}")
-    checkpoint_result = repository.read(f"human_checkpoint:{checkpoint_id}")
-    if checkpoint_result.status != "found" or checkpoint_result.record is None:
-        raise ValueError(f"human checkpoint not found: {checkpoint_id}")
-    proposal = proposal_result.record
-    checkpoint = checkpoint_result.record
-    if proposal.installation_target != "project":
-        raise ValueError("only project-local AITP skill installation is supported")
-    if not _SKILL_NAME_RE.fullmatch(proposal.skill_name):
-        raise ValueError("skill_name must contain only letters, numbers, and hyphens")
-
-    current_hash = str((proposal_result.frontmatter or {}).get("record_content_hash") or "")
-    approved_hash = proposal.approved_content_hash or current_hash
-    if checkpoint.checkpoint_id != checkpoint_id:
-        raise ValueError("checkpoint identity mismatch")
-    if checkpoint.decision != "approve_install" or not checkpoint_can_authorize_trust(checkpoint):
-        raise ValueError("skill installation requires a host-verified approve_install checkpoint")
-    if checkpoint.reason != _review_reason(proposal, approved_hash):
-        raise ValueError("skill checkpoint is not bound to the exact proposal content")
-
-    content = render_skill_markdown(proposal)
-    skill_path = ws.base / ".agents" / "skills" / proposal.skill_name / "SKILL.md"
-    if skill_path.exists() and skill_path.read_text(encoding="utf-8") != content:
-        raise ValueError(f"skill target already contains different content: {skill_path}")
-    write_text_atomic(skill_path, content)
-
-    if proposal.application_status != "applied":
-        if not current_hash:
-            raise ValueError(f"skill proposal lacks a revision hash: {proposal_id}")
-        proposal.review_status = "approved"
-        proposal.application_status = "applied"
-        proposal.review_checkpoint_id = checkpoint_id
-        proposal.approved_content_hash = approved_hash
-        repository.write(
-            "skill_patch_proposals",
-            proposal,
-            body=proposal_result.body,
-            policy=WritePolicy(mode="revision", expected_hash=current_hash),
-        )
-    return {
-        "ok": True,
-        "status": "installed",
-        "proposal_id": proposal_id,
-        "checkpoint_id": checkpoint_id,
-        "skill_path": str(skill_path),
-        "can_update_claim_trust": False,
-    }
+    del ws, proposal_id, checkpoint_id
+    raise ValueError(
+        "legacy apply_project_skill is disabled; build a package install plan and "
+        "use a bound install checkpoint (checkpoint_required)"
+    )
 
 
 def render_skill_markdown(proposal: SkillPatchProposalRecord) -> str:

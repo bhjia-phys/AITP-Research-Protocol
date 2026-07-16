@@ -49,7 +49,10 @@
 | `brain/v5/skill_readiness_contracts.py` | Readiness report validation. |
 | `brain/v5/project_skill_packages.py` | Host-neutral content-addressed package preview and proposal rendering. |
 | `brain/v5/project_skill_contracts.py` | Manifest/provenance/hash/checkpoint/target validation. |
-| `brain/v5/skill_install_transactions.py` | Durable install intent, atomic apply/readback, receipt, compensation, and rollback. |
+| `brain/v5/skill_install_transactions.py` | Durable install intent, guarded apply/readback, receipt, compensation, and rollback. |
+| `brain/v5/skill_install_plan_derivations.py` | Shared deterministic plan, diff, action, and validator-policy projections. |
+| `brain/v5/skill_install_plan_validation.py` | Reload-time proposal/artifact/target/derived-hash revalidation. |
+| `brain/v5/skill_install_host_safety.py` | Staging, path-boundary revalidation, and before-image backup checks. |
 | `brain/v5/skill_validation_execution.py` | Separate M2 high-risk validation request/receipt handoff. |
 | `brain/v5/skill_applicability.py` | Reviewed and derived selector matching. |
 | `brain/v5/skill_usage.py` | Exact version/hash usage and patch-signal records. |
@@ -302,30 +305,37 @@ Commit message: `v5: build host-neutral skill package previews`.
 - Modify: `brain/v5/skill_models.py`
 - Modify: `brain/v5/record_family_registry.py`
 - Create: `brain/v5/skill_install_transactions.py`
+- Create: `brain/v5/skill_install_planning.py`
+- Create: `brain/v5/skill_install_materialization.py`
+- Create: `brain/v5/skill_install_plan_derivations.py`
+- Create: `brain/v5/skill_install_plan_validation.py`
+- Create: `brain/v5/skill_install_host_safety.py`
 - Create: `brain/v5/skill_validation_execution.py`
 - Create: `tests/test_v5_project_skill_install.py`
+- Create: `tests/test_v5_project_skill_install_security.py`
 - Create: `tests/test_v5_project_skill_rollback.py`
 - Create: `tests/test_v5_skill_validation_execution.py`
 
 **Interfaces:**
-- Produces: `SkillInstallPlanRecord`, `SkillInstallIntentRecord`,
-  `SkillInstallReceiptRecord`, `SkillRollbackPlanRecord`,
-  `SkillRollbackReceiptRecord`,
-  `SkillValidationExecutionRequest`
-- Adds families: `skill_install_plans`, `skill_install_intents`,
-  `skill_install_receipts`, `skill_rollback_plans`, `skill_rollback_receipts`
+- Produces: canonical `SkillInstallPlanRecord` and `SkillInstallReceiptRecord`;
+  non-canonical `SkillValidationExecutionRequest` and runtime install journal.
+- Adds only `skill_install_plans` and `skill_install_receipts`. Install,
+  reinstall, upgrade, overwrite, and rollback are operations of one deployment
+  transaction, not five duplicate record families. Prepared/materialized/
+  completed/compensated/recovery-required states remain host runtime state.
 - Produces: `build_skill_install_plan(ws, proposal_ref, target_root, hosts) -> SkillInstallPlanRecord`
-- Produces: `apply_skill_install_plan(ws, plan_ref, checkpoint_ref, *, actor) -> SkillInstallReceiptRecord`
-- Produces: `build_skill_rollback_plan` and `apply_skill_rollback_plan`
+- Produces: `apply_skill_install_plan(ws, plan_ref, checkpoint_ref, *, actor) -> SkillInstallApplication`
+- Produces: `build_skill_rollback_plan`; rollback applies through the same
+  `apply_skill_install_plan` path.
 - Produces: `resume_skill_install_intent` and `recover_skill_install_intent`
 
-- [ ] **Step 1: Write failing no-checkpoint/no-install tests**
+- [x] **Step 1: Write failing no-checkpoint/no-install tests**
 
 Missing, pending, rejected, wrong-action, wrong-target, wrong-package-hash,
 wrong-diff-hash, wrong subject/request hash, expired, or replayed checkpoints
 must leave every target byte unchanged.
 
-- [ ] **Step 2: Constrain install targets**
+- [x] **Step 2: Constrain install targets**
 
 Install only below an explicit project root in dedicated paths such as
 `.agents/skills/aitp-generated/<skill-name>`. Resolve every target and reject
@@ -336,19 +346,38 @@ All domain-skill shim writes use this path. Legacy `apply=True` is preview-only
 or returns `checkpoint_required`; arbitrary absolute `output_root`, overwrite
 flags, or direct host-shim writes cannot bypass target and approval validation.
 
-- [ ] **Step 3: Bind approval to exact plan**
+- [x] **Step 3: Bind approval to exact plan**
 
-Checkpoint action is `install_aitp_skill` or `overwrite_aitp_skill`; metadata
-contains package hash, diff hash, target root/path, hosts, and existing version.
+Checkpoint action is `install_aitp_skill` only for a previously absent target;
+reinstall and upgrade use `overwrite_aitp_skill`, while rollback uses
+`rollback_aitp_skill`. Metadata contains package hash, diff hash, target
+root/path, hosts, and existing version.
 It also binds the exact validation-command digest, executor policy, network
 policy, writable roots, timeout, and environment allowlist. Any changed byte or
 execution policy invalidates approval.
 
-- [ ] **Step 4: Materialize atomically and verify readback**
+Every plan load re-derives source identity, target path, validator policy,
+before/after diff, diff hash, action, action payload, and plan id from the exact
+pinned proposal and package artifact. A structurally valid but source-incoherent
+plan is rejected before checkpoint request, apply, resume, or recovery.
+
+- [x] **Step 4: Materialize with guarded rename steps and verify readback**
 
 Persist a hash-bound install intent before filesystem mutation. Write package to
-a sibling temporary directory, verify file hashes and policy, atomically replace
-only after checks, read back every hash, then persist an immutable receipt. If
+a deterministic `.aitp/runtime/skill_install_staging/<application-id>`
+directory, verify file hashes and policy, then re-resolve every target component
+and re-hash target/staging immediately before rename steps. Windows pins parent
+directory handles without delete sharing and holds no-write-share handles for
+every staging directory while files are created; POSIX creation/replacement
+uses pinned directory file descriptors. Apply and explicit recovery also enter
+the repository canonical-mutation lease, serializing cooperative AITP transactions.
+Uncooperative external writes to child content are not claimed to be globally
+locked out or transactionally isolated by the OS. The transaction revalidates
+before rename, verifies readback, and refuses or compensates when drift is
+observed. Read back every hash, then persist an immutable receipt. Before
+compensation can remove a
+verified after-image, its backup must be a normal directory with the exact
+approved before hash. If
 receipt persistence fails, restore the before-image and leave a
 `compensated` intent when restore/readback succeeds; only compensation failure
 leaves `recovery_required`. Intent id is deterministic from plan/checkpoint/
@@ -358,29 +387,31 @@ revalidates target and before/after hashes, completes a missing receipt or
 compensates deterministically, and never reuses approval for changed bytes.
 Built-in declarative no-network validators may run
 in restricted staging. M4 never executes arbitrary project/package code;
-such commands become a separate M2 high-risk request and must return a typed
-`BoundExecutionReceipt` with pinned ToolRun and ValidationResult refs before a
-policy requiring them can pass. Reject traversal,
+such commands become a separate M2 high-risk request. The current M4 adapter
+fails closed because M2 does not yet expose a project-command executor that can
+bind the command digest, execution policy, ToolRun, ValidationResult, and
+checkpoint application receipt. A policy requiring arbitrary code cannot pass
+until that exact receipt adapter exists; M4 does not emulate it. Reject traversal,
 junction/symlink escape, undeclared writes, network/secret access, timeout, and
 post-approval mutation. Receipt records paths/hosts/hash/version/checkpoint and
 before/rollback hashes. Host shims point to the same canonical package bytes.
 
-- [ ] **Step 5: Preserve external domain shims**
+- [x] **Step 5: Preserve external domain shims**
 
 Existing external Skills remain discovery adapters. An overlap result may
 propose an extension/patch but cannot overwrite the external package.
 
-- [ ] **Step 5a: Enforce version and rollback semantics**
+- [x] **Step 5a: Enforce version and rollback semantics**
 
 `(skill_id, semantic_version)` maps to one immutable package hash. Same hash and
 target reinstall is idempotent; same version/different hash fails; upgrades are
 monotonic; downgrade and rollback require action-specific hash-bound checkpoints.
 Rollback installs a previously pinned package through the same intent/readback/
-receipt transaction and never deletes prior history. Rollback itself is a
-canonical `SkillRollbackPlanRecord` with expected current/target package hashes,
-before-image, target, diff, and checkpoint binding.
+receipt transaction and never deletes prior history. It is a canonical
+`SkillInstallPlanRecord(operation="rollback")` with expected current/target
+package hashes, before-image, target, diff, and action-specific checkpoint.
 
-- [ ] **Step 6: Run install/security/rollback tests and commit**
+- [x] **Step 6: Run install/security/rollback tests and commit**
 
 Include malicious package fixtures for command substitution, traversal,
 symlink/junction escape, undeclared executable, environment-secret access,
@@ -391,6 +422,31 @@ target bytes unchanged; arbitrary commands are not executed in this Gate even
 when present in a package.
 
 Commit message: `v5: require reviewed project skill installs`.
+
+**Implemented boundary (2026-07-16):** package deployment writes only the exact
+blob-backed bytes below
+`.agents/skills/aitp-generated/<skill-name>`. The immutable plan is the bound
+checkpoint intent, while proposal and package artifact are exact subjects.
+Filesystem state is staged below `.aitp/runtime`, pinned during host rename,
+and read back under a runtime journal before an
+immutable deployment receipt is written. Receipt failure restores the exact
+before-image when that backup still matches its approved hash; otherwise the
+verified after-image is preserved and the journal becomes `recovery_required`.
+Interrupted materialization can resume unchanged or compensate. Target and
+staging paths/hashes are revalidated after staging and immediately before each
+rename step. Reloaded plans re-prove proposal/artifact identity and every
+derived plan, diff, target, action, and validation-policy field.
+The old one-file `apply_project_skill` and domain-shim `apply=True` paths now
+return/raise `checkpoint_required` and write nothing. External Skills remain
+discovery adapters and are never overwritten. One host-neutral installed tree
+is authoritative; M4 does not create divergent per-host copies.
+
+Task 4's combined candidate/readiness/package/checkpoint/install/rollback,
+new-software compatibility, registry, M0.5 audit, test-lane, and architecture
+regression passed 152 tests both in the worktree and from an exact Git-index
+export in system Temp. The focused Windows-pin/install/rollback/architecture
+slice passed 36 tests. No real
+canonical research record or real derived index was modified.
 
 ## Task 5: Applicability, Usage, And Patch Loop
 

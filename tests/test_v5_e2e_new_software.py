@@ -206,7 +206,7 @@ def test_new_research_utility_onboards_from_execution_to_reviewed_skill_candidat
     assert get_claim(ws, claim.claim_id).confidence_state == "hypothesis"
     assert not (ws.base / ".agents" / "skills" / candidate.skill_name).exists()
 
-    with pytest.raises(ValueError, match="human checkpoint not found"):
+    with pytest.raises(ValueError, match="checkpoint_required"):
         mcp_tools.aitp_v5_apply_project_skill(
             str(ws.base),
             proposal_id=candidate.proposal_id,
@@ -219,7 +219,7 @@ def test_new_research_utility_onboards_from_execution_to_reviewed_skill_candidat
         claim_id=claim.claim_id,
         requested_by="new-software-e2e",
     )
-    with pytest.raises(ValueError, match="host-verified approve_install"):
+    with pytest.raises(ValueError, match="checkpoint_required"):
         mcp_tools.aitp_v5_apply_project_skill(
             str(ws.base),
             proposal_id=candidate.proposal_id,
@@ -233,27 +233,20 @@ def test_new_research_utility_onboards_from_execution_to_reviewed_skill_candidat
         decided_by="test-reviewer",
     )
     assert decided.decision_verified is True
-    installed = mcp_tools.aitp_v5_apply_project_skill(
-        str(ws.base),
-        proposal_id=candidate.proposal_id,
-        checkpoint_id=checkpoint["checkpoint_id"],
-    )
-    skill_path = Path(str(installed["skill_path"]))
-    skill_text = skill_path.read_text(encoding="utf-8")
-    assert skill_path == ws.base / ".agents" / "skills" / candidate.skill_name / "SKILL.md"
-    assert "name: finite-size-json-fit" in skill_text
-    assert "Use when Fit y(L)=intercept+slope/L" in skill_text
-    assert f"tool_run:{run.run_id}" in skill_text
-    assert "cannot update scientific claim trust" in skill_text
+    with pytest.raises(ValueError, match="checkpoint_required"):
+        mcp_tools.aitp_v5_apply_project_skill(
+            str(ws.base),
+            proposal_id=candidate.proposal_id,
+            checkpoint_id=checkpoint["checkpoint_id"],
+        )
+    assert not (ws.base / ".agents" / "skills" / candidate.skill_name).exists()
 
     proposal = RecordRepository(
         ws,
         actor=RecordActor(actor_type="tool", actor_id="test-reader", host="pytest"),
     ).read(f"skill_patch_proposal:{candidate.proposal_id}").record
-    assert proposal.review_status == "approved"
-    assert proposal.application_status == "applied"
-    assert proposal.review_checkpoint_id == checkpoint["checkpoint_id"]
-    assert proposal.approved_content_hash
+    assert proposal.review_status == "draft"
+    assert proposal.application_status == "not_applied"
     assert get_claim(ws, claim.claim_id).confidence_state == "hypothesis"
 
     canonical_after = _canonical_snapshot(ws)

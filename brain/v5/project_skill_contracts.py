@@ -173,6 +173,88 @@ def validate_skill_proposal(value: Any, *, path: str = "skill_proposal") -> Cont
     return result
 
 
+def validate_skill_install_plan(value: Any, *, path: str = "skill_install_plan") -> ContractResult:
+    payload = asdict(value) if is_dataclass(value) else value
+    result = ContractResult()
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, Mapping):
+        return result
+    for key in (
+        "plan_id", "operation", "checkpoint_action", "skill_id", "name",
+        "semantic_version", "package_hash", "tree_hash", "target_root", "target_path",
+        "expected_before_hash", "expected_after_hash", "diff_hash",
+        "validation_policy_hash", "kind",
+    ):
+        _require_nonempty_str(payload, key, path, result)
+    if payload.get("kind") != "skill_install_plan":
+        result.add(f"{path}.kind", "must be 'skill_install_plan'")
+    if payload.get("operation") not in {"install", "reinstall", "upgrade", "overwrite", "rollback"}:
+        result.add(f"{path}.operation", "must be a supported deployment operation")
+    if payload.get("checkpoint_action") not in {
+        "install_aitp_skill", "overwrite_aitp_skill", "rollback_aitp_skill",
+    }:
+        result.add(f"{path}.checkpoint_action", "must be a Skill deployment checkpoint action")
+    for field in (
+        "package_hash", "tree_hash", "expected_before_hash", "expected_after_hash",
+        "diff_hash", "validation_policy_hash",
+    ):
+        _require_sha(payload.get(field), f"{path}.{field}", result)
+    for field in ("proposal_ref", "package_artifact_ref"):
+        _validate_pinned_ref(payload.get(field), f"{path}.{field}", result)
+    for field in ("validation_policy", "action_payload"):
+        _require_mapping(payload.get(field), f"{path}.{field}", result)
+    for field in ("hosts", "validation_commands"):
+        _require_list(payload.get(field), f"{path}.{field}", result)
+    if not payload.get("hosts"):
+        result.add(f"{path}.hosts", "must not be empty")
+    _reject_nested_authority(payload, path, result)
+    for field, expected in (
+        ("immutable", True),
+        ("requires_human_review", True),
+        ("can_install_skill", False),
+        ("can_update_claim_trust", False),
+    ):
+        _require_bool_value(payload.get(field), expected, f"{path}.{field}", result)
+    return result
+
+
+def validate_skill_install_receipt(value: Any, *, path: str = "skill_install_receipt") -> ContractResult:
+    payload = asdict(value) if is_dataclass(value) else value
+    result = ContractResult()
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, Mapping):
+        return result
+    for key in (
+        "receipt_id", "application_id", "operation", "skill_id", "semantic_version",
+        "package_hash", "target_root", "target_path", "before_hash", "after_hash",
+        "diff_hash", "validation_policy_hash", "status", "completed_at", "kind",
+    ):
+        _require_nonempty_str(payload, key, path, result)
+    if payload.get("kind") != "skill_install_receipt":
+        result.add(f"{path}.kind", "must be 'skill_install_receipt'")
+    if payload.get("status") != "completed":
+        result.add(f"{path}.status", "must be 'completed'")
+    for field in (
+        "package_hash", "before_hash", "after_hash", "diff_hash", "validation_policy_hash",
+    ):
+        _require_sha(payload.get(field), f"{path}.{field}", result)
+    for field in (
+        "plan_ref", "proposal_ref", "package_artifact_ref", "checkpoint_request_ref",
+        "checkpoint_decision_ref",
+    ):
+        _validate_pinned_ref(payload.get(field), f"{path}.{field}", result)
+    for field in ("hosts", "validation_results"):
+        _require_list(payload.get(field), f"{path}.{field}", result)
+    _reject_nested_authority(payload, path, result)
+    _require_bool_value(
+        payload.get("can_update_claim_trust"),
+        False,
+        f"{path}.can_update_claim_trust",
+        result,
+    )
+    return result
+
+
 def require_valid_skill_package_preview(value: Any):
     return _require_valid(value, validate_skill_package_preview)
 
@@ -183,6 +265,14 @@ def require_valid_skill_package_artifact(value: Any):
 
 def require_valid_skill_proposal(value: Any):
     return _require_valid(value, validate_skill_proposal)
+
+
+def require_valid_skill_install_plan(value: Any):
+    return _require_valid(value, validate_skill_install_plan)
+
+
+def require_valid_skill_install_receipt(value: Any):
+    return _require_valid(value, validate_skill_install_receipt)
 
 
 def _require_valid(value: Any, validator):

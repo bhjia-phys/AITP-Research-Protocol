@@ -9,10 +9,12 @@ capabilities. M1 then added six host-neutral lifecycle capabilities and six
 trust-neutral core record families. M3 added reviewed physics knowledge and
 source-memory capabilities/families; M4 Tasks 1-3 added procedural Skill
 candidate, readiness, package-artifact, and proposal families without compact
-or install authority.
+or install authority. M4 Task 4 adds one immutable deployment-plan family and
+one immutable deployment-receipt family; host intent transitions remain runtime
+journals rather than canonical research families.
 
 Writer scan status: all 161 current named-helper rows (111 at the M0 baseline)
-and all 169 current direct
+and all 173 current direct
 mutation rows are classified; scan coverage remains explicitly incomplete.
 
 Source baseline: accepted M0 staged core plus reviewed M1-M4 vertical extensions.
@@ -447,7 +449,7 @@ validation_contracts
 validation_results
 ```
 
-### 3.2 Vertical Extension (37)
+### 3.2 Vertical Extension (39)
 
 ```text
 authorities
@@ -478,6 +480,8 @@ routes
 scope_revalidation_decisions
 sensemaking_reports
 skill_distillation_candidates
+skill_install_plans
+skill_install_receipts
 skill_package_artifacts
 skill_patch_proposals
 skill_proposals
@@ -521,7 +525,7 @@ Their concepts overlap existing exploratory records, research routes/intents,
 artifacts, validation, and closeout. They remain registered/readable during the
 review but may not receive new writes or be used to justify new APIs.
 
-Family accounting totals 70 with no unclassified family.
+Family accounting totals 72 with no unclassified family.
 
 ## 4. Writer Classification
 
@@ -532,7 +536,7 @@ a writer-convergence target even when it writes a non-registry canonical family
 or a topic-local mirror. A migration row may write a typed migration record but
 does not belong to the production research lifecycle.
 
-### 4.1 Canonical Record Or Repository (84)
+### 4.1 Canonical Record Or Repository (85)
 
 ~~~text
 brain/v5/_compat_shards/active_claim_focus/part_02.py:_write_rebind_audit:273:write_record | families=active_claim_rebind_audits | dynamic=false
@@ -606,7 +610,8 @@ brain/v5/evidence.py:record_evidence:147:repository_write | families=evidence | 
 brain/v5/failure_mode_review.py:record_failure_mode_review_result:127:repository_write | families=failure_mode_reviews | dynamic=false
 brain/v5/references.py:record_reference_location:60:repository_write | families=reference_locations | dynamic=false
 brain/v5/skill_candidates.py:propose_procedural_skill:84:repository_write | families=skill_patch_proposals | dynamic=false
-brain/v5/skill_candidates.py:apply_project_skill:166:repository_write | families=skill_patch_proposals | dynamic=false
+brain/v5/skill_install_materialization.py:materialize_plan:156:repository_write | families=skill_install_receipts | dynamic=false
+brain/v5/skill_install_planning.py:_record_plan:232:repository_write | families=skill_install_plans | dynamic=false
 brain/v5/validation.py:create_validation_contract:62:repository_write | families=validation_contracts | dynamic=false
 brain/v5/validation.py:record_validation_result:137:repository_write | families=validation_results | dynamic=false
 brain/v5/knowledge_lifecycle.py:record_knowledge_lifecycle_event:78:repository_write | families=lifecycle_events | dynamic=false
@@ -655,13 +660,12 @@ brain/v5/source_shelf_storage.py:_write_shelf_files:251:write_text_atomic | fami
 brain/v5/source_shelf_storage.py:_write_shelf_files:255:write_text_atomic | families=- | dynamic=false
 ~~~
 
-### 4.3 Host Or Runtime (18)
+### 4.3 Host Or Runtime (17)
 
 ~~~text
 brain/v5/_compat_shards/lane_exemplars/part_01.py:record_lane_exemplar:119:write_md | families=- | dynamic=false
 brain/v5/checkpoint_transactions.py:_write_journal:367:write_text_atomic | families=- | dynamic=false
 brain/v5/domain_packs.py:register_domain_pack:150:write_record | families=- | dynamic=false
-brain/v5/domain_skill_shims.py:_materialize_or_preview_shim:169:write_text_atomic | families=- | dynamic=false
 brain/v5/knowledge_connector_bindings.py:_write_bindings:158:write_text_atomic | families=- | dynamic=false
 brain/v5/operator_checkpoint.py:_write_active:174:write_md | families=- | dynamic=false
 brain/v5/output_stability.py:record_final_output_profile:61:write_md | families=- | dynamic=false
@@ -673,7 +677,7 @@ brain/v5/run_iterations.py:_write_iteration_files:134:write_md | families=- | dy
 brain/v5/run_iterations.py:_write_iteration_files:136:write_md | families=- | dynamic=false
 brain/v5/run_iterations.py:_write_iteration_files:138:write_md | families=- | dynamic=false
 brain/v5/run_iterations.py:_write_journal:156:write_md | families=- | dynamic=false
-brain/v5/skill_candidates.py:apply_project_skill:157:write_text_atomic | families=- | dynamic=false
+brain/v5/skill_install_materialization.py:write_journal:322:write_text_atomic | families=- | dynamic=false
 brain/v5/workspace.py:init_workspace:27:write_md | families=- | dynamic=false
 brain/v5/human_approval.py:persist_human_approval_receipt:95:write_text_atomic | families=- | dynamic=false
 ~~~
@@ -759,12 +763,12 @@ A second conservative AST scanner is now represented separately by
 `direct_mutation_candidates`. It excludes tests and recognizes direct
 `write_text`/`write_bytes`, literal write-mode `open`, write-flag `os.open`,
 `shutil` copy/move, `os` rename/replace, and literal SQL mutations. On the
-current repository it finds 169 additional mutation candidates across 65
+current repository it finds 173 additional mutation candidates across 66
 production files:
 
-- 118 direct path writes, 23 write-mode opens, 15 copy/move calls, and 13
+- 119 direct path writes, 24 write-mode opens, 15 copy/move calls, and 15
   rename/replace calls;
-- 62 calls in 27 `brain/v5` files;
+- 66 calls in 28 `brain/v5` files;
 - 40 calls in 20 legacy `brain` files;
 - 59 calls in 12 `scripts` files;
 - seven calls in five host-hook files;
@@ -777,7 +781,7 @@ silently added to the canonical-bypass count or ignored because they are not
 named helpers.
 
 The expanded runtime-audit contract now publishes two distinct closure facts.
-All 709 Python files under the declared production source prefixes are
+All 716 Python files under the declared production source prefixes are
 enumerated and parsed with zero errors, so
 `writer_scan_policy.bounded_coverage_complete` is true. Dynamic/aliased APIs,
 non-literal database mutations, unrecognized helpers, reflection, and native
@@ -836,7 +840,7 @@ brain/v5/topic_status_startup.py:write_topic_status_startup_surfaces:76:write_te
 scripts/demo_example_output.py:main:100:write_text | mechanism=direct_path_write | target=tex_path
 ~~~
 
-### 4.6.3 Host Runtime Or Maintenance (57)
+### 4.6.3 Host Runtime Or Maintenance (61)
 
 ~~~text
 brain/v5/_compat_shards/lane_exemplars/part_03.py:_append_jsonl:54:open | mechanism=direct_open_write | target=path
@@ -862,6 +866,10 @@ brain/v5/output_stability.py:_append_jsonl:101:open | mechanism=direct_open_writ
 brain/v5/research_intent.py:_write_json:193:write_text | mechanism=direct_path_write | target=path
 brain/v5/research_intent.py:_append_jsonl:197:open | mechanism=direct_open_write | target=path
 brain/v5/run_iterations.py:_write_json:349:write_text | mechanism=direct_path_write | target=path
+brain/v5/skill_install_host_safety.py:replace:63:replace | mechanism=rename_or_replace | target=target
+brain/v5/skill_install_host_safety.py:replace:65:replace | mechanism=rename_or_replace | target=target.name
+brain/v5/skill_install_host_safety.py:materialize_stage:160:write_bytes | mechanism=direct_path_write | target=stage_guard
+brain/v5/skill_install_host_safety.py:_write_relative_posix:350:open | mechanism=direct_open_write | target=parts[-1]
 brain/v5/strategy_memory.py:record_strategy_memory:69:open | mechanism=direct_open_write | target=path
 brain/v5/trace.py:append_trace_event:34:open | mechanism=direct_open_write | target=trace_path
 hooks/aitp_event.py:record_event:45:write_text | mechanism=direct_path_write | target=log_path
@@ -999,7 +1007,7 @@ brain/v5/_compat_shards/source_assets/part_02.py:_fetch_pdf_to_temp:273:copyfile
 brain/v5/_compat_shards/source_assets/part_02.py:_download_pdf_to_temp:313:open | mechanism=direct_open_write | target=tmp_path
 ~~~
 
-Direct mutation accounting totals 169 with no unclassified row. The three
+Direct mutation accounting totals 173 with no unclassified row. The three
 transient rows may create only temporary acquisition files; the final blob move
 and its typed metadata/receipt have separate ownership. Host/maintenance and
 derived rows remain outside canonical trust, while migration or archived legacy
@@ -1012,13 +1020,13 @@ rows remain outside normal production research writes.
 - final M1 foundation lane: 186 passed, 1 skipped;
 - exact capability/family and writer/direct-mutation classification tests:
   2 passed;
-- current direct-mutation classification: 169 of 169 rows, no duplicate or
+- current direct-mutation classification: 173 of 173 rows, no duplicate or
   unclassified signature;
 - current named-helper classification: 161 of 161 rows; the preserved M0
   lower-bound baseline was 111;
 - production-tree probe: no filesystem import aliases, dynamic open modes, or
   SQL execute calls were found;
-- `writer_scan_policy.bounded_coverage_complete`: true for 709/709 declared
+- `writer_scan_policy.bounded_coverage_complete`: true for 716/716 declared
   production Python files with zero parse errors;
 - `writer_scan_policy.coverage_complete`: false, because absence of arbitrary
   dynamic, reflected, custom, or native mutation helpers is not statically
@@ -1108,6 +1116,6 @@ For record families, retain the 25 core, 37 vertical, and four migration
 registrations under their existing write/read policies. New vertical families
 remain owned by their M3/M4 acceptance journeys; four zero-record
 unimplemented-layout families remain soft-deprecation candidates.
-All 161 helper-writer and 169 direct-mutation rows retain the ownership classes
+All 161 helper-writer and 173 direct-mutation rows retain the ownership classes
 in section 4. Migration/archived rows do not re-enter production, and bounded
 scanner closure does not convert candidate counts into a no-bypass proof.

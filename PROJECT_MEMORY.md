@@ -53,18 +53,24 @@ must follow the reviewed skill-candidate/install/use lifecycle.
 - `propose_detected_procedural_skill` writes one review-gated
   `skill_patch_proposal` with topic, execution, validation, source, artifact,
   precondition, and applicability refs. It does not install anything.
-- Project installation requires a content-hash-bound, host-verified
-  `approve_install` human checkpoint. `apply_project_skill` writes only
-  `.agents/skills/<skill-name>/SKILL.md`, rejects conflicting existing content,
-  CAS-updates proposal status, and cannot update claim trust.
+- The old one-file `apply_project_skill` path is disabled and returns
+  `checkpoint_required`; it cannot revise a proposal or write project files.
+  Project installation now requires an immutable `skill_install_plan`, an exact
+  action/subject/target/policy-bound host-verified checkpoint, and an immutable
+  `skill_install_receipt`.
 - These operations are available on full MCP. The existing research
   distillation response includes procedural candidates; compact remains ten
   tools and loads no Skill installer by default.
-- The legacy compatibility path remains one project-local `SKILL.md`; it is not
-  the v5 compiler. M4 now produces a canonical multi-file host-neutral preview,
-  exact blob-backed package artifact, and immutable draft proposal, but does not
-  install them. Rollback, cross-host installation, and skill-usage records
-  remain future vertical-owned work, not hidden implemented capability. M4
+- The legacy compatibility proposal remains separate from the v5 compiler and
+  cannot install. M4 produces a canonical multi-file host-neutral preview,
+  exact blob-backed package artifact, immutable draft proposal, and reviewed
+  project-local deployment under
+  `.agents/skills/aitp-generated/<skill-name>`. Install, reinstall, upgrade, and
+  rollback share one plan/receipt model; prepared/materialized/compensated/
+  recovery-required intent is runtime journal state, not another canonical
+  research family. Staging stays below `.aitp/runtime`; target-parent identity
+  is pinned during rename, and apply/recovery share the repository
+  canonical-mutation lease. Skill-usage records remain future vertical-owned work. M4
   Task 1 adds the canonical `skill_distillation_candidate` family before that
   legacy proposal/install path: it stores exact process/provenance pins,
   rejects semantic M3 content, and cannot update claim trust. M4 Task 2 adds
@@ -73,8 +79,12 @@ must follow the reviewed skill-candidate/install/use lifecycle.
   installed/external overlap checks. M4 Task 3 adds `skill_package_artifact` and
   `skill_proposal` families with two-layer package/tree hashes, exact process,
   code, environment, artifact, program, and source pins, deterministic blob
-  reconstruction, and fixed no-install/no-trust authority. Transactional
-  installation, applicability, and usage records are still pending.
+  reconstruction, and fixed no-install/no-trust authority. M4 Task 4 adds exact
+  checkpoint binding, staged readback, immutable receipts, before-image
+  compensation, deterministic resume/recovery, monotonic versions, and explicit
+  rollback. It never executes arbitrary package commands; those remain blocked
+  pending an M2 receipt adapter that binds the exact command and execution
+  policy. Applicability and usage records are still pending.
 
 ## Key Conventions
 
@@ -98,9 +108,9 @@ must follow the reviewed skill-candidate/install/use lifecycle.
   vertical or required compatibility fixture owns them.
 - **Writer-audit lower bound**: Preserve the historical M0 111-row named-helper
   baseline while classifying the current 161-row inventory separately from the
-  169-row direct-mutation inventory. The latter
+  173-row direct-mutation inventory. The latter
   covers literal path/open/copy/rename/SQL mechanisms in declared production
-  trees and excludes tests. Its bounded policy currently parses 709/709
+  trees and excludes tests. Its bounded policy currently parses 716/716
   declared production Python files with zero errors, so
   `bounded_coverage_complete` is true. Universal `coverage_complete` remains
   false for dynamic/reflected/native I/O. Do not sum call sites into a semantic

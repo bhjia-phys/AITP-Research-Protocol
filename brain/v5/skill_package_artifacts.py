@@ -112,6 +112,24 @@ def rebuild_skill_package_preview(
     )
 
 
+def resolve_skill_package_artifact(
+    ws: WorkspacePaths,
+    artifact_ref: PinnedRecordRef | dict[str, Any],
+) -> tuple[SkillPackageArtifactRecord, dict[str, bytes], dict[str, Any]]:
+    """Resolve and fully verify one immutable package artifact and its bytes."""
+
+    pin = artifact_ref if isinstance(artifact_ref, PinnedRecordRef) else PinnedRecordRef(
+        str(artifact_ref.get("record_ref") or ""),
+        str(artifact_ref.get("content_hash") or ""),
+        artifact_ref.get("revision"),
+    )
+    artifact = get_record_version(ws, pin).record
+    if not isinstance(artifact, SkillPackageArtifactRecord):
+        raise ValueError("artifact ref must pin a Skill package artifact")
+    files, manifest = _resolve_validated_artifact(ws, artifact)
+    return artifact, files, manifest
+
+
 def package_tree_hash(rows: list[dict[str, Any]]) -> str:
     projection = [
         {
@@ -227,5 +245,6 @@ __all__ = [
     "package_tree_hash",
     "rebuild_skill_package_preview",
     "record_skill_package_artifact",
+    "resolve_skill_package_artifact",
     "require_artifact_matches_preview",
 ]

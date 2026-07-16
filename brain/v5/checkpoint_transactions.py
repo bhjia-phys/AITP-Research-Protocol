@@ -43,6 +43,26 @@ class BoundCheckpointApplication:
     replayed: bool
 
 
+def checkpoint_application_identity(
+    binding: CheckpointSubjectBinding,
+    request_ref: PinnedRecordRef | Mapping[str, Any],
+    decision_ref: PinnedRecordRef | Mapping[str, Any],
+) -> tuple[str, dict[str, Any]]:
+    """Return the deterministic id and exact key consumed by one application."""
+
+    request_pin = _coerce_pin(request_ref)
+    decision_pin = _coerce_pin(decision_ref)
+    application_key = {
+        "action": binding.action,
+        "action_payload_hash": binding.action_payload_hash,
+        "intent": asdict(binding.intent),
+        "subjects": [asdict(item) for item in sorted(binding.subjects)],
+        "request": asdict(request_pin),
+        "decision": asdict(decision_pin),
+    }
+    return f"checkpoint-application-{_sha256_json(application_key)}", application_key
+
+
 def apply_bound_checkpoint_action(
     ws: WorkspacePaths,
     *,
@@ -100,16 +120,11 @@ def apply_bound_checkpoint_action(
     if predecessor not in (decision_version.frontmatter.get("supersedes") or []):
         raise ValueError("checkpoint decision does not supersede the pinned request")
 
-    application_key = {
-        "action": binding.action,
-        "action_payload_hash": binding.action_payload_hash,
-        "intent": asdict(binding.intent),
-        "subjects": [asdict(item) for item in sorted(binding.subjects)],
-        "request": asdict(request_pin),
-        "decision": asdict(decision_pin),
-    }
-    application_hash = _sha256_json(application_key)
-    application_id = f"checkpoint-application-{application_hash}"
+    application_id, application_key = checkpoint_application_identity(
+        binding,
+        request_pin,
+        decision_pin,
+    )
     repository = RecordRepository(ws, actor=actor)
     with repository.lock_record("checkpoint_application_receipts", application_id):
         existing = repository.read(f"checkpoint_application_receipt:{application_id}")

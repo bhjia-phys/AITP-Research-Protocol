@@ -236,6 +236,109 @@ class SkillProposalRecord:
 
 
 @dataclass(frozen=True)
+class SkillInstallPlanRecord:
+    plan_id: str
+    operation: str
+    checkpoint_action: str
+    skill_id: str
+    name: str
+    semantic_version: str
+    package_hash: str
+    tree_hash: str
+    proposal_ref: dict
+    package_artifact_ref: dict
+    target_root: str
+    target_path: str
+    hosts: list[str]
+    expected_before_hash: str
+    expected_after_hash: str
+    diff_hash: str
+    existing_skill_id: str
+    existing_semantic_version: str
+    existing_package_hash: str
+    validation_commands: list[dict]
+    validation_policy: dict
+    validation_policy_hash: str
+    action_payload: dict
+    created_at: str = ""
+    immutable: bool = True
+    requires_human_review: bool = True
+    can_install_skill: bool = False
+    can_update_claim_trust: bool = False
+    kind: str = "skill_install_plan"
+
+    def __post_init__(self) -> None:
+        if self.operation not in {"install", "reinstall", "upgrade", "overwrite", "rollback"}:
+            raise ValueError("Skill install plan operation is invalid")
+        allowed_actions = {
+            "install_aitp_skill",
+            "overwrite_aitp_skill",
+            "rollback_aitp_skill",
+        }
+        if self.checkpoint_action not in allowed_actions:
+            raise ValueError("Skill install plan checkpoint action is invalid")
+        if not self.immutable or not self.requires_human_review:
+            raise ValueError("Skill install plans are immutable and require human review")
+        if self.can_install_skill or self.can_update_claim_trust:
+            raise ValueError("Skill install plans carry no install or claim-trust authority")
+
+
+@dataclass(frozen=True)
+class SkillInstallReceiptRecord:
+    receipt_id: str
+    application_id: str
+    plan_ref: dict
+    proposal_ref: dict
+    package_artifact_ref: dict
+    checkpoint_request_ref: dict
+    checkpoint_decision_ref: dict
+    operation: str
+    skill_id: str
+    semantic_version: str
+    package_hash: str
+    target_root: str
+    target_path: str
+    hosts: list[str]
+    before_hash: str
+    after_hash: str
+    diff_hash: str
+    validation_policy_hash: str
+    validation_results: list[dict]
+    status: str
+    completed_at: str
+    can_update_claim_trust: bool = False
+    kind: str = "skill_install_receipt"
+
+    def __post_init__(self) -> None:
+        if self.status != "completed":
+            raise ValueError("canonical Skill install receipts must be completed")
+        if self.operation not in {"install", "reinstall", "upgrade", "overwrite", "rollback"}:
+            raise ValueError("Skill install receipt operation is invalid")
+        if self.can_update_claim_trust:
+            raise ValueError("Skill install receipts cannot update claim trust")
+
+
+@dataclass(frozen=True)
+class SkillValidationExecutionRequest:
+    command_digest: str
+    commands: tuple[dict[str, Any], ...]
+    requires_m2_execution: bool
+    risk_class: str
+    network_policy: str
+    writable_roots: tuple[str, ...]
+    environment_allowlist: tuple[str, ...]
+    timeout_seconds: int
+    can_execute: bool = False
+    can_update_claim_trust: bool = False
+
+    def __post_init__(self) -> None:
+        if self.risk_class not in {"none", "high"}:
+            raise ValueError("Skill validation request risk_class is invalid")
+        if self.can_execute or self.can_update_claim_trust:
+            raise ValueError("Skill validation requests carry no execution or trust authority")
+
+
+@dataclass(frozen=True)
 class CandidateBuildReport:
     eligible: bool
     candidate: SkillDistillationCandidateRecord | None
