@@ -1200,17 +1200,22 @@ skills/context, and records its own friction without taking engineering authorit
 **Files:**
 - Create: `brain/v5/research_moments.py`
 - Create: `brain/v5/research_moment_contracts.py`
+- Create: `brain/v5/research_moment_policy.py`
+- Create: `brain/v5/research_moment_validation.py`
+- Create: `brain/v5/research_moment_application.py`
 - Create: `tests/test_v5_research_moments.py`
-- Modify: `brain/v5/moment_policy.py`
-- Modify: `brain/v5/recording_navigator.py`
+- Modify: `brain/v5/query_index_locking.py`
+- Keep existing graph-oriented `moment_policy.py` and recording-oriented
+  `recording_navigator.py` unchanged; the host-neutral facade composes them at
+  their existing boundaries.
 
-- [ ] Map logical research events to ignore, auto-capture, candidate, review,
+- [x] Map logical research events to ignore, auto-capture, candidate, review,
   checkpoint, or block decisions.
-- [ ] Include reason codes, minimum refs, dedup key, expiry, and verification.
-- [ ] Allow a persisted knowledge gap to request budgeted read-only literature
+- [x] Include reason codes, minimum refs, dedup key, expiry, and verification.
+- [x] Allow a persisted knowledge gap to request budgeted read-only literature
   discovery while keeping acquisition and semantic promotion separately gated.
-- [ ] Skip low-value tool noise and recursive semantic-tool capture.
-- [ ] Test objective auto-writes separately from scientific promotion.
+- [x] Skip low-value tool noise and recursive semantic-tool capture.
+- [x] Test objective auto-writes separately from scientific promotion.
 
 ### Task 5.2: Real Host Lifecycle Integration
 

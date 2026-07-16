@@ -13,6 +13,7 @@ from brain.v5.paths import WorkspacePaths
 
 LOCK_RANKS = {
     "base-build": 0,
+    "runtime-transaction": 0,
     "canonical-mutation": 1,
     "canonical-record": 2,
     "delta-manifest": 3,

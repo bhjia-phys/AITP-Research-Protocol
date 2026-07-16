@@ -48,16 +48,23 @@ receipt path, bytes/tokens, and temp root. Unavailable is never passed.
 **Files:**
 - Create: `brain/v5/research_moments.py`
 - Create: `brain/v5/research_moment_contracts.py`
+- Create: `brain/v5/research_moment_policy.py`
+- Create: `brain/v5/research_moment_validation.py`
+- Create: `brain/v5/research_moment_application.py`
 - Create: `tests/test_v5_research_moments.py`
-- Modify: `brain/v5/moment_policy.py`
-- Modify: `brain/v5/recording_navigator.py`
+- Modify: `brain/v5/query_index_locking.py` (one generic rank-0 runtime
+  transaction name; canonical writer locks remain unchanged)
+- Keep unchanged: `brain/v5/moment_policy.py` (existing graph-orientation
+  policy) and `brain/v5/recording_navigator.py` (existing recording workflow).
+  The new host-event protocol composes their public services through a focused
+  facade rather than merging unrelated policy responsibilities.
 
 **Interfaces:**
 - Produces: `ResearchEvent`, `ResearchMomentDecision`
 - Produces: `decide_research_moment(ws, event) -> ResearchMomentDecision`
 - Produces: `apply_research_moment_decision(ws, decision, *, actor) -> MomentReceipt`
 
-- [ ] **Step 1: Write failing event/decision contract tests**
+- [x] **Step 1: Write failing event/decision contract tests**
 
 Allowed events: ResearchTurnStart, SourceAcquired, CodeStateChanged,
 ToolRunCompleted, ArtifactProduced, FailureOrGapObserved, RouteChanged,
@@ -65,7 +72,7 @@ MajorConclusionPending, ExpensiveRunPending, and SessionCloseout. Every event
 has event id/time/host/session/topic, exact subject refs, objective payload,
 semantic payload, source event id, and recursion origin.
 
-- [ ] **Step 2: Write a decision matrix before implementation**
+- [x] **Step 2: Write a decision matrix before implementation**
 
 Low-value reads/log noise -> ignore; exact source/code/run/artifact/monitor facts
 -> auto-capture process; definition/formula/interpretation/workflow signals ->
@@ -75,13 +82,13 @@ A persisted `FailureOrGapObserved` with `gap_kind=knowledge` may request an
 allowlisted read-only literature discovery action with explicit result/time
 budget. It may not auto-acquire restricted content or promote a search result.
 
-- [ ] **Step 3: Implement a pure deterministic controller**
+- [x] **Step 3: Implement a pure deterministic controller**
 
 Decision contains outcome, reason codes, target families, minimum refs, dedup
 key, expiry, verification steps, required checkpoint action, blocked action,
 and fixed `can_update_claim_trust=False`. No filesystem write occurs here.
 
-- [ ] **Step 4: Implement bounded application adapters**
+- [x] **Step 4: Implement bounded application adapters**
 
 Route objective captures to exact M2 writers and semantic signals to M1
 staging. Route coalescing/checkpoints/prerequisite gates to their existing APIs.
@@ -89,13 +96,13 @@ Route approved external-read requests to the M3 discovery handoff and ingest
 only its normalized receipt. Reject a decision whose declared effect differs
 from CapabilitySpec policy.
 
-- [ ] **Step 5: Suppress recursive and low-value capture**
+- [x] **Step 5: Suppress recursive and low-value capture**
 
 Events originating from AITP retrieval/context/recording/diagnostic output carry
 an origin marker and cannot create another semantic candidate. Repeated status
 polls with unchanged fingerprints are idempotent/ignored.
 
-- [ ] **Step 6: Run moment/recording/execution/trust tests and commit**
+- [x] **Step 6: Run moment/recording/execution/trust tests and commit**
 
 Commit message: `v5: add bounded research moment controller`.
 
