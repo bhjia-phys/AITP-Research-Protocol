@@ -37,19 +37,27 @@ def validate_source_acquisition_decision_record(
         "decided_at",
     ):
         _require_text(record, field, errors)
-    if record.action not in _ACTIONS:
+    if not isinstance(record.action, str) or record.action not in _ACTIONS:
         errors.append("action must be allow, deny, or review")
     _require_timestamp(record.decided_at, "decided_at", errors)
-    if record.expires_at:
+    if record.expires_at != "":
         _require_timestamp(record.expires_at, "expires_at", errors)
-        if not errors and _timestamp(record.expires_at) <= _timestamp(record.decided_at):
+        if (
+            _is_timestamp(record.decided_at)
+            and _is_timestamp(record.expires_at)
+            and _timestamp(record.expires_at) <= _timestamp(record.decided_at)
+        ):
             errors.append("expires_at must be later than decided_at")
     if record.can_update_claim_trust is not False:
         errors.append("can_update_claim_trust must be false")
     if record.kind != "source_acquisition_decision":
         errors.append("kind must be source_acquisition_decision")
-    if record.decision_id and record.decision_id != expected_decision_id(record):
-        errors.append("decision_id must match immutable bound content")
+    if record.decision_id:
+        try:
+            if record.decision_id != expected_decision_id(record):
+                errors.append("decision_id must match immutable bound content")
+        except (TypeError, ValueError):
+            errors.append("decision_id bound content must be JSON-compatible")
     return tuple(errors)
 
 
@@ -70,7 +78,7 @@ def validate_source_acquisition_receipt_record(
     ):
         _require_text(record, field, errors)
     _validate_pin(record.decision_ref, errors)
-    if record.status not in _STATUSES:
+    if not isinstance(record.status, str) or record.status not in _STATUSES:
         errors.append("status must be succeeded, failed, or denied")
     _require_timestamp(record.acquired_at, "acquired_at", errors)
     if not isinstance(record.errors, list) or any(
@@ -96,8 +104,12 @@ def validate_source_acquisition_receipt_record(
         errors.append("can_update_claim_trust must be false")
     if record.kind != "source_acquisition_receipt":
         errors.append("kind must be source_acquisition_receipt")
-    if record.receipt_id and record.receipt_id != expected_receipt_id(record):
-        errors.append("receipt_id must match immutable bound content")
+    if record.receipt_id:
+        try:
+            if record.receipt_id != expected_receipt_id(record):
+                errors.append("receipt_id must match immutable bound content")
+        except (TypeError, ValueError):
+            errors.append("receipt_id bound content must be JSON-compatible")
     return tuple(errors)
 
 
@@ -121,6 +133,7 @@ def _validate_pin(value: object, errors: list[str]) -> None:
 
 def _require_timestamp(value: object, field: str, errors: list[str]) -> None:
     if not isinstance(value, str) or not value.strip():
+        errors.append(f"{field} must be an ISO-8601 timestamp with timezone")
         return
     try:
         parsed = _timestamp(value)
@@ -133,3 +146,12 @@ def _require_timestamp(value: object, field: str, errors: list[str]) -> None:
 
 def _timestamp(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def _is_timestamp(value: object) -> bool:
+    if not isinstance(value, str) or not value.strip():
+        return False
+    try:
+        return _timestamp(value).tzinfo is not None
+    except (TypeError, ValueError):
+        return False

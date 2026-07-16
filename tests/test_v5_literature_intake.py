@@ -170,6 +170,11 @@ def test_record_literature_candidate_writes_source_asset_reference_location_and_
     assert payload["kind"] == "literature_intake_record_result"
     assert payload["recorded_source_asset"]["orientation_only"] is True
     assert payload["recorded_source_asset"]["asset_type"] == "paper"
+    assert payload["recorded_source_asset"]["content_hash"] == ""
+    assert payload["recorded_source_asset"]["metadata"]["acquisition_state"] == "metadata_only"
+    assert payload["recorded_source_asset"]["metadata"]["shelf_eligible"] is False
+    assert payload["recorded_source_asset"]["metadata"]["reconstruction_eligible"] is False
+    assert payload["recorded_source_asset"]["metadata"]["access_license_disposition"] == "not_checked"
     assert payload["recorded_reference_location"]["orientation_only"] is True
     assert payload["recorded_reference_location"]["claim_id"] == claim.claim_id
     assert payload["recorded_reference_location"]["source_ref"].startswith("source_asset:")
@@ -179,6 +184,7 @@ def test_record_literature_candidate_writes_source_asset_reference_location_and_
     assert len(source_assets) == 1
     assert len(references) == 1
     assert source_assets[0].reference_location_ids == [references[0].location_id]
+    assert source_assets[0].metadata["acquisition_state"] == "metadata_only"
     assert references[0].external_id == "arXiv:2604.14695"
     assert trust_updates == []
 

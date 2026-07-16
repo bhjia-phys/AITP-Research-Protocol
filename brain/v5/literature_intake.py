@@ -122,6 +122,11 @@ def record_literature_candidate(
             "external_id": ref["external_id"],
             "detected_relevance": ref["metadata"].get("detected_relevance", ""),
             "intake_source": "literature_intake_assistant",
+            "acquisition_state": "metadata_only",
+            "access_license_disposition": "not_checked",
+            "storage_permission": "not_requested",
+            "shelf_eligible": False,
+            "reconstruction_eligible": False,
         },
         linked_records=ref["linked_records"],
     )

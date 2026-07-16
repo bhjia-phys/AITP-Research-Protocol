@@ -37,6 +37,12 @@ from brain.v5.record_envelope import RecordActor
 
 from brain.v5.record_repository import RecordRepository
 
+from brain.v5.source_asset_acquisition_bindings import (
+    record_pdf_acquisition_decision as _record_pdf_acquisition_decision,
+    record_pdf_acquisition_receipt as _record_pdf_acquisition_receipt,
+    source_acquisition_metadata as _source_acquisition_metadata,
+)
+
 from brain.v5.store import list_records
 
 ASSET_TYPES = {
@@ -220,8 +226,22 @@ def acquire_pdf_source_asset(
     attempted_at = datetime.now(UTC).isoformat()
     source_url = str(url).strip()
     fetch_result: _PdfFetchResult | None = None
+    decision_capture = None
+    receipt_capture = None
+    decision_started = False
+    receipt_started = False
     try:
         source_url, source_metadata = _normalize_pdf_source_url(ws, source_url)
+        decision_started = True
+        acquisition_binding, decision_capture = _record_pdf_acquisition_decision(
+            ws,
+            topic_id=topic_id,
+            claim_id=claim_id,
+            source_url=source_url,
+            source_metadata=source_metadata,
+            metadata=metadata,
+            decided_at=attempted_at,
+        )
         fetch_result = _fetch_pdf_to_temp(
             ws,
             source_url,
@@ -273,6 +293,30 @@ def acquire_pdf_source_asset(
             }
         )
 
+        receipt_started = True
+        receipt_capture = _record_pdf_acquisition_receipt(
+            ws,
+            topic_id=topic_id,
+            claim_id=claim_id,
+            source_url=source_url,
+            binding=acquisition_binding,
+            decision_capture=decision_capture,
+            status="succeeded",
+            byte_sha256=content_hash,
+            byte_length=size_bytes,
+            stored_uri=blob_path.resolve().as_uri(),
+            acquired_at=acquired_at or attempted_at,
+            errors=[],
+        )
+        enriched_metadata.update(
+            _source_acquisition_metadata(
+                decision_capture,
+                receipt_capture,
+                acquisition_state="acquired",
+                eligible=True,
+            )
+        )
+
         links = dict(linked_records or {})
         links.setdefault("topic_id", topic_id)
         if claim_id:
@@ -301,6 +345,62 @@ def acquire_pdf_source_asset(
             linked_records=links,
         )
     except Exception as exc:
+        if (decision_started and decision_capture is None) or (receipt_started and receipt_capture is None):
+            raise
+        if receipt_capture is not None:
+            raise
+        failure_reason = f"{type(exc).__name__}: {exc}"
+        failure_metadata = dict(metadata or {})
+        if decision_capture is None:
+            rejected_binding, decision_capture = _record_pdf_acquisition_decision(
+                ws,
+                topic_id=topic_id,
+                claim_id=claim_id,
+                source_url=source_url,
+                source_metadata={"source_scheme": urlparse(source_url).scheme or "unsupported"},
+                metadata=metadata,
+                action="deny",
+                decided_at=attempted_at,
+            )
+            failure_receipt = _record_pdf_acquisition_receipt(
+                ws,
+                topic_id=topic_id,
+                claim_id=claim_id,
+                source_url=source_url,
+                binding=rejected_binding,
+                decision_capture=decision_capture,
+                status="denied",
+                acquired_at=acquired_at or attempted_at,
+                errors=[failure_reason],
+            )
+            failure_metadata.update(
+                _source_acquisition_metadata(
+                    decision_capture,
+                    failure_receipt,
+                    acquisition_state="denied",
+                    eligible=False,
+                )
+            )
+        else:
+            failure_receipt = _record_pdf_acquisition_receipt(
+                ws,
+                topic_id=topic_id,
+                claim_id=claim_id,
+                source_url=source_url,
+                binding=acquisition_binding,
+                decision_capture=decision_capture,
+                status="failed",
+                acquired_at=acquired_at or attempted_at,
+                errors=[failure_reason],
+            )
+            failure_metadata.update(
+                _source_acquisition_metadata(
+                    decision_capture,
+                    failure_receipt,
+                    acquisition_state="failed",
+                    eligible=False,
+                )
+            )
         return _register_pdf_acquisition_failure(
             ws,
             topic_id=topic_id,
@@ -310,7 +410,7 @@ def acquire_pdf_source_asset(
             title=title,
             label=label,
             attempted_at=acquired_at or attempted_at,
-            failure_reason=f"{type(exc).__name__}: {exc}",
+            failure_reason=failure_reason,
             version_anchor=version_anchor,
             source_kind=source_kind,
             summary=summary,
@@ -319,7 +419,7 @@ def acquire_pdf_source_asset(
             code_state_ids=code_state_ids,
             reference_location_ids=reference_location_ids,
             derived_from=derived_from,
-            metadata=metadata,
+            metadata=failure_metadata,
             linked_records=linked_records,
         )
     finally:
@@ -328,6 +428,7 @@ def acquire_pdf_source_asset(
                 fetch_result.temp_path.unlink(missing_ok=True)
             except OSError:
                 pass
+
 
 def acquire_arxiv_source_asset(
     ws: WorkspacePaths,

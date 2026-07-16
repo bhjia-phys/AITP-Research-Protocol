@@ -185,6 +185,9 @@ def test_acquire_pdf_source_asset_from_file_url_copies_into_topic_blob_store(tmp
     import hashlib
     from pathlib import Path
 
+    from brain.v5.models import SourceAcquisitionDecisionRecord, SourceAcquisitionReceiptRecord
+    from brain.v5.source_acquisition import resolve_source_acquisition_for_source_asset
+    from brain.v5.store import list_records
     from brain.v5.workspace import create_claim, create_topic, init_workspace
 
     ws = init_workspace(tmp_path)
@@ -222,6 +225,12 @@ def test_acquire_pdf_source_asset_from_file_url_copies_into_topic_blob_store(tmp
     )
 
     local_path = Path(payload["metadata"]["local_path"])
+    decisions = list_records(
+        ws.registry_dir("source_acquisition_decisions"), SourceAcquisitionDecisionRecord
+    )
+    receipts = list_records(
+        ws.registry_dir("source_acquisition_receipts"), SourceAcquisitionReceiptRecord
+    )
     assert payload["ok"] is True
     assert payload["kind"] == "source_asset"
     assert payload["asset_type"] == "paper"
@@ -239,6 +248,21 @@ def test_acquire_pdf_source_asset_from_file_url_copies_into_topic_blob_store(tmp
     assert local_path.read_bytes() == PDF_BYTES
     assert local_path.name == "original.pdf"
     assert local_path.resolve().is_relative_to((tmp_path / ".aitp" / "source_blobs").resolve())
+    assert len(decisions) == 1
+    assert decisions[0].action == "allow"
+    assert decisions[0].canonical_uri == payload["uri"]
+    assert len(receipts) == 1
+    assert receipts[0].status == "succeeded"
+    assert receipts[0].byte_sha256 == expected_hash
+    assert receipts[0].byte_length == len(PDF_BYTES)
+    assert payload["metadata"]["acquisition_state"] == "acquired"
+    assert payload["metadata"]["shelf_eligible"] is True
+    assert payload["metadata"]["reconstruction_eligible"] is True
+    resolution = resolve_source_acquisition_for_source_asset(
+        ws, payload["metadata"]["source_acquisition_receipt_ref"]
+    )
+    assert resolution.receipt == receipts[0]
+    assert resolution.decision == decisions[0]
     assert payload["orientation_only"] is True
     assert payload["can_update_claim_trust"] is False
 
@@ -292,7 +316,9 @@ def test_acquire_arxiv_source_asset_uses_downloaded_pdf_bytes_without_network(tm
 
 def test_acquire_pdf_failure_records_honest_failed_source_asset(tmp_path, monkeypatch):
     import brain.v5.source_assets as source_assets
+    from brain.v5.models import SourceAcquisitionDecisionRecord, SourceAcquisitionReceiptRecord
     from brain.v5.source_assets import acquire_pdf_source_asset
+    from brain.v5.store import list_records
     from brain.v5.workspace import create_topic, init_workspace
 
     ws = init_workspace(tmp_path)
@@ -316,12 +342,31 @@ def test_acquire_pdf_failure_records_honest_failed_source_asset(tmp_path, monkey
     assert record.metadata["acquisition_status"] == "failed"
     assert "mock download failure" in record.metadata["failure_reason"]
     assert "local_path" not in record.metadata
+    decisions = list_records(
+        ws.registry_dir("source_acquisition_decisions"), SourceAcquisitionDecisionRecord
+    )
+    receipts = list_records(
+        ws.registry_dir("source_acquisition_receipts"), SourceAcquisitionReceiptRecord
+    )
+    assert len(decisions) == 1
+    assert decisions[0].action == "allow"
+    assert len(receipts) == 1
+    assert receipts[0].status == "failed"
+    assert "mock download failure" in receipts[0].errors[0]
+    assert record.metadata["acquisition_state"] == "failed"
+    assert record.metadata["shelf_eligible"] is False
+    assert record.metadata["reconstruction_eligible"] is False
+    assert record.metadata["source_acquisition_receipt_ref"]["record_ref"].startswith(
+        "source_acquisition_receipt:"
+    )
     assert record.orientation_only is True
     assert record.can_update_claim_trust is False
 
 
 def test_acquire_pdf_file_uri_outside_topics_root_is_failed_not_hashed(tmp_path):
+    from brain.v5.models import SourceAcquisitionDecisionRecord, SourceAcquisitionReceiptRecord
     from brain.v5.source_assets import acquire_pdf_source_asset
+    from brain.v5.store import list_records
     from brain.v5.workspace import create_topic, init_workspace
 
     base = tmp_path / "topics"
@@ -343,6 +388,21 @@ def test_acquire_pdf_file_uri_outside_topics_root_is_failed_not_hashed(tmp_path)
     assert record.content_hash == ""
     assert record.hash_algorithm == ""
     assert "local_path" not in record.metadata
+    decisions = list_records(
+        ws.registry_dir("source_acquisition_decisions"), SourceAcquisitionDecisionRecord
+    )
+    receipts = list_records(
+        ws.registry_dir("source_acquisition_receipts"), SourceAcquisitionReceiptRecord
+    )
+    assert len(decisions) == 1
+    assert decisions[0].action == "deny"
+    assert decisions[0].policy_basis == "source_url_rejected_by_acquisition_policy"
+    assert len(receipts) == 1
+    assert receipts[0].status == "denied"
+    assert "topics root" in receipts[0].errors[0]
+    assert record.metadata["acquisition_state"] == "denied"
+    assert record.metadata["shelf_eligible"] is False
+    assert record.metadata["reconstruction_eligible"] is False
 
 
 def test_acquire_pdf_does_not_overwrite_existing_different_blob_without_force(tmp_path):

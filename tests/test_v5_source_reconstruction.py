@@ -3,6 +3,54 @@ from __future__ import annotations
 import json
 
 
+def _record_complete_reconstruction_components(
+    ws, claim, source_refs, *, supports_outputs=None
+):
+    from brain.v5.evidence import record_evidence
+    from brain.v5.physics_objects import record_object_relation, record_physics_object
+
+    counting = record_physics_object(
+        ws,
+        topic_id=claim.topic_id,
+        object_type="observable",
+        name=f"counting sequence {claim.claim_id}",
+        definition="Degeneracy sequence in the fixed sector.",
+        assumptions=["fixed particle number"],
+        source_refs=[source_refs[0]],
+    )
+    cft = record_physics_object(
+        ws,
+        topic_id=claim.topic_id,
+        object_type="theory",
+        name=f"edge CFT {claim.claim_id}",
+        definition="Candidate chiral edge conformal field theory.",
+        source_refs=[source_refs[0]],
+    )
+    relation = record_object_relation(
+        ws,
+        topic_id=claim.topic_id,
+        relation_type="matches",
+        subject_id=counting.object_id,
+        object_id=cft.object_id,
+        statement="The counting sequence matches the edge CFT character.",
+        claim_id=claim.claim_id,
+        assumptions=["same sector convention"],
+        failure_modes=["wrong sector assignment"],
+        source_refs=[source_refs[0]],
+    )
+    evidence = record_evidence(
+        ws,
+        topic_id=claim.topic_id,
+        claim_id=claim.claim_id,
+        evidence_type="source_reconstruction",
+        status="supports",
+        summary="Definition, sector convention, and counting comparison are reconstructable.",
+        supports_outputs=supports_outputs or ["reconstruction_path"],
+        source_refs=source_refs,
+    )
+    return counting, cft, relation, evidence
+
+
 def test_source_reconstruction_audit_reports_missing_components(tmp_path):
     from brain.v5.public_surfaces import require_valid_public_surface
     from brain.v5.source_reconstruction import audit_source_reconstruction
@@ -36,7 +84,7 @@ def test_source_reconstruction_audit_reports_missing_components(tmp_path):
     assert require_valid_public_surface("source_reconstruction_audit", payload) == payload
 
 
-def test_source_reconstruction_audit_accepts_typed_source_stack(tmp_path):
+def test_source_reconstruction_audit_rejects_unresolved_source_strings(tmp_path):
     from brain.v5.evidence import record_evidence
     from brain.v5.physics_objects import record_object_relation, record_physics_object
     from brain.v5.references import record_reference_location
@@ -107,10 +155,142 @@ def test_source_reconstruction_audit_accepts_typed_source_stack(tmp_path):
 
     payload = audit_source_reconstruction(ws, claim_id=claim.claim_id)
 
+    assert payload["complete"] is False
+    assert payload["missing_components"] == ["source_locations"]
+    assert payload["source_refs"] == ["paper:fqhe-counting"]
+    assert payload["components"]["source_locations"]["status"] == "missing"
+    assert payload["components"]["source_locations"]["record_ids"] == []
+    assert payload["source_resolution"]["status"] == "incomplete"
+    assert payload["source_resolution"]["resolved_location_ids"] == []
+    assert payload["source_resolution"]["resolved_asset_ids"] == []
+    assert {issue["code"] for issue in payload["source_resolution"]["issues"]} == {
+        "unresolved_source_asset_ref"
+    }
+    assert payload["components"]["definitions"]["record_ids"] == [counting.object_id, cft.object_id]
+    assert payload["components"]["dependency_graph"]["record_ids"] == [relation.relation_id]
+    assert payload["components"]["reconstruction_path"]["record_ids"] == [evidence.evidence_id]
+
+
+def test_source_reconstruction_rejects_forged_eligibility_without_receipt(tmp_path):
+    from brain.v5.references import record_reference_location
+    from brain.v5.source_assets import register_source_asset
+    from brain.v5.source_reconstruction import audit_source_reconstruction
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="The counting sequence identifies the edge CFT in the recorded sector.",
+        evidence_profile="literature",
+        confidence_state="hypothesis",
+        active_uncertainty="finite-size aliasing",
+        scope="Fixed sector, finite-size counting table.",
+        strongest_failure_mode="wrong sector assignment",
+    )
+    asset = register_source_asset(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        asset_type="paper",
+        uri="https://example.org/forged.pdf",
+        title="Forged source identity",
+        content_hash="a" * 64,
+        hash_algorithm="sha256",
+        metadata={
+            "acquisition_state": "acquired",
+            "shelf_eligible": True,
+            "reconstruction_eligible": True,
+        },
+    )
+    location = record_reference_location(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        connector_id="manual",
+        location_type="paper",
+        uri=asset.uri,
+        label=asset.title,
+        source_ref=f"source_asset:{asset.asset_id}",
+    )
+    _record_complete_reconstruction_components(
+        ws,
+        claim,
+        [
+            f"reference_location:{location.location_id}",
+            f"source_asset:{asset.asset_id}",
+        ],
+    )
+
+    payload = audit_source_reconstruction(ws, claim_id=claim.claim_id)
+
+    assert payload["complete"] is False
+    assert payload["missing_components"] == ["source_locations"]
+    assert payload["source_resolution"]["resolved_location_ids"] == []
+    assert {issue["code"] for issue in payload["source_resolution"]["issues"]} == {
+        "source_acquisition_unverified"
+    }
+
+
+def test_source_reconstruction_accepts_exact_hash_pinned_acquisition(tmp_path):
+    from brain.v5.references import record_reference_location
+    from brain.v5.source_assets import acquire_pdf_source_asset
+    from brain.v5.source_reconstruction import audit_source_reconstruction
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="The counting sequence identifies the edge CFT in the recorded sector.",
+        evidence_profile="literature",
+        confidence_state="hypothesis",
+        active_uncertainty="finite-size aliasing",
+        scope="Fixed sector, finite-size counting table.",
+        strongest_failure_mode="wrong sector assignment",
+    )
+    pdf = tmp_path / "counting.pdf"
+    pdf.write_bytes(b"%PDF-1.4\nsource reconstruction\n%%EOF\n")
+    asset = acquire_pdf_source_asset(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        url=pdf.resolve().as_uri(),
+        title="Counting reference",
+    )
+    location = record_reference_location(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        connector_id="local_pdf",
+        location_type="paper",
+        uri=asset.uri,
+        label=asset.title,
+        source_ref=f"source_asset:{asset.asset_id}",
+    )
+    counting, cft, relation, evidence = _record_complete_reconstruction_components(
+        ws,
+        claim,
+        [
+            f"reference_location:{location.location_id}",
+            f"source_asset:{asset.asset_id}",
+        ],
+    )
+
+    payload = audit_source_reconstruction(ws, claim_id=claim.claim_id)
+
     assert payload["complete"] is True
     assert payload["missing_components"] == []
-    assert payload["source_refs"] == ["paper:fqhe-counting"]
-    assert payload["components"]["definitions"]["record_ids"] == [counting.object_id, cft.object_id]
+    assert payload["source_resolution"]["status"] == "complete"
+    assert payload["source_resolution"]["resolved_location_ids"] == [location.location_id]
+    assert payload["source_resolution"]["resolved_asset_ids"] == [asset.asset_id]
+    assert payload["source_resolution"]["issues"] == []
+    assert payload["components"]["definitions"]["record_ids"] == [
+        counting.object_id,
+        cft.object_id,
+    ]
     assert payload["components"]["dependency_graph"]["record_ids"] == [relation.relation_id]
     assert payload["components"]["reconstruction_path"]["record_ids"] == [evidence.evidence_id]
 
@@ -190,10 +370,9 @@ def test_source_reconstruction_audit_cli_compact_progress(tmp_path, capsys):
 
 
 def test_source_reconstruction_manifest_prioritizes_incomplete_claims(tmp_path):
-    from brain.v5.evidence import record_evidence
-    from brain.v5.physics_objects import record_object_relation, record_physics_object
     from brain.v5.public_surfaces import require_valid_public_surface
     from brain.v5.references import record_reference_location
+    from brain.v5.source_assets import acquire_pdf_source_asset
     from brain.v5.source_reconstruction import build_source_reconstruction_manifest
     from brain.v5.workspace import create_claim, create_topic, init_workspace
 
@@ -217,54 +396,32 @@ def test_source_reconstruction_manifest_prioritizes_incomplete_claims(tmp_path):
         scope="Fixed sector only.",
         strongest_failure_mode="wrong sector assignment",
     )
-    record_reference_location(
+    pdf = tmp_path / "manifest-counting.pdf"
+    pdf.write_bytes(b"%PDF-1.4\nmanifest source\n%%EOF\n")
+    asset = acquire_pdf_source_asset(
         ws,
         topic_id="fqhe",
         claim_id=complete.claim_id,
-        connector_id="zotero",
+        url=pdf.resolve().as_uri(),
+        title="Counting reference",
+    )
+    reference = record_reference_location(
+        ws,
+        topic_id="fqhe",
+        claim_id=complete.claim_id,
+        connector_id="local_pdf",
         location_type="paper",
-        uri="zotero://select/items/ABC",
+        uri=asset.uri,
         label="Counting reference",
-        source_ref="paper:fqhe-counting",
+        source_ref=f"source_asset:{asset.asset_id}",
     )
-    counting = record_physics_object(
+    _record_complete_reconstruction_components(
         ws,
-        topic_id="fqhe",
-        object_type="observable",
-        name="counting sequence",
-        definition="Degeneracy sequence in the fixed sector.",
-        assumptions=["fixed sector"],
-        source_refs=["paper:fqhe-counting"],
-    )
-    cft = record_physics_object(
-        ws,
-        topic_id="fqhe",
-        object_type="theory",
-        name="edge CFT",
-        definition="Candidate chiral edge CFT.",
-        source_refs=["paper:fqhe-counting"],
-    )
-    record_object_relation(
-        ws,
-        topic_id="fqhe",
-        relation_type="matches",
-        subject_id=counting.object_id,
-        object_id=cft.object_id,
-        statement="The counting sequence matches the edge CFT character.",
-        claim_id=complete.claim_id,
-        assumptions=["same sector convention"],
-        failure_modes=["wrong sector assignment"],
-        source_refs=["paper:fqhe-counting"],
-    )
-    record_evidence(
-        ws,
-        topic_id="fqhe",
-        claim_id=complete.claim_id,
-        evidence_type="source_reconstruction",
-        status="supports",
-        summary="The typed source stack reconstructs the claim.",
-        supports_outputs=["reconstruction_path"],
-        source_refs=["paper:fqhe-counting"],
+        complete,
+        [
+            f"reference_location:{reference.location_id}",
+            f"source_asset:{asset.asset_id}",
+        ],
     )
 
     manifest = build_source_reconstruction_manifest(ws)
@@ -420,10 +577,9 @@ def test_source_reconstruction_manifest_cli_compact_progress(tmp_path, capsys):
 
 
 def test_source_stack_coverage_manifest_combines_evidence_reconstruction_and_review(tmp_path):
-    from brain.v5.evidence import record_evidence
-    from brain.v5.physics_objects import record_object_relation, record_physics_object
     from brain.v5.public_surfaces import require_valid_public_surface
     from brain.v5.references import record_reference_location
+    from brain.v5.source_assets import acquire_pdf_source_asset
     from brain.v5.source_reconstruction_review import record_source_reconstruction_review_result
     from brain.v5.source_stack_coverage import build_source_stack_coverage_manifest
     from brain.v5.workspace import create_claim, create_topic, init_workspace
@@ -448,54 +604,33 @@ def test_source_stack_coverage_manifest_combines_evidence_reconstruction_and_rev
         scope="Fixed sector only.",
         strongest_failure_mode="sector assignment mismatch",
     )
+    pdf = tmp_path / "coverage-counting.pdf"
+    pdf.write_bytes(b"%PDF-1.4\ncoverage source\n%%EOF\n")
+    asset = acquire_pdf_source_asset(
+        ws,
+        topic_id="fqhe",
+        claim_id=complete.claim_id,
+        url=pdf.resolve().as_uri(),
+        title="Counting reference",
+    )
     reference = record_reference_location(
         ws,
         topic_id="fqhe",
         claim_id=complete.claim_id,
-        connector_id="zotero",
+        connector_id="local_pdf",
         location_type="paper",
-        uri="zotero://select/items/ABC",
+        uri=asset.uri,
         label="Counting reference",
-        source_ref="paper:fqhe-counting",
+        source_ref=f"source_asset:{asset.asset_id}",
     )
-    counting = record_physics_object(
+    counting, cft, relation, evidence = _record_complete_reconstruction_components(
         ws,
-        topic_id="fqhe",
-        object_type="observable",
-        name="counting sequence",
-        definition="Degeneracy sequence in the fixed sector.",
-        assumptions=["fixed sector"],
-        source_refs=["paper:fqhe-counting"],
-    )
-    cft = record_physics_object(
-        ws,
-        topic_id="fqhe",
-        object_type="theory",
-        name="edge CFT",
-        definition="Candidate chiral edge CFT.",
-        source_refs=["paper:fqhe-counting"],
-    )
-    relation = record_object_relation(
-        ws,
-        topic_id="fqhe",
-        relation_type="matches",
-        subject_id=counting.object_id,
-        object_id=cft.object_id,
-        statement="The counting sequence matches the edge CFT character.",
-        claim_id=complete.claim_id,
-        assumptions=["same sector convention"],
-        failure_modes=["sector assignment mismatch"],
-        source_refs=["paper:fqhe-counting"],
-    )
-    evidence = record_evidence(
-        ws,
-        topic_id="fqhe",
-        claim_id=complete.claim_id,
-        evidence_type="source_reconstruction",
-        status="supports",
-        summary="The typed source stack reconstructs the claim.",
+        complete,
+        [
+            f"reference_location:{reference.location_id}",
+            f"source_asset:{asset.asset_id}",
+        ],
         supports_outputs=["scoped_claim", "evidence_or_provenance", "reconstruction_path"],
-        source_refs=["paper:fqhe-counting"],
     )
     review = record_source_reconstruction_review_result(
         ws,
@@ -633,10 +768,9 @@ def test_source_reconstruction_review_packet_guides_missing_typed_records(tmp_pa
     packet = build_source_reconstruction_review_packet(ws, claim_id=claim.claim_id)
 
     assert packet["kind"] == "source_reconstruction_review_packet"
-    assert packet["missing_components"] == ["definitions", "dependency_graph"]
+    assert packet["missing_components"] == ["definitions", "source_locations", "dependency_graph"]
     assert packet["satisfied_components"] == [
         "assumptions_or_scope",
-        "source_locations",
         "reconstruction_path",
         "failure_conditions",
     ]
@@ -644,9 +778,10 @@ def test_source_reconstruction_review_packet_guides_missing_typed_records(tmp_pa
     assert packet["typed_records"]["evidence"][0]["record_id"] == evidence.evidence_id
     by_component = {item["component"]: item for item in packet["component_reviews"]}
     assert "aitp-v5 object record" in by_component["definitions"]["recommended_record_commands"][0]
+    assert "aitp-v5 reference location record" in by_component["source_locations"]["recommended_record_commands"][0]
     assert "aitp-v5 relation record" in by_component["dependency_graph"]["recommended_record_commands"][0]
     assert by_component["definitions"]["status"] == "missing"
-    assert by_component["source_locations"]["status"] == "satisfied"
+    assert by_component["source_locations"]["status"] == "missing"
     assert packet["requires_human_or_adversarial_review"] is True
     assert packet["summary_inputs_trusted"] is False
     assert packet["orientation_only"] is True

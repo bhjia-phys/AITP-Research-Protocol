@@ -99,9 +99,7 @@ def test_m3_source_acquisition_families_are_append_only_and_receipts_pin_decisio
         assert {"exact_ref", "inventory", "query_index", "context_compiler"} <= set(
             spec.participates_in
         )
-    assert specs["source_acquisition_receipts"].dependency_fields == (
-        "decision_ref.record_ref",
-    )
+    assert specs["source_acquisition_receipts"].dependency_fields == ("decision_ref",)
 
 
 def test_m1_lifecycle_families_are_trust_neutral_and_exact_expandable():

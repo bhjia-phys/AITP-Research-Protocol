@@ -14,9 +14,14 @@ from brain.v5.models import (
     ObjectRelationRecord,
     PhysicsObjectRecord,
     ReferenceLocationRecord,
+    SourceAssetRecord,
     ValidationContractRecord,
 )
 from brain.v5.paths import WorkspacePaths
+from brain.v5.source_reconstruction_sources import (
+    resolve_reconstructable_source_locations,
+    source_anchor_refs,
+)
 from brain.v5.store import list_valid_records as _list_valid_records
 from brain.v5.workspace import get_claim
 
@@ -133,6 +138,10 @@ def audit_source_reconstruction_batch(ws: WorkspacePaths, claim_ids: list[str]) 
     claims_by_id = {claim.claim_id: claim for claim in _legacy_records(ws.registry_dir("claims"), ClaimRecord)}
     evidence_by_claim = _group_by_claim(_legacy_records(ws.registry_dir("evidence"), EvidenceRecord))
     references_by_claim = _group_by_claim(_legacy_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord))
+    source_assets_by_id = {
+        record.asset_id: record
+        for record in _legacy_records(ws.registry_dir("source_assets"), SourceAssetRecord)
+    }
     objects_by_topic = _group_by_topic(_legacy_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord))
     relations = _legacy_records(ws.registry_dir("object_relations"), ObjectRelationRecord)
     contracts_by_claim = _group_by_claim(_legacy_records(ws.registry_dir("validation_contracts"), ValidationContractRecord))
@@ -142,9 +151,11 @@ def audit_source_reconstruction_batch(ws: WorkspacePaths, claim_ids: list[str]) 
         claim = claims_by_id.get(claim_id) or get_claim(ws, claim_id)
         topic_id = claim.topic_id
         audits[claim_id] = _audit_claim_source_reconstruction(
+            ws,
             claim,
             evidence=evidence_by_claim.get(claim_id, []),
             references=references_by_claim.get(claim_id, []),
+            source_assets_by_id=source_assets_by_id,
             objects=objects_by_topic.get(topic_id, []),
             relations=[
                 record
@@ -351,10 +362,12 @@ def _missing_component_counts(items: list[dict]) -> dict[str, int]:
 
 
 def _audit_claim_source_reconstruction(
+    ws: WorkspacePaths,
     claim: ClaimRecord,
     *,
     evidence: list[EvidenceRecord],
     references: list[ReferenceLocationRecord],
+    source_assets_by_id: dict[str, SourceAssetRecord],
     objects: list[PhysicsObjectRecord],
     relations: list[ObjectRelationRecord],
     contracts: list[ValidationContractRecord],
@@ -362,10 +375,17 @@ def _audit_claim_source_reconstruction(
 ) -> dict:
     topic_id = claim.topic_id
     source_refs = _source_refs(evidence, references, objects, relations)
+    source_resolution = resolve_reconstructable_source_locations(
+        ws,
+        topic_id=topic_id,
+        anchor_refs=source_anchor_refs(evidence, objects, relations),
+        references=references,
+        source_assets_by_id=source_assets_by_id,
+    )
     components = {
         "definitions": _component([record.object_id for record in objects if record.definition.strip()]),
         "assumptions_or_scope": _component(_assumption_refs(claim, objects, relations)),
-        "source_locations": _component([record.location_id for record in references] + source_refs),
+        "source_locations": _component(source_resolution["resolved_location_ids"]),
         "dependency_graph": _component([record.relation_id for record in relations]),
         "reconstruction_path": _component([
             record.evidence_id for record in evidence
@@ -384,6 +404,7 @@ def _audit_claim_source_reconstruction(
         "missing_components": missing,
         "components": components,
         "source_refs": source_refs,
+        "source_resolution": source_resolution,
         "derivation_coverage": derivation_coverage,
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,

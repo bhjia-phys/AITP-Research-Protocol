@@ -34,7 +34,7 @@ M3_DEPENDENCY_FIELDS = {
         "object_ref", "source_asset_refs", "source_location_refs",
         "contradiction_refs", "supersedes_assertion_ref", "review_decision_ref.record_ref",
     ),
-    "source_acquisition_receipts": ("decision_ref.record_ref",),
+    "source_acquisition_receipts": ("decision_ref",),
 }
 
 M3_APPEND_ONLY_FAMILIES = frozenset({

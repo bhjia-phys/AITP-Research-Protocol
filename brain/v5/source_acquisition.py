@@ -86,6 +86,8 @@ def record_source_acquisition_decision(
         **fields,
     )
     _raise_contract_errors(validate_source_acquisition_decision_record(record))
+    if _parse_timestamp(record.decided_at) > _utc_now():
+        raise ValueError("decided_at cannot be in the future")
     write = RecordRepository(ws, actor=actor).write(
         "source_acquisition_decisions",
         record,
@@ -148,6 +150,10 @@ def record_source_acquisition_receipt(
         at=record.acquired_at,
         require_allow=record.status == "succeeded",
     )
+    now = _utc_now()
+    if _parse_timestamp(record.acquired_at) > now:
+        raise ValueError("acquired_at cannot be in the future")
+    _validate_decision_current(decision, now=now)
     write = RecordRepository(ws, actor=actor).write(
         "source_acquisition_receipts",
         record,
@@ -163,8 +169,6 @@ def record_source_acquisition_receipt(
 def resolve_source_acquisition_for_source_asset(
     ws: WorkspacePaths,
     receipt_ref: PinnedRecordRef | Mapping[str, Any],
-    *,
-    now: str | datetime | None = None,
 ) -> SourceAcquisitionResolution:
     """Fail closed unless a successful receipt retains currently valid authority."""
 
@@ -187,9 +191,13 @@ def resolve_source_acquisition_for_source_asset(
         _validate_receipt_binding(
             decision,
             receipt,
-            at=_now_string(now),
+            at=receipt.acquired_at,
             require_allow=True,
         )
+        now = _utc_now()
+        if _parse_timestamp(receipt.acquired_at) > now:
+            raise SourceAcquisitionResolutionError("receipt acquired_at is in the future")
+        _validate_decision_current(decision, now=now)
     except SourceAcquisitionResolutionError:
         raise
     except Exception as exc:  # noqa: BLE001 - preserve the trust boundary for callers.
@@ -231,6 +239,8 @@ def _validate_receipt_binding(
         if getattr(decision, field) != getattr(receipt, field):
             raise ValueError(f"decision and receipt {field} must match")
     instant = _parse_timestamp(at)
+    if instant < _parse_timestamp(decision.decided_at):
+        raise ValueError("receipt acquired_at cannot precede decided_at")
     if decision.expires_at and instant >= _parse_timestamp(decision.expires_at):
         raise ValueError("decision is expired")
     if require_allow and decision.action != "allow":
@@ -264,14 +274,20 @@ def _raise_contract_errors(errors: tuple[str, ...]) -> None:
         raise ValueError("; ".join(errors))
 
 
-def _now_string(value: str | datetime | None) -> str:
-    if value is None:
-        return datetime.now(timezone.utc).isoformat()
-    if isinstance(value, datetime):
-        if value.tzinfo is None:
-            raise ValueError("now must have timezone information")
-        return value.isoformat()
-    return value
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _validate_decision_current(
+    decision: SourceAcquisitionDecisionRecord,
+    *,
+    now: datetime,
+) -> None:
+    decided_at = _parse_timestamp(decision.decided_at)
+    if decided_at > now:
+        raise ValueError("decision decided_at is in the future")
+    if decision.expires_at and now >= _parse_timestamp(decision.expires_at):
+        raise ValueError("decision is expired at the current time")
 
 
 def _parse_timestamp(value: str) -> datetime:
