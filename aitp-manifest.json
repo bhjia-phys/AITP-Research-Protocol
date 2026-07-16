@@ -3,7 +3,7 @@
   "package_version": "1.0.0",
   "description": "AITP Research Protocol — deployable asset index. Edit this file when adding/removing deployable files.",
 
-  "pip_deps": ["fastmcp", "pyyaml", "jsonschema", "sympy"],
+  "pip_deps": ["fastmcp", "pyyaml", "jsonschema", "sympy", "pypdf>=5,<7"],
 
   "template_variables": [
     "REPO_ROOT",

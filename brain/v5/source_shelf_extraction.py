@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from io import BytesIO
 import re
 from dataclasses import dataclass
-from pathlib import Path
 
 from pypdf import PdfReader
 
@@ -46,38 +46,63 @@ _ANCHOR_PATTERNS = (
     ("theorem", re.compile(r"\b(?:Theorem|Proposition|Lemma)\s+([\w.-]+)", re.IGNORECASE)),
     ("assumption", re.compile(r"\bAssumption\s+([\w.-]+)", re.IGNORECASE)),
     ("derivation_step", re.compile(r"\bDerivation\s+step\s+([\w.-]+)", re.IGNORECASE)),
-    ("figure_caption", re.compile(r"\b(?:Figure|Fig\.)\s+([\w.-]+)", re.IGNORECASE)),
-    ("caveat", re.compile(r"\b(?:Caveat|Warning|Limitation)\b", re.IGNORECASE)),
-    ("bibliography", re.compile(r"\b(?:Bibliography|References)\s*:", re.IGNORECASE)),
+    (
+        "figure_caption",
+        re.compile(r"\b(?:Figure|Fig\.)\s+([\w.-]+)|\\caption\{([^}]+)\}", re.IGNORECASE),
+    ),
+    (
+        "caveat",
+        re.compile(r"\b(?:Caveat|Warning|Limitation)\b|\\begin\{remark\}", re.IGNORECASE),
+    ),
+    (
+        "bibliography",
+        re.compile(r"\b(?:Bibliography|References)\s*:|\\bibitem\{([^}]+)\}", re.IGNORECASE),
+    ),
     ("symbols", re.compile(r"\b(?:Symbols?|Notation)\s*:", re.IGNORECASE)),
     (
         "equation",
         re.compile(
-            r"\\tag\{([^}]+)\}|\b(?:Eq(?:uation)?\.?)[\s~]*(?:\(|\[)?([\w.-]+)",
+            r"\\tag\{([^}]+)\}|\b(?:Equation|Eq\.?)\s+(?:\(|\[)?([\w.-]+)",
             re.IGNORECASE,
         ),
     ),
 )
 
+_TEX_ENV_KINDS = {
+    "assumption": "assumption",
+    "definition": "definition",
+    "equation": "equation",
+    "align": "equation",
+    "alignat": "equation",
+    "gather": "equation",
+    "multline": "equation",
+    "lemma": "theorem",
+    "proposition": "theorem",
+    "theorem": "theorem",
+}
+
 
 def extract_source_passages(
-    path: Path,
+    source_bytes: bytes,
     *,
+    source_suffix: str,
     max_passage_chars: int,
 ) -> tuple[ExtractedPassage, ...]:
     """Extract bounded passages while retaining page, section, and formal anchors."""
 
-    suffix = path.suffix.lower()
+    if not isinstance(source_bytes, bytes):
+        raise TypeError("source_bytes must be immutable bytes")
+    suffix = str(source_suffix or "").strip().lower()
     if suffix not in SUPPORTED_SUFFIXES:
         raise SourceShelfExtractionError(
             "unsupported_source_format",
             f"source suffix {suffix or '<none>'} is not supported",
         )
     if suffix == ".pdf":
-        pages = _read_pdf_pages(path)
+        pages = _read_pdf_pages(source_bytes)
     else:
         try:
-            text = path.read_text(encoding="utf-8-sig")
+            text = source_bytes.decode("utf-8-sig")
         except UnicodeError as exc:
             raise SourceShelfExtractionError(
                 "source_text_decode_failed",
@@ -85,8 +110,14 @@ def extract_source_passages(
             ) from exc
         pages = ((None, text),)
     paragraphs: list[_Paragraph] = []
+    section = ""
     for page_number, text in pages:
-        paragraphs.extend(_paragraphs(text, page_number=page_number))
+        page_paragraphs, section = _paragraphs(
+            text,
+            page_number=page_number,
+            initial_section=section,
+        )
+        paragraphs.extend(page_paragraphs)
     if not paragraphs:
         raise SourceShelfExtractionError(
             "source_text_empty",
@@ -95,9 +126,9 @@ def extract_source_passages(
     return _pack_paragraphs(paragraphs, max_passage_chars=max_passage_chars)
 
 
-def _read_pdf_pages(path: Path) -> tuple[tuple[int, str], ...]:
+def _read_pdf_pages(source_bytes: bytes) -> tuple[tuple[int, str], ...]:
     try:
-        reader = PdfReader(str(path))
+        reader = PdfReader(BytesIO(source_bytes))
     except Exception as exc:  # noqa: BLE001 - malformed PDFs need explicit coverage.
         raise SourceShelfExtractionError(
             "source_reader_failed",
@@ -120,8 +151,13 @@ def _read_pdf_pages(path: Path) -> tuple[tuple[int, str], ...]:
     return tuple(pages)
 
 
-def _paragraphs(text: str, *, page_number: int | None) -> list[_Paragraph]:
-    section = ""
+def _paragraphs(
+    text: str,
+    *,
+    page_number: int | None,
+    initial_section: str,
+) -> tuple[list[_Paragraph], str]:
+    section = initial_section
     buffered: list[str] = []
     result: list[_Paragraph] = []
 
@@ -145,17 +181,17 @@ def _paragraphs(text: str, *, page_number: int | None) -> list[_Paragraph]:
 
     for raw_line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
         line = raw_line.rstrip()
-        heading = re.match(r"^\s*#{1,6}\s+(.+?)\s*$", line)
+        heading = _section_heading(line)
         if heading:
             flush()
-            section = heading.group(1).strip()
+            section = heading
             continue
         if not line.strip():
             flush()
             continue
         buffered.append(line)
     flush()
-    return result
+    return result, section
 
 
 def _classify(text: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
@@ -171,7 +207,35 @@ def _classify(text: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
             label = f"{kind}:{captured}" if captured else kind
             if label not in labels:
                 labels.append(label)
+    for environment, kind in _TEX_ENV_KINDS.items():
+        environment_matches = tuple(
+            re.finditer(
+                rf"\\begin\{{{environment}\*?\}}(.*?)(?:\\end\{{{environment}\*?\}}|$)",
+                text,
+                re.IGNORECASE | re.DOTALL,
+            )
+        )
+        if not environment_matches:
+            continue
+        if kind not in kinds:
+            kinds.append(kind)
+        for environment_match in environment_matches:
+            for captured in re.findall(r"\\label\{([^}]+)\}", environment_match.group(1)):
+                label = f"{kind}:{captured}"
+                if label not in labels:
+                    labels.append(label)
     return tuple(kinds), tuple(labels)
+
+
+def _section_heading(line: str) -> str:
+    markdown = re.match(r"^\s*#{1,6}\s+(.+?)\s*$", line)
+    if markdown:
+        return markdown.group(1).strip()
+    tex = re.match(r"^\s*\\(?:sub)*section\*?\{([^}]+)\}\s*$", line)
+    if tex:
+        return tex.group(1).strip()
+    numbered = re.match(r"^\s*\d+(?:\.\d+)*\s+([A-Z][^.!?]{2,100})\s*$", line)
+    return numbered.group(1).strip() if numbered else ""
 
 
 def _pack_paragraphs(
@@ -218,17 +282,46 @@ def _split_long_paragraph(paragraph: _Paragraph, limit: int) -> list[_Paragraph]
             split_at = limit
         chunks.append(remaining[:split_at].rstrip())
         remaining = remaining[split_at:].lstrip()
+    enclosing_kind = _enclosing_tex_environment_kind(paragraph.text)
     return [
-        _Paragraph(
-            page_number=paragraph.page_number,
-            section=paragraph.section,
-            text=chunk,
-            anchor_kinds=_classify(chunk)[0],
-            anchor_labels=_classify(chunk)[1],
-        )
+        _split_chunk(paragraph, chunk, enclosing_kind=enclosing_kind)
         for chunk in chunks
         if chunk
     ]
+
+
+def _split_chunk(paragraph, chunk, *, enclosing_kind):
+    kinds, labels = _classify(chunk)
+    kinds = list(kinds)
+    labels = list(labels)
+    if enclosing_kind and enclosing_kind not in kinds:
+        kinds.append(enclosing_kind)
+    for full_label in paragraph.anchor_labels:
+        kind, separator, raw_label = full_label.partition(":")
+        if separator and f"\\label{{{raw_label}}}" in chunk:
+            if kind not in kinds:
+                kinds.append(kind)
+            if full_label not in labels:
+                labels.append(full_label)
+    return _Paragraph(
+        page_number=paragraph.page_number,
+        section=paragraph.section,
+        text=chunk,
+        anchor_kinds=tuple(kinds),
+        anchor_labels=tuple(labels),
+    )
+
+
+def _enclosing_tex_environment_kind(text):
+    match = re.match(r"\s*\\begin\{([a-z]+)\*?\}", text, re.IGNORECASE)
+    if not match:
+        return ""
+    environment = match.group(1).lower()
+    if environment not in _TEX_ENV_KINDS:
+        return ""
+    if not re.search(rf"\\end\{{{environment}\*?\}}\s*$", text, re.IGNORECASE):
+        return ""
+    return _TEX_ENV_KINDS[environment]
 
 
 def _passage(paragraphs: list[_Paragraph]) -> ExtractedPassage:

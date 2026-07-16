@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-from dataclasses import asdict
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Mapping
 from urllib.parse import unquote, urlparse
@@ -23,6 +23,8 @@ from brain.v5.source_shelf_extraction import (
     extract_source_passages,
 )
 from brain.v5.source_shelf_models import (
+    SOURCE_SHELF_EXTRACTOR_VERSION,
+    SOURCE_SHELF_READER_VERSION,
     SOURCE_SHELF_SCHEMA_VERSION,
     SourcePassage,
     SourceShelf,
@@ -30,15 +32,18 @@ from brain.v5.source_shelf_models import (
     SourceShelfBuildRequest,
     SourceShelfIntegrityError,
     SourceShelfIssue,
+    SourceShelfLocationPin,
     SourceShelfManifest,
     SourceShelfSourcePin,
     SourceShelfStaleError,
+    validate_source_shelf_build_request,
 )
 from brain.v5.source_shelf_storage import (
     hash_json as _hash_json,
     load_source_shelf_generation,
     publish_source_shelf,
     shelf_generation_basis,
+    source_passage_id,
 )
 
 
@@ -51,13 +56,20 @@ _RESTRICTED_ACCESS = {
 _RESTRICTED_STORAGE = {"denied", "forbidden", "metadata_only", "not_allowed", "not_requested"}
 
 
+@dataclass(frozen=True)
+class _ResolvedSource:
+    pin: SourceShelfSourcePin
+    source_bytes: bytes
+    source_suffix: str
+
+
 def build_source_shelf(
     ws: WorkspacePaths,
     request: SourceShelfBuildRequest,
 ) -> SourceShelfBuildReport:
     """Build one immutable derived generation from exact acquired source bytes."""
 
-    _validate_request(request)
+    validate_source_shelf_build_request(request)
     ws.ensure_layout()
     repository = RecordRepository(ws, actor=_reader_actor())
     requested_refs, inventory_issues = _requested_refs(repository, request)
@@ -69,27 +81,40 @@ def build_source_shelf(
 
     for source_ref in requested_refs:
         checked_count += 1
+        location_pins, pin_issues = _location_pins(
+            ws,
+            locations=locations,
+            topic_id=request.topic_id,
+            source_ref=source_ref,
+        )
+        issues.extend(pin_issues)
         result = repository.read(source_ref)
         if result.status != "found" or not isinstance(result.record, SourceAssetRecord):
-            issues.append(_read_issue(source_ref, result.status))
+            issues.append(
+                replace(
+                    _read_issue(source_ref, result.status),
+                    source_location_pins=location_pins,
+                )
+            )
             continue
         asset = result.record
         if asset.topic_id != request.topic_id:
-            issues.append(_issue("source_topic_mismatch", source_ref, "source belongs to another topic"))
+            issues.append(
+                _issue(
+                    "source_topic_mismatch",
+                    source_ref,
+                    "source belongs to another topic",
+                    source_location_pins=location_pins,
+                )
+            )
             continue
         resolved = _resolve_source(ws, asset, source_ref)
         if isinstance(resolved, SourceShelfIssue):
-            issues.append(resolved)
+            issues.append(replace(resolved, source_location_pins=location_pins))
             continue
-        pin, path = resolved
+        pin = replace(resolved.pin, source_location_pins=location_pins)
         source_pins.append(pin)
-        location_refs = tuple(
-            sorted(
-                f"reference_location:{location.location_id}"
-                for location in locations
-                if location.source_ref == source_ref
-            )
-        )
+        location_refs = tuple(item.record_ref for item in location_pins)
         if not location_refs:
             issues.append(
                 _issue(
@@ -100,7 +125,8 @@ def build_source_shelf(
             )
         try:
             extracted = extract_source_passages(
-                path,
+                resolved.source_bytes,
+                source_suffix=resolved.source_suffix,
                 max_passage_chars=request.max_passage_chars,
             )
         except SourceShelfExtractionError as exc:
@@ -129,9 +155,10 @@ def build_source_shelf(
         requested_source_asset_refs=requested_refs,
         source_pins=tuple(source_pins),
         curation_rationale=request.curation_rationale.strip(),
-        reader_version=request.reader_version.strip(),
-        extractor_version=request.extractor_version.strip(),
+        reader_version=SOURCE_SHELF_READER_VERSION,
+        extractor_version=SOURCE_SHELF_EXTRACTOR_VERSION,
         max_passage_chars=request.max_passage_chars,
+        incomplete_coverage=bool(issues),
         passages_hash=passages_hash,
         issues_hash=issues_hash,
     )
@@ -143,8 +170,8 @@ def build_source_shelf(
         requested_source_asset_refs=requested_refs,
         source_pins=tuple(source_pins),
         curation_rationale=request.curation_rationale.strip(),
-        reader_version=request.reader_version.strip(),
-        extractor_version=request.extractor_version.strip(),
+        reader_version=SOURCE_SHELF_READER_VERSION,
+        extractor_version=SOURCE_SHELF_EXTRACTOR_VERSION,
         max_passage_chars=request.max_passage_chars,
         passage_count=len(passages),
         issue_count=len(issues),
@@ -153,6 +180,7 @@ def build_source_shelf(
         issues_hash=issues_hash,
     )
     shelf = SourceShelf(manifest=manifest, passages=tuple(passages), issues=tuple(issues))
+    _require_current_sources(ws, shelf)
     publish_source_shelf(ws, shelf)
     loaded = load_source_shelf(ws, generation)
     return SourceShelfBuildReport(
@@ -177,7 +205,7 @@ def _resolve_source(
     ws: WorkspacePaths,
     asset: SourceAssetRecord,
     source_ref: str,
-) -> tuple[SourceShelfSourcePin, Path] | SourceShelfIssue:
+) -> _ResolvedSource | SourceShelfIssue:
     if asset.metadata.get("acquisition_state") != "acquired" or asset.metadata.get("shelf_eligible") is not True:
         return _issue(
             "source_not_shelf_eligible",
@@ -231,9 +259,10 @@ def _resolve_source(
     if str(asset.metadata.get("local_path") or "").strip() != str(resolved_path) or receipt.stored_uri != local_uri:
         return _issue("source_storage_mismatch", source_ref, "asset path disagrees with receipt storage URI")
     record_pin = pin_current_record(ws, source_ref)
-    return (
-        SourceShelfSourcePin(
+    return _ResolvedSource(
+        pin=SourceShelfSourcePin(
             source_asset_ref=source_ref,
+            topic_id=asset.topic_id,
             record_content_hash=record_pin.content_hash,
             record_revision=record_pin.revision,
             canonical_uri=asset.uri,
@@ -244,26 +273,27 @@ def _resolve_source(
             storage_permission=decision.storage_permission,
             acquisition_decision_ref=asdict(resolution.decision_ref),
             acquisition_receipt_ref=asdict(resolution.receipt_ref),
+            source_location_pins=(),
         ),
-        resolved_path,
+        source_bytes=actual_bytes,
+        source_suffix=resolved_path.suffix.lower(),
     )
 
 
 def _source_passage(*, source_ref, pin, location_refs, ordinal, extracted) -> SourcePassage:
     text_hash = hashlib.sha256(extracted.text.encode("utf-8")).hexdigest()
-    identity = _hash_json(
-        {
-            "source_asset_ref": source_ref,
-            "source_content_hash": pin.content_hash,
-            "page_start": extracted.page_start,
-            "page_end": extracted.page_end,
-            "section": extracted.section,
-            "ordinal": ordinal,
-            "text_hash": text_hash,
-        }
+    identity = source_passage_id(
+        source_asset_ref=source_ref,
+        source_content_hash=pin.content_hash,
+        page_start=extracted.page_start,
+        page_end=extracted.page_end,
+        section=extracted.section,
+        ordinal=ordinal,
+        text_hash=text_hash,
     )
     return SourcePassage(
-        passage_id=f"source-passage:{identity}",
+        passage_id=identity,
+        ordinal=ordinal,
         source_asset_ref=source_ref,
         source_content_hash=pin.content_hash,
         canonical_uri=pin.canonical_uri,
@@ -303,7 +333,7 @@ def _reference_locations(repository, topic_id):
     records = tuple(
         item
         for item in report.records
-        if isinstance(item, ReferenceLocationRecord) and item.topic_id == topic_id
+        if isinstance(item, ReferenceLocationRecord)
     )
     issues = [
         _issue("canonical_location_unreadable", "", f"{item.path}: {item.message}")
@@ -312,41 +342,115 @@ def _reference_locations(repository, topic_id):
     return records, issues
 
 
+def _location_pins(ws, *, locations, topic_id, source_ref):
+    pins = []
+    issues = []
+    for location in locations:
+        if location.source_ref != source_ref:
+            continue
+        location_ref = f"reference_location:{location.location_id}"
+        if location.topic_id != topic_id:
+            issues.append(_issue("source_location_topic_mismatch", source_ref, location_ref))
+            continue
+        try:
+            pinned = pin_current_record(ws, location_ref)
+        except Exception as exc:  # noqa: BLE001 - every retained location must be exact.
+            issues.append(_issue("source_location_unpinned", source_ref, f"{location_ref}: {exc}"))
+            continue
+        pins.append(
+            SourceShelfLocationPin(
+                record_ref=pinned.record_ref,
+                content_hash=pinned.content_hash,
+                revision=pinned.revision,
+                topic_id=location.topic_id,
+                source_asset_ref=location.source_ref,
+            )
+        )
+    return tuple(sorted(pins, key=lambda item: item.record_ref)), issues
+
+
 def _require_current_sources(ws, shelf):
     repository = RecordRepository(ws, actor=_reader_actor())
+    expected_pins = {
+        pin.source_asset_ref: pin for pin in shelf.manifest.source_pins
+    }
+    locations, location_issues = _reference_locations(repository, shelf.manifest.topic_id)
+    expected_location_issues = {
+        issue
+        for issue in shelf.issues
+        if issue.code == "canonical_location_unreadable" and not issue.source_asset_ref
+    }
+    if set(location_issues) != expected_location_issues:
+        raise SourceShelfStaleError("canonical location issue state changed")
     current_refs = set()
-    for expected_pin in shelf.manifest.source_pins:
-        current_refs.add(expected_pin.source_asset_ref)
-        result = repository.read(expected_pin.source_asset_ref)
+    for source_ref in shelf.manifest.requested_source_asset_refs:
+        expected_pin = expected_pins.get(source_ref)
+        current_location_pins, pin_issues = _location_pins(
+            ws,
+            locations=locations,
+            topic_id=shelf.manifest.topic_id,
+            source_ref=source_ref,
+        )
+        for issue in pin_issues:
+            _require_current_issue(shelf, issue)
+        result = repository.read(source_ref)
         if result.status != "found" or not isinstance(result.record, SourceAssetRecord):
-            raise SourceShelfStaleError(
-                f"source_asset_unreadable: {expected_pin.source_asset_ref}"
+            _require_current_issue(
+                shelf,
+                replace(
+                    _read_issue(source_ref, result.status),
+                    source_location_pins=current_location_pins,
+                ),
             )
-        resolved = _resolve_source(ws, result.record, expected_pin.source_asset_ref)
+            continue
+        if result.record.topic_id != shelf.manifest.topic_id:
+            _require_current_issue(
+                shelf,
+                _issue(
+                    "source_topic_mismatch",
+                    source_ref,
+                    "source belongs to another topic",
+                    source_location_pins=current_location_pins,
+                ),
+            )
+            continue
+        resolved = _resolve_source(ws, result.record, source_ref)
         if isinstance(resolved, SourceShelfIssue):
-            raise SourceShelfStaleError(
-                f"{resolved.code}: {resolved.source_asset_ref}: {resolved.detail}"
+            _require_current_issue(
+                shelf,
+                replace(resolved, source_location_pins=current_location_pins),
             )
-        current_pin, _path = resolved
+            continue
+        if expected_pin is None:
+            raise SourceShelfStaleError(f"source issue state changed: {source_ref}")
+        if not current_location_pins:
+            _require_current_issue(
+                shelf,
+                _issue(
+                    "missing_source_location",
+                    source_ref,
+                    "source has no exact ReferenceLocationRecord",
+                ),
+            )
+        current_pin = replace(
+            resolved.pin,
+            source_location_pins=current_location_pins,
+        )
         if current_pin != expected_pin:
             raise SourceShelfStaleError(
-                f"source_pin_changed: {expected_pin.source_asset_ref}"
+                f"source_location_or_pin_changed: {source_ref}"
             )
-    if any(passage.source_asset_ref not in current_refs for passage in shelf.passages):
-        raise SourceShelfIntegrityError("source shelf passage has no manifest source pin")
+        current_refs.add(source_ref)
+    if current_refs != set(expected_pins):
+        raise SourceShelfStaleError("source pin or issue state changed")
 
 
-def _validate_request(request):
-    if not isinstance(request, SourceShelfBuildRequest):
-        raise TypeError("request must be SourceShelfBuildRequest")
-    if not request.topic_id.strip():
-        raise ValueError("topic_id is required")
-    if not request.curation_rationale.strip():
-        raise ValueError("curation_rationale is required")
-    if not request.reader_version.strip() or not request.extractor_version.strip():
-        raise ValueError("reader_version and extractor_version are required")
-    if request.max_passage_chars < 256 or request.max_passage_chars > 20000:
-        raise ValueError("max_passage_chars must be between 256 and 20000")
+def _require_current_issue(shelf, issue):
+    if issue not in shelf.issues:
+        raise SourceShelfStaleError(
+            f"{issue.code}: source issue state changed: "
+            f"{issue.source_asset_ref or issue.code}"
+        )
 
 
 def _path_from_file_uri(uri: str) -> Path | None:
@@ -364,15 +468,20 @@ def _read_issue(source_ref, status):
     return _issue(code, source_ref, f"canonical source asset read status is {status}")
 
 
-def _issue(code, source_ref, detail):
-    return SourceShelfIssue(code=code, source_asset_ref=source_ref, detail=detail)
+def _issue(code, source_ref, detail, *, source_location_pins=()):
+    return SourceShelfIssue(
+        code=code,
+        source_asset_ref=source_ref,
+        detail=detail,
+        source_location_pins=source_location_pins,
+    )
 
 
 def _unique_issues(issues):
     seen = set()
     result = []
     for issue in issues:
-        key = (issue.code, issue.source_asset_ref, issue.detail)
+        key = issue
         if key not in seen:
             seen.add(key)
             result.append(issue)
