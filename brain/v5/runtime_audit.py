@@ -10,6 +10,11 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from brain.v5.runtime_audit_static import layout_families as _layout_families
+from brain.v5.runtime_audit_capability_rows import (
+    execution_capability_rows as _execution_capability_rows,
+    knowledge_capability_rows as _knowledge_capability_rows,
+    skill_capability_rows as _skill_capability_rows,
+)
 from brain.v5.writer_scan import (
     direct_mutation_rows,
     helper_writer_rows,
@@ -256,6 +261,7 @@ def _capability_inventory(directory: Path) -> dict[str, list[str]]:
         registry_rows = _capability_rows(registry_data, "MCP_ONLY_CAPABILITIES")
         registry_rows.extend(_execution_capability_rows(directory))
         registry_rows.extend(_knowledge_capability_rows(directory))
+        registry_rows.extend(_skill_capability_rows(directory))
         optional_rows = _capability_rows(registry_data, "OPTIONAL_MCP_CAPABILITIES")
         registry_rows.extend(row for row in optional_rows if row[1] in mcp_wrappers)
         registry_operations = sorted({*catalog, *(row[0] for row in registry_rows)})
@@ -331,49 +337,6 @@ def _capability_rows(path: Path, name: str) -> list[tuple[Any, ...]]:
                 rows.append(tuple(row))
         return rows
     return []
-
-
-def _execution_capability_rows(directory: Path) -> list[tuple[Any, ...]]:
-    path = directory / "execution_surface_contracts.py"
-    rows = []
-    for mapping_name, state_effect in (("_READ", "read_only"), ("_GATED", "kernel_write")):
-        for operation in _mapping_key_assignment(path, mapping_name):
-            rows.append(
-                (
-                    operation,
-                    f"aitp_v5_{operation}",
-                    f"aitp-v5 execution {operation} --payload-file <args>",
-                    "execution_operation_result",
-                    state_effect,
-                    "full",
-                )
-            )
-    return rows
-
-
-def _knowledge_capability_rows(directory: Path) -> list[tuple[Any, ...]]:
-    path = directory / "knowledge_surface_contracts.py"
-    operations = _literal_named_assignment(path, "_OPERATIONS", default={})
-    if not isinstance(operations, dict):
-        return []
-    rows = []
-    for operation, value in operations.items():
-        if not isinstance(operation, str) or not isinstance(value, tuple) or not value:
-            continue
-        state_effect = value[0]
-        if not isinstance(state_effect, str):
-            continue
-        rows.append(
-            (
-                operation,
-                f"aitp_v5_{operation}",
-                f"aitp-v5 knowledge {operation} --payload-file <args>",
-                "knowledge_operation_result",
-                state_effect,
-                "full",
-            )
-        )
-    return rows
 
 
 def _literal_named_assignment(path: Path, name: str, *, default: Any) -> Any:

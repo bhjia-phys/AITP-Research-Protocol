@@ -70,6 +70,18 @@ from brain.v5.mcp_knowledge import (
     aitp_v5_knowledge_query,
     aitp_v5_knowledge_record_review,
 )
+from brain.v5.mcp_skills import (
+    aitp_v5_skill_apply_deployment,
+    aitp_v5_skill_assess_readiness,
+    aitp_v5_skill_build_package_preview,
+    aitp_v5_skill_build_validation_request,
+    aitp_v5_skill_distill_candidate,
+    aitp_v5_skill_match_applicable,
+    aitp_v5_skill_plan_deployment,
+    aitp_v5_skill_propose_patch,
+    aitp_v5_skill_record_package_proposal,
+    aitp_v5_skill_record_usage,
+)
 
 
 def aitp_v5_propose_detected_procedural_skill(

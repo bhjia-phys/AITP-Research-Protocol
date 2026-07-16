@@ -6,6 +6,7 @@ from brain.v5.context_compiler import ContextBundle, estimate_context_tokens
 from brain.v5.context_selection import NOT_SHOWN_REASON_CODES
 from brain.v5.context_disclosure import DISCLOSURE_LEVELS
 from brain.v5.knowledge_context_integration import knowledge_context_payload_errors
+from brain.v5.skill_context_integration import skill_context_payload_errors
 
 
 _NEXT_DISCLOSURE = {
@@ -19,6 +20,7 @@ _NEXT_DISCLOSURE = {
 def validate_context_bundle(bundle: ContextBundle) -> tuple[str, ...]:
     errors: list[str] = []
     errors.extend(message for _path, message in knowledge_context_payload_errors(bundle.knowledge_context))
+    errors.extend(skill_context_payload_errors(bundle.applicable_skills))
     if not bundle.session_id:
         errors.append("session_id must be non-empty")
     if not bundle.topic_id:

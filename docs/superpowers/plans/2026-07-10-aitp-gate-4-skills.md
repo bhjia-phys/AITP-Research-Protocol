@@ -543,7 +543,7 @@ or real derived index was modified.
 - Modify: `README.md`
 - Modify: `docs/superpowers/plans/2026-07-09-aitp-final-research-lifecycle-roadmap.md`
 
-- [ ] **Step 1: Register distill/readiness/preview/plan/apply/match/use/patch capabilities**
+- [x] **Step 1: Register distill/readiness/preview/plan/apply/match/use/patch capabilities**
 
 Distill/readiness/preview/match are read or candidate operations; proposal,
 install, usage, and patch records have precise runtime/kernel effects. Compact
@@ -552,19 +552,19 @@ Register deep public validators, pre-tool/checkpoint policies, CLI/MCP parity,
 and compact visibility for install, rollback, validation-request, match, use,
 and patch operations. Loader files receive only focused-module imports.
 
-- [ ] **Step 2: Add LibRPA procedural vertical acceptance**
+- [x] **Step 2: Add LibRPA procedural vertical acceptance**
 
 Use two independent validated LibRPA runs plus a failure case to produce a
 candidate/readiness report/package preview. Reject install without approval,
 approve exact hash/diff/target, install project-locally, invoke it on a later
 run, and record exact usage.
 
-- [ ] **Step 3: Add conceptual-exclusion acceptance**
+- [x] **Step 3: Add conceptual-exclusion acceptance**
 
 A QFT definition, derivation, and speculative insight remain knowledge records
 and cannot produce a package even when repeated in many sessions.
 
-- [ ] **Step 4: Run M0-M4, security, staged-tree, and real-store audits**
+- [x] **Step 4: Run M0-M4, security, staged-tree, and real-store audits**
 
 Capability/family drift is zero, architecture limits unchanged, old records
 readable, install tests cannot escape the project, and no package operation
@@ -574,23 +574,40 @@ changes scientific trust.
 
 Commit message: `v5: complete M4 reviewed skill lifecycle`.
 
+Task 6 implementation adds ten full-only operations behind one deep
+`skill_operation_result` contract and one file-backed CLI/MCP facade. Compact
+remains exactly ten tools. Startup/normal context includes at most four
+applicable installed-Skill cards only when the host supplies an explicit
+structured applicability request; route hints and unrequested context include
+none, and no Skill body, manifest, validator command, or patch text is inlined.
+The LibRPA acceptance covers two independent validated runs, structured failure
+coverage, draft packaging, rejection without exact approval, approved
+project-local installation, current-package matching, and exact later-run use.
+Conceptual definition/derivation/Insight inputs fail before provenance reads or
+canonical Skill writes. Focused Task 6, architecture/CLI/public-surface, prior
+Skill transaction/security, M0.5 classification, and all five worktree blocking
+lanes pass. The exact Git-index export also passes all five blocking lanes. The
+authorized real-store derived-index rebuild reached generation 16 with zero
+malformed records and an unchanged canonical watermark. Protected concurrent
+`README.md` integration is still required before M4 is declared released.
+
 ## M4 Completion Checklist
 
-- [ ] Only procedural validated workflows enter Skill distillation.
-- [ ] Every candidate traces to topics, runs, artifacts, validations, failures, and boundaries.
-- [ ] Readiness requires independent uses or a typed expert exception.
-- [ ] Package preview is complete, host-neutral, versioned, and content-addressed.
-- [ ] Approved package bytes are pinned as an immutable artifact and
+- [x] Only procedural validated workflows enter Skill distillation.
+- [x] Every candidate traces to topics, runs, artifacts, validations, failures, and boundaries.
+- [x] Readiness requires independent uses or a typed expert exception.
+- [x] Package preview is complete, host-neutral, versioned, and content-addressed.
+- [x] Approved package bytes are pinned as an immutable artifact and
   deterministically reconstruct to the same hash.
-- [ ] Install/overwrite/patch cannot occur without exact hash/diff/target approval.
-- [ ] Domain shims, rollback, downgrade, and reinstall use the same transaction
+- [x] Install/overwrite/patch cannot occur without exact hash/diff/target approval.
+- [x] Domain shims, rollback, downgrade, and reinstall use the same transaction
   and cannot bypass project-root/checkpoint policy.
-- [ ] Generated validation code has no ambient execution authority; command and
+- [x] Generated validation code has no ambient execution authority; command and
   executor policy are separately hash/checkpoint bound.
-- [ ] Generated Skills remain inside a dedicated project-local namespace.
-- [ ] Applicable skill names/versions are discoverable without loading full bodies.
-- [ ] Actual use records exact version/hash and consuming run/baseline.
-- [ ] Same id/version cannot map to different bytes; rollback is explicit and
+- [x] Generated Skills remain inside a dedicated project-local namespace.
+- [x] Applicable skill names/versions are discoverable without loading full bodies.
+- [x] Actual use records exact version/hash and consuming run/baseline.
+- [x] Same id/version cannot map to different bytes; rollback is explicit and
   history preserving.
-- [ ] External Skills remain independent discovery adapters.
-- [ ] No Skill operation transfers or updates claim trust.
+- [x] External Skills remain independent discovery adapters.
+- [x] No Skill operation transfers or updates claim trust.

@@ -70,8 +70,8 @@ must follow the reviewed skill-candidate/install/use lifecycle.
   recovery-required intent is runtime journal state, not another canonical
   research family. Staging stays below `.aitp/runtime`; target-parent identity
   is pinned during rename, and apply/recovery share the repository
-  canonical-mutation lease. Skill-usage records remain future vertical-owned work. M4
-  Task 1 adds the canonical `skill_distillation_candidate` family before that
+  canonical-mutation lease. M4 Task 1 adds the canonical
+  `skill_distillation_candidate` family before that
   legacy proposal/install path: it stores exact process/provenance pins,
   rejects semantic M3 content, and cannot update claim trust. M4 Task 2 adds
   append-only readiness reports with independent-use, failure/fixture,
@@ -84,7 +84,16 @@ must follow the reviewed skill-candidate/install/use lifecycle.
   compensation, deterministic resume/recovery, monotonic versions, and explicit
   rollback. It never executes arbitrary package commands; those remain blocked
   pending an M2 receipt adapter that binds the exact command and execution
-  policy. Applicability and usage records are still pending.
+  policy. M4 Task 5 matches only byte-current completed installs, records exact
+  version/hash/receipt/proposal/artifact/run usage, and derives reviewed patch
+  proposals only from typed usage evidence. Patch application reuses the same
+  exact checkpoint, journal, readback, compensation, recovery, and receipt
+  transaction. M4 Task 6 exposes ten full-only reviewed Skill operations behind
+  one deep CLI/MCP facade contract. Compact remains ten tools. Startup and
+  normal context can show at most four installed-Skill name/version/hash/ref
+  cards when the host supplies an explicit structured applicability request;
+  route hints and unrequested context contain none, and no Skill body,
+  manifest, validator command, or patch text is inlined.
 
 ## Key Conventions
 
@@ -107,10 +116,10 @@ must follow the reviewed skill-candidate/install/use lifecycle.
   logical shard complexity; then retain abstractions only when a real research
   vertical or required compatibility fixture owns them.
 - **Writer-audit lower bound**: Preserve the historical M0 111-row named-helper
-  baseline while classifying the current 161-row inventory separately from the
+  baseline while classifying the current 164-row inventory separately from the
   173-row direct-mutation inventory. The latter
   covers literal path/open/copy/rename/SQL mechanisms in declared production
-  trees and excludes tests. Its bounded policy currently parses 716/716
+  trees and excludes tests. Its bounded policy currently parses 726/726
   declared production Python files with zero errors, so
   `bounded_coverage_complete` is true. Universal `coverage_complete` remains
   false for dynamic/reflected/native I/O. Do not sum call sites into a semantic

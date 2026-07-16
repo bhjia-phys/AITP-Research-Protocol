@@ -127,11 +127,26 @@ def test_workspace_replay_packet_lists_resume_queue_and_source_gaps(tmp_path):
     assert coverage_summary["can_update_claim_trust"] is False
     source_summary = packet.workspace_backlog_summary["source_reconstruction"]
     assert source_summary["surface"] == "source_reconstruction_manifest"
-    assert source_summary["complete_claim_count"] == 1
-    assert source_summary["incomplete_claim_count"] == 1
+    assert source_summary["complete_claim_count"] == 0
+    assert source_summary["incomplete_claim_count"] == 2
     assert source_summary["review_status_counts"] == {"passed": 1, "pending": 1}
     assert source_summary["missing_component_counts"]["definitions"] == 1
+    assert source_summary["missing_component_counts"]["source_locations"] == 2
     assert source_summary["top_incomplete_claims"] == [
+        {
+            "session_id": "s1",
+            "topic_id": "fqhe",
+            "claim_id": claim.claim_id,
+            "review_status": "passed",
+            "missing_components": ["source_locations"],
+            "next_actions": [
+                "collect_required_evidence_or_provenance",
+                "complete_source_reconstruction",
+                "run_or_record_minimal_validation",
+            ],
+            "review_packet_cli": f"aitp-v5 source reconstruction-review --claim {claim.claim_id}",
+            "can_update_claim_trust": False,
+        },
         {
             "session_id": "s2",
             "topic_id": "gw",
@@ -160,13 +175,13 @@ def test_workspace_replay_packet_lists_resume_queue_and_source_gaps(tmp_path):
     assert attention_summary["top_items"][0]["session_id"] == "s2"
     assert "missing_source_reconstruction" in attention_summary["top_items"][0]["attention_reasons"]
 
-    complete = next(entry for entry in packet.entries if entry["claim_id"] == claim.claim_id)
+    reviewed = next(entry for entry in packet.entries if entry["claim_id"] == claim.claim_id)
     incomplete = next(entry for entry in packet.entries if entry["claim_id"] == gw_claim.claim_id)
-    assert complete["source_reconstruction_complete"] is True
-    assert complete["source_reconstruction_review_status"] == "passed"
-    assert complete["source_reconstruction_review_result_ids"]
-    assert "record_source_reconstruction_review_result" not in complete["next_actions"]
-    assert complete["missing_source_components"] == []
+    assert reviewed["source_reconstruction_complete"] is False
+    assert reviewed["source_reconstruction_review_status"] == "passed"
+    assert reviewed["source_reconstruction_review_result_ids"]
+    assert "record_source_reconstruction_review_result" not in reviewed["next_actions"]
+    assert reviewed["missing_source_components"] == ["source_locations"]
     assert incomplete["source_reconstruction_complete"] is False
     assert incomplete["source_reconstruction_review_status"] == "pending"
     assert incomplete["source_reconstruction_review_result_ids"] == []
@@ -892,12 +907,13 @@ def test_workspace_replay_packet_cli_compact_progress(tmp_path, capsys):
     assert payload["attention_count"] == 2
     assert payload["active_session_count"] == 2
     assert payload["active_claim_count"] == 2
-    assert payload["source_reconstruction"]["incomplete_claim_count"] == 1
+    assert payload["source_reconstruction"]["incomplete_claim_count"] == 2
     assert payload["source_reconstruction"]["top_incomplete_claim_refs"] == [
+        f"source_reconstruction:{claim.claim_id}",
         f"source_reconstruction:{gw_claim.claim_id}"
     ]
     assert payload["resume_attention"]["attention_count"] == 2
-    assert payload["resume_attention"]["top_session_refs"] == ["session:s2", "session:s1"]
+    assert payload["resume_attention"]["top_session_refs"] == ["session:s1", "session:s2"]
     assert payload["source_stack_coverage"]["claim_count"] == 2
     assert payload["source_stack_coverage"]["coverage_status_counts"]["complete"] == 0
     assert payload["source_stack_coverage"]["coverage_status_counts"]["evidence_gap"] == 2

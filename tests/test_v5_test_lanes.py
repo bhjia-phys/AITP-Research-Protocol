@@ -347,13 +347,13 @@ def test_m0_5_classification_audit_covers_current_core_without_behavior_change()
 
     capability_classes = {
         "core": classified_items(r"2\.1 Core \(59\)"),
-        "vertical_extension": classified_items(r"2\.2 Vertical Extension \(112\)"),
+        "vertical_extension": classified_items(r"2\.2 Vertical Extension \(122\)"),
         "maintenance": classified_items(r"2\.3 Maintenance \(43\)"),
         "migration": classified_items(r"2\.4 Migration \(43\)"),
     }
     assert {name: len(items) for name, items in capability_classes.items()} == {
         "core": 59,
-        "vertical_extension": 112,
+        "vertical_extension": 122,
         "maintenance": 43,
         "migration": 43,
     }
@@ -362,7 +362,7 @@ def test_m0_5_classification_audit_covers_current_core_without_behavior_change()
 
     registered_capabilities = set(capability_specs())
     registered_capabilities.discard("harness_feedback_problem_dossier")
-    assert len(registered_capabilities) == 257
+    assert len(registered_capabilities) == 267
     assert classified_capabilities == registered_capabilities
 
     family_classes = {
@@ -396,14 +396,17 @@ def test_m0_5_classification_audit_covers_current_core_without_behavior_change()
         "one immutable deployment-receipt family; host intent transitions remain runtime "
         "journals rather than canonical research families. M4 Task 5 adds one exact "
         "Skill-usage family plus evidence-backed patch planning through the existing "
-        "deployment transaction; it adds no compact capability or direct mutation path."
+        "deployment transaction; it adds no compact capability or direct mutation path. "
+        "M4 Task 6 adds ten full-only facade capabilities for the reviewed lifecycle, "
+        "keeps compact at ten tools, and adds no record family, named-helper writer, or "
+        "direct mutation path."
     ) in normalized
     assert "## 6. Resolved Review Decisions" in report
     assert "bounded scanner closure does not convert candidate counts into a no-bypass proof" in normalized
     assert "all 164 current named-helper rows" in normalized
     assert "all 173 current direct" in normalized
-    assert "257-capability staged core" in normalized
-    assert "719/719 declared production Python files" in normalized
+    assert "267-capability staged core" in normalized
+    assert "726/726 declared production Python files" in normalized
 
 
 def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():

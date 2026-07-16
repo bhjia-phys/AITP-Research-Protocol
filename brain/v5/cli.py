@@ -37,6 +37,11 @@ from brain.v5.cli_knowledge import (
     dispatch_knowledge_command as _dispatch_knowledge_command,
     is_knowledge_command as _is_knowledge_command,
 )
+from brain.v5.cli_skills import (
+    add_skill_parser as _add_skill_parser,
+    dispatch_skill_command as _dispatch_skill_command,
+    is_skill_command as _is_skill_command,
+)
 
 
 _add_parser_section_04_without_lifecycle = _add_parser_section_04
@@ -48,12 +53,15 @@ def _add_parser_section_04(sp):
     _add_execution_parser(sp)
     _add_promotion_checkpoint_parser(sp)
     _add_knowledge_parser(sp)
+    _add_skill_parser(sp)
 
 
 _dispatch_without_lifecycle = _dispatch
 
 
 def _dispatch(args):
+    if _is_skill_command(args):
+        return _dispatch_skill_command(args)
     if _is_knowledge_command(args):
         return _dispatch_knowledge_command(args)
     if _is_promotion_checkpoint_command(args):

@@ -337,12 +337,14 @@ def _install_operation(proposal, *, before_hash, existing_manifest):
 def target_paths(target_root: str | Path, name: str) -> tuple[Path, Path]:
     raw_root = Path(target_root).expanduser()
     raw_root = raw_root if raw_root.is_absolute() else raw_root.absolute()
+    home_root = Path.home().expanduser()
+    home_root = home_root if home_root.is_absolute() else home_root.absolute()
+    if raw_root.resolve(strict=False) == home_root.resolve(strict=False):
+        raise ValueError("user-global Skill target roots are forbidden")
     _reject_link_components(raw_root)
     root = raw_root.resolve(strict=True)
     if not root.is_dir():
         raise ValueError("Skill target root must be an existing project directory")
-    if root == Path.home().resolve():
-        raise ValueError("user-global Skill target roots are forbidden")
     if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name):
         raise ValueError("generated Skill name is not path-safe")
     if link_like(root):

@@ -45,7 +45,12 @@ def _write_qsgw_topic(root):
 
 def test_curated_legacy_migration_creates_active_v5_claim_and_gaps(tmp_path):
     from brain.v5.curated_legacy_migration import migrate_curated_legacy_topic_to_v5
-    from brain.v5.models import ClaimStatusRecord, ProofObligationRecord, ValidationContractRecord
+    from brain.v5.models import (
+        ClaimStatusRecord,
+        EvidenceRecord,
+        ProofObligationRecord,
+        ValidationContractRecord,
+    )
     from brain.v5.public_surfaces import require_valid_public_surface
     from brain.v5.store import list_records
     from brain.v5.workspace import get_claim, get_session_binding, init_workspace
@@ -79,6 +84,16 @@ def test_curated_legacy_migration_creates_active_v5_claim_and_gaps(tmp_path):
     contracts = [item for item in list_records(ws.registry_dir("validation_contracts"), ValidationContractRecord) if item.claim_id == claim.claim_id]
     assert contracts
     assert "missing_l4_review" in contracts[0].failure_modes
+
+    migrated_reports = [
+        item
+        for item in list_records(ws.registry_dir("evidence"), EvidenceRecord)
+        if item.claim_id == claim.claim_id and item.artifact_ids
+    ]
+    assert migrated_reports
+    assert all(item.basis_policy_status == "legacy_unchecked" for item in migrated_reports)
+    assert all(item.support_basis_refs == [] for item in migrated_reports)
+    assert all(item.can_update_claim_trust is False for item in migrated_reports)
     assert (ws.topic_dir("qsgw-headwing-update-librpa") / "indexes" / "legacy_v5_curated_migration.md").exists()
 
 

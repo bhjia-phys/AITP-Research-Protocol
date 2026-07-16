@@ -176,10 +176,96 @@ def record_evidence(
         )
         if not basis_audit.admissible:
             raise ValueError("inadmissible evidence basis: " + ", ".join(basis_audit.errors))
+    return _persist_evidence_record(
+        ws,
+        topic_id=topic_id,
+        claim_id=claim_id,
+        evidence_type=evidence_type,
+        status=status,
+        summary=summary,
+        supports_outputs=supports_outputs or [],
+        source_refs=source_refs,
+        tool_run_ids=tool_run_ids,
+        validation_result_ids=validation_result_ids,
+        artifact_ids=artifact_ids,
+        support_basis_refs=support_basis_refs or [],
+        trace_context_refs=trace_context_refs or [],
+        basis_audit=basis_audit,
+        body=body,
+        actor_id="record_evidence",
+    )
+
+
+def record_legacy_unchecked_evidence(
+    ws: WorkspacePaths,
+    *,
+    topic_id: str,
+    claim_id: str,
+    evidence_type: str,
+    status: str,
+    summary: str,
+    supports_outputs: list[str] | None = None,
+    source_refs: list[str] | None = None,
+    artifact_ids: list[str] | None = None,
+    body: str | None = None,
+) -> EvidenceRecord:
+    """Preserve migration-only evidence without asserting v2 support lineage."""
+
+    return _persist_evidence_record(
+        ws,
+        topic_id=topic_id,
+        claim_id=claim_id,
+        evidence_type=evidence_type,
+        status=status,
+        summary=summary,
+        supports_outputs=supports_outputs or [],
+        source_refs=source_refs or [],
+        tool_run_ids=[],
+        validation_result_ids=[],
+        artifact_ids=artifact_ids or [],
+        support_basis_refs=[],
+        trace_context_refs=[],
+        basis_audit=None,
+        body=body,
+        actor_id="record_legacy_unchecked_evidence",
+    )
+
+
+def _persist_evidence_record(
+    ws: WorkspacePaths,
+    *,
+    topic_id: str,
+    claim_id: str,
+    evidence_type: str,
+    status: str,
+    summary: str,
+    supports_outputs: list[str],
+    source_refs: list[str],
+    tool_run_ids: list[str],
+    validation_result_ids: list[str],
+    artifact_ids: list[str],
+    support_basis_refs: list[PinnedRecordRef],
+    trace_context_refs: list[PinnedRecordRef],
+    basis_audit: Any | None,
+    body: str | None,
+    actor_id: str,
+) -> EvidenceRecord:
+    policy_payload = {
+        "topic_id": topic_id,
+        "claim_id": claim_id,
+        "evidence_type": evidence_type,
+        "status": status,
+        "summary": summary,
+        "supports_outputs": supports_outputs,
+        "source_refs": source_refs,
+        "tool_run_ids": tool_run_ids,
+        "validation_result_ids": validation_result_ids,
+        "artifact_ids": artifact_ids,
+    }
     identity_payload = {
         **policy_payload,
-        "support_basis_refs": [asdict(pin) for pin in support_basis_refs or ()],
-        "trace_context_refs": [asdict(pin) for pin in trace_context_refs or ()],
+        "support_basis_refs": [asdict(pin) for pin in support_basis_refs],
+        "trace_context_refs": [asdict(pin) for pin in trace_context_refs],
         "basis_payload_hash": basis_audit.payload_hash if basis_audit else "",
         "body": body or "",
     }
@@ -203,19 +289,19 @@ def record_evidence(
         evidence_type=evidence_type,
         status=status,
         summary=summary,
-        supports_outputs=supports_outputs or [],
+        supports_outputs=supports_outputs,
         source_refs=source_refs,
         tool_run_ids=tool_run_ids,
         validation_result_ids=validation_result_ids,
         artifact_ids=artifact_ids,
-        support_basis_refs=[asdict(pin) for pin in support_basis_refs or ()],
-        trace_context_refs=[asdict(pin) for pin in trace_context_refs or ()],
+        support_basis_refs=[asdict(pin) for pin in support_basis_refs],
+        trace_context_refs=[asdict(pin) for pin in trace_context_refs],
         basis_audit=asdict(basis_audit) if basis_audit else {},
         basis_policy_status="admissible" if basis_audit else "legacy_unchecked",
         basis_payload_hash=basis_audit.payload_hash if basis_audit else "",
         basis_policy_version=basis_audit.policy_version if basis_audit else "",
     )
-    _repository(ws, actor_id="record_evidence").write(
+    _repository(ws, actor_id=actor_id).write(
         "evidence",
         record,
         body=body if body is not None else f"# Evidence\n\n{summary}\n",

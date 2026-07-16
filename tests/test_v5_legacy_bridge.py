@@ -3798,9 +3798,10 @@ def test_legacy_semantic_review_worklist_maps_source_review_result_action_to_res
         "latest_review_id": review.review_id,
         "cli": (
             f"aitp-v5 --base {ws.base} source reconstruction-review-result "
-            "--claim claim-canonical --status <passed|needs_revision|inconclusive> "
-            "--reviewed-component definitions --reviewed-component assumptions_or_scope "
-            "--reviewed-component dependency_graph --reviewed-component reconstruction_path "
+                "--claim claim-canonical --status <passed|needs_revision|inconclusive> "
+                "--reviewed-component definitions --reviewed-component assumptions_or_scope "
+                "--reviewed-component source_locations "
+                "--reviewed-component dependency_graph --reviewed-component reconstruction_path "
             "--reviewed-component failure_conditions "
             f"--basis-ref {source_ref} "
             "--summary <source reconstruction review basis>"
@@ -5435,14 +5436,15 @@ def test_legacy_semantic_needs_revision_basis_queue_separates_checkpoint_only_it
     from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
     from brain.v5.models import (
         ClaimRecord,
-        EvidenceRecord,
         HumanCheckpointRecord,
         ObjectRelationRecord,
         PhysicsObjectRecord,
-        ReferenceLocationRecord,
         ValidationContractRecord,
     )
     from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.evidence import record_evidence
+    from brain.v5.references import record_reference_location
+    from brain.v5.source_assets import acquire_pdf_source_asset
     from brain.v5.source_reconstruction_review import record_source_reconstruction_review_result
     from brain.v5.store import write_record
     from brain.v5.workspace import init_workspace
@@ -5463,31 +5465,38 @@ def test_legacy_semantic_needs_revision_basis_queue_separates_checkpoint_only_it
             strongest_failure_mode="Human promotion approval is still required.",
         ),
     )
-    write_record(
-        ws.registry_dir("reference_locations") / "reference-canonical.md",
-        ReferenceLocationRecord(
-            location_id="reference-canonical",
-            topic_id="canonical-topic",
-            connector_id="legacy_import",
-            location_type="legacy_archive",
-            uri="legacy_archive:canonical-topic/state.md",
-            label="Canonical legacy archive sample",
-            claim_id="claim-canonical",
-            source_ref="legacy_archive:canonical-topic/state.md",
-        ),
+    source_file = base / "canonical-legacy-source.pdf"
+    source_file.write_bytes(b"%PDF-1.4\ncanonical legacy source\n%%EOF\n")
+    source_asset = acquire_pdf_source_asset(
+        ws,
+        topic_id="canonical-topic",
+        claim_id="claim-canonical",
+        url=source_file.resolve().as_uri(),
+        title="Canonical legacy archive sample",
     )
-    write_record(
-        ws.registry_dir("evidence") / "evidence-canonical-reconstruction.md",
-        EvidenceRecord(
-            evidence_id="evidence-canonical-reconstruction",
-            topic_id="canonical-topic",
-            claim_id="claim-canonical",
-            evidence_type="source_reconstruction",
-            status="supports",
-            summary="Reviewed the reconstruction path from the canonical legacy archive sample.",
-            supports_outputs=["reconstruction_path"],
-            source_refs=["legacy_archive:canonical-topic/state.md"],
-        ),
+    location = record_reference_location(
+        ws,
+        topic_id="canonical-topic",
+        claim_id="claim-canonical",
+        connector_id="local_pdf",
+        location_type="paper",
+        uri=source_asset.uri,
+        label=source_asset.title,
+        source_ref=f"source_asset:{source_asset.asset_id}",
+    )
+    source_refs = [
+        f"reference_location:{location.location_id}",
+        f"source_asset:{source_asset.asset_id}",
+    ]
+    evidence = record_evidence(
+        ws,
+        topic_id="canonical-topic",
+        claim_id="claim-canonical",
+        evidence_type="source_reconstruction",
+        status="supports",
+        summary="Reviewed the reconstruction path from the canonical legacy archive sample.",
+        supports_outputs=["reconstruction_path"],
+        source_refs=source_refs,
     )
     write_record(
         ws.registry_dir("physics_objects") / "object-canonical.md",
@@ -5498,7 +5507,7 @@ def test_legacy_semantic_needs_revision_basis_queue_separates_checkpoint_only_it
             name="Canonical migrated semantic unit",
             definition="The source-grounded semantic unit preserved from the canonical legacy topic.",
             assumptions=["Reviewed only for checkpoint-only queue behavior."],
-            source_refs=["legacy_archive:canonical-topic/state.md"],
+            source_refs=source_refs,
         ),
     )
     write_record(
@@ -5511,7 +5520,7 @@ def test_legacy_semantic_needs_revision_basis_queue_separates_checkpoint_only_it
             object_id="claim-canonical",
             claim_id="claim-canonical",
             statement="The typed semantic unit reconstructs the canonical migrated claim.",
-            source_refs=["legacy_archive:canonical-topic/state.md"],
+            source_refs=source_refs,
         ),
     )
     write_record(
@@ -5538,7 +5547,11 @@ def test_legacy_semantic_needs_revision_basis_queue_separates_checkpoint_only_it
             "reconstruction_path",
             "failure_conditions",
         ],
-        basis_refs=["legacy-topic:canonical-topic/state.md"],
+        basis_refs=source_refs,
+        evidence_refs=[evidence.evidence_id],
+        reference_location_ids=[location.location_id],
+        object_ids=["object-canonical"],
+        relation_ids=["relation-canonical"],
         summary="Source reconstruction is complete; only the human promotion checkpoint remains.",
     )
     write_record(

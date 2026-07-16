@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from brain.v5.execution_surface_contracts import execution_capability_rows
 from brain.v5.knowledge_surface_contracts import knowledge_capability_rows
+from brain.v5.skill_surface_contracts import skill_capability_rows
 
 
 READ_ONLY_OPERATIONS = frozenset(
@@ -313,6 +314,7 @@ MCP_ONLY_CAPABILITIES = (
     ("request_skill_install_review", "aitp_v5_request_skill_install_review", None, "human_checkpoint_record", "kernel_write", "full"),
     *execution_capability_rows(),
     *knowledge_capability_rows(),
+    *skill_capability_rows(),
 )
 
 # Independently shipped extensions are registered only when their MCP wrapper

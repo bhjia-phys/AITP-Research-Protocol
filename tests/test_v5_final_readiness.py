@@ -157,8 +157,10 @@ def test_final_readiness_audit_keeps_kernel_capability_separate_from_content_bac
     assert payload["can_update_claim_trust"] is False
     assert payload["kernel_capabilities"]["record_gate_coverage"]["ungated_record_protocols"] == []
     assert payload["kernel_capabilities"]["source_stack"]["active_claim_count"] == 1
-    assert payload["kernel_capabilities"]["source_stack"]["complete_claim_count"] == 1
-    assert payload["kernel_capabilities"]["source_stack"]["incomplete_claim_ids"] == []
+    assert payload["kernel_capabilities"]["source_stack"]["complete_claim_count"] == 0
+    assert payload["kernel_capabilities"]["source_stack"]["incomplete_claim_ids"] == [
+        claim.claim_id
+    ]
     assert payload["kernel_capabilities"]["source_stack"]["obsidian_review_view_surface"] == (
         "source_reconstruction_obsidian_view_bundle"
     )
@@ -375,7 +377,7 @@ def test_final_readiness_skips_malformed_legacy_evidence_records(tmp_path):
     assert payload["content_backlog"]["legacy_semantic_review"]["pending_count"] == 2
     assert payload["content_backlog"]["legacy_semantic_review"]["passed_count"] == 0
     assert payload["content_backlog"]["legacy_semantic_review"]["semantic_lossless_proven"] is False
-    assert f"source_reconstruction:{claim.claim_id}:complete" in payload["evidence_refs"]
+    assert f"source_reconstruction:{claim.claim_id}:incomplete" in payload["evidence_refs"]
     assert "semantic_review:legacy-v5-lossless-test:pending=2" in payload["backlog_refs"]
     assert "runtime_mcp_bridge_acceptance:status=expected_contract_only" in payload["backlog_refs"]
     assert "fresh_host_mcp_bridge_acceptance_required" in payload["residual_risks"]

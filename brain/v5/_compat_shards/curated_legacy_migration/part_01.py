@@ -7,7 +7,7 @@ from pathlib import Path
 
 from typing import Any
 
-from brain.v5.evidence import record_evidence
+from brain.v5.evidence import record_legacy_unchecked_evidence
 
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5, scan_legacy_topic
 
@@ -282,7 +282,7 @@ def _record_curated_evidence(
     evidence_ids: list[str] = []
     for item in spec.evidence:
         artifact_ids = [artifact_by_path[path] for path in item.artifact_paths if path in artifact_by_path]
-        evidence = record_evidence(
+        evidence = record_legacy_unchecked_evidence(
             ws,
             topic_id=spec.topic_id,
             claim_id=claim_id,

@@ -1054,10 +1054,14 @@ through auditable hybrid lanes and exposed through bounded context.
 
 **Detailed plan:** `docs/superpowers/plans/2026-07-10-aitp-gate-4-skills.md`
 
-**Status (2026-07-16): in progress.** Tasks 4.1-4.3 are implemented, including
-host-neutral package artifacts and review-gated project-local deployment,
-rollback, compensation, and recovery. Applicability, exact usage, patch
-feedback, facade exposure, and M4 end-to-end acceptance remain open.
+**Status (2026-07-17): release acceptance in progress.** Tasks 4.1-4.4 and the
+full-only Skill facade are implemented, including host-neutral package
+artifacts, review-gated project-local deployment, rollback, compensation,
+recovery, applicability, exact usage, and evidence-backed patch planning. The
+LibRPA and conceptual-exclusion acceptance tests pass. All five worktree and
+exact staged-candidate blocking lanes pass, and the real derived index is fresh
+at generation 16 with an unchanged canonical watermark. Protected concurrent
+`README.md` integration remains before M4 is declared released.
 
 **Milestone outcome:** Stable validated procedures become complete, reviewable,
 host-neutral skill packages linked to their source research and actual usage.
@@ -1169,17 +1173,17 @@ advertises only the one currently materialized version.
 
 ### M4 Acceptance
 
-- [ ] No conceptual knowledge enters a skill package as a substitute for graph
+- [x] No conceptual knowledge enters a skill package as a substitute for graph
   refs.
-- [ ] A skill can be traced to source topics, runs, artifacts, validations, and
+- [x] A skill can be traced to source topics, runs, artifacts, validations, and
   checkpoints.
-- [ ] An applicable skill is discoverable at session start without loading every
+- [x] An applicable skill is discoverable at session start without loading every
   full skill body.
 - [x] Skill installation and overwrite cannot occur without a typed approval.
 - [x] Domain shims, rollback, downgrade, and reinstall cannot bypass the same
   transaction and checkpoint path.
 - [x] Install readback cannot implicitly execute arbitrary generated scripts.
-- [ ] Actual use records the exact skill version.
+- [x] Actual use records the exact skill version.
 - [x] Same id/version cannot map to different bytes and rollback preserves
   immutable install history.
 

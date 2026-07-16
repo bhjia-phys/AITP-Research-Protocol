@@ -14,6 +14,9 @@ one immutable deployment-receipt family; host intent transitions remain runtime
 journals rather than canonical research families. M4 Task 5 adds one exact
 Skill-usage family plus evidence-backed patch planning through the existing
 deployment transaction; it adds no compact capability or direct mutation path.
+M4 Task 6 adds ten full-only facade capabilities for the reviewed lifecycle,
+keeps compact at ten tools, and adds no record family, named-helper writer, or
+direct mutation path.
 
 Writer scan status: all 164 current named-helper rows (111 at the M0 baseline)
 and all 173 current direct
@@ -116,7 +119,7 @@ Review notes:
 - query index build is derived state and core infrastructure, not a scientific
   write.
 
-### 2.2 Vertical Extension (112)
+### 2.2 Vertical Extension (122)
 
 ```text
 acquire_arxiv_source_asset
@@ -218,6 +221,16 @@ research_timeline
 request_promotion_checkpoint
 request_skill_install_review
 run_dir_provenance_extractor_plan
+skill_apply_deployment
+skill_assess_readiness
+skill_build_package_preview
+skill_build_validation_request
+skill_distill_candidate
+skill_match_applicable
+skill_plan_deployment
+skill_propose_patch
+skill_record_package_proposal
+skill_record_usage
 source_reconstruction_audit
 source_reconstruction_manifest
 source_reconstruction_review_manifest
@@ -402,7 +415,7 @@ above but remain available.
 ### 2.6 Independent Protected Extension
 
 `harness_feedback_problem_dossier` is present only through protected user work
-in the primary worktree. It is excluded from the 257-capability staged core and from
+in the primary worktree. It is excluded from the 267-capability staged core and from
 this staging scope. Its intended lifecycle is a vertical extension with human
 review, not a reason to retain `harness_feedback_seed_bundle` automatically.
 
@@ -411,13 +424,13 @@ Capability accounting:
 | Class | Count |
 |---|---:|
 | Core | 59 |
-| Vertical extension | 112 |
+| Vertical extension | 122 |
 | Maintenance | 43 |
 | Migration | 43 |
 | Soft deprecated classification | 0 |
 | Maintenance tools soft-deprecated from compact | 6 |
-| Current staged core | 257 |
-| Current classified core plus verticals | 257 |
+| Current staged core | 267 |
+| Current classified core plus verticals | 267 |
 
 ## 3. Record-Family Candidates
 
@@ -609,7 +622,7 @@ brain/v5/_compat_shards/source_assets/part_01.py:register_source_asset:176:repos
 brain/v5/checkpoints.py:request_human_checkpoint:42:repository_write | families=checkpoints | dynamic=false
 brain/v5/checkpoints.py:decide_human_checkpoint:97:repository_write | families=checkpoints | dynamic=false
 brain/v5/evidence.py:record_artifact_ref:71:repository_write | families=artifacts | dynamic=false
-brain/v5/evidence.py:record_evidence:147:repository_write | families=evidence | dynamic=false
+brain/v5/evidence.py:_persist_evidence_record:304:repository_write | families=evidence | dynamic=false
 brain/v5/failure_mode_review.py:record_failure_mode_review_result:127:repository_write | families=failure_mode_reviews | dynamic=false
 brain/v5/references.py:record_reference_location:60:repository_write | families=reference_locations | dynamic=false
 brain/v5/skill_candidates.py:propose_procedural_skill:84:repository_write | families=skill_patch_proposals | dynamic=false
@@ -1032,7 +1045,7 @@ rows remain outside normal production research writes.
   lower-bound baseline was 111;
 - production-tree probe: no filesystem import aliases, dynamic open modes, or
   SQL execute calls were found;
-- `writer_scan_policy.bounded_coverage_complete`: true for 719/719 declared
+- `writer_scan_policy.bounded_coverage_complete`: true for 726/726 declared
   production Python files with zero parse errors;
 - `writer_scan_policy.coverage_complete`: false, because absence of arbitrary
   dynamic, reflected, custom, or native mutation helpers is not statically
