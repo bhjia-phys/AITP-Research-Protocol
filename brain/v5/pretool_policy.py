@@ -15,6 +15,7 @@ from brain.v5.models import (
     ValidationResultRecord,
 )
 from brain.v5.human_approval import checkpoint_can_authorize_trust
+from brain.v5.evidence_basis_policy import persisted_evidence_basis_is_admissible
 from brain.v5.policy import PolicyDecision, evaluate_policy
 from brain.v5.store import list_records
 from brain.v5.workspace import get_claim, get_session_binding
@@ -237,7 +238,9 @@ def _resolve_evidence_records(ws, claim_id: str, requested_ids: list[str]) -> li
     return [
         record
         for record in records
-        if record.evidence_id in wanted and record.claim_id == claim_id
+        if record.evidence_id in wanted
+        and record.claim_id == claim_id
+        and persisted_evidence_basis_is_admissible(ws, record)
     ]
 
 

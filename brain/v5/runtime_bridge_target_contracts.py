@@ -145,6 +145,7 @@ def _validate_mcp_arguments(target: dict[str, Any], path: str, result: ContractR
     entrypoint_key = target.get("entrypoint_key")
     arguments = target.get("mcp_arguments")
     if entrypoint_key in {
+        "record_evidence",
         "process_graph_slice",
         "host_agnostic_moment_policy",
         "runtime_payload_profiles",
@@ -176,6 +177,38 @@ def _validate_mcp_arguments(target: dict[str, Any], path: str, result: ContractR
         _require_list(arguments.get("optional"), f"{path}.mcp_arguments.optional", result)
         if not isinstance(arguments.get("source"), str) or not arguments["source"]:
             result.add(f"{path}.mcp_arguments.source", "must be a non-empty string")
+        if entrypoint_key == "record_evidence":
+            if arguments.get("required") != [
+                "base",
+                "topic_id",
+                "claim_id",
+                "evidence_type",
+                "status",
+                "summary",
+            ]:
+                result.add(
+                    f"{path}.mcp_arguments.required",
+                    "must require the evidence write identity and payload fields",
+                )
+            if arguments.get("optional") != [
+                "supports_outputs",
+                "source_refs",
+                "tool_run_ids",
+                "validation_result_ids",
+                "artifact_ids",
+                "support_basis_refs",
+                "trace_context_refs",
+                "body",
+            ]:
+                result.add(
+                    f"{path}.mcp_arguments.optional",
+                    "must allow provenance, exact basis, trace context, and body fields",
+                )
+            if arguments.get("source") != "aitp_v5_record_evidence":
+                result.add(
+                    f"{path}.mcp_arguments.source",
+                    "must be 'aitp_v5_record_evidence'",
+                )
         if entrypoint_key in {"process_graph_slice", "host_agnostic_moment_policy"}:
             if arguments.get("required") != ["base", "session_id"]:
                 result.add(
@@ -411,4 +444,4 @@ def _validate_mcp_arguments(target: dict[str, Any], path: str, result: ContractR
                     "must allow pack_ids, output_root, apply, and overwrite",
                 )
     elif arguments is not None:
-        result.add(f"{path}.mcp_arguments", "must be omitted for non-read target metadata")
+        result.add(f"{path}.mcp_arguments", "must be omitted for undeclared target metadata")

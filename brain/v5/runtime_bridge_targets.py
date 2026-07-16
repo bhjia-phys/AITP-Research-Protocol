@@ -10,6 +10,20 @@ from brain.v5.runtime_entrypoints import runtime_entrypoints
 
 
 _MCP_ARGUMENT_SPECS: dict[str, dict[str, Any]] = {
+    "record_evidence": {
+        "required": ["base", "topic_id", "claim_id", "evidence_type", "status", "summary"],
+        "optional": [
+            "supports_outputs",
+            "source_refs",
+            "tool_run_ids",
+            "validation_result_ids",
+            "artifact_ids",
+            "support_basis_refs",
+            "trace_context_refs",
+            "body",
+        ],
+        "source": "aitp_v5_record_evidence",
+    },
     "process_graph_slice": {
         "required": ["base", "session_id"],
         "optional": ["claim_id", "limit"],

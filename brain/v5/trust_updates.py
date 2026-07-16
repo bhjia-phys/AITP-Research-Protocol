@@ -6,8 +6,17 @@ import hashlib
 import json
 from dataclasses import asdict, replace
 
+from brain.v5.evidence_basis_policy import persisted_evidence_basis_is_admissible
+from brain.v5.evidence_support_policy import evidence_support_record_ids
 from brain.v5.ids import prefixed_id
-from brain.v5.models import ClaimRecord, CodeStateRecord, TrustUpdateRecord, TrustUpdateRequest
+from brain.v5.models import (
+    ClaimRecord,
+    CodeStateRecord,
+    EvidenceRecord,
+    TrustUpdateRecord,
+    TrustUpdateRequest,
+    ValidationResultRecord,
+)
 from brain.v5.paths import WorkspacePaths
 from brain.v5.policy import evaluate_policy
 from brain.v5.store import list_records, read_record, write_record
@@ -34,16 +43,21 @@ def preflight_trust_update(ws: WorkspacePaths, request: TrustUpdateRequest) -> d
 
     claim = get_claim(ws, request.claim_id)
     code_states = _resolve_code_states(ws, claim, request.code_state_ids)
+    evidence_records = _resolve_evidence_records(ws, claim, request.evidence_refs)
+    validation_results = _resolve_evidence_validation_results(ws, claim, evidence_records)
     source_kind = request.source_kind.strip().lower()
     decision = evaluate_policy(
         action=request.action,
         claim=claim,
         code_states=code_states,
+        evidence_records=evidence_records,
         evidence_refs=request.evidence_refs,
+        validation_results=validation_results,
         context={
             "source_kind": source_kind,
             "source_ref": request.source_ref,
             "orientation_only": source_kind in _SUMMARY_SOURCE_KINDS,
+            "requested_state": request.requested_state,
         },
     )
     policy_reasons = [asdict(reason) for reason in decision.reasons]
@@ -153,6 +167,41 @@ def _resolve_code_states(
         wanted = set(requested_ids)
         return [state for state in states if state.code_state_id in wanted]
     return [state for state in states if _record_links_to_claim(state.linked_records, claim.claim_id)]
+
+
+def _resolve_evidence_records(
+    ws: WorkspacePaths,
+    claim: ClaimRecord,
+    requested_refs: list[str],
+) -> list[EvidenceRecord]:
+    wanted = {
+        ref.split(":", 1)[1] if ref.startswith("evidence:") else ref
+        for ref in requested_refs
+    }
+    return [
+        record
+        for record in list_records(ws.registry_dir("evidence"), EvidenceRecord)
+        if record.evidence_id in wanted
+        and record.claim_id == claim.claim_id
+        and persisted_evidence_basis_is_admissible(ws, record)
+    ]
+
+
+def _resolve_evidence_validation_results(
+    ws: WorkspacePaths,
+    claim: ClaimRecord,
+    evidence_records: list[EvidenceRecord],
+) -> list[ValidationResultRecord]:
+    wanted = {
+        result_id
+        for evidence in evidence_records
+        for result_id in evidence_support_record_ids(evidence, "validation_result")
+    }
+    return [
+        result
+        for result in list_records(ws.registry_dir("validation_results"), ValidationResultRecord)
+        if result.result_id in wanted and result.claim_id == claim.claim_id
+    ]
 
 
 def _write_claim(ws: WorkspacePaths, claim: ClaimRecord) -> None:

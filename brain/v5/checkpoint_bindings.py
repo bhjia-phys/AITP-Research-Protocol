@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from typing import Any, Mapping, Sequence
 
 from brain.v5.checkpoints import decide_human_checkpoint
-from brain.v5.human_approval import checkpoint_can_authorize_trust
+from brain.v5.checkpoint_authority import require_verified_checkpoint_authority
 from brain.v5.models import HumanCheckpointRecord
 from brain.v5.paths import WorkspacePaths
 from brain.v5.pinned_record_refs import (
@@ -272,8 +272,7 @@ def validate_checkpoint_binding(
     if require_decided:
         if record.status != "decided" or record.decision != "approve":
             raise ValueError("bound checkpoint is not an approved decision")
-        if not checkpoint_can_authorize_trust(record):
-            raise ValueError("bound checkpoint decision lacks host-verified approval")
+        require_verified_checkpoint_authority(ws, version)
     return version
 
 

@@ -348,6 +348,11 @@ RUNTIME_ENTRYPOINTS_02 = {
         "mcp": "aitp_v5_request_human_checkpoint",
         "surface": "human_checkpoint_record",
     },
+    'request_promotion_checkpoint': {
+        "cli": "aitp-v5 promotion-checkpoint request <args>",
+        "mcp": "aitp_v5_request_promotion_checkpoint",
+        "surface": "human_checkpoint_record",
+    },
     'decide_human_checkpoint': {
         "cli": "aitp-v5 checkpoint decide <args>",
         "mcp": "aitp_v5_decide_human_checkpoint",

@@ -183,6 +183,7 @@ _SCHEMA_VERSIONS = {
     "derivation_chains": "v2",
     "derivation_reviews": "v2",
     "derivation_steps": "v2",
+    "evidence": "v2",
     "execution_environments": "v2",
     "execution_baselines": "v2",
     "monitor_snapshots": "v2",
@@ -240,6 +241,7 @@ _DEPENDENCY_FIELDS = {
         "local_check_refs[].record_ref",
         "source_anchor_refs[].record_ref",
     ),
+    "evidence": ("support_basis_refs", "trace_context_refs"),
     "execution_environments": (
         "source_refs[].record_ref",
     ),

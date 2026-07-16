@@ -219,6 +219,153 @@ def test_bound_decision_pins_request_revision_and_requires_host_approval(
     ]
     assert get_record_version(ws, requested.request_ref).version_source == "archive"
 
+    receipt_path = (
+        ws.root
+        / "runtime"
+        / "human_approval_receipts"
+        / f"{requested.record.checkpoint_id}.json"
+    )
+    persisted_receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    persisted_receipt["nonce"] = "tampered-runtime-receipt"
+    receipt_path.write_text(json.dumps(persisted_receipt), encoding="utf-8")
+    with pytest.raises(ValueError, match="host-verified approval"):
+        validate_checkpoint_binding(
+            ws,
+            decided.decision_ref,
+            requested.binding,
+            now=now,
+            require_decided=True,
+        )
+
+
+def test_bound_decision_rejects_forged_receipt_metadata_without_signed_receipt(
+    tmp_path,
+):
+    from brain.v5.checkpoint_bindings import validate_checkpoint_binding
+    from brain.v5.pinned_record_refs import pin_current_record
+    from brain.v5.record_envelope import RecordActor
+    from brain.v5.record_repository import RecordRepository, WritePolicy
+
+    now = datetime.now(UTC)
+    ws, intent, subject = _seed_bound_records(tmp_path)
+    requested = _request(ws, intent, subject, now=now)
+    forged = replace(
+        requested.record,
+        status="decided",
+        decision="approve",
+        rationale="Forged canonical decision metadata.",
+        decided_by="model",
+        decision_verified=True,
+        decision_verification="hmac_sha256_v1",
+        decision_receipt_hash=f"sha256:{'a' * 64}",
+        decision_receipt_nonce="forged-but-well-shaped",
+        can_authorize_trust=True,
+    )
+    RecordRepository(
+        ws,
+        actor=RecordActor(
+            actor_type="tool",
+            actor_id="decide_human_checkpoint",
+            host="aitp",
+        ),
+    ).write(
+        "checkpoints",
+        forged,
+        body="# Forged Human Checkpoint Decision\n",
+        policy=WritePolicy(
+            mode="revision",
+            expected_hash=requested.request_ref.content_hash,
+        ),
+    )
+
+    with pytest.raises(ValueError, match="host-verified approval"):
+        validate_checkpoint_binding(
+            ws,
+            pin_current_record(ws, requested.request_ref.record_ref),
+            requested.binding,
+            now=now,
+            require_decided=True,
+        )
+
+
+def test_bound_decision_rejects_valid_receipt_with_mismatched_canonical_metadata(
+    tmp_path,
+    monkeypatch,
+):
+    from brain.v5.checkpoint_bindings import validate_checkpoint_binding
+    from brain.v5.human_approval import (
+        persist_human_approval_receipt,
+        verify_human_approval_receipt,
+    )
+    from brain.v5.pinned_record_refs import pin_current_record
+    from brain.v5.record_envelope import RecordActor
+    from brain.v5.record_repository import RecordRepository, WritePolicy
+
+    now = datetime.now(UTC)
+    ws, intent, subject = _seed_bound_records(tmp_path)
+    requested = _request(ws, intent, subject, now=now)
+    secret = b"m2-checkpoint-metadata-secret-32-bytes"
+    monkeypatch.setenv(
+        "AITP_HUMAN_APPROVAL_HMAC_KEY_B64",
+        base64.b64encode(secret).decode("ascii"),
+    )
+    rationale, receipt = _approval_receipt(
+        secret=secret,
+        checkpoint_id=requested.record.checkpoint_id,
+        request_hash=requested.request_ref.content_hash,
+    )
+    verification = verify_human_approval_receipt(
+        ws,
+        checkpoint_id=requested.record.checkpoint_id,
+        checkpoint_content_hash=requested.request_ref.content_hash,
+        decision="approve",
+        rationale=rationale,
+        decided_by="samur",
+        approval_receipt=receipt,
+    )
+    persist_human_approval_receipt(
+        ws,
+        requested.record.checkpoint_id,
+        receipt,
+    )
+    mismatched = replace(
+        requested.record,
+        status="decided",
+        decision="approve",
+        rationale=rationale,
+        decided_by="samur",
+        decision_verified=True,
+        decision_verification=verification.method,
+        decision_receipt_hash=f"sha256:{'b' * 64}",
+        decision_receipt_nonce=verification.nonce,
+        can_authorize_trust=True,
+    )
+    RecordRepository(
+        ws,
+        actor=RecordActor(
+            actor_type="tool",
+            actor_id="decide_human_checkpoint",
+            host="aitp",
+        ),
+    ).write(
+        "checkpoints",
+        mismatched,
+        body="# Mismatched Human Checkpoint Decision\n",
+        policy=WritePolicy(
+            mode="revision",
+            expected_hash=requested.request_ref.content_hash,
+        ),
+    )
+
+    with pytest.raises(ValueError, match="does not match persisted metadata"):
+        validate_checkpoint_binding(
+            ws,
+            pin_current_record(ws, requested.request_ref.record_ref),
+            requested.binding,
+            now=now,
+            require_decided=True,
+        )
+
 
 def test_legacy_unbound_checkpoint_cannot_authorize_v2_action(tmp_path):
     from brain.v5.checkpoint_bindings import validate_checkpoint_binding

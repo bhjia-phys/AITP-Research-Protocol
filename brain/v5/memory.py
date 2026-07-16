@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import asdict
 
 from brain.v5.contracts import ContractError
+from brain.v5.evidence_basis_policy import persisted_evidence_basis_is_trust_admissible
+from brain.v5.evidence_support_policy import evidence_support_record_ids
 from brain.v5.human_approval import checkpoint_can_authorize_trust
 from brain.v5.ids import prefixed_id
 from brain.v5.models import (
@@ -15,6 +17,10 @@ from brain.v5.models import (
     PromotionPacketRecord,
     ToolRunRecord,
     ValidationResultRecord,
+)
+from brain.v5.promotion_checkpoints import (
+    request_promotion_checkpoint,
+    require_approved_promotion_checkpoint,
 )
 from brain.v5.record_contracts import require_valid_memory_entry_record, require_valid_promotion_packet_record
 from brain.v5.record_envelope import RecordActor, canonical_record_hash
@@ -78,6 +84,7 @@ def create_promotion_packet(
         evidence_refs=evidence_refs or [],
         validation_result_ids=validation_result_ids or [],
     )
+    _require_admissible_evidence_refs(ws, claim_id, evidence_refs or [])
     if failure_mode_review_checkpoint_id or failure_mode_review_result_id:
         _ensure_passed_failure_mode_review_result(
             ws,
@@ -150,7 +157,7 @@ def apply_promotion_packet(
         ):
             raise ValueError(f"approved human checkpoint not found or malformed: {checkpoint_id}")
         checkpoint = checkpoint_read.record
-        _require_approved_promotion_checkpoint(packet, checkpoint)
+        require_approved_promotion_checkpoint(ws, packet, checkpoint)
 
         claim = get_claim(ws, packet.claim_id)
         entry = _memory_entry_for_packet(packet, checkpoint_id, claim.statement)
@@ -212,6 +219,7 @@ def _validate_promotion_basis(ws: WorkspacePaths, packet: PromotionPacketRecord)
         evidence_refs=packet.evidence_refs,
         validation_result_ids=packet.validation_result_ids,
     )
+    _require_admissible_evidence_refs(ws, packet.claim_id, packet.evidence_refs)
     if packet.failure_mode_review_checkpoint_id or packet.failure_mode_review_result_id:
         _ensure_passed_failure_mode_review_result(
             ws,
@@ -219,26 +227,6 @@ def _validate_promotion_basis(ws: WorkspacePaths, packet: PromotionPacketRecord)
             claim_id=packet.claim_id,
             checkpoint_id=packet.failure_mode_review_checkpoint_id,
             result_id=packet.failure_mode_review_result_id,
-        )
-
-
-def _require_approved_promotion_checkpoint(
-    packet: PromotionPacketRecord,
-    checkpoint: HumanCheckpointRecord,
-) -> None:
-    if checkpoint.topic_id != packet.topic_id or checkpoint.claim_id != packet.claim_id:
-        raise ValueError(
-            "approved human checkpoint must belong to the same topic and claim as the promotion packet"
-        )
-    if checkpoint.status != "decided":
-        raise ValueError("approved human checkpoint is required - checkpoint not decided")
-    if checkpoint.decision != "approve":
-        raise ValueError(
-            f"approved human checkpoint is required - decision was {checkpoint.decision!r}"
-        )
-    if not checkpoint_can_authorize_trust(checkpoint):
-        raise ValueError(
-            "approved human checkpoint requires a host-verified human approval receipt"
         )
 
 
@@ -360,14 +348,22 @@ def _ensure_tool_evidence_has_passed_validation_results(
     tool_run_ids = {
         run_id
         for evidence in evidence_records
-        for run_id in getattr(evidence, "tool_run_ids", [])
-        if run_id
+        for run_id in evidence_support_record_ids(evidence, "tool_run")
     }
+    exact_result_ids = {
+        result_id
+        for evidence in evidence_records
+        for result_id in evidence_support_record_ids(evidence, "validation_result")
+    }
+    if set(validation_result_ids) != exact_result_ids:
+        raise ValueError(
+            "promotion packet validation_result_ids must match the exact evidence basis"
+        )
     if not tool_run_ids:
         return
-    if not validation_result_ids:
-        raise ValueError("promotion packet validation_result_ids must cover tool-derived evidence")
-    validation_results = _resolve_validation_results(ws, claim_id, validation_result_ids)
+    validation_results = _resolve_validation_results(ws, claim_id, sorted(exact_result_ids))
+    if {result.result_id for result in validation_results} != exact_result_ids:
+        raise ValueError("promotion packet exact evidence basis contains unknown validation results")
     passed_tool_runs = {
         result.tool_run_id
         for result in validation_results
@@ -430,6 +426,22 @@ def _resolve_evidence_records(ws: WorkspacePaths, claim_id: str, evidence_refs: 
         for evidence in list_records(ws.registry_dir("evidence"), EvidenceRecord)
         if evidence.evidence_id in wanted and evidence.claim_id == claim_id
     ]
+
+
+def _require_admissible_evidence_refs(
+    ws: WorkspacePaths,
+    claim_id: str,
+    evidence_refs: list[str],
+) -> None:
+    records = _resolve_evidence_records(ws, claim_id, evidence_refs)
+    resolved = {record.evidence_id for record in records}
+    if set(evidence_refs) != resolved or any(
+        not persisted_evidence_basis_is_trust_admissible(ws, record) for record in records
+    ):
+        raise ValueError(
+            "promotion packet requires an admissible evidence basis; "
+            "use a trust-admissible exact evidence basis"
+        )
 
 
 def _resolve_validation_results(

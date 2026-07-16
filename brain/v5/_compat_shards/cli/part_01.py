@@ -41,6 +41,8 @@ from brain.v5.curated_rag_corpus import (
 
 from brain.v5.evidence import record_evidence
 
+from brain.v5.cli_evidence import add_evidence_parser, dispatch_evidence_command
+
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
 
 from brain.v5.knowledge_connector_bindings import bind_knowledge_connector, list_knowledge_connector_bindings

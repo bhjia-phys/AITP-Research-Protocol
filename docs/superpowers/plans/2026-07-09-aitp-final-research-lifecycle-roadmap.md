@@ -943,13 +943,13 @@ through auditable hybrid lanes and exposed through bounded context.
 - [x] Route interpretation, analogy, conjecture, failed route, counterexample,
   bridge, and open direction to speculative candidates.
 - [x] Remove physics-semantic fragments from the skill path.
-- [ ] Require exact grounding refs for grounded promotion.
-- [ ] Keep reviewed insight non-evidence and able only to motivate research
+- [x] Require exact grounding refs for grounded promotion.
+- [x] Keep reviewed insight non-evidence and able only to motivate research
   questions, routes, obligations, and checks.
-- [ ] Enforce evidence-basis admissibility in evidence write, pre-tool policy,
+- [x] Enforce evidence-basis admissibility in evidence write, pre-tool policy,
   trust audit, and promotion so insight/search/summary/Skill cannot be wrapped
   into claim support.
-- [ ] Bind per-item review to content hash and preserve revise/demote/invalidate/
+- [x] Bind per-item review to content hash and preserve revise/demote/invalidate/
   supersede history.
 
 ### Task 3.3: Versioned Source Shelf And Structured Ingestion

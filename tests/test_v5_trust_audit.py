@@ -6,11 +6,16 @@ from pathlib import Path
 
 
 def _setup_trusted_claim(tmp_path: Path):
-    from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
+    from brain.v5.checkpoints import decide_human_checkpoint
     from brain.v5.code import record_code_state
     from brain.v5.evidence import record_evidence
-    from brain.v5.memory import apply_promotion_packet, create_promotion_packet
+    from brain.v5.memory import (
+        apply_promotion_packet,
+        create_promotion_packet,
+        request_promotion_checkpoint,
+    )
     from brain.v5.models import TrustUpdateRequest
+    from brain.v5.pinned_record_refs import pin_current_record
     from brain.v5.tools import record_tool_run
     from brain.v5.trust_updates import apply_trust_update, preflight_trust_update
     from brain.v5.validation import create_validation_contract, record_validation_result
@@ -78,6 +83,11 @@ def _setup_trusted_claim(tmp_path: Path):
         supports_outputs=["benchmark_consistency"],
         tool_run_ids=[run.run_id],
         validation_result_ids=[validation.result_id],
+        support_basis_refs=[
+            pin_current_record(ws, f"tool_run:{run.run_id}"),
+            pin_current_record(ws, f"validation_result:{validation.result_id}"),
+        ],
+        trace_context_refs=[],
     )
     packet = create_promotion_packet(
         ws,
@@ -88,12 +98,12 @@ def _setup_trusted_claim(tmp_path: Path):
         validation_result_ids=[validation.result_id],
         known_failure_modes=["wrong code state"],
     )
-    checkpoint = request_human_checkpoint(
+    checkpoint = request_promotion_checkpoint(
         ws,
-        topic_id="librpa-gw",
-        claim_id=claim.claim_id,
+        packet_id=packet.packet_id,
         reason="Promote benchmark workflow memory.",
         requested_by="promotion_policy",
+        expires_at="2099-01-01T00:00:00+00:00",
         options=["approve"],
     )
     decided = decide_human_checkpoint(
@@ -148,7 +158,7 @@ def test_claim_trust_audit_reports_typed_support_for_current_confidence(tmp_path
     assert payload["trust_update_record_ids"][0].startswith("trust-update-")
 
 
-def test_claim_trust_audit_counts_scoped_support_as_evidence_only(tmp_path):
+def test_claim_trust_audit_excludes_unchecked_scoped_support(tmp_path):
     from brain.v5.evidence import record_evidence
     from brain.v5.trust_audit import audit_claim_trust
     from brain.v5.workspace import create_claim, create_topic, init_workspace
@@ -174,8 +184,9 @@ def test_claim_trust_audit_counts_scoped_support_as_evidence_only(tmp_path):
 
     payload = audit_claim_trust(ws, claim_id=claim.claim_id)
 
-    assert payload["support_state"] == "evidence_only"
-    assert payload["supporting_evidence_refs"] == [evidence.evidence_id]
+    assert payload["support_state"] == "unsupported"
+    assert payload["supporting_evidence_refs"] == []
+    assert payload["inadmissible_supporting_evidence_refs"] == [evidence.evidence_id]
     assert payload["passed_validation_result_ids"] == []
 
 

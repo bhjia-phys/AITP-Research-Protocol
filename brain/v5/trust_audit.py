@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from brain.v5.evidence import list_evidence_for_claim
+from brain.v5.evidence_basis_policy import persisted_evidence_basis_is_trust_admissible
 from brain.v5.memory import list_memory_entries_for_claim
 from brain.v5.models import CodeStateRecord, ToolRunRecord, TrustUpdateRecord, ValidationResultRecord
 from brain.v5.store import list_records
@@ -18,8 +19,18 @@ def audit_claim_trust(ws: WorkspacePaths, *, claim_id: str) -> dict:
 
     claim = get_claim(ws, claim_id)
     evidence_records = list_evidence_for_claim(ws, claim_id)
+    supporting_candidates = [
+        evidence for evidence in evidence_records if _is_supporting_evidence(evidence.status)
+    ]
     supporting_evidence_refs = [
-        evidence.evidence_id for evidence in evidence_records if _is_supporting_evidence(evidence.status)
+        evidence.evidence_id
+        for evidence in supporting_candidates
+        if persisted_evidence_basis_is_trust_admissible(ws, evidence)
+    ]
+    inadmissible_supporting_evidence_refs = [
+        evidence.evidence_id
+        for evidence in supporting_candidates
+        if not persisted_evidence_basis_is_trust_admissible(ws, evidence)
     ]
     challenging_evidence_refs = [
         evidence.evidence_id for evidence in evidence_records if _is_challenging_evidence(evidence.status)
@@ -56,6 +67,7 @@ def audit_claim_trust(ws: WorkspacePaths, *, claim_id: str) -> dict:
         "evidence_profile": claim.evidence_profile,
         "support_state": support_state,
         "supporting_evidence_refs": supporting_evidence_refs,
+        "inadmissible_supporting_evidence_refs": inadmissible_supporting_evidence_refs,
         "challenging_evidence_refs": challenging_evidence_refs,
         "passed_validation_result_ids": passed_validation_result_ids,
         "failed_validation_result_ids": failed_validation_result_ids,

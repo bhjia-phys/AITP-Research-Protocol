@@ -192,14 +192,14 @@ route to M4 Skill candidates. Mixed candidates require explicit splitting.
 Add a regression test that `research_distillation` cannot emit a Skill candidate
 for a definition, formula, derivation, interpretation, or insight.
 
-- [ ] **Step 3: Implement grounding/contradiction diagnostics**
+- [x] **Step 3: Implement grounding/contradiction diagnostics**
 
 Require exact source asset plus location for grounded promotion; validate scope,
 framework, regime, conventions, dependencies, contradictions, duplicate ids,
 and unresolved refs. An inferred statement without source assertion routes to
 insight even when source refs motivated it.
 
-- [ ] **Step 4: Implement review-gated promotion**
+- [x] **Step 4: Implement review-gated promotion**
 
 Promotion consumes per-item review decisions bound to candidate/batch content
 hashes, exact source refs, and a matching checkpoint subject/request hash.
@@ -209,7 +209,7 @@ contradiction, grounding, or framework changes create invalidation candidates;
 they never mutate active reviewed content silently. No promotion function calls
 evidence/trust writers.
 
-- [ ] **Step 4a: Close the evidence-admissibility boundary**
+- [x] **Step 4a: Close the evidence-admissibility boundary**
 
 Evidence recording resolves every basis ref. Reject insight, discovery/search
 receipt, derived passage, summary/context, Skill, unreviewed candidate, and
@@ -227,7 +227,7 @@ audit hash. Mixed valid support plus insight is unambiguous: insight may remain
 trace context but is never counted as support. Trust paths recompute/verify the
 audit rather than trusting an arbitrary boolean.
 
-- [ ] **Step 5: Integrate literature extraction and run regressions**
+- [x] **Step 5: Integrate literature extraction and run regressions**
 
 Literature extraction produces M1 staged candidates with equation/source
 anchors. Run candidate, insight, literature, recording-batch, derivation, and
@@ -238,9 +238,17 @@ imported content hashes, applicability, review/validation refs, expiry, and
 supersession. Context resolves the exact decision ref; bridge status or a bare
 checkpoint cannot move imported assertions out of the orientation-only lane.
 
-- [ ] **Step 6: Commit Task 2**
+- [x] **Step 6: Commit Task 2**
 
 Commit message: `v5: separate grounded knowledge and insight candidates`.
+
+Completion evidence refreshed 2026-07-16: the focused Task 2 knowledge,
+review, evidence, recording, distillation, and derivation suite passed 92 tests;
+the Evidence/trust/pre-tool/promotion/validation core passed 162 tests; the
+checkpoint/source-policy consumer suite passed 102 tests; and the focused CLI,
+adapter, runtime, capability, compact-surface, and architecture suite passed 61
+tests. These are overlapping scoped suites, not additive full-suite counts.
+Task 3 and overall M3 acceptance remain open.
 
 ## Task 3: Versioned Source Shelf And Structured Ingestion
 

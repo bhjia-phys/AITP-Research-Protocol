@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Any
 
 from brain.v5.ids import prefixed_id, short_hash
+from brain.v5.evidence_basis_policy import audit_evidence_basis
+from brain.v5.evidence_support_policy import pinned_record_ids
 from brain.v5.models import ArtifactRecord, EvidenceRecord
 from brain.v5.paths import WorkspacePaths
+from brain.v5.pinned_record_refs import PinnedRecordRef, pin_current_record
 from brain.v5.record_envelope import RecordActor
 from brain.v5.record_repository import RecordCollisionError, RecordRepository
 from brain.v5.store import read_record
@@ -112,21 +115,72 @@ def record_evidence(
     tool_run_ids: list[str] | None = None,
     validation_result_ids: list[str] | None = None,
     artifact_ids: list[str] | None = None,
+    support_basis_refs: list[PinnedRecordRef] | None = None,
+    trace_context_refs: list[PinnedRecordRef] | None = None,
     body: str | None = None,
 ) -> EvidenceRecord:
     """Record claim-local evidence that may satisfy action-budget outputs."""
 
-    identity_payload = {
+    if support_basis_refs is None:
+        inferred_refs = [
+            *[
+                ref for ref in source_refs or []
+                if ref.startswith(("source_asset:", "reference_location:"))
+            ],
+            *[f"tool_run:{run_id}" for run_id in tool_run_ids or []],
+            *[
+                f"validation_result:{result_id}"
+                for result_id in validation_result_ids or []
+            ],
+            *[f"artifact:{artifact_id}" for artifact_id in artifact_ids or []],
+        ]
+        if inferred_refs:
+            support_basis_refs = [pin_current_record(ws, ref) for ref in inferred_refs]
+            trace_context_refs = trace_context_refs or []
+    support_pins = support_basis_refs or []
+    pinned_sources = [
+        pin.record_ref
+        for pin in support_pins
+        if pin.record_ref.startswith(("source_asset:", "reference_location:"))
+    ]
+    source_refs = _merge_unique(source_refs or [], pinned_sources)
+    tool_run_ids = _merge_unique(
+        tool_run_ids or [], pinned_record_ids(support_pins, "tool_run")
+    )
+    validation_result_ids = _merge_unique(
+        validation_result_ids or [], pinned_record_ids(support_pins, "validation_result")
+    )
+    artifact_ids = _merge_unique(
+        artifact_ids or [], pinned_record_ids(support_pins, "artifact")
+    )
+    policy_payload = {
         "topic_id": topic_id,
         "claim_id": claim_id,
         "evidence_type": evidence_type,
         "status": status,
         "summary": summary,
         "supports_outputs": supports_outputs or [],
-        "source_refs": source_refs or [],
-        "tool_run_ids": tool_run_ids or [],
-        "validation_result_ids": validation_result_ids or [],
-        "artifact_ids": artifact_ids or [],
+        "source_refs": source_refs,
+        "tool_run_ids": tool_run_ids,
+        "validation_result_ids": validation_result_ids,
+        "artifact_ids": artifact_ids,
+    }
+    basis_audit = None
+    if support_basis_refs is not None or trace_context_refs is not None:
+        basis_audit = audit_evidence_basis(
+            ws,
+            topic_id=topic_id,
+            support_basis_refs=tuple(support_basis_refs or ()),
+            trace_context_refs=tuple(trace_context_refs or ()),
+            evidence_payload=policy_payload,
+        )
+        if not basis_audit.admissible:
+            raise ValueError("inadmissible evidence basis: " + ", ".join(basis_audit.errors))
+    identity_payload = {
+        **policy_payload,
+        "support_basis_refs": [asdict(pin) for pin in support_basis_refs or ()],
+        "trace_context_refs": [asdict(pin) for pin in trace_context_refs or ()],
+        "basis_payload_hash": basis_audit.payload_hash if basis_audit else "",
         "body": body or "",
     }
     identity_hash = hashlib.sha256(
@@ -150,10 +204,16 @@ def record_evidence(
         status=status,
         summary=summary,
         supports_outputs=supports_outputs or [],
-        source_refs=source_refs or [],
-        tool_run_ids=tool_run_ids or [],
-        validation_result_ids=validation_result_ids or [],
-        artifact_ids=artifact_ids or [],
+        source_refs=source_refs,
+        tool_run_ids=tool_run_ids,
+        validation_result_ids=validation_result_ids,
+        artifact_ids=artifact_ids,
+        support_basis_refs=[asdict(pin) for pin in support_basis_refs or ()],
+        trace_context_refs=[asdict(pin) for pin in trace_context_refs or ()],
+        basis_audit=asdict(basis_audit) if basis_audit else {},
+        basis_policy_status="admissible" if basis_audit else "legacy_unchecked",
+        basis_payload_hash=basis_audit.payload_hash if basis_audit else "",
+        basis_policy_version=basis_audit.policy_version if basis_audit else "",
     )
     _repository(ws, actor_id="record_evidence").write(
         "evidence",
@@ -182,6 +242,10 @@ def _repository(ws: WorkspacePaths, *, actor_id: str) -> RecordRepository:
         ws,
         actor=RecordActor(actor_type="tool", actor_id=actor_id, host="aitp"),
     )
+
+
+def _merge_unique(first: list[str], second: list[str]) -> list[str]:
+    return list(dict.fromkeys([*first, *second]))
 
 
 def required_output_coverage(

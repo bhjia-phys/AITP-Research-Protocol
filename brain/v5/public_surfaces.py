@@ -24,6 +24,9 @@ from brain.v5.execution_surface_contracts import (
     execution_surface_purposes as _execution_surface_purposes,
     execution_surface_validators as _execution_surface_validators,
 )
+from brain.v5.evidence_surface_contracts import (
+    evidence_surface_validators as _evidence_surface_validators,
+)
 
 
 _PUBLIC_SURFACE_NAMES = tuple(
@@ -45,4 +48,5 @@ def _validators():
     validators = _validators_without_lifecycle()
     validators.update(_lifecycle_surface_validators())
     validators.update(_execution_surface_validators())
+    validators.update(_evidence_surface_validators())
     return validators

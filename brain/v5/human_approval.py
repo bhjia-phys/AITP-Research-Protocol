@@ -14,6 +14,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from brain.v5.markdown import write_text_atomic
 from brain.v5.paths import WorkspacePaths
 
 
@@ -33,11 +34,11 @@ class HumanApprovalVerification:
 
 
 def checkpoint_can_authorize_trust(checkpoint: Any) -> bool:
-    """Return whether persisted receipt metadata can authorize a trust action.
+    """Return whether persisted receipt metadata has an authority-capable shape.
 
-    ``can_authorize_trust`` is not an authority bit by itself. Consumers must
-    require the complete production verifier shape so schema-v1 records or
-    hand-built booleans remain trust-neutral.
+    This is necessary but never sufficient authorization. Trust-changing bound
+    consumers must also reverify the signed host receipt and exact request to
+    decision revision lineage through ``checkpoint_authority``.
     """
 
     return bool(
@@ -58,9 +59,7 @@ def load_human_approval_receipt(
 ) -> dict[str, Any] | None:
     """Load a host-written runtime receipt without treating it as canonical state."""
 
-    if Path(checkpoint_id).name != checkpoint_id or "/" in checkpoint_id or "\\" in checkpoint_id:
-        raise ValueError("checkpoint_id is not safe for a human approval receipt path")
-    path = ws.root / "runtime" / "human_approval_receipts" / f"{checkpoint_id}.json"
+    path = _receipt_path(ws, checkpoint_id)
     if not path.exists():
         return None
     try:
@@ -70,6 +69,31 @@ def load_human_approval_receipt(
     if not isinstance(payload, dict):
         raise ValueError("host human approval receipt must be a JSON object")
     return payload
+
+
+def persist_human_approval_receipt(
+    ws: WorkspacePaths,
+    checkpoint_id: str,
+    receipt: dict[str, Any],
+) -> Path:
+    """Persist one verified host receipt for later authorization checks."""
+
+    if not isinstance(receipt, dict):
+        raise ValueError("host human approval receipt must be a JSON object")
+    path = _receipt_path(ws, checkpoint_id)
+    encoded = json.dumps(
+        receipt,
+        ensure_ascii=True,
+        sort_keys=True,
+        indent=2,
+    ) + "\n"
+    if path.exists():
+        existing = load_human_approval_receipt(ws, checkpoint_id)
+        if existing != receipt:
+            raise ValueError("host human approval receipt already exists with different content")
+        return path
+    write_text_atomic(path, encoded)
+    return path
 
 
 def verify_human_approval_receipt(
@@ -169,6 +193,12 @@ def _load_hmac_key() -> bytes:
     if len(key) < 32:
         raise ValueError(f"{_APPROVAL_KEY_ENV} must decode to at least 32 bytes")
     return key
+
+
+def _receipt_path(ws: WorkspacePaths, checkpoint_id: str) -> Path:
+    if Path(checkpoint_id).name != checkpoint_id or "/" in checkpoint_id or "\\" in checkpoint_id:
+        raise ValueError("checkpoint_id is not safe for a human approval receipt path")
+    return ws.root / "runtime" / "human_approval_receipts" / f"{checkpoint_id}.json"
 
 
 def _parse_timestamp(value: str, field: str) -> datetime:

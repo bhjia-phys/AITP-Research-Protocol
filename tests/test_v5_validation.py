@@ -708,25 +708,53 @@ def test_decide_human_checkpoint_kernel_rejects_decision_not_in_options(tmp_path
 
 def test_invalid_decision_checkpoint_blocks_promotion(tmp_path):
     """A checkpoint with wrong decision must not be usable for promotion."""
-    from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
-    from brain.v5.memory import apply_promotion_packet, create_promotion_packet
-    from brain.v5.workspace import create_claim, create_topic, init_workspace
+    from brain.v5.checkpoints import decide_human_checkpoint
+    from brain.v5.evidence import record_evidence
+    from brain.v5.memory import (
+        apply_promotion_packet,
+        create_promotion_packet,
+        request_promotion_checkpoint,
+    )
+    from brain.v5.validation import record_validation_result
 
-    ws = init_workspace(tmp_path)
-    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
-    claim = create_claim(ws, topic_id="fqhe",
-        statement="Test claim", evidence_profile="toy_numeric",
-        confidence_state="hypothesis", active_uncertainty="test")
-    packet = create_promotion_packet(ws, topic_id="fqhe", claim_id=claim.claim_id,
+    ws, claim, contract, run = _setup_validation_contract_and_run(tmp_path)
+    validation = record_validation_result(
+        ws,
+        topic_id="gw",
+        claim_id=claim.claim_id,
+        contract_id=contract.contract_id,
+        tool_run_id=run.run_id,
+        status="passed",
+        checked_outputs=["benchmark_table", "diagnostic_plot"],
+        summary="Validation basis for checkpoint decision test.",
+    )
+    evidence = record_evidence(
+        ws,
+        topic_id="gw",
+        claim_id=claim.claim_id,
+        evidence_type="code_method",
+        status="supports",
+        summary="Validated evidence for checkpoint decision test.",
+        tool_run_ids=[run.run_id],
+        validation_result_ids=[validation.result_id],
+    )
+    packet = create_promotion_packet(ws, topic_id="gw", claim_id=claim.claim_id,
         proposed_memory_kind="scoped_claim", scope="test scope",
-        evidence_refs=["ev-1"], known_failure_modes=["test"])
-    checkpoint = request_human_checkpoint(ws, topic_id="fqhe", claim_id=claim.claim_id,
-        reason="test", requested_by="test", options=["approve", "revise"])
+        evidence_refs=[evidence.evidence_id],
+        validation_result_ids=[validation.result_id], known_failure_modes=["test"])
+    checkpoint = request_promotion_checkpoint(
+        ws,
+        packet_id=packet.packet_id,
+        reason="test",
+        requested_by="test",
+        expires_at="2099-01-01T00:00:00+00:00",
+        options=["approve", "revise"],
+    )
     decided = decide_human_checkpoint(ws, checkpoint_id=checkpoint.checkpoint_id,
         decision="revise", rationale="Not ready", decided_by="human")
     assert decided.decision == "revise"
 
-    with pytest.raises(ValueError, match="decision was"):
+    with pytest.raises(ValueError, match="approved decision"):
         apply_promotion_packet(ws, packet_id=packet.packet_id, checkpoint_id=checkpoint.checkpoint_id)
 
 

@@ -1806,6 +1806,28 @@ def test_mcp_adapter_pre_tool_event_infers_human_checkpoint_request_policy(tmp_p
         "no_summary_surface_as_truth_source"
     ]
 
+    promotion_payload = aitp_v5_evaluate_adapter_pre_tool_event(
+        str(tmp_path),
+        bridge_payload=bridge,
+        platform_event={
+            "runtime": "codex",
+            "hook_name": "pre_tool",
+            "session_id": "s1",
+            "tool_name": "mcp__aitp__aitp_v5_request_promotion_checkpoint",
+            "tool_input": {
+                "packet_id": "packet-librpa-gw",
+                "reason": "Review the exact packet.",
+                "requested_by": "codex",
+                "expires_at": "2099-01-01T00:00:00+00:00",
+                "source_kind": "task_plan",
+                "orientation_only": True,
+            },
+        },
+    )
+    assert promotion_payload["action"] == "request_human_checkpoint"
+    assert promotion_payload["block"] is True
+    assert promotion_payload["runtime_gate_protocol"]["action"] == "request_human_checkpoint"
+
 
 def test_mcp_adapter_pre_tool_event_maps_failure_mode_review_checkpoint_to_human_checkpoint(tmp_path):
     from brain.v5.mcp_tools import aitp_v5_evaluate_adapter_pre_tool_event, aitp_v5_write_codex_hook_bridge

@@ -243,6 +243,8 @@ def test_cli_tool_run_record_accepts_json_file_arguments(tmp_path, capsys):
 
 
 def test_cli_evidence_and_code_state_record_provenance(tmp_path, capsys):
+    from brain.v5.research_state import attach_artifact
+    from brain.v5.tools import record_tool_run
     from brain.v5.workspace import create_claim, create_topic, init_workspace
 
     ws = init_workspace(tmp_path)
@@ -284,6 +286,25 @@ def test_cli_evidence_and_code_state_record_provenance(tmp_path, capsys):
         ],
         capsys,
     )
+    artifact = attach_artifact(
+        ws,
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        artifact_type="benchmark_log",
+        uri="file:///benchmarks/si-reference.log",
+        summary="Captured Si benchmark log.",
+    )
+    run = record_tool_run(
+        ws,
+        recipe_id="librpa-si-benchmark",
+        tool_family="librpa",
+        tool_name="librpa",
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        outputs={"benchmark_consistency": True},
+        artifact_ids=[artifact.artifact_id],
+        evidence_status="diagnostic",
+    )
     evidence = _invoke(
         [
             "--base",
@@ -305,9 +326,9 @@ def test_cli_evidence_and_code_state_record_provenance(tmp_path, capsys):
             "--source-ref",
             "benchmark:si-reference",
             "--tool-run-id",
-            "tool-run-librpa-si",
+            run.run_id,
             "--artifact-id",
-            "artifact-si-log",
+            artifact.artifact_id,
         ],
         capsys,
     )
@@ -320,8 +341,8 @@ def test_cli_evidence_and_code_state_record_provenance(tmp_path, capsys):
     assert evidence["ok"] is True
     assert evidence["kind"] == "evidence"
     assert evidence["supports_outputs"] == ["benchmark_consistency"]
-    assert evidence["tool_run_ids"] == ["tool-run-librpa-si"]
-    assert evidence["artifact_ids"] == ["artifact-si-log"]
+    assert evidence["tool_run_ids"] == [run.run_id]
+    assert evidence["artifact_ids"] == [artifact.artifact_id]
 
 
 def test_cli_and_mcp_auto_capture_git_code_state(tmp_path, capsys):

@@ -5,7 +5,10 @@ from __future__ import annotations
 from dataclasses import asdict
 
 from brain.v5.contracts import ContractError
-from brain.v5.human_approval import verify_human_approval_receipt
+from brain.v5.human_approval import (
+    persist_human_approval_receipt,
+    verify_human_approval_receipt,
+)
 from brain.v5.ids import prefixed_id
 from brain.v5.models import HumanCheckpointRecord
 from brain.v5.record_contracts import require_valid_human_checkpoint_record
@@ -101,6 +104,8 @@ def decide_human_checkpoint(
         f"**Decision:** {decision} by {decided_by}\n\n**Rationale:** {rationale}\n",
         policy=WritePolicy(mode="revision", expected_hash=expected_hash),
     )
+    if approval_receipt is not None:
+        persist_human_approval_receipt(ws, checkpoint_id, approval_receipt)
     return target
 
 

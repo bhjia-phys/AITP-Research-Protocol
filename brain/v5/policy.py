@@ -6,6 +6,10 @@ from dataclasses import dataclass, field
 import re
 from typing import Any
 
+from brain.v5.evidence_basis_policy import (
+    promotion_evidence_policy_blocks,
+    trust_update_evidence_policy_blocks,
+)
 from brain.v5.evolution import EvolutionProposal
 from brain.v5.models import (
     ClaimRecord,
@@ -113,7 +117,8 @@ def evaluate_policy(
     if action == "continue_fluid_work" and risk_level == "fluid":
         return decision
 
-    _guard_summary_surface_cannot_drive_trust_update(decision, action, ctx)
+    if _guard_summary_surface_cannot_drive_trust_update(decision, action, ctx):
+        return decision
     _guard_adversarial_trust_change_requires_checkpoint(decision, action, risk_level, ctx)
 
     if action in _BOUND_CHECKPOINT_ACTIONS and ctx.get("human_checkpoint_approved") is not True:
@@ -139,7 +144,32 @@ def evaluate_policy(
 
     if action in {"create_promotion_packet", "promote_to_l2"}:
         _guard_l2_promotion_requires_evidence(decision, refs)
-        _guard_high_risk_promotion_requires_validation_result(decision, risk_level, records, results)
+        for block in promotion_evidence_policy_blocks(
+            evidence_refs=refs,
+            evidence_records=records,
+            validation_results=results,
+            risk_level=risk_level,
+        ):
+            decision.add_block(
+                block.policy_id,
+                block.message,
+                block.required_action,
+                severity="hard_block",
+            )
+
+    if action == "change_claim_confidence":
+        for block in trust_update_evidence_policy_blocks(
+            evidence_refs=refs,
+            evidence_records=records,
+            validation_results=results,
+            requested_state=str(ctx.get("requested_state") or ""),
+        ):
+            decision.add_block(
+                block.policy_id,
+                block.message,
+                block.required_action,
+                severity="hard_block",
+            )
 
     if action == "create_promotion_packet":
         _guard_promotion_packet_requires_known_failure_modes(decision, claim, ctx)
@@ -166,19 +196,20 @@ def _guard_summary_surface_cannot_drive_trust_update(
     decision: PolicyDecision,
     action: str,
     context: dict[str, Any],
-) -> None:
+) -> bool:
     if action not in _TRUST_CHANGING_ACTIONS | _CANONICAL_EXECUTION_ACTIONS:
-        return
+        return False
     source_kind = str(context.get("source_kind", "")).strip().lower()
     orientation_only = context.get("orientation_only")
     if source_kind not in _SUMMARY_SOURCE_KINDS and orientation_only is not True:
-        return
+        return False
     decision.add_block(
         "no_summary_surface_as_truth_source",
         "derived summary surfaces are orientation only and cannot justify trust-changing actions",
         "query_execution_brief_or_typed_record",
         severity="hard_block",
     )
+    return True
 
 
 def _guard_adversarial_trust_change_requires_checkpoint(
@@ -308,46 +339,6 @@ def _failure_modes_cover_claim_risk(strongest_failure_mode: str, known_failure_m
 def _failure_mode_tokens(text: str) -> set[str]:
     generic = {"failure", "mode", "modes", "risk", "mismatch", "artifact", "possible", "may", "can"}
     return {token for token in re.findall(r"[a-z0-9]+", text.lower()) if len(token) > 2 and token not in generic}
-
-
-def _guard_high_risk_promotion_requires_validation_result(
-    decision: PolicyDecision,
-    risk_level: str,
-    evidence_records: list[EvidenceRecord],
-    validation_results: list[ValidationResultRecord],
-) -> None:
-    if risk_level not in {"rigorous", "adversarial"}:
-        return
-    tool_run_ids = {
-        run_id
-        for evidence in evidence_records
-        for run_id in getattr(evidence, "tool_run_ids", [])
-        if run_id
-    }
-    if not tool_run_ids:
-        return
-    passed_tool_runs = {
-        result.tool_run_id
-        for result in validation_results
-        if result.status == "passed"
-        and not result.missing_outputs
-        and not result.failure_modes_observed
-    }
-    if not passed_tool_runs:
-        decision.add_block(
-            "high_risk_promotion_requires_validation_result",
-            "rigorous or adversarial promotion using tool-derived evidence requires passed validation-result refs",
-            "attach_passed_validation_result",
-            severity="hard_block",
-        )
-        return
-    if not tool_run_ids.issubset(passed_tool_runs):
-        decision.add_block(
-            "high_risk_promotion_validation_result_mismatch",
-            "provided validation results do not pass every tool-derived evidence run in the promotion packet",
-            "attach_matching_validation_result",
-            severity="hard_block",
-        )
 
 
 def _guard_high_risk_tool_requires_validation_contract(

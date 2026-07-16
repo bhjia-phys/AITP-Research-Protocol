@@ -52,8 +52,13 @@ def _seed_session(tmp_path):
 
 
 def _seed_promoted_memory_session(tmp_path):
-    from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
-    from brain.v5.memory import apply_promotion_packet, create_promotion_packet
+    from brain.v5.checkpoints import decide_human_checkpoint
+    from brain.v5.evidence import record_evidence
+    from brain.v5.memory import (
+        apply_promotion_packet,
+        create_promotion_packet,
+        request_promotion_checkpoint,
+    )
     from brain.v5.validation import create_validation_contract, record_validation_result
 
     ws, claim, run, evidence = _seed_session(tmp_path)
@@ -78,22 +83,33 @@ def _seed_promoted_memory_session(tmp_path):
         evidence_refs=[evidence.evidence_id],
         summary="Typed validation passed for the ED counting evidence.",
     )
+    promoted_evidence = record_evidence(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        evidence_type="toy_numeric",
+        status="supports",
+        summary="Validated ED counting support with an exact result pin.",
+        supports_outputs=["evidence_or_provenance", "minimal_check"],
+        tool_run_ids=[run.run_id],
+        validation_result_ids=[validation.result_id],
+    )
     packet = create_promotion_packet(
         ws,
         topic_id="fqhe",
         claim_id=claim.claim_id,
         proposed_memory_kind="scoped_claim",
         scope="finite-size ED counting",
-        evidence_refs=[evidence.evidence_id],
+        evidence_refs=[promoted_evidence.evidence_id],
         validation_result_ids=[validation.result_id],
         known_failure_modes=["finite-size artifacts"],
     )
-    checkpoint = request_human_checkpoint(
+    checkpoint = request_promotion_checkpoint(
         ws,
-        topic_id="fqhe",
-        claim_id=claim.claim_id,
+        packet_id=packet.packet_id,
         reason="Promote validated ED counting memory.",
         requested_by="summary_test",
+        expires_at="2099-01-01T00:00:00+00:00",
         options=["approve", "reject"],
     )
     decide_human_checkpoint(
@@ -104,7 +120,7 @@ def _seed_promoted_memory_session(tmp_path):
         decided_by="human",
     )
     memory = apply_promotion_packet(ws, packet_id=packet.packet_id, checkpoint_id=checkpoint.checkpoint_id)
-    return ws, claim, run, evidence, validation, memory
+    return ws, claim, run, promoted_evidence, validation, memory
 
 
 def _invoke(args, capsys):

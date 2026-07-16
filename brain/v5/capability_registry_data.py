@@ -214,6 +214,7 @@ register_source_asset
 register_tool_recipe
 request_failure_mode_review_checkpoint
 request_human_checkpoint
+request_promotion_checkpoint
 request_operator_checkpoint
 session_closeout_apply
 start_research_run

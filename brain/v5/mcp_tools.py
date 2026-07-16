@@ -58,6 +58,7 @@ from brain.v5.mcp_execution import (
     aitp_v5_execution_resolve_effective_attempt,
     aitp_v5_execution_request_bound_checkpoint,
 )
+from brain.v5.mcp_promotion import aitp_v5_request_promotion_checkpoint
 
 
 def aitp_v5_propose_detected_procedural_skill(

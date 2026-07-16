@@ -563,14 +563,15 @@ def test_mcp_pre_tool_policy_blocks_sensemaking_report_from_progress_source(tmp_
 def test_mcp_pre_tool_policy_blocks_adversarial_trust_change_without_checkpoint(tmp_path):
     from brain.v5.mcp_tools import aitp_v5_evaluate_pre_tool_policy
 
-    _, claim = _seed_claim(tmp_path)
+    _, claim, evidence, result = _seed_tool_evidence_for_promotion(tmp_path)
 
     payload = aitp_v5_evaluate_pre_tool_policy(
         str(tmp_path),
         session_id="s1",
         action="promote_to_l2",
         claim_id=claim.claim_id,
-        evidence_refs=["evidence-fqhe-counting"],
+        evidence_refs=[evidence.evidence_id],
+        validation_result_ids=[result.result_id],
         source_kind="typed_records",
         risk_level="adversarial",
     )
@@ -589,7 +590,7 @@ def test_mcp_pre_tool_policy_accepts_adversarial_trust_change_with_approved_chec
     from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
     from brain.v5.mcp_tools import aitp_v5_evaluate_pre_tool_policy
 
-    ws, claim = _seed_claim(tmp_path)
+    ws, claim, evidence, result = _seed_tool_evidence_for_promotion(tmp_path)
     checkpoint = request_human_checkpoint(
         ws,
         topic_id="fqhe",
@@ -611,7 +612,8 @@ def test_mcp_pre_tool_policy_accepts_adversarial_trust_change_with_approved_chec
         session_id="s1",
         action="promote_to_l2",
         claim_id=claim.claim_id,
-        evidence_refs=["evidence-fqhe-counting"],
+        evidence_refs=[evidence.evidence_id],
+        validation_result_ids=[result.result_id],
         source_kind="typed_records",
         risk_level="adversarial",
         human_checkpoint_id=checkpoint.checkpoint_id,
@@ -801,14 +803,14 @@ def test_mcp_pre_tool_policy_blocks_validation_result_from_findings_source(tmp_p
 def test_mcp_pre_tool_policy_blocks_promotion_packet_from_findings_source(tmp_path):
     from brain.v5.mcp_tools import aitp_v5_evaluate_pre_tool_policy
 
-    _, claim = _seed_claim(tmp_path)
+    _, claim, evidence, _ = _seed_tool_evidence_for_promotion(tmp_path)
 
     payload = aitp_v5_evaluate_pre_tool_policy(
         str(tmp_path),
         session_id="s1",
         action="create_promotion_packet",
         claim_id=claim.claim_id,
-        evidence_refs=["evidence-fqhe-counting"],
+        evidence_refs=[evidence.evidence_id],
         known_failure_modes=["finite-size aliasing"],
         source_kind="findings",
         source_ref=".aitp/surfaces/session_summaries/s1/findings.md",
@@ -851,7 +853,7 @@ def test_mcp_pre_tool_policy_blocks_promotion_packet_without_evidence_refs(tmp_p
 def test_mcp_pre_tool_policy_blocks_rigorous_promotion_packet_without_validation_result(tmp_path):
     from brain.v5.mcp_tools import aitp_v5_evaluate_pre_tool_policy
 
-    _, claim, evidence, _ = _seed_tool_evidence_for_promotion(tmp_path, link_result_to_evidence=False)
+    _, claim, evidence, _ = _seed_tool_evidence_for_promotion(tmp_path)
 
     payload = aitp_v5_evaluate_pre_tool_policy(
         str(tmp_path),
@@ -873,6 +875,29 @@ def test_mcp_pre_tool_policy_blocks_rigorous_promotion_packet_without_validation
     assert payload["required_actions"] == ["attach_passed_validation_result"]
     assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
         "high_risk_promotion_requires_validation_result"
+    ]
+
+
+def test_mcp_pre_tool_policy_blocks_routine_tool_promotion_without_validation_result(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_evaluate_pre_tool_policy
+
+    _, claim, evidence, _ = _seed_tool_evidence_for_promotion(tmp_path)
+
+    payload = aitp_v5_evaluate_pre_tool_policy(
+        str(tmp_path),
+        session_id="s1",
+        action="create_promotion_packet",
+        claim_id=claim.claim_id,
+        evidence_refs=[evidence.evidence_id],
+        known_failure_modes=["finite-size aliasing"],
+        source_kind="typed_records",
+        risk_level="guided",
+    )
+
+    assert payload["mode"] == "block"
+    assert payload["required_actions"] == ["attach_passed_validation_result"]
+    assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
+        "tool_evidence_requires_validation_result"
     ]
 
 

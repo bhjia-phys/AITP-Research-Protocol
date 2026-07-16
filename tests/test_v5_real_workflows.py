@@ -1,11 +1,32 @@
 from __future__ import annotations
 
 
+def _record_validated_tool_evidence(ws, claim, execution, validation):
+    from brain.v5.evidence import record_evidence
+
+    return record_evidence(
+        ws,
+        topic_id=claim.topic_id,
+        claim_id=claim.claim_id,
+        evidence_type=execution.evidence.evidence_type,
+        status="supports",
+        summary=f"Validated support: {execution.evidence.summary}",
+        supports_outputs=list(execution.evidence.supports_outputs),
+        tool_run_ids=[execution.run.run_id],
+        validation_result_ids=[validation.result_id],
+        artifact_ids=list(execution.run.artifact_ids),
+    )
+
+
 def test_fqhe_learning_to_idea_to_toy_check_workflow(tmp_path):
     from brain.v5.brief import build_execution_brief
-    from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
+    from brain.v5.checkpoints import decide_human_checkpoint
     from brain.v5.evidence import record_evidence
-    from brain.v5.memory import apply_promotion_packet, create_promotion_packet
+    from brain.v5.memory import (
+        apply_promotion_packet,
+        create_promotion_packet,
+        request_promotion_checkpoint,
+    )
     from brain.v5.physics_objects import record_object_relation, record_physics_object
     from brain.v5.references import record_reference_location
     from brain.v5.tool_executors import execute_registered_tool_result
@@ -81,6 +102,7 @@ def test_fqhe_learning_to_idea_to_toy_check_workflow(tmp_path):
         evidence_refs=[result.evidence.evidence_id],
         summary="Finite-size counting table passed the required benchmark.",
     )
+    promoted_evidence = _record_validated_tool_evidence(ws, claim, result, validation)
     record_evidence(
         ws,
         topic_id="fqhe",
@@ -97,17 +119,17 @@ def test_fqhe_learning_to_idea_to_toy_check_workflow(tmp_path):
         claim_id=claim.claim_id,
         proposed_memory_kind="scoped_claim",
         scope="recorded finite-size sector",
-        evidence_refs=[result.evidence.evidence_id],
+        evidence_refs=[promoted_evidence.evidence_id],
         validation_result_ids=[validation.result_id],
         non_claims=["Does not prove thermodynamic-limit uniqueness."],
         known_failure_modes=["wrong sector", "finite-size aliasing"],
     )
-    checkpoint = request_human_checkpoint(
+    checkpoint = request_promotion_checkpoint(
         ws,
-        topic_id="fqhe",
-        claim_id=claim.claim_id,
+        packet_id=packet.packet_id,
         reason="Promote validated finite-size counting claim to scoped L2 memory.",
         requested_by="real_workflow_acceptance",
+        expires_at="2099-01-01T00:00:00+00:00",
         options=["approve", "reject"],
     )
     decide_human_checkpoint(
@@ -123,7 +145,7 @@ def test_fqhe_learning_to_idea_to_toy_check_workflow(tmp_path):
     brief = build_execution_brief(ws, "s1")
 
     assert result.evidence is not None
-    assert memory.evidence_refs == [result.evidence.evidence_id]
+    assert memory.evidence_refs == [promoted_evidence.evidence_id]
     assert brief["evidence_coverage"]["satisfied_outputs"]
     assert brief["known_context"]["reference_locations"]
     assert brief["known_context"]["object_relations"]
@@ -132,7 +154,7 @@ def test_fqhe_learning_to_idea_to_toy_check_workflow(tmp_path):
             "entry_id": memory.entry_id,
             "memory_kind": "scoped_claim",
             "scope": "recorded finite-size sector",
-            "evidence_refs": [result.evidence.evidence_id],
+            "evidence_refs": [promoted_evidence.evidence_id],
             "validation_result_ids": [validation.result_id],
             "source_packet_id": packet.packet_id,
             "human_checkpoint_id": checkpoint.checkpoint_id,
@@ -143,9 +165,13 @@ def test_fqhe_learning_to_idea_to_toy_check_workflow(tmp_path):
 
 def test_gw_formula_code_translation_records_code_state_and_benchmark(tmp_path):
     from brain.v5.brief import build_execution_brief
-    from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
+    from brain.v5.checkpoints import decide_human_checkpoint
     from brain.v5.code import record_code_state
-    from brain.v5.memory import apply_promotion_packet, create_promotion_packet
+    from brain.v5.memory import (
+        apply_promotion_packet,
+        create_promotion_packet,
+        request_promotion_checkpoint,
+    )
     from brain.v5.physics_objects import record_object_relation, record_physics_object
     from brain.v5.tool_executors import execute_registered_tool_result
     from brain.v5.validation import create_validation_contract, record_validation_result
@@ -217,23 +243,24 @@ def test_gw_formula_code_translation_records_code_state_and_benchmark(tmp_path):
         evidence_refs=[result.evidence.evidence_id],
         summary="GW benchmark gap passed for the recorded code state.",
     )
+    promoted_evidence = _record_validated_tool_evidence(ws, claim, result, validation)
     packet = create_promotion_packet(
         ws,
         topic_id="librpa-gw",
         claim_id=claim.claim_id,
         proposed_memory_kind="code_method_claim",
         scope="librpa commit abc123 self-energy worktree",
-        evidence_refs=[result.evidence.evidence_id],
+        evidence_refs=[promoted_evidence.evidence_id],
         validation_result_ids=[validation.result_id],
         non_claims=["Does not validate other upstream commits."],
         known_failure_modes=["frequency grid mismatch", "basis cutoff mismatch"],
     )
-    checkpoint = request_human_checkpoint(
+    checkpoint = request_promotion_checkpoint(
         ws,
-        topic_id="librpa-gw",
-        claim_id=claim.claim_id,
+        packet_id=packet.packet_id,
         reason="Promote validated GW code-method benchmark to scoped L2 memory.",
         requested_by="real_workflow_acceptance",
+        expires_at="2099-01-01T00:00:00+00:00",
         options=["approve", "reject"],
     )
     decide_human_checkpoint(
@@ -248,7 +275,7 @@ def test_gw_formula_code_translation_records_code_state_and_benchmark(tmp_path):
 
     brief = build_execution_brief(ws, "s1")
 
-    assert memory.evidence_refs == [result.evidence.evidence_id]
+    assert memory.evidence_refs == [promoted_evidence.evidence_id]
     assert brief["known_context"]["object_relations"]
     assert "evidence_or_provenance" in brief["evidence_coverage"]["satisfied_outputs"]
     assert brief["known_context"]["memory_entries"] == [
@@ -256,7 +283,7 @@ def test_gw_formula_code_translation_records_code_state_and_benchmark(tmp_path):
             "entry_id": memory.entry_id,
             "memory_kind": "code_method_claim",
             "scope": "librpa commit abc123 self-energy worktree",
-            "evidence_refs": [result.evidence.evidence_id],
+            "evidence_refs": [promoted_evidence.evidence_id],
             "validation_result_ids": [validation.result_id],
             "code_state_ids": [code_state.code_state_id],
             "source_packet_id": packet.packet_id,
@@ -268,13 +295,18 @@ def test_gw_formula_code_translation_records_code_state_and_benchmark(tmp_path):
 
 def test_gw_high_risk_promotion_uses_tool_backed_failure_mode_review_basis(tmp_path):
     from brain.v5.brief import build_execution_brief
-    from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
+    from brain.v5.checkpoints import decide_human_checkpoint
     from brain.v5.code import record_code_state
+    from brain.v5.evidence import record_artifact_ref
     from brain.v5.failure_mode_review import (
         record_failure_mode_review_result,
         request_failure_mode_review_checkpoint,
     )
-    from brain.v5.memory import apply_promotion_packet, create_promotion_packet
+    from brain.v5.memory import (
+        apply_promotion_packet,
+        create_promotion_packet,
+        request_promotion_checkpoint,
+    )
     from brain.v5.memory_audit import audit_l2_memory_context
     from brain.v5.mcp_tools import aitp_v5_evaluate_pre_tool_policy
     from brain.v5.tool_executors import execute_registered_tool_result
@@ -392,6 +424,22 @@ def test_gw_high_risk_promotion_uses_tool_backed_failure_mode_review_basis(tmp_p
         executor_ids=["librpa_gw_run_metadata_check"],
         validator_role="metadata_validator",
     )
+    input_artifact = record_artifact_ref(
+        ws,
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        artifact_type="gw_input",
+        uri="file:///runs/gw/input.json",
+        summary="Recorded GW input metadata.",
+    )
+    output_artifact = record_artifact_ref(
+        ws,
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        artifact_type="gw_output",
+        uri="file:///runs/gw/output.json",
+        summary="Recorded GW output metadata.",
+    )
     metadata = execute_registered_tool_result(
         ws,
         executor_id="librpa_gw_run_metadata_check",
@@ -400,12 +448,12 @@ def test_gw_high_risk_promotion_uses_tool_backed_failure_mode_review_basis(tmp_p
         claim_id=claim.claim_id,
         inputs={
             "frequency_grid": {
-                "source_ref": "artifact:gw-run-output",
+                "source_ref": f"artifact:{output_artifact.artifact_id}",
                 "grid_type": "gauss_legendre",
                 "n_points": 96,
             },
             "basis_cutoff": {
-                "source_ref": "artifact:gw-input",
+                "source_ref": f"artifact:{input_artifact.artifact_id}",
                 "cutoff_ev": 120.0,
                 "band_count": 320,
             },
@@ -417,7 +465,7 @@ def test_gw_high_risk_promotion_uses_tool_backed_failure_mode_review_basis(tmp_p
             },
         },
         code_state_ids=[code_state.code_state_id],
-        artifact_ids=["artifact:gw-input", "artifact:gw-run-output"],
+        artifact_ids=[input_artifact.artifact_id, output_artifact.artifact_id],
         supports_outputs=["librpa_gw_run_metadata", "minimal_check"],
         evidence_type="code_method",
         evidence_summary="GW run metadata matched the reproduction thresholds.",
@@ -433,6 +481,12 @@ def test_gw_high_risk_promotion_uses_tool_backed_failure_mode_review_basis(tmp_p
         evidence_refs=[metadata.evidence.evidence_id],
         summary="GW run metadata diagnostic passed for the recorded input/output artifacts.",
     )
+    promotion_evidence = [
+        _record_validated_tool_evidence(ws, claim, benchmark, benchmark_validation),
+        _record_validated_tool_evidence(ws, claim, formula, formula_validation),
+        _record_validated_tool_evidence(ws, claim, metadata, metadata_validation),
+    ]
+    promotion_evidence_ids = [evidence.evidence_id for evidence in promotion_evidence]
     basis_contract = create_validation_contract(
         ws,
         topic_id="librpa-gw",
@@ -502,11 +556,7 @@ def test_gw_high_risk_promotion_uses_tool_backed_failure_mode_review_basis(tmp_p
         session_id="s1",
         action="create_promotion_packet",
         claim_id=claim.claim_id,
-        evidence_refs=[
-            benchmark.evidence.evidence_id,
-            formula.evidence.evidence_id,
-            metadata.evidence.evidence_id,
-        ],
+        evidence_refs=promotion_evidence_ids,
         validation_result_ids=[
             benchmark_validation.result_id,
             formula_validation.result_id,
@@ -524,11 +574,7 @@ def test_gw_high_risk_promotion_uses_tool_backed_failure_mode_review_basis(tmp_p
         claim_id=claim.claim_id,
         proposed_memory_kind="code_method_claim",
         scope="librpa commit abc123 with reviewed frequency-grid risk",
-        evidence_refs=[
-            benchmark.evidence.evidence_id,
-            formula.evidence.evidence_id,
-            metadata.evidence.evidence_id,
-        ],
+        evidence_refs=promotion_evidence_ids,
         validation_result_ids=[
             benchmark_validation.result_id,
             formula_validation.result_id,
@@ -538,12 +584,12 @@ def test_gw_high_risk_promotion_uses_tool_backed_failure_mode_review_basis(tmp_p
         failure_mode_review_checkpoint_id=approved_review.checkpoint_id,
         failure_mode_review_result_id=review_result.result_id,
     )
-    promotion_checkpoint = request_human_checkpoint(
+    promotion_checkpoint = request_promotion_checkpoint(
         ws,
-        topic_id="librpa-gw",
-        claim_id=claim.claim_id,
+        packet_id=packet.packet_id,
         reason="Promote high-risk GW code-method result after typed review.",
         requested_by="real_workflow_acceptance",
+        expires_at="2099-01-01T00:00:00+00:00",
         options=["approve", "reject"],
     )
     decide_human_checkpoint(

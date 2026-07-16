@@ -4,6 +4,76 @@ import json
 from pathlib import Path
 
 
+def _approve_promotion_packet(ws, packet, rationale: str):
+    from brain.v5.checkpoints import decide_human_checkpoint
+    from brain.v5.memory import request_promotion_checkpoint
+
+    checkpoint = request_promotion_checkpoint(
+        ws,
+        packet_id=packet.packet_id,
+        reason="Approve this exact L2 promotion packet.",
+        requested_by="memory-audit-test",
+        expires_at="2099-01-01T00:00:00+00:00",
+    )
+    return decide_human_checkpoint(
+        ws,
+        checkpoint_id=checkpoint.checkpoint_id,
+        decision="approve",
+        rationale=rationale,
+        decided_by="human",
+    )
+
+
+def _record_source_evidence(ws, claim):
+    from brain.v5.evidence import record_evidence
+    from brain.v5.models import ReferenceLocationRecord, SourceAssetRecord
+    from brain.v5.pinned_record_refs import pin_current_record
+    from brain.v5.record_envelope import RecordActor
+    from brain.v5.record_repository import RecordRepository
+
+    repository = RecordRepository(
+        ws,
+        actor=RecordActor(actor_type="tool", actor_id="memory-audit-test", host="pytest"),
+    )
+    repository.write(
+        "source_assets",
+        SourceAssetRecord(
+            asset_id="fqhe-audit-paper",
+            topic_id=claim.topic_id,
+            asset_type="paper",
+            uri="file:///fqhe-audit-paper.pdf",
+            title="FQHE audit source",
+            content_hash="b" * 64,
+            hash_algorithm="sha256",
+        ),
+    )
+    repository.write(
+        "reference_locations",
+        ReferenceLocationRecord(
+            location_id="fqhe-audit-equation",
+            topic_id=claim.topic_id,
+            connector_id="local-source",
+            location_type="equation_anchor",
+            uri="file:///fqhe-audit-paper.pdf#eq=1",
+            label="Equation 1",
+            source_ref="source_asset:fqhe-audit-paper",
+        ),
+    )
+    return record_evidence(
+        ws,
+        topic_id=claim.topic_id,
+        claim_id=claim.claim_id,
+        evidence_type="literature_equation",
+        status="supports",
+        summary="Exact source evidence for the failure-mode audit fixture.",
+        support_basis_refs=[
+            pin_current_record(ws, "source_asset:fqhe-audit-paper"),
+            pin_current_record(ws, "reference_location:fqhe-audit-equation"),
+        ],
+        trace_context_refs=[],
+    )
+
+
 def _setup_promoted_code_memory(tmp_path: Path):
     from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
     from brain.v5.code import record_code_state
@@ -83,20 +153,10 @@ def _setup_promoted_code_memory(tmp_path: Path):
         validation_result_ids=[validation.result_id],
         known_failure_modes=["wrong code version", "formula-code mismatch"],
     )
-    checkpoint = request_human_checkpoint(
+    decided = _approve_promotion_packet(
         ws,
-        topic_id="librpa-gw",
-        claim_id=claim.claim_id,
-        reason="L2 memory promotion for benchmark workflow.",
-        requested_by="promotion_policy",
-        options=["approve", "revise"],
-    )
-    decided = decide_human_checkpoint(
-        ws,
-        checkpoint_id=checkpoint.checkpoint_id,
-        decision="approve",
-        rationale="Evidence, code provenance, and validation result are explicit.",
-        decided_by="human",
+        packet,
+        "Evidence, code provenance, and validation result are explicit.",
     )
     entry = apply_promotion_packet(ws, packet_id=packet.packet_id, checkpoint_id=decided.checkpoint_id)
     return ws, claim, code_state, validation, evidence, packet, decided, entry
@@ -127,14 +187,7 @@ def _setup_failure_mode_audit_gap(tmp_path: Path):
         failure_modes=["frequency grid mismatch", "basis cutoff mismatch"],
         required_evidence_outputs=["grid_table"],
     )
-    evidence = record_evidence(
-        ws,
-        topic_id="fqhe",
-        claim_id=claim.claim_id,
-        evidence_type="toy_numeric",
-        status="supports",
-        summary="Counting evidence without tool-run provenance.",
-    )
+    evidence = _record_source_evidence(ws, claim)
     packet = create_promotion_packet(
         ws,
         topic_id="fqhe",
@@ -281,21 +334,7 @@ def test_l2_memory_audit_reports_failure_mode_review_checkpoint(tmp_path):
         failure_mode_review_checkpoint_id=approved_review.checkpoint_id,
         failure_mode_review_result_id=review_result.result_id,
     )
-    checkpoint = request_human_checkpoint(
-        ws,
-        topic_id="fqhe",
-        claim_id=claim.claim_id,
-        reason="Approve L2 memory promotion.",
-        requested_by="promotion_policy",
-        options=["approve"],
-    )
-    decided = decide_human_checkpoint(
-        ws,
-        checkpoint_id=checkpoint.checkpoint_id,
-        decision="approve",
-        rationale="Promotion packet is ready.",
-        decided_by="human",
-    )
+    decided = _approve_promotion_packet(ws, packet, "Promotion packet is ready.")
     apply_promotion_packet(ws, packet_id=packet.packet_id, checkpoint_id=decided.checkpoint_id)
 
     payload = audit_l2_memory_context(ws, claim_id=claim.claim_id)
@@ -939,21 +978,7 @@ def test_l2_memory_audit_links_review_result_basis_to_memory_entry(tmp_path):
         failure_mode_review_checkpoint_id=approved_review.checkpoint_id,
         failure_mode_review_result_id=review_result.result_id,
     )
-    checkpoint = request_human_checkpoint(
-        ws,
-        topic_id="fqhe",
-        claim_id=claim.claim_id,
-        reason="Approve L2 memory promotion.",
-        requested_by="promotion_policy",
-        options=["approve"],
-    )
-    decided = decide_human_checkpoint(
-        ws,
-        checkpoint_id=checkpoint.checkpoint_id,
-        decision="approve",
-        rationale="Promotion packet is ready.",
-        decided_by="human",
-    )
+    decided = _approve_promotion_packet(ws, packet, "Promotion packet is ready.")
     apply_promotion_packet(ws, packet_id=packet.packet_id, checkpoint_id=decided.checkpoint_id)
 
     audit = audit_l2_memory_context(ws, claim_id=claim.claim_id)

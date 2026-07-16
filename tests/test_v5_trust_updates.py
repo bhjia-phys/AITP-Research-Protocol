@@ -26,6 +26,101 @@ def _seed_claim(tmp_path, *, evidence_profile: str = "toy_numeric"):
     return ws, claim
 
 
+def _record_source_evidence(ws, claim):
+    from brain.v5.evidence import record_evidence
+    from brain.v5.models import ReferenceLocationRecord, SourceAssetRecord
+    from brain.v5.pinned_record_refs import pin_current_record
+    from brain.v5.record_envelope import RecordActor
+    from brain.v5.record_repository import RecordRepository
+
+    repository = RecordRepository(
+        ws,
+        actor=RecordActor(actor_type="tool", actor_id="trust-update-test", host="pytest"),
+    )
+    repository.write(
+        "source_assets",
+        SourceAssetRecord(
+            asset_id="trust-source",
+            topic_id=claim.topic_id,
+            asset_type="paper",
+            uri="file:///trust-source.pdf",
+            title="Trust source",
+            content_hash="a" * 64,
+            hash_algorithm="sha256",
+        ),
+    )
+    repository.write(
+        "reference_locations",
+        ReferenceLocationRecord(
+            location_id="trust-source-equation",
+            topic_id=claim.topic_id,
+            claim_id=claim.claim_id,
+            connector_id="local-source",
+            location_type="equation_anchor",
+            uri="file:///trust-source.pdf#eq=1",
+            label="Equation 1",
+            source_ref="source_asset:trust-source",
+        ),
+    )
+    return record_evidence(
+        ws,
+        topic_id=claim.topic_id,
+        claim_id=claim.claim_id,
+        evidence_type="literature_equation",
+        status="supports",
+        summary="Pinned source support.",
+        support_basis_refs=[
+            pin_current_record(ws, "source_asset:trust-source"),
+            pin_current_record(ws, "reference_location:trust-source-equation"),
+        ],
+        trace_context_refs=[],
+    )
+
+
+def _record_validated_evidence(ws, claim):
+    from brain.v5.evidence import record_evidence
+    from brain.v5.tools import record_tool_run
+    from brain.v5.validation import create_validation_contract, record_validation_result
+
+    contract = create_validation_contract(
+        ws,
+        topic_id=claim.topic_id,
+        claim_id=claim.claim_id,
+        required_checks=["bounded check"],
+        failure_modes=["scope mismatch"],
+        required_evidence_outputs=["bounded_result"],
+    )
+    run = record_tool_run(
+        ws,
+        recipe_id="bounded-check",
+        tool_family="numerical",
+        tool_name="pytest",
+        topic_id=claim.topic_id,
+        claim_id=claim.claim_id,
+        outputs={"bounded_result": True},
+    )
+    result = record_validation_result(
+        ws,
+        topic_id=claim.topic_id,
+        claim_id=claim.claim_id,
+        contract_id=contract.contract_id,
+        tool_run_id=run.run_id,
+        status="passed",
+        checked_outputs=["bounded_result"],
+        summary="Bounded check passed.",
+    )
+    return record_evidence(
+        ws,
+        topic_id=claim.topic_id,
+        claim_id=claim.claim_id,
+        evidence_type="validated_check",
+        status="supports",
+        summary="Self-contained validated support.",
+        tool_run_ids=[run.run_id],
+        validation_result_ids=[result.result_id],
+    )
+
+
 def _invoke(args, capsys):
     from brain.v5.cli import main
 
@@ -119,6 +214,86 @@ def test_preflight_blocks_code_method_validation_without_code_state(tmp_path):
     assert any(reason["policy_id"] == "no_code_method_validation_without_code_state" for reason in payload["policy_reasons"])
 
 
+def test_confidence_update_rejects_legacy_unchecked_evidence(tmp_path):
+    from dataclasses import replace
+
+    from brain.v5.evidence import record_evidence
+    from brain.v5.trust_updates import TrustUpdateRequest, apply_trust_update, preflight_trust_update
+
+    ws, claim = _seed_claim(tmp_path)
+    legacy = record_evidence(
+        ws,
+        topic_id=claim.topic_id,
+        claim_id=claim.claim_id,
+        evidence_type="legacy_note",
+        status="supports",
+        summary="Unpinned historical support.",
+    )
+    request = TrustUpdateRequest(
+        request_id="trust-req-unchecked-evidence",
+        action="change_claim_confidence",
+        session_id="s1",
+        topic_id=claim.topic_id,
+        claim_id=claim.claim_id,
+        requested_state="locally_checked",
+        source_kind="typed_records",
+        evidence_refs=[legacy.evidence_id],
+        rationale="Unchecked evidence must not justify confidence.",
+    )
+
+    preflight = preflight_trust_update(ws, request)
+    applied = apply_trust_update(
+        ws,
+        replace(request, preflight_token=preflight["preflight_token"]),
+    )
+
+    assert preflight["allowed"] is False
+    assert "record_or_review_evidence_basis" in preflight["required_actions"]
+    assert applied["applied"] is False
+
+
+def test_checked_confidence_update_requires_evidence(tmp_path):
+    from brain.v5.trust_updates import TrustUpdateRequest, preflight_trust_update
+
+    ws, claim = _seed_claim(tmp_path)
+    request = TrustUpdateRequest(
+        request_id="trust-req-no-evidence",
+        action="change_claim_confidence",
+        session_id="s1",
+        topic_id=claim.topic_id,
+        claim_id=claim.claim_id,
+        requested_state="locally_checked",
+        source_kind="typed_records",
+    )
+
+    preflight = preflight_trust_update(ws, request)
+
+    assert preflight["allowed"] is False
+    assert "record_supporting_evidence" in preflight["required_actions"]
+
+
+def test_confidence_update_accepts_self_contained_validated_evidence(tmp_path):
+    from brain.v5.trust_updates import TrustUpdateRequest, preflight_trust_update
+
+    ws, claim = _seed_claim(tmp_path)
+    evidence = _record_validated_evidence(ws, claim)
+    request = TrustUpdateRequest(
+        request_id="trust-req-validated-evidence",
+        action="change_claim_confidence",
+        session_id="s1",
+        topic_id=claim.topic_id,
+        claim_id=claim.claim_id,
+        requested_state="locally_checked",
+        source_kind="typed_records",
+        evidence_refs=[evidence.evidence_id],
+    )
+
+    preflight = preflight_trust_update(ws, request)
+
+    assert preflight["allowed"] is True
+    assert preflight["required_actions"] == []
+
+
 def test_preflight_allows_code_method_promotion_with_evidence_and_code_state(tmp_path):
     from brain.v5.code import record_code_state
     from brain.v5.trust_updates import TrustUpdateRequest, preflight_trust_update
@@ -135,6 +310,7 @@ def test_preflight_allows_code_method_promotion_with_evidence_and_code_state(tmp
         dirty=False,
         linked_records={"claim_id": claim.claim_id},
     )
+    evidence = _record_source_evidence(ws, claim)
     request = TrustUpdateRequest(
         request_id="trust-req-promote",
         action="promote_to_l2",
@@ -143,7 +319,7 @@ def test_preflight_allows_code_method_promotion_with_evidence_and_code_state(tmp
         claim_id=claim.claim_id,
         source_kind="execution_brief",
         source_ref="brief:s1",
-        evidence_refs=["evidence:si-gw-benchmark"],
+        evidence_refs=[evidence.evidence_id],
         code_state_ids=[code_state.code_state_id],
         rationale="Promotion request cites evidence and exact code provenance.",
     )
@@ -164,6 +340,7 @@ def test_apply_confidence_change_requires_matching_preflight_token(tmp_path):
     from brain.v5.workspace import get_claim
 
     ws, claim = _seed_claim(tmp_path)
+    evidence = _record_validated_evidence(ws, claim)
     request = TrustUpdateRequest(
         request_id="trust-req-apply",
         action="change_claim_confidence",
@@ -173,6 +350,7 @@ def test_apply_confidence_change_requires_matching_preflight_token(tmp_path):
         requested_state="locally_checked",
         source_kind="execution_brief",
         source_ref="brief:s1",
+        evidence_refs=[evidence.evidence_id],
         rationale="A typed preflight is required before a confidence update.",
     )
 
@@ -199,6 +377,7 @@ def test_apply_confidence_change_updates_registry_and_topic_ledger(tmp_path):
     from brain.v5.workspace import get_claim
 
     ws, claim = _seed_claim(tmp_path)
+    evidence = _record_validated_evidence(ws, claim)
     request = TrustUpdateRequest(
         request_id="trust-req-apply",
         action="change_claim_confidence",
@@ -208,6 +387,7 @@ def test_apply_confidence_change_updates_registry_and_topic_ledger(tmp_path):
         requested_state="locally_checked",
         source_kind="execution_brief",
         source_ref="brief:s1",
+        evidence_refs=[evidence.evidence_id],
         rationale="A typed kernel brief and evidence review justify the confidence update.",
     )
     preflight = preflight_trust_update(ws, request)
@@ -253,6 +433,7 @@ def test_can_read_persisted_trust_update_record_by_id(tmp_path):
     )
 
     ws, claim = _seed_claim(tmp_path)
+    evidence = _record_validated_evidence(ws, claim)
     request = TrustUpdateRequest(
         request_id="trust-req-read-record",
         action="change_claim_confidence",
@@ -262,6 +443,7 @@ def test_can_read_persisted_trust_update_record_by_id(tmp_path):
         requested_state="locally_checked",
         source_kind="execution_brief",
         source_ref="brief:s1",
+        evidence_refs=[evidence.evidence_id],
         rationale="Read back the typed trust-update history record.",
     )
     preflight = preflight_trust_update(ws, request)
@@ -382,7 +564,8 @@ def test_cli_trust_apply_confidence_change_updates_claim(tmp_path, capsys):
     from brain.v5.contracts import validate_trust_update_apply
     from brain.v5.workspace import get_claim, init_workspace
 
-    _, claim = _seed_claim(tmp_path)
+    ws, claim = _seed_claim(tmp_path)
+    evidence = _record_validated_evidence(ws, claim)
     preflight = _invoke(
         [
             "--base",
@@ -402,6 +585,8 @@ def test_cli_trust_apply_confidence_change_updates_claim(tmp_path, capsys):
             "execution_brief",
             "--source-ref",
             "brief:s1",
+            "--evidence-ref",
+            evidence.evidence_id,
         ],
         capsys,
     )
@@ -425,6 +610,8 @@ def test_cli_trust_apply_confidence_change_updates_claim(tmp_path, capsys):
             "execution_brief",
             "--source-ref",
             "brief:s1",
+            "--evidence-ref",
+            evidence.evidence_id,
             "--preflight-token",
             preflight["preflight_token"],
         ],
@@ -444,7 +631,8 @@ def test_cli_trust_apply_confidence_change_updates_claim(tmp_path, capsys):
 def test_cli_trust_update_record_returns_contract_payload(tmp_path, capsys):
     from brain.v5.public_surfaces import require_valid_public_surface
 
-    _, claim = _seed_claim(tmp_path)
+    ws, claim = _seed_claim(tmp_path)
+    evidence = _record_validated_evidence(ws, claim)
     preflight = _invoke(
         [
             "--base",
@@ -464,6 +652,8 @@ def test_cli_trust_update_record_returns_contract_payload(tmp_path, capsys):
             "execution_brief",
             "--source-ref",
             "brief:s1",
+            "--evidence-ref",
+            evidence.evidence_id,
         ],
         capsys,
     )
@@ -486,6 +676,8 @@ def test_cli_trust_update_record_returns_contract_payload(tmp_path, capsys):
             "execution_brief",
             "--source-ref",
             "brief:s1",
+            "--evidence-ref",
+            evidence.evidence_id,
             "--preflight-token",
             preflight["preflight_token"],
         ],
@@ -532,7 +724,8 @@ def test_mcp_apply_trust_update_accepts_matching_preflight_token(tmp_path):
     from brain.v5.mcp_tools import aitp_v5_apply_trust_update, aitp_v5_preflight_trust_update
     from brain.v5.workspace import get_claim, init_workspace
 
-    _, claim = _seed_claim(tmp_path)
+    ws, claim = _seed_claim(tmp_path)
+    evidence = _record_validated_evidence(ws, claim)
     preflight = aitp_v5_preflight_trust_update(
         str(tmp_path),
         action="change_claim_confidence",
@@ -542,6 +735,7 @@ def test_mcp_apply_trust_update_accepts_matching_preflight_token(tmp_path):
         requested_state="locally_checked",
         source_kind="execution_brief",
         source_ref="brief:s1",
+        evidence_refs=[evidence.evidence_id],
     )
 
     payload = aitp_v5_apply_trust_update(
@@ -553,6 +747,7 @@ def test_mcp_apply_trust_update_accepts_matching_preflight_token(tmp_path):
         requested_state="locally_checked",
         source_kind="execution_brief",
         source_ref="brief:s1",
+        evidence_refs=[evidence.evidence_id],
         preflight_token=preflight["preflight_token"],
     )
     persisted = get_claim(init_workspace(tmp_path), claim.claim_id)
@@ -573,7 +768,8 @@ def test_mcp_get_trust_update_record_returns_contract_payload(tmp_path):
     )
     from brain.v5.public_surfaces import require_valid_public_surface
 
-    _, claim = _seed_claim(tmp_path)
+    ws, claim = _seed_claim(tmp_path)
+    evidence = _record_validated_evidence(ws, claim)
     preflight = aitp_v5_preflight_trust_update(
         str(tmp_path),
         action="change_claim_confidence",
@@ -583,6 +779,7 @@ def test_mcp_get_trust_update_record_returns_contract_payload(tmp_path):
         requested_state="locally_checked",
         source_kind="execution_brief",
         source_ref="brief:s1",
+        evidence_refs=[evidence.evidence_id],
     )
     applied = aitp_v5_apply_trust_update(
         str(tmp_path),
@@ -593,6 +790,7 @@ def test_mcp_get_trust_update_record_returns_contract_payload(tmp_path):
         requested_state="locally_checked",
         source_kind="execution_brief",
         source_ref="brief:s1",
+        evidence_refs=[evidence.evidence_id],
         preflight_token=preflight["preflight_token"],
     )
 

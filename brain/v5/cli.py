@@ -27,6 +27,11 @@ from brain.v5.cli_execution import (
     dispatch_execution_command as _dispatch_execution_command,
     is_execution_command as _is_execution_command,
 )
+from brain.v5.cli_promotion_checkpoint import (
+    add_promotion_checkpoint_parser as _add_promotion_checkpoint_parser,
+    dispatch_promotion_checkpoint as _dispatch_promotion_checkpoint,
+    is_promotion_checkpoint_command as _is_promotion_checkpoint_command,
+)
 
 
 _add_parser_section_04_without_lifecycle = _add_parser_section_04
@@ -36,12 +41,15 @@ def _add_parser_section_04(sp):
     _add_parser_section_04_without_lifecycle(sp)
     _add_session_lifecycle_parsers(sp)
     _add_execution_parser(sp)
+    _add_promotion_checkpoint_parser(sp)
 
 
 _dispatch_without_lifecycle = _dispatch
 
 
 def _dispatch(args):
+    if _is_promotion_checkpoint_command(args):
+        return _dispatch_promotion_checkpoint(args, init_workspace(args.base))
     if _is_execution_command(args):
         return _dispatch_execution_command(args)
     if _is_session_lifecycle_command(args):

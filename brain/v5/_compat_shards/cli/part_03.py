@@ -210,12 +210,7 @@ def _dispatch_workspace_01(args, ws):
             )
             return {"ok": True, **require_valid_public_surface("code_state_record", {"ok": True, **asdict(st)})}
     if args.command == "evidence" and args.evidence_command == "record":
-            ev = record_evidence(ws, topic_id=args.topic_id, claim_id=args.claim_id,
-                evidence_type=args.evidence_type, status=args.status, summary=args.summary,
-                supports_outputs=args.supports_outputs, source_refs=args.source_refs,
-                tool_run_ids=args.tool_run_ids, validation_result_ids=args.validation_result_ids,
-                artifact_ids=args.artifact_ids)
-            return {"ok": True, **require_valid_public_surface("evidence_record", {"ok": True, **asdict(ev)})}
+            return dispatch_evidence_command(args, ws)
     if args.command == "tool" and args.tool_command == "recipe" and args.tool_recipe_command == "register":
             rc = register_tool_recipe(ws, recipe_id=args.recipe_id, tool_family=args.tool_family,
                 tool_name=args.tool_name, purpose=args.purpose, required_inputs=args.required_inputs,

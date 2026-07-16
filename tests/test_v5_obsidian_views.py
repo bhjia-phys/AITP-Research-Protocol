@@ -4,10 +4,18 @@ import json
 
 
 def _seed_memory(tmp_path):
-    from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
+    from brain.v5.checkpoints import decide_human_checkpoint
     from brain.v5.evidence import record_evidence
-    from brain.v5.memory import apply_promotion_packet, create_promotion_packet
+    from brain.v5.memory import (
+        apply_promotion_packet,
+        create_promotion_packet,
+        request_promotion_checkpoint,
+    )
+    from brain.v5.models import ReferenceLocationRecord, SourceAssetRecord
+    from brain.v5.pinned_record_refs import pin_current_record
     from brain.v5.physics_objects import record_object_relation, record_physics_object
+    from brain.v5.record_envelope import RecordActor
+    from brain.v5.record_repository import RecordRepository
     from brain.v5.sensemaking import record_sensemaking_report
     from brain.v5.workspace import create_claim, create_topic, init_workspace
 
@@ -23,6 +31,34 @@ def _seed_memory(tmp_path):
         scope="Recorded finite-size sector.",
         strongest_failure_mode="wrong sector assignment",
     )
+    repository = RecordRepository(
+        ws,
+        actor=RecordActor(actor_type="tool", actor_id="obsidian-test", host="pytest"),
+    )
+    repository.write(
+        "source_assets",
+        SourceAssetRecord(
+            asset_id="fqhe-counting-paper",
+            topic_id="fqhe",
+            asset_type="paper",
+            uri="file:///fqhe-counting.pdf",
+            title="FQHE counting paper",
+            content_hash="d" * 64,
+            hash_algorithm="sha256",
+        ),
+    )
+    repository.write(
+        "reference_locations",
+        ReferenceLocationRecord(
+            location_id="fqhe-counting-sector",
+            topic_id="fqhe",
+            connector_id="local-source",
+            location_type="section_anchor",
+            uri="file:///fqhe-counting.pdf#sector",
+            label="Sector convention",
+            source_ref="source_asset:fqhe-counting-paper",
+        ),
+    )
     evidence = record_evidence(
         ws,
         topic_id="fqhe",
@@ -31,7 +67,15 @@ def _seed_memory(tmp_path):
         status="supports",
         summary="The sector convention and counting definition are recorded.",
         supports_outputs=["evidence_or_provenance"],
-        source_refs=["paper:fqhe-counting"],
+        source_refs=[
+            "source_asset:fqhe-counting-paper",
+            "reference_location:fqhe-counting-sector",
+        ],
+        support_basis_refs=[
+            pin_current_record(ws, "source_asset:fqhe-counting-paper"),
+            pin_current_record(ws, "reference_location:fqhe-counting-sector"),
+        ],
+        trace_context_refs=[],
     )
     counting = record_physics_object(
         ws,
@@ -78,12 +122,12 @@ def _seed_memory(tmp_path):
         evidence_refs=[evidence.evidence_id],
         known_failure_modes=["wrong sector assignment"],
     )
-    checkpoint = request_human_checkpoint(
+    checkpoint = request_promotion_checkpoint(
         ws,
-        topic_id="fqhe",
-        claim_id=claim.claim_id,
+        packet_id=packet.packet_id,
         reason="Approve reusable L2 memory.",
         requested_by="obsidian_view_test",
+        expires_at="2099-01-01T00:00:00+00:00",
         options=["approve", "reject"],
     )
     decide_human_checkpoint(

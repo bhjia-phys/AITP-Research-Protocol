@@ -264,6 +264,8 @@ def sample_args_part_02(template: str) -> list[str] | None:
             return ["--topic", "gw", "--claim", "claim-gw", "--contract", "validation-contract-gw", "--tool-run", "tool-run-gw", "--status", "inconclusive", "--checked-output", "evidence_or_provenance", "--summary", "Validation result sample."]
     if template.startswith("checkpoint request"):
             return ["--topic", "fqhe", "--claim", "claim-fqhe", "--reason", "Promotion requires judgment", "--requested-by", "risk_policy", "--option", "approve"]
+    if template.startswith("promotion-checkpoint request"):
+            return ["--packet", "packet-fqhe", "--reason", "Review exact packet", "--requested-by", "risk_policy", "--expires-at", "2099-01-01T00:00:00+00:00", "--option", "approve"]
     if template.startswith("checkpoint decide"):
             return ["checkpoint-test", "--decision", "approve", "--rationale", "Looks good", "--decided-by", "human"]
     if template.startswith("promotion packet create"):

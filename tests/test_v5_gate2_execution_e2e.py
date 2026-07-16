@@ -58,7 +58,7 @@ def test_librpa_hpc_fixture_contract_recovers_exact_accepted_execution(
         expected=checkpoint.binding,
         decision="approve",
         rationale=rationale,
-        decided_by="fixture-reviewer",
+        decided_by="samur",
         approval_receipt=_approval(
             secret,
             checkpoint.record.checkpoint_id,
