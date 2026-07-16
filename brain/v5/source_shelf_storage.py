@@ -82,12 +82,8 @@ def publish_source_shelf(ws, shelf: SourceShelf) -> None:
 
 
 def load_source_shelf_generation(ws, generation: str) -> SourceShelf:
-    if not _is_digest(generation):
-        raise SourceShelfIntegrityError("generation must be a lowercase SHA-256 digest")
+    manifest = _load_source_shelf_manifest(ws, generation, verify_generation=False)
     generation_dir = source_shelf_root(ws) / "generations" / generation
-    manifest_data = _load_json_object(generation_dir / "manifest.json")
-    manifest = _manifest_from_dict(manifest_data)
-    _validate_manifest_contract(manifest)
     passage_rows = _load_json_list(generation_dir / manifest.passage_file)
     issue_rows = _load_json_list(generation_dir / manifest.issues_file)
     passages_hash = hash_json(passage_rows)
@@ -106,6 +102,31 @@ def load_source_shelf_generation(ws, generation: str) -> SourceShelf:
     if manifest.generation != generation or expected_generation != generation:
         raise SourceShelfIntegrityError("source shelf generation hash mismatch")
     return SourceShelf(manifest=manifest, passages=passages, issues=issues)
+
+
+def load_source_shelf_manifest(ws, generation: str) -> SourceShelfManifest:
+    """Load and validate immutable manifest identity before component reads."""
+
+    return _load_source_shelf_manifest(ws, generation, verify_generation=True)
+
+
+def _load_source_shelf_manifest(
+    ws,
+    generation: str,
+    *,
+    verify_generation: bool,
+) -> SourceShelfManifest:
+    if not _is_digest(generation):
+        raise SourceShelfIntegrityError("generation must be a lowercase SHA-256 digest")
+    generation_dir = source_shelf_root(ws) / "generations" / generation
+    manifest_data = _load_json_object(generation_dir / "manifest.json")
+    manifest = _manifest_from_dict(manifest_data)
+    _validate_manifest_contract(manifest)
+    if verify_generation:
+        expected_generation = hash_json(_basis_from_manifest(manifest))
+        if manifest.generation != generation or expected_generation != generation:
+            raise SourceShelfIntegrityError("source shelf generation hash mismatch")
+    return manifest
 
 
 def source_shelf_root(ws) -> Path:

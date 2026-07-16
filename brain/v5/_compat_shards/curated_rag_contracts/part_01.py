@@ -7,21 +7,27 @@ from brain.v5.contracts import ContractError, ContractResult, _require_list, _re
 
 from brain.v5.curated_rag_corpus import CATALOG_VERSION, curated_rag_corpus
 
+_CURATED_RAG_INDEX_MODES = {"lexical_fixture", "lexical_file_backed", "lexical_source_shelf"}
+
 def validate_curated_rag_corpus(
     payload: Any,
     *,
     path: str = "curated_rag_corpus",
+    base=None,
 ) -> ContractResult:
     result = ContractResult()
     _require_mapping(payload, path, result)
     if not isinstance(payload, dict):
         return result
 
-    _validate_common_no_trust(payload, path, result)
+    if not _validate_common_no_trust(payload, path, result): return result
     if payload.get("kind") != "curated_rag_corpus":
         result.add(f"{path}.kind", "must be 'curated_rag_corpus'")
-    if payload.get("truth_source") != "curated_rag_corpus_catalog":
-        result.add(f"{path}.truth_source", "must be 'curated_rag_corpus_catalog'")
+    if payload.get("truth_source") not in {
+        "curated_rag_corpus_catalog",
+        "canonical_source_records_via_source_shelf",
+    }:
+        result.add(f"{path}.truth_source", "must identify the curated catalog authority")
     _require_mapping(payload.get("retrieval_policy"), f"{path}.retrieval_policy", result)
     if isinstance(payload.get("retrieval_policy"), dict):
         _validate_retrieval_policy(payload["retrieval_policy"], f"{path}.retrieval_policy", result)
@@ -51,13 +57,15 @@ def validate_curated_rag_corpus(
             result.add(f"{path}.chunk_index", "must list chunk ids in catalog order")
         _validate_chunks(payload["chunks"], f"{path}.chunks", result, document_ids)
 
+    _validate_curated_rag_authority_mode(payload, path, result, base=base)
+
     if payload.get("index_policy", {}).get("active_index_mode") == "lexical_fixture":
         if payload != curated_rag_corpus():
             result.add(path, "fixture corpus must match curated_rag_corpus()")
     return result
 
-def require_valid_curated_rag_corpus(payload: dict[str, Any]) -> dict[str, Any]:
-    result = validate_curated_rag_corpus(payload)
+def require_valid_curated_rag_corpus(payload: dict[str, Any], *, base=None) -> dict[str, Any]:
+    result = validate_curated_rag_corpus(payload, base=base)
     if not result.ok:
         raise ContractError(result)
     return payload
@@ -66,13 +74,14 @@ def validate_curated_rag_search_result(
     payload: Any,
     *,
     path: str = "curated_rag_search_result",
+    base=None,
 ) -> ContractResult:
     result = ContractResult()
     _require_mapping(payload, path, result)
     if not isinstance(payload, dict):
         return result
 
-    _validate_common_no_trust(payload, path, result)
+    if not _validate_common_no_trust(payload, path, result): return result
     if payload.get("kind") != "curated_rag_search_result":
         result.add(f"{path}.kind", "must be 'curated_rag_search_result'")
     if payload.get("result_role") != "heuristic_context":
@@ -85,7 +94,7 @@ def validate_curated_rag_search_result(
         result.add(f"{path}.requires_promotion_for_claim_support", "must be true")
     if not isinstance(payload.get("query"), str):
         result.add(f"{path}.query", "must be a string")
-    if payload.get("index_mode") not in {"lexical_fixture", "lexical_file_backed"}:
+    if payload.get("index_mode") not in _CURATED_RAG_INDEX_MODES:
         result.add(f"{path}.index_mode", "must be a supported lexical curated RAG mode")
     if payload.get("index_status") is not None and not isinstance(payload.get("index_status"), str):
         result.add(f"{path}.index_status", "must be a string when present")
@@ -97,10 +106,11 @@ def validate_curated_rag_search_result(
             result.add(f"{path}.result_count", "must equal len(results)")
         for index, item in enumerate(payload["results"]):
             _validate_search_result_item(item, f"{path}.results[{index}]", result)
+    _validate_curated_rag_authority_mode(payload, path, result, base=base)
     return result
 
-def require_valid_curated_rag_search_result(payload: dict[str, Any]) -> dict[str, Any]:
-    result = validate_curated_rag_search_result(payload)
+def require_valid_curated_rag_search_result(payload: dict[str, Any], *, base=None) -> dict[str, Any]:
+    result = validate_curated_rag_search_result(payload, base=base)
     if not result.ok:
         raise ContractError(result)
     return payload
@@ -109,17 +119,21 @@ def validate_curated_rag_chunk(
     payload: Any,
     *,
     path: str = "curated_rag_chunk",
+    base=None,
 ) -> ContractResult:
     result = ContractResult()
     _require_mapping(payload, path, result)
     if not isinstance(payload, dict):
         return result
 
-    _validate_common_no_trust(payload, path, result)
+    if not _validate_common_no_trust(payload, path, result): return result
     if payload.get("kind") != "curated_rag_chunk":
         result.add(f"{path}.kind", "must be 'curated_rag_chunk'")
-    if payload.get("truth_source") != "curated_rag_chunk_manifest":
-        result.add(f"{path}.truth_source", "must be 'curated_rag_chunk_manifest'")
+    if payload.get("truth_source") not in {
+        "curated_rag_chunk_manifest",
+        "canonical_source_records_via_source_shelf",
+    }:
+        result.add(f"{path}.truth_source", "must identify the curated chunk authority")
     if payload.get("state_effect") != "read_only":
         result.add(f"{path}.state_effect", "must be 'read_only'")
     if payload.get("retrieval_role") != "heuristic_context":
@@ -139,7 +153,7 @@ def validate_curated_rag_chunk(
     for key in ("corpus_id", "chunk_id", "document_id", "index_mode"):
         if not isinstance(payload.get(key), str) or not payload.get(key):
             result.add(f"{path}.{key}", "must be a non-empty string")
-    if payload.get("index_mode") not in {"lexical_fixture", "lexical_file_backed"}:
+    if payload.get("index_mode") not in _CURATED_RAG_INDEX_MODES:
         result.add(f"{path}.index_mode", "must be a supported lexical curated RAG mode")
     if payload.get("index_status") is not None and not isinstance(payload.get("index_status"), str):
         result.add(f"{path}.index_status", "must be a string when present")
@@ -177,10 +191,11 @@ def validate_curated_rag_chunk(
         if not isinstance(payload["document"].get("intended_use"), str) or not payload["document"].get("intended_use"):
             result.add(f"{path}.document.intended_use", "must be a non-empty string")
     _validate_lookup_promotion_boundary(payload.get("promotion_boundary"), f"{path}.promotion_boundary", result)
+    _validate_curated_rag_authority_mode(payload, path, result, base=base)
     return result
 
-def require_valid_curated_rag_chunk(payload: dict[str, Any]) -> dict[str, Any]:
-    result = validate_curated_rag_chunk(payload)
+def require_valid_curated_rag_chunk(payload: dict[str, Any], *, base=None) -> dict[str, Any]:
+    result = validate_curated_rag_chunk(payload, base=base)
     if not result.ok:
         raise ContractError(result)
     return payload
@@ -195,7 +210,7 @@ def validate_curated_rag_ingest_result(
     if not isinstance(payload, dict):
         return result
 
-    _validate_common_no_trust(payload, path, result)
+    if not _validate_common_no_trust(payload, path, result): return result
     if payload.get("kind") != "curated_rag_ingest_result":
         result.add(f"{path}.kind", "must be 'curated_rag_ingest_result'")
     if payload.get("ok") is not True:
@@ -262,7 +277,7 @@ def validate_curated_rag_promotion_draft(
     if not isinstance(payload, dict):
         return result
 
-    _validate_common_no_trust(payload, path, result)
+    if not _validate_common_no_trust(payload, path, result): return result
     if payload.get("kind") != "curated_rag_promotion_draft":
         result.add(f"{path}.kind", "must be 'curated_rag_promotion_draft'")
     if payload.get("truth_source") != "curated_rag_chunk_manifest":
@@ -337,13 +352,16 @@ def require_valid_curated_rag_promotion_draft(payload: dict[str, Any]) -> dict[s
         raise ContractError(result)
     return payload
 
-def _validate_common_no_trust(payload: dict[str, Any], path: str, result: ContractResult) -> None:
+def _validate_common_no_trust(payload: dict[str, Any], path: str, result: ContractResult) -> bool:
+    if not _validate_json_compatible(payload, path, result):
+        return False
     if payload.get("catalog_version") != CATALOG_VERSION:
         result.add(f"{path}.catalog_version", f"must be '{CATALOG_VERSION}'")
     if payload.get("summary_inputs_trusted") is not False:
         result.add(f"{path}.summary_inputs_trusted", "must be false")
     if payload.get("can_update_claim_trust") is not False:
         result.add(f"{path}.can_update_claim_trust", "must be false")
+    return True
 
 def _validate_retrieval_policy(policy: dict[str, Any], path: str, result: ContractResult) -> None:
     if policy.get("result_role") != "heuristic_context":
@@ -379,7 +397,7 @@ def _validate_retrieval_policy(policy: dict[str, Any], path: str, result: Contra
 
 def _validate_index_policy(policy: dict[str, Any], path: str, result: ContractResult) -> None:
     active_index_mode = policy.get("active_index_mode")
-    if active_index_mode not in {"lexical_fixture", "lexical_file_backed"}:
+    if active_index_mode not in _CURATED_RAG_INDEX_MODES:
         result.add(f"{path}.active_index_mode", "must be a supported lexical curated RAG mode")
     if policy.get("supported_index_modes") != [active_index_mode]:
         result.add(f"{path}.supported_index_modes", "must list the active lexical mode")
@@ -387,8 +405,13 @@ def _validate_index_policy(policy: dict[str, Any], path: str, result: ContractRe
         result.add(f"{path}.embedding_index_required", "must be false")
     if policy.get("index_is_derived") is not True:
         result.add(f"{path}.index_is_derived", "must be true")
-    if policy.get("derived_from") != "curated_rag_chunk_manifest":
-        result.add(f"{path}.derived_from", "must be 'curated_rag_chunk_manifest'")
+    expected_source = (
+        "source_shelf_generation"
+        if active_index_mode == "lexical_source_shelf"
+        else "curated_rag_chunk_manifest"
+    )
+    if policy.get("derived_from") != expected_source:
+        result.add(f"{path}.derived_from", f"must be {expected_source!r}")
     if policy.get("stale_index_behavior") != "return_diagnostic_not_trust":
         result.add(f"{path}.stale_index_behavior", "must return diagnostics, not trust")
     if active_index_mode == "lexical_file_backed":
@@ -399,6 +422,18 @@ def _validate_index_policy(policy: dict[str, Any], path: str, result: ContractRe
         if policy.get("index_status") not in {"fresh", "stale", "derived_in_memory"}:
             result.add(f"{path}.index_status", "must be fresh, stale, or derived_in_memory")
         _require_list(policy.get("stale_index_diagnostics"), f"{path}.stale_index_diagnostics", result)
+    if active_index_mode == "lexical_source_shelf":
+        if policy.get("index_status") != "fresh":
+            result.add(f"{path}.index_status", "must be 'fresh' after shelf revalidation")
+        for key in (
+            "requested_source_asset_refs",
+            "resolved_source_asset_refs",
+            "indexed_source_asset_refs",
+            "unindexed_source_asset_refs",
+            "source_shelf_issues",
+            "stale_index_diagnostics",
+        ):
+            _require_list(policy.get(key), f"{path}.{key}", result)
 
 def _validate_documents(documents: list[Any], path: str, result: ContractResult) -> None:
     ids: set[str] = set()
@@ -418,7 +453,7 @@ def _validate_documents(documents: list[Any], path: str, result: ContractResult)
             if not isinstance(document.get(key), str) or not document.get(key):
                 result.add(f"{item_path}.{key}", "must be a non-empty string")
         for key in ("tags", "domain_hints", "topic_hints"):
-            _require_list(document.get(key), f"{item_path}.{key}", result)
+            _require_string_list(document.get(key), f"{item_path}.{key}", result)
         if document.get("trust_status") != "heuristic_context":
             result.add(f"{item_path}.trust_status", "must be 'heuristic_context'")
         if document.get("orientation_only") is not True:
@@ -451,7 +486,7 @@ def _validate_chunks(
         if chunk.get("document_id") not in document_ids:
             result.add(f"{item_path}.document_id", "must refer to a corpus document")
         _require_mapping(chunk.get("anchor"), f"{item_path}.anchor", result)
-        _require_list(chunk.get("tags"), f"{item_path}.tags", result)
+        _require_string_list(chunk.get("tags"), f"{item_path}.tags", result)
         if not isinstance(chunk.get("token_estimate"), int) or chunk["token_estimate"] <= 0:
             result.add(f"{item_path}.token_estimate", "must be a positive integer")
         if chunk.get("retrieval_role") != "heuristic_context":

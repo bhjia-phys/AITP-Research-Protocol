@@ -22,6 +22,7 @@ from brain.v5.source_shelf_extraction import (
     SourceShelfExtractionError,
     extract_source_passages,
 )
+from brain.v5.source_shelf_bounded_io import read_bounded_bytes
 from brain.v5.source_shelf_models import (
     SOURCE_SHELF_EXTRACTOR_VERSION,
     SOURCE_SHELF_READER_VERSION,
@@ -47,13 +48,9 @@ from brain.v5.source_shelf_storage import (
 )
 
 
-_RESTRICTED_ACCESS = {
-    "forbidden",
-    "license_restricted",
-    "not_acquired",
-    "restricted",
-}
+_RESTRICTED_ACCESS = {"forbidden", "license_restricted", "not_acquired", "restricted"}
 _RESTRICTED_STORAGE = {"denied", "forbidden", "metadata_only", "not_allowed", "not_requested"}
+_MAX_SOURCE_BYTES = 128 * 1024 * 1024
 
 
 @dataclass(frozen=True)
@@ -247,7 +244,16 @@ def _resolve_source(
     blob_root = (ws.root / "source_blobs").resolve()
     if not resolved_path.is_file() or not resolved_path.is_relative_to(blob_root):
         return _issue("source_storage_not_local", source_ref, "receipted source is outside the source blob store")
-    actual_bytes = resolved_path.read_bytes()
+    actual_size = resolved_path.stat().st_size
+    if actual_size != receipt.byte_length:
+        detail = f"receipted byte length changed: expected {receipt.byte_length}, observed {actual_size}"
+        return _issue("source_bytes_changed", source_ref, detail)
+    if actual_size > _MAX_SOURCE_BYTES:
+        detail = f"receipted source exceeds the bounded {_MAX_SOURCE_BYTES}-byte shelf limit"
+        return _issue("source_blob_too_large", source_ref, detail)
+    actual_bytes = read_bounded_bytes(resolved_path, _MAX_SOURCE_BYTES)
+    if actual_bytes is None:
+        return _issue("source_blob_too_large", source_ref, "receipted source exceeded the bounded shelf limit")
     actual_hash = hashlib.sha256(actual_bytes).hexdigest()
     if actual_hash != receipt.byte_sha256 or len(actual_bytes) != receipt.byte_length:
         return _issue(

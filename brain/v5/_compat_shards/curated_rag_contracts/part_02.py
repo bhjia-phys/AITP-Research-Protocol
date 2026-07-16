@@ -1,6 +1,98 @@
 # Compatibility shard 2 for curated_rag_contracts.
 from __future__ import annotations
 
+def _contains_reserved_source_shelf_structure(payload: dict[str, Any]) -> bool:
+    reserved_pin_keys = {
+        "acquisition_decision_ref",
+        "acquisition_receipt_ref",
+        "source_asset_ref",
+        "source_content_hash",
+        "source_location_pins",
+        "source_location_refs",
+        "source_record_content_hash",
+        "source_record_revision",
+    }
+    stack: list[Any] = [payload]
+    seen: set[int] = set()
+    while stack:
+        value = stack.pop()
+        if isinstance(value, dict):
+            identity = id(value)
+            if identity in seen:
+                continue
+            seen.add(identity)
+            for key, item in value.items():
+                normalized = key.lower().replace("-", "_")
+                if (
+                    "source_shelf" in normalized
+                    or "source_passage" in normalized
+                    or normalized in reserved_pin_keys
+                ):
+                    return True
+                if isinstance(item, (dict, list)):
+                    stack.append(item)
+        elif isinstance(value, list):
+            identity = id(value)
+            if identity in seen:
+                continue
+            seen.add(identity)
+            stack.extend(value)
+    return False
+
+def _validate_json_compatible(value: Any, path: str, result: ContractResult) -> bool:
+    stack: list[tuple[Any, bool]] = [(value, False)]
+    active: set[int] = set()
+    while stack:
+        item, leaving = stack.pop()
+        if leaving:
+            active.remove(id(item))
+            continue
+        if item is None or type(item) in {str, int, bool}:
+            continue
+        if type(item) is float:
+            if item != item or item in {float("inf"), float("-inf")}:
+                result.add(path, "must contain only finite JSON values")
+                return False
+            continue
+        if type(item) not in {dict, list}:
+            result.add(path, "must contain only JSON-compatible values")
+            return False
+        identity = id(item)
+        if identity in active:
+            result.add(path, "must not contain circular JSON containers")
+            return False
+        active.add(identity)
+        stack.append((item, True))
+        if type(item) is dict:
+            if any(type(key) is not str for key in item):
+                result.add(path, "must use string JSON object keys")
+                return False
+            stack.extend((child, False) for child in item.values())
+        else:
+            stack.extend((child, False) for child in item)
+    return True
+
+def _require_string_list(value: Any, path: str, result: ContractResult) -> None:
+    _require_list(value, path, result)
+    if isinstance(value, list) and any(type(item) is not str for item in value):
+        result.add(path, "must contain only strings")
+
+def _validate_curated_rag_authority_mode(
+    payload: dict[str, Any], path: str, result: ContractResult, *, base=None,
+) -> None:
+    kind = payload.get("kind")
+    policy = payload.get("index_policy")
+    mode = policy.get("active_index_mode") if isinstance(policy, dict) else None
+    if kind != "curated_rag_corpus":
+        mode = payload.get("index_mode")
+    if mode == "lexical_source_shelf":
+        if kind == "curated_rag_corpus":
+            _validate_source_shelf_catalog(payload, path, result, base=base)
+        else:
+            _validate_source_shelf_retrieval(payload, path, result, base=base)
+    elif _contains_reserved_source_shelf_structure(payload):
+        result.add(path, "non-shelf mode must not carry reserved source-shelf structure")
+
 def _validate_search_result_item(item: Any, path: str, result: ContractResult) -> None:
     _require_mapping(item, path, result)
     if not isinstance(item, dict):
@@ -17,7 +109,7 @@ def _validate_search_result_item(item: Any, path: str, result: ContractResult) -
     if item.get("can_update_claim_trust") is not False:
         result.add(f"{path}.can_update_claim_trust", "must be false")
     _require_mapping(item.get("anchor"), f"{path}.anchor", result)
-    _require_list(item.get("tags"), f"{path}.tags", result)
+    _require_string_list(item.get("tags"), f"{path}.tags", result)
 
 def _validate_promotion_chunk(item: Any, path: str, result: ContractResult) -> None:
     _require_mapping(item, path, result)
@@ -33,7 +125,7 @@ def _validate_promotion_chunk(item: Any, path: str, result: ContractResult) -> N
     if item.get("can_update_claim_trust") is not False:
         result.add(f"{path}.can_update_claim_trust", "must be false")
     _require_mapping(item.get("anchor"), f"{path}.anchor", result)
-    _require_list(item.get("tags"), f"{path}.tags", result)
+    _require_string_list(item.get("tags"), f"{path}.tags", result)
 
 def _validate_promotion_document(item: Any, path: str, result: ContractResult) -> None:
     _require_mapping(item, path, result)
@@ -43,7 +135,7 @@ def _validate_promotion_document(item: Any, path: str, result: ContractResult) -
         if not isinstance(item.get(key), str) or not item.get(key):
             result.add(f"{path}.{key}", "must be a non-empty string")
     for key in ("tags", "domain_hints", "topic_hints"):
-        _require_list(item.get(key), f"{path}.{key}", result)
+        _require_string_list(item.get(key), f"{path}.{key}", result)
     _require_mapping(item.get("version_anchor"), f"{path}.version_anchor", result)
     if item.get("trust_status") != "heuristic_context":
         result.add(f"{path}.trust_status", "must be 'heuristic_context'")
@@ -198,3 +290,13 @@ def _validate_lookup_promotion_boundary(item: Any, path: str, result: ContractRe
             result.add(f"{path}.{key}", "must be false")
     if item.get("requires_user_or_model_decision_before_write") is not True:
         result.add(f"{path}.requires_user_or_model_decision_before_write", "must be true")
+
+def _validate_source_shelf_catalog(payload: dict[str, Any], path: str, result: ContractResult, *, base=None) -> None:
+    from brain.v5.curated_rag_source_shelf_contracts import validate_source_shelf_catalog
+
+    validate_source_shelf_catalog(payload, path, result, base=base)
+
+def _validate_source_shelf_retrieval(payload: dict[str, Any], path: str, result: ContractResult, *, base=None) -> None:
+    from brain.v5.curated_rag_source_shelf_contracts import validate_source_shelf_retrieval
+
+    validate_source_shelf_retrieval(payload, path, result, base=base)
