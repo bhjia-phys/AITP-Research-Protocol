@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Mapping
+from typing import Literal, Mapping
 
 
 HOST_LIFECYCLE_CAPABILITY_SCHEMA_VERSION = "host_lifecycle_capability_matrix/v1"
@@ -24,6 +24,17 @@ class HostLifecycleEventCapability:
 
 
 @dataclass(frozen=True)
+class HostLifecycleFallbackDescriptor:
+    """One explicit non-automatic boundary for an unsupported host event."""
+
+    unsupported_event: str
+    operation: str
+    automatic: Literal[False]
+    review_boundary: str
+    application_boundary: str
+
+
+@dataclass(frozen=True)
 class HostLifecycleCapability:
     """Read-only lifecycle boundary for a real host configuration owner."""
 
@@ -31,7 +42,7 @@ class HostLifecycleCapability:
     owner_paths: tuple[str, ...]
     automatic_events: tuple[HostLifecycleEventCapability, ...]
     unsupported_events: tuple[str, ...]
-    fallback_operations: Mapping[str, str]
+    fallbacks: tuple[HostLifecycleFallbackDescriptor, ...]
     legacy_injection_conflicts: tuple[str, ...] = ()
 
     def event(self, logical_event: str) -> HostLifecycleEventCapability:
@@ -41,6 +52,14 @@ class HostLifecycleCapability:
             if event.logical_event == logical_event:
                 return event
         raise ValueError(f"host {self.host!r} has no installed automatic event {logical_event!r}")
+
+    def fallback(self, unsupported_event: str) -> HostLifecycleFallbackDescriptor:
+        """Return the explicit manual boundary for one unsupported host event."""
+
+        for fallback in self.fallbacks:
+            if fallback.unsupported_event == unsupported_event:
+                return fallback
+        raise ValueError(f"host {self.host!r} has no fallback for unsupported event {unsupported_event!r}")
 
 
 @dataclass(frozen=True)
@@ -71,12 +90,27 @@ def _event(
     )
 
 
+def _fallback(
+    unsupported_event: str,
+    operation: str,
+    review_boundary: str,
+    application_boundary: str,
+) -> HostLifecycleFallbackDescriptor:
+    return HostLifecycleFallbackDescriptor(
+        unsupported_event=unsupported_event,
+        operation=operation,
+        automatic=False,
+        review_boundary=review_boundary,
+        application_boundary=application_boundary,
+    )
+
+
 def _profile(
     host: str,
     owner_paths: tuple[str, ...],
     automatic_events: tuple[HostLifecycleEventCapability, ...],
     unsupported_events: tuple[str, ...],
-    fallback_operations: dict[str, str],
+    fallbacks: tuple[HostLifecycleFallbackDescriptor, ...],
     legacy_injection_conflicts: tuple[str, ...] = (),
 ) -> HostLifecycleCapability:
     return HostLifecycleCapability(
@@ -84,7 +118,7 @@ def _profile(
         owner_paths=owner_paths,
         automatic_events=automatic_events,
         unsupported_events=unsupported_events,
-        fallback_operations=MappingProxyType(dict(fallback_operations)),
+        fallbacks=fallbacks,
         legacy_injection_conflicts=legacy_injection_conflicts,
     )
 
@@ -192,7 +226,9 @@ _HOSTS = MappingProxyType(
             ),
             _CLAUDE_EVENTS,
             ("prompt_submit", "session_end"),
-            {"closeout": "apply_session_closeout"},
+            (
+                _fallback("session_end", "plan_session_closeout", "human_review_required", "plan_only"),
+            ),
         ),
         "kimi_code": _profile(
             "kimi_code",
@@ -202,7 +238,9 @@ _HOSTS = MappingProxyType(
             ),
             _KIMI_EVENTS,
             ("prompt_submit", "session_end"),
-            {"closeout": "apply_session_closeout"},
+            (
+                _fallback("session_end", "plan_session_closeout", "human_review_required", "plan_only"),
+            ),
         ),
         "codex": _profile(
             "codex",
@@ -212,10 +250,10 @@ _HOSTS = MappingProxyType(
             ),
             _CODEX_EVENTS,
             ("session_start", "prompt_submit", "session_end"),
-            {
-                "first_research_prompt": "aitp_v5_codex_enter",
-                "closeout": "aitp_v5_codex_closeout",
-            },
+            (
+                _fallback("prompt_submit", "aitp_v5_codex_enter", "read_only", "read_only"),
+                _fallback("session_end", "plan_session_closeout", "human_review_required", "plan_only"),
+            ),
         ),
         "opencode": _profile(
             "opencode",
@@ -225,7 +263,9 @@ _HOSTS = MappingProxyType(
             ),
             _OPENCODE_EVENTS,
             ("session_start", "prompt_submit", "session_end"),
-            {"closeout": "apply_session_closeout"},
+            (
+                _fallback("session_end", "plan_session_closeout", "human_review_required", "plan_only"),
+            ),
             (
                 "experimental.chat.system.transform: stale full-skill injection; "
                 "not a lifecycle start capability",
@@ -249,6 +289,8 @@ def host_lifecycle_capability_matrix() -> HostLifecycleCapabilityMatrix:
 def host_lifecycle_capability(host: str) -> HostLifecycleCapability:
     """Return one host profile, failing closed for an uncharacterized host."""
 
+    if not isinstance(host, str) or not host.strip():
+        raise ValueError(f"unsupported host: {host!r}")
     try:
         return _MATRIX.hosts[host]
     except KeyError as exc:
@@ -258,6 +300,7 @@ def host_lifecycle_capability(host: str) -> HostLifecycleCapability:
 __all__ = [
     "HOST_LIFECYCLE_CAPABILITY_SCHEMA_VERSION",
     "HostLifecycleCapability",
+    "HostLifecycleFallbackDescriptor",
     "HostLifecycleCapabilityMatrix",
     "HostLifecycleEventCapability",
     "host_lifecycle_capability",
