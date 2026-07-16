@@ -120,6 +120,122 @@ class SkillReadinessReportRecord:
 
 
 @dataclass(frozen=True)
+class SkillPackagePreview:
+    skill_id: str
+    namespace: str
+    name: str
+    semantic_version: str
+    package_hash: str
+    candidate_ref: dict
+    readiness_ref: dict
+    files: dict[str, bytes]
+    manifest: dict
+    preview_dir: str
+    generator_version: str
+    can_install_skill: bool = False
+    can_update_claim_trust: bool = False
+
+    def contract_payload(self) -> dict:
+        import hashlib
+
+        return {
+            "kind": "skill_package_preview",
+            "skill_id": self.skill_id,
+            "namespace": self.namespace,
+            "name": self.name,
+            "semantic_version": self.semantic_version,
+            "package_hash": self.package_hash,
+            "candidate_ref": dict(self.candidate_ref),
+            "readiness_ref": dict(self.readiness_ref),
+            "files": [
+                {
+                    "path": path,
+                    "mode": "0644",
+                    "length": len(content),
+                    "sha256": hashlib.sha256(content).hexdigest(),
+                }
+                for path, content in sorted(self.files.items())
+            ],
+            "manifest": dict(self.manifest),
+            "preview_dir": self.preview_dir,
+            "generator_version": self.generator_version,
+            "can_install_skill": self.can_install_skill,
+            "can_update_claim_trust": self.can_update_claim_trust,
+        }
+
+
+@dataclass(frozen=True)
+class SkillPackageArtifactRecord:
+    artifact_id: str
+    skill_id: str
+    semantic_version: str
+    package_hash: str
+    tree_hash: str
+    candidate_ref: dict
+    readiness_ref: dict
+    files: list[dict]
+    renderer_blob_ref: str
+    renderer_blob_hash: str
+    renderer_blob_revision: int
+    generator_version: str
+    template_refs: list[dict] = field(default_factory=list)
+    immutable: bool = True
+    can_install_skill: bool = False
+    can_update_claim_trust: bool = False
+    kind: str = "skill_package_artifact"
+
+    def __post_init__(self) -> None:
+        if not self.immutable:
+            raise ValueError("skill package artifacts are immutable")
+        if self.can_install_skill or self.can_update_claim_trust:
+            raise ValueError("skill package artifacts have no install or trust authority")
+
+
+@dataclass(frozen=True)
+class SkillProposalRecord:
+    proposal_id: str
+    skill_id: str
+    namespace: str
+    name: str
+    semantic_version: str
+    package_hash: str
+    tree_hash: str
+    candidate_ref: dict
+    readiness_ref: dict
+    package_artifact_ref: dict
+    source_topic_ids: list[str]
+    recipe_refs: list[dict]
+    source_program_refs: list[dict]
+    execution_refs: list[dict]
+    validation_refs: list[dict]
+    artifact_refs: list[dict]
+    code_state_refs: list[dict]
+    environment_refs: list[dict]
+    source_refs: list[dict]
+    failure_basis: dict
+    applicability_selectors: dict
+    manifest: dict
+    file_hashes: list[dict]
+    validation_commands: list[dict]
+    review_status: str = "draft"
+    application_status: str = "not_applied"
+    requires_human_review: bool = True
+    can_install_skill: bool = False
+    can_update_claim_trust: bool = False
+    kind: str = "skill_proposal"
+
+    def __post_init__(self) -> None:
+        if self.review_status != "draft":
+            raise ValueError("skill proposals must remain draft")
+        if self.application_status != "not_applied":
+            raise ValueError("skill proposals must remain not_applied")
+        if not self.requires_human_review or self.can_install_skill:
+            raise ValueError("skill proposals require review and cannot install directly")
+        if self.can_update_claim_trust:
+            raise ValueError("skill proposals cannot update claim trust")
+
+
+@dataclass(frozen=True)
 class CandidateBuildReport:
     eligible: bool
     candidate: SkillDistillationCandidateRecord | None

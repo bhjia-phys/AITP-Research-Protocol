@@ -47,7 +47,7 @@ def test_record_family_registry_contract_is_self_consistent():
 
     assert payload["ok"] is True
     assert payload["errors"] == []
-    assert payload["registry_family_count"] == 64
+    assert payload["registry_family_count"] == 66
     assert payload["special_family_count"] == 4
     assert payload["truth_source"] == "record_family_specs"
     assert payload["can_update_kernel_state"] is False
@@ -129,6 +129,40 @@ def test_m4_skill_readiness_reports_are_append_only_process_records():
         "candidate_ref.record_ref",
         "expert_exception_ref.record_ref",
     )
+
+
+def test_m4_skill_package_artifacts_are_append_only_exact_provenance():
+    spec = record_family_specs()["skill_package_artifacts"]
+
+    assert spec.schema_version == "v2"
+    assert spec.trust_effect == "none"
+    assert spec.record_role == "immutable_provenance_record"
+    assert spec.lifecycle_policy == "append_only"
+    assert {
+        "candidate_ref.record_ref",
+        "readiness_ref.record_ref",
+        "files[].blob_receipt_ref",
+        "renderer_blob_ref",
+    } <= set(spec.dependency_fields)
+
+
+def test_m4_skill_proposals_are_append_only_candidates_without_trust_authority():
+    spec = record_family_specs()["skill_proposals"]
+
+    assert spec.schema_version == "v2"
+    assert spec.trust_effect == "candidate_only"
+    assert spec.record_role == "candidate_record"
+    assert spec.lifecycle_policy == "append_only"
+    assert {
+        "candidate_ref.record_ref",
+        "readiness_ref.record_ref",
+        "package_artifact_ref.record_ref",
+        "recipe_refs[].record_ref",
+        "artifact_refs[].record_ref",
+        "code_state_refs[].record_ref",
+        "environment_refs[].record_ref",
+        "source_refs[].record_ref",
+    } <= set(spec.dependency_fields)
 
 
 def test_m1_lifecycle_families_are_trust_neutral_and_exact_expandable():

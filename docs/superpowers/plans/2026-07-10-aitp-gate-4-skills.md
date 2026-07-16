@@ -47,7 +47,7 @@
 | `brain/v5/skill_distillation_contracts.py` | Procedural completeness and knowledge exclusion. |
 | `brain/v5/skill_readiness.py` | Independent-use, failure-coverage, overlap, and fixture readiness. |
 | `brain/v5/skill_readiness_contracts.py` | Readiness report validation. |
-| `brain/v5/project_skill_packages.py` | Host-neutral content-addressed package preview/materialization/install. |
+| `brain/v5/project_skill_packages.py` | Host-neutral content-addressed package preview and proposal rendering. |
 | `brain/v5/project_skill_contracts.py` | Manifest/provenance/hash/checkpoint/target validation. |
 | `brain/v5/skill_install_transactions.py` | Durable install intent, atomic apply/readback, receipt, compensation, and rollback. |
 | `brain/v5/skill_validation_execution.py` | Separate M2 high-risk validation request/receipt handoff. |
@@ -207,7 +207,7 @@ Commit message: `v5: assess reviewed skill readiness`.
 - Produces: `build_skill_package_preview(ws, readiness_ref) -> SkillPackagePreview`
 - Produces: `record_skill_proposal(ws, preview, *, actor) -> WriteResult`
 
-- [ ] **Step 1: Write failing completeness tests**
+- [x] **Step 1: Write failing completeness tests**
 
 A package preview contains `SKILL.md`, `manifest.json`, provenance refs,
 applicability/transfer boundary, version, content hash, validation commands,
@@ -238,30 +238,60 @@ External-only receipts must first be materialized into deterministic local blob
 receipts. Exact file blobs make later reconstruction independent of mutable
 renderer code.
 
-- [ ] **Step 2: Define host-neutral manifest**
+- [x] **Step 2: Define host-neutral manifest**
 
 Required keys: skill id, namespace, name, semantic version, package hash,
 candidate/readiness refs, source topic/program refs, run/validation/failure refs,
 selectors, entrypoint, included file hashes, validation commands, external
 dependencies, license/access notes, renderer/template version, pinned package
-artifact ref/hash, and generated time. Reject same `(skill_id, version)` with a
-different package hash.
+artifact identity, and generated time. Reject same `(skill_id, version)` with a
+different package hash. The manifest carries the deterministic artifact typed
+ref but not that artifact record's content hash: embedding the latter would
+create an impossible self-reference because the artifact tree contains the
+manifest bytes. The canonical proposal supplies the exact artifact
+ref/content-hash/revision pin.
 
-- [ ] **Step 3: Render a compact `SKILL.md`**
+- [x] **Step 3: Render a compact `SKILL.md`**
 
 Include trigger/when-to-use, prerequisites, procedure, parameters, stop rules,
 failure recovery, validation, applicability/non-applicability, and exact AITP
 expansion refs. Do not embed source papers, long graph slices, or claim summaries.
 
-- [ ] **Step 4: Store proposal, not install**
+- [x] **Step 4: Store proposal, not install**
 
 The canonical proposal records full file hashes and package hash. Preview files
 live under `.aitp/tools/skills/catalog/<skill-id>/<version>/preview`; they are
 derived and disposable until approved.
 
-- [ ] **Step 5: Run package/hash/rebuild tests and commit**
+- [x] **Step 5: Run package/hash/rebuild tests and commit**
 
 Commit message: `v5: build host-neutral skill package previews`.
+
+**Task 3 implementation evidence (2026-07-16):**
+
+- A ready report renders a compact multi-file preview under the derived
+  `aitp-generated` catalog only. `SKILL.md` contains when-to-use,
+  non-applicability, prerequisites, procedure, parameters, stop rules, failure
+  recovery, validation, and exact graph expansion refs without copying long
+  physics summaries.
+- Manifest and proposal preserve exact recipe, run, validation, artifact, code
+  state, environment, program, and source pins. Proposals remain immutable
+  `draft/not_applied` candidates and have no install, evidence, or claim-trust
+  authority.
+- Identity is deliberately two-layered. Manifest `package_hash` hashes the
+  canonical manifest projection before its own hash is inserted and binds all
+  non-manifest file hashes. Artifact `tree_hash` binds the complete sorted tree,
+  including the final manifest and each local blob-receipt content hash. The
+  proposal then pins the artifact record by exact ref/content hash/revision.
+- Artifact reads re-resolve every M2 blob, verify row length/hash/order,
+  recompute both hashes, and cross-check manifest/artifact identity before
+  proposal or derived reconstruction. Same-id/version hash conflicts, unsafe
+  paths, links/junctions, stale preview files, malformed pins, and nested
+  authority flags are rejected.
+- Task 3 package/artifact/registry tests passed 30 tests; the combined M4
+  Task 1-3, blob, repository, query-index, and architecture regression passed
+  110 tests in system Temp. No project Skill was installed and no real research
+  canonical record was written.
 
 ## Task 4: Review-Gated Project-Local Installation
 

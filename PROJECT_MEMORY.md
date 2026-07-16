@@ -60,15 +60,21 @@ must follow the reviewed skill-candidate/install/use lifecycle.
 - These operations are available on full MCP. The existing research
   distillation response includes procedural candidates; compact remains ten
   tools and loads no Skill installer by default.
-- Current scope is one project-local `SKILL.md`. Multi-file packages, rollback,
-  cross-host installation, and skill-usage records remain future vertical-owned
-  work, not hidden implemented capability. M4 Task 1 adds the canonical
-  `skill_distillation_candidate` family before that legacy proposal/install
-  path: it stores exact process/provenance pins, rejects semantic M3 content,
-  and cannot update claim trust. M4 Task 2 adds append-only readiness reports
-  with independent-use, failure/fixture, exact expert-exception, and
-  installed/external overlap checks. Package artifacts, transactional install,
-  applicability, and usage records are still pending.
+- The legacy compatibility path remains one project-local `SKILL.md`; it is not
+  the v5 compiler. M4 now produces a canonical multi-file host-neutral preview,
+  exact blob-backed package artifact, and immutable draft proposal, but does not
+  install them. Rollback, cross-host installation, and skill-usage records
+  remain future vertical-owned work, not hidden implemented capability. M4
+  Task 1 adds the canonical `skill_distillation_candidate` family before that
+  legacy proposal/install path: it stores exact process/provenance pins,
+  rejects semantic M3 content, and cannot update claim trust. M4 Task 2 adds
+  append-only readiness reports with independent-use, failure/fixture,
+  exact expert-exception, and
+  installed/external overlap checks. M4 Task 3 adds `skill_package_artifact` and
+  `skill_proposal` families with two-layer package/tree hashes, exact process,
+  code, environment, artifact, program, and source pins, deterministic blob
+  reconstruction, and fixed no-install/no-trust authority. Transactional
+  installation, applicability, and usage records are still pending.
 
 ## Key Conventions
 

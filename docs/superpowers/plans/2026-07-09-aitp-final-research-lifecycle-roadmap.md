@@ -1054,9 +1054,9 @@ through auditable hybrid lanes and exposed through bounded context.
 
 **Detailed plan:** `docs/superpowers/plans/2026-07-10-aitp-gate-4-skills.md`
 
-**Status (2026-07-16): in progress.** Tasks 4.1-4.2 canonical procedural
-distillation and readiness/overlap reports are implemented; package artifacts,
-transactional reviewed installation, applicability, and exact usage remain
+**Status (2026-07-16): in progress.** Tasks 4.1-4.2 and the host-neutral package
+preview/artifact/proposal portion of Task 4.3 are implemented. Transactional
+reviewed installation, applicability, exact usage, and patch feedback remain
 open.
 
 **Milestone outcome:** Stable validated procedures become complete, reviewable,
@@ -1101,13 +1101,13 @@ host-neutral skill packages linked to their source research and actual usage.
 - Create: `tests/test_v5_project_skill_packages.py`
 - Modify: `brain/v5/domain_skill_shims.py`
 
-- [ ] Build complete package previews with manifest, provenance, references,
+- [x] Build complete package previews with manifest, provenance, references,
   scripts/templates when required, tests, version, and content hash.
-- [ ] Pin exact package bytes as an immutable artifact plus renderer/template
+- [x] Pin exact package bytes as an immutable artifact plus renderer/template
   version; hashes alone cannot stand in for missing unreconstructable bytes.
-- [ ] Store a canonical sorted package-tree manifest whose files resolve through
+- [x] Store a canonical sorted package-tree manifest whose files resolve through
   M2 content-addressed blob receipts; reject symlinks/special files.
-- [ ] Use a dedicated AITP-generated namespace.
+- [x] Use a dedicated AITP-generated namespace.
 - [ ] Bind install/overwrite approval to a typed human checkpoint, hash, target,
   and diff.
 - [ ] Run built-in declarative validators only; arbitrary commands use a

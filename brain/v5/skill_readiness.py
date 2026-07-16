@@ -230,6 +230,8 @@ def _installed_descriptors(ws: WorkspacePaths) -> tuple[list[dict], list[dict]]:
             except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
                 errors.append({"path": str(path), "error": str(exc)})
                 continue
+            if payload.get("catalog_state") == "preview":
+                continue
             descriptors.append(
                 {
                     **payload,
