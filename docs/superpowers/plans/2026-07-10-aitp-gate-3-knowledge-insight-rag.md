@@ -248,7 +248,7 @@ the Evidence/trust/pre-tool/promotion/validation core passed 162 tests; the
 checkpoint/source-policy consumer suite passed 102 tests; and the focused CLI,
 adapter, runtime, capability, compact-surface, and architecture suite passed 61
 tests. These are overlapping scoped suites, not additive full-suite counts.
-Task 3 is complete. Task 4 and overall M3 acceptance remain open.
+Tasks 3 and 4 are complete. Task 5 and overall M3 acceptance remain open.
 
 ## Task 3: Versioned Source Shelf And Structured Ingestion
 
@@ -365,7 +365,11 @@ system Temp; this task wrote no real-topic canonical records.
 - Create: `brain/v5/graph_retrieval.py`
 - Create: `brain/v5/retrieval_fusion.py`
 - Create: `brain/v5/knowledge_snapshot.py`
+- Create: `brain/v5/knowledge_snapshot_edges.py`
+- Create: `brain/v5/knowledge_retrieval_contracts.py`
+- Create: `brain/v5/knowledge_retrieval_metrics.py`
 - Create: `tests/test_v5_knowledge_retrieval.py`
+- Create: `tests/test_v5_knowledge_retrieval_resilience.py`
 - Create: `tests/fixtures/v5_retrieval/manifest.json`
 - Create: `tests/fixtures/v5_retrieval/qft_qg_queries.json`
 
@@ -375,34 +379,34 @@ system Temp; this task wrote no real-topic canonical records.
 - Produces: `search_fielded_lexical`, `search_formula`, `search_graph`, `search_dense_optional`
 - Produces: `fuse_knowledge_rankings(results, policy) -> KnowledgeRetrievalResult`
 
-- [ ] **Step 1: Build versioned evaluation fixtures before ranking code**
+- [x] **Step 1: Build versioned evaluation fixtures before ranking code**
 
 Include definitions, convention collisions, equivalent formula notation,
 nearby but wrong frameworks, source caveats, derivation dependencies,
 contradictory relations, grounded records, and speculative insights. Expected
 relevance judgments are exact refs with grades.
 
-- [ ] **Step 2: Implement deterministic fielded BM25-style baseline**
+- [x] **Step 2: Implement deterministic fielded BM25-style baseline**
 
 Index canonical names/aliases, formulas/symbols, framework/regime, assumptions,
 non-claims, source anchors, relation statements, and passage text as separate
 fields. Persist corpus statistics and expose field-level score contributions.
 
-- [ ] **Step 3: Implement formula normalization**
+- [x] **Step 3: Implement formula normalization**
 
 Normalize TeX whitespace, harmless delimiters, indexed dummy symbols, and
 commutative products only where declared safe. Preserve sign, normalization,
 operator order, indices, and convention fields. Return both normalized and
 original anchors.
 
-- [ ] **Step 4: Implement typed graph traversal**
+- [x] **Step 4: Implement typed graph traversal**
 
 Traverse object/relation, derivation dependency, source, proof-obligation, and
 formula-code edges with bounded depth and explicit path scores. Do not traverse
 cross-topic support unless the consumer resolves a valid, unexpired,
 unsuperseded exact `scope_revalidation_decision:` ref for the target scope.
 
-- [ ] **Step 5: Define optional dense interface and reciprocal-rank fusion**
+- [x] **Step 5: Define optional dense interface and reciprocal-rank fusion**
 
 Dense retrieval is absent-by-default and disposable. Fusion preserves component
 ranks/scores, grounded/speculative lane, scope filters, exclusions, and exact
@@ -411,8 +415,11 @@ refs. Generated query expansions have their own non-evidence provenance.
 Bind every component to the effective record-index generation, selected-family
 state/content watermarks, source-shelf generation/hash, and its component hash.
 The result reports component status, stale/dirty/errors, checked/excluded scope,
-fixed tie-break inputs, lane quotas, token allocation, truncation, and exact
-pagination. Incompatible generations cannot be labeled complete. A corrupt or
+fixed tie-break inputs, lane quotas, truncation, and exact pagination.
+Token allocation is owned by Task 5's context renderer, which consumes these
+ranked refs and reports its actual rendered budget; the retrieval layer must
+not invent a second token estimate. Incompatible generations cannot be labeled
+complete. A corrupt or
 missing formula sidecar degrades visibly to lexical/graph results. A missing or
 corrupt graph projection either reconstructs a bounded graph from canonical
 typed edges with checked paths/errors or degrades visibly to lexical-only;
@@ -430,7 +437,7 @@ Comparison/contradiction intent may return them only in a separate named lane.
 Fix RRF constants, weights, tie rules, lane quotas, and fixture thresholds in
 the versioned manifest before implementation.
 
-- [ ] **Step 6: Measure quality and contamination**
+- [x] **Step 6: Measure quality and contamination**
 
 Report recall@k, MRR/nDCG, exact-anchor recovery, convention mismatch rate,
 wrong-framework contamination, grounded/insight cross-contamination, and
@@ -441,9 +448,40 @@ Add primary-topic, program/shared, and discovery lane tests; local insight is
 isolated, every cross-topic assertion remains orientation until target review,
 and all claim-trust-transfer paths are rejected.
 
-- [ ] **Step 7: Run deterministic/repeatability tests and commit**
+- [x] **Step 7: Run deterministic/repeatability tests and commit**
 
 Commit message: `v5: add auditable hybrid knowledge retrieval`.
+
+**Task 4 implementation evidence (2026-07-16):**
+
+- Commit: `1bf62d55` (`v5: add auditable hybrid knowledge retrieval`).
+- The immutable `KnowledgeSnapshot` binds query-index root/delta generation,
+  selected-family state/content watermarks, optional exact source-shelf
+  generation/passages hash, per-record SHA-256 identity, and one snapshot hash.
+- Fielded BM25 persists field-level corpus statistics and score contributions.
+  A 7,000-record in-memory benchmark built the snapshot in `0.1651 s` and ran
+  the lexical query in `0.2806 s`; no canonical records were read or written by
+  that benchmark.
+- Formula normalization preserves sign/order/indices and only applies declared
+  dummy-symbol or commutative-product equivalence. Formula and graph components
+  reconstruct from bounded snapshot fields/typed edges when no sidecar exists.
+- Typed graph paths cover object/relation, derivation, source/proof links, and a
+  real formula-to-code-state vertical. Cross-topic traversal remains blocked
+  unless `assess_execution_scope` accepts an exact, current target-side
+  `scope_revalidation_decision:` pin; accepted hits remain discovery/orientation.
+- Dense retrieval is absent by default. Nondeterministic adapters are excluded
+  from deterministic queries; timeout, invalid contract, out-of-scope hits, and
+  wrong snapshot generation degrade visibly without discarding lexical results.
+- Fusion exposes component lineage, scope ordering, RRF ranks/scores, lane
+  quotas, unique exclusions, pagination/not-shown state, and incomplete
+  coverage. Retrieval hits and results are contractually unable to update claim
+  trust; incomplete or nonempty results cannot authorize an absence claim.
+- All four versioned QFT/QG queries meet fixture recall@3, MRR, and nDCG@3
+  thresholds. Exact formula-anchor recovery is `1.0`; wrong-framework,
+  convention-mismatch, and grounded/insight cross-contamination are `0.0`.
+- The exact staged candidate was rebuilt from `HEAD 52700984` in system Temp
+  and passed `131` focused regression tests in `27.55 s`, including query-index,
+  source-shelf, scope-revalidation, formula-code, and architecture boundaries.
 
 ## Task 5: Knowledge Context Slice
 
