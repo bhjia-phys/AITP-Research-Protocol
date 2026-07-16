@@ -46,17 +46,23 @@ def build_research_distillation_candidates(ws, session_id, *, limit=_DEFAULT_LIM
                         "physics_assertion_candidate",
                         "insight_candidate",
                         "tool_recipe_record",
-                        "procedural_skill_candidate",
+                        "skill_distillation_candidate_record",
                     ],
                 }
             )
         else:
-            candidate["knowledge_route"] = "procedural_review"
+            candidate.update(
+                {
+                    "knowledge_route": "procedural_review",
+                    "can_draft_reusable_block": False,
+                    "target_surfaces": _procedural_targets(candidate),
+                }
+            )
         candidates.append(candidate)
     payload["candidates"] = candidates
     payload["summary"] = _summary(candidates)
     routed_actions = [
-        f"split and review candidate {item['candidate_id']} before knowledge or Skill promotion"
+        f"split and review candidate {item['candidate_id']} before knowledge review or procedural candidate recording"
         for item in candidates
         if item.get("knowledge_route") == "mixed_split_required"
     ]
@@ -64,3 +70,12 @@ def build_research_distillation_candidates(ws, session_id, *, limit=_DEFAULT_LIM
         [*routed_actions, *list(payload.get("next_valid_actions") or [])]
     )
     return payload
+
+
+def _procedural_targets(candidate):
+    targets = [
+        value
+        for value in candidate.get("target_surfaces", [])
+        if value not in {"strategy_memory_record", "sensemaking_report_record"}
+    ]
+    return _dedupe([*targets, "skill_distillation_candidate_record"])

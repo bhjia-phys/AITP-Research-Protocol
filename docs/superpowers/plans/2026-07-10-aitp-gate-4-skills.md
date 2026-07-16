@@ -79,7 +79,7 @@ execution.
 - Produces: `build_skill_distillation_candidate(ws, request) -> CandidateBuildReport`
 - Produces: `record_skill_distillation_candidate(ws, report, *, actor) -> WriteResult`
 
-- [ ] **Step 1: Write failing procedural-only tests**
+- [x] **Step 1: Write failing procedural-only tests**
 
 Accept stabilized ordered steps, parameter roles/values, prerequisites, inputs,
 outputs, stop rules, known failures, recovery steps, validation refs, execution
@@ -87,9 +87,9 @@ refs, source topics, code/environment scope, applicability selectors, transfer
 boundary, and package requirements. Reject conceptual-only and source-summary
 inputs with explicit reason codes.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
-- [ ] **Step 3: Define candidate record**
+- [x] **Step 3: Define candidate record**
 
 Fields include candidate id/title/summary, source topic/program refs, workflow
 kind, ordered steps, parameter contract, inputs/outputs, prerequisites, stop
@@ -98,20 +98,36 @@ artifact/code/environment refs, applicability selectors, transfer boundary,
 package requirements, status, source refs, created time, and fixed
 `can_update_claim_trust=False`.
 
-- [ ] **Step 4: Aggregate independent executions without trust transfer**
+- [x] **Step 4: Aggregate independent executions without trust transfer**
 
 Match by normalized procedural signature plus declared scope. Preserve each run,
 validation, failure, code, environment, and topic separately. Cross-topic
 aggregation can demonstrate workflow repetition but never claim support.
 
-- [ ] **Step 5: Remove all semantic candidate paths from distillation**
+- [x] **Step 5: Remove all semantic candidate paths from distillation**
 
 Regression tests cover definitions, formulas, derivations, literature summaries,
 interpretations, and insights. Their correct route is M3.
 
-- [ ] **Step 6: Run distillation/knowledge/execution tests and commit**
+- [x] **Step 6: Run distillation/knowledge/execution tests and commit**
 
 Commit message: `v5: add procedural skill distillation records`.
+
+**Task 1 implementation evidence (2026-07-16):**
+
+- `SkillDistillationCandidateRecord` is a canonical v2 candidate-only family;
+  it pins recipes, final runs, passed validations, artifacts, code states,
+  environments, programs, and sources without claim-trust authority.
+- The builder verifies every run-level topic and provenance binding, preserves
+  all retries, and computes deterministic independent-execution groups rather
+  than counting duplicate run ids as independent uses.
+- Definition, formula, derivation, literature/source summary, interpretation,
+  and insight inputs fail with explicit M3 routing reasons. The legacy research
+  distillation wrapper now routes procedural material to the canonical
+  candidate record instead of a direct Skill proposal.
+- Focused Task 1, compatibility, registry, repository, execution, knowledge,
+  and architecture tests passed 86 tests before the final binding hardening;
+  the final binding-focused suite passed 29 tests.
 
 ## Task 2: Skill Readiness And Overlap Audit
 

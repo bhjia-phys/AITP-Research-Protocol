@@ -1,0 +1,28 @@
+"""Focused record-family metadata owned by the M4 reviewed-Skill vertical."""
+
+M4_REGISTRY_ROWS = (
+    (
+        "skill_distillation_candidates",
+        "skill_distillation_candidate",
+        "SkillDistillationCandidateRecord",
+        "candidate_id",
+    ),
+)
+
+M4_RECORD_ROLES = {"skill_distillation_candidates": "candidate_record"}
+M4_SCHEMA_VERSIONS = {"skill_distillation_candidates": "v2"}
+M4_CANDIDATE_ONLY_FAMILIES = frozenset({"skill_distillation_candidates"})
+M4_APPEND_ONLY_FAMILIES = frozenset()
+
+M4_DEPENDENCY_FIELDS = {
+    "skill_distillation_candidates": (
+        "recipe_refs[].record_ref",
+        "execution_refs[].record_ref",
+        "validation_refs[].record_ref",
+        "artifact_refs[].record_ref",
+        "code_state_refs[].record_ref",
+        "environment_refs[].record_ref",
+        "source_program_refs[].record_ref",
+        "source_refs[].record_ref",
+    ),
+}

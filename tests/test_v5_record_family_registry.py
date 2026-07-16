@@ -47,7 +47,7 @@ def test_record_family_registry_contract_is_self_consistent():
 
     assert payload["ok"] is True
     assert payload["errors"] == []
-    assert payload["registry_family_count"] == 62
+    assert payload["registry_family_count"] == 63
     assert payload["special_family_count"] == 4
     assert payload["truth_source"] == "record_family_specs"
     assert payload["can_update_kernel_state"] is False
@@ -100,6 +100,22 @@ def test_m3_source_acquisition_families_are_append_only_and_receipts_pin_decisio
             spec.participates_in
         )
     assert specs["source_acquisition_receipts"].dependency_fields == ("decision_ref",)
+
+
+def test_m4_skill_distillation_candidates_are_exact_and_candidate_only():
+    spec = record_family_specs()["skill_distillation_candidates"]
+
+    assert spec.schema_version == "v2"
+    assert spec.trust_effect == "candidate_only"
+    assert spec.record_role == "candidate_record"
+    assert spec.lifecycle_policy == "append_revision"
+    assert {
+        "execution_refs[].record_ref",
+        "validation_refs[].record_ref",
+        "artifact_refs[].record_ref",
+        "code_state_refs[].record_ref",
+        "environment_refs[].record_ref",
+    } <= set(spec.dependency_fields)
 
 
 def test_m1_lifecycle_families_are_trust_neutral_and_exact_expandable():

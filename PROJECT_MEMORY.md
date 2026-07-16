@@ -62,7 +62,11 @@ must follow the reviewed skill-candidate/install/use lifecycle.
   tools and loads no Skill installer by default.
 - Current scope is one project-local `SKILL.md`. Multi-file packages, rollback,
   cross-host installation, and skill-usage records remain future vertical-owned
-  work, not hidden implemented capability.
+  work, not hidden implemented capability. M4 Task 1 adds the canonical
+  `skill_distillation_candidate` family before that legacy proposal/install
+  path: it stores exact process/provenance pins, rejects semantic M3 content,
+  and cannot update claim trust. Readiness, package artifact, transactional
+  install, applicability, and usage records are still pending.
 
 ## Key Conventions
 

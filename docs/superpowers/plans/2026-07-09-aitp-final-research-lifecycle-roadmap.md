@@ -1054,6 +1054,11 @@ through auditable hybrid lanes and exposed through bounded context.
 
 **Detailed plan:** `docs/superpowers/plans/2026-07-10-aitp-gate-4-skills.md`
 
+**Status (2026-07-16): in progress.** Task 4.1 canonical procedural
+distillation candidates are implemented; readiness, package artifacts,
+transactional reviewed installation, applicability, and exact usage remain
+open.
+
 **Milestone outcome:** Stable validated procedures become complete, reviewable,
 host-neutral skill packages linked to their source research and actual usage.
 
@@ -1065,11 +1070,11 @@ host-neutral skill packages linked to their source research and actual usage.
 - Create: `tests/test_v5_skill_distillation_records.py`
 - Modify: `brain/v5/research_distillation.py`
 
-- [ ] Persist procedural candidates only.
-- [ ] Capture stabilized steps, parameters, inputs, outputs, stop rules,
+- [x] Persist procedural candidates only.
+- [x] Capture stabilized steps, parameters, inputs, outputs, stop rules,
   failures, validation, source records, scope, and transfer boundary.
-- [ ] Reject conceptual-only and source-summary candidates.
-- [ ] Aggregate independent executions without transferring claim trust.
+- [x] Reject conceptual-only and source-summary candidates.
+- [x] Aggregate independent executions without transferring claim trust.
 
 ### Task 4.2: Skill Readiness
 

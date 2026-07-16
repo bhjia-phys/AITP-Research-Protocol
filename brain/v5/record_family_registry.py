@@ -6,10 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from brain.v5 import models
-from brain.v5.record_family_m3 import (
-    M3_APPEND_ONLY_FAMILIES, M3_DEPENDENCY_FIELDS, M3_RECORD_ROLES,
-    M3_REGISTRY_ROWS, M3_SCHEMA_VERSIONS,
-)
+from brain.v5 import record_family_m3 as _m3, record_family_m4 as _m4
 
 
 @dataclass(frozen=True)
@@ -98,7 +95,7 @@ _REGISTRY_ROWS: tuple[tuple[str, str, str | None, str], ...] = (
     ("trust_updates", "trust_update", "TrustUpdateRecord", "update_id"),
     ("validation_contracts", "validation_contract", "ValidationContractRecord", "contract_id"),
     ("validation_results", "validation_result", "ValidationResultRecord", "result_id"),
-) + M3_REGISTRY_ROWS
+) + _m3.M3_REGISTRY_ROWS + _m4.M4_REGISTRY_ROWS
 
 _SPECIAL_ROWS: tuple[tuple[str, str, str, str, str, str], ...] = (
     ("contexts", "context", "ContextRecord", "context_id", "contexts/<context_id>/context.md", "context"),
@@ -163,7 +160,8 @@ _RECORD_ROLES = {
     "sessions": "runtime_binding",
     "source_assets": "orientation_only_record",
 }
-_RECORD_ROLES.update(M3_RECORD_ROLES)
+_RECORD_ROLES.update(_m3.M3_RECORD_ROLES)
+_RECORD_ROLES.update(_m4.M4_RECORD_ROLES)
 _SURFACES = {
     "quiet_checkpoints": "quiet_checkpoint_batch",
     "sessions": "session_binding",
@@ -193,7 +191,8 @@ _SCHEMA_VERSIONS = {
     "validation_contracts": "v2",
     "validation_results": "v2",
 }
-_SCHEMA_VERSIONS.update(M3_SCHEMA_VERSIONS)
+_SCHEMA_VERSIONS.update(_m3.M3_SCHEMA_VERSIONS)
+_SCHEMA_VERSIONS.update(_m4.M4_SCHEMA_VERSIONS)
 
 _DEPENDENCY_FIELDS = {
     "artifact_blob_receipts": (
@@ -282,7 +281,8 @@ _DEPENDENCY_FIELDS = {
         "tool_run_ref",
     ),
 }
-_DEPENDENCY_FIELDS.update(M3_DEPENDENCY_FIELDS)
+_DEPENDENCY_FIELDS.update(_m3.M3_DEPENDENCY_FIELDS)
+_DEPENDENCY_FIELDS.update(_m4.M4_DEPENDENCY_FIELDS)
 
 _LIFECYCLE_FAMILIES = {"claims", "evidence"}
 _APPEND_ONLY_FAMILIES = {
@@ -307,7 +307,7 @@ _APPEND_ONLY_FAMILIES = {
     "trust_updates",
     "cross_topic_relations",
     "derivation_reviews",
-} | M3_APPEND_ONLY_FAMILIES
+} | _m3.M3_APPEND_ONLY_FAMILIES | _m4.M4_APPEND_ONLY_FAMILIES
 _BOUNDED_AUTO_WRITE_FAMILIES = {
     "monitor_snapshots",
     "recall_audits",
@@ -340,7 +340,7 @@ _CANDIDATE_ONLY_FAMILIES = {
     "outputs",
     "questions",
     "sensemaking_reports",
-}
+} | _m4.M4_CANDIDATE_ONLY_FAMILIES
 
 
 def record_family_specs() -> dict[str, RecordFamilySpec]:

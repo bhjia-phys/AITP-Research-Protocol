@@ -73,6 +73,8 @@ def test_research_distillation_compiles_qsgw_method_candidate_from_run_journal(t
     assert candidate["can_promote_claim_trust"] is False
     assert candidate["missing_requirements"] == []
     assert "tool_recipe_record" in candidate["target_surfaces"]
+    assert "skill_distillation_candidate_record" in candidate["target_surfaces"]
+    assert "procedural_skill_candidate" not in candidate["target_surfaces"]
     assert "H2O QSGW first-iteration" in candidate["reuse_boundary"]["scope"]
     assert "evidence-qsgw-h2o-gap-audit" in candidate["source_records"]["evidence"]
     assert payload["distillation_boundary"]["does_not_create_skills"] is True
