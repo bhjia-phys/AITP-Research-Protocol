@@ -14,6 +14,7 @@ from brain.v5.context_compiler import (
     estimate_context_tokens,
 )
 from brain.v5.context_selection import merge_not_shown_reasons, select_candidate_summaries
+from brain.v5.knowledge_context_integration import profile_knowledge_request
 from brain.v5.context_pack_projection import (
     bounded_context_lines as _bounded_context_lines,
     compact_from_bundle as _compact_from_bundle,
@@ -39,6 +40,11 @@ def build_aitp_context_pack(
     user_goal: str = "",
     task_profile: str = "",
     recall_audit_ref: str = "",
+    knowledge_framework: str = "",
+    knowledge_regime: str = "",
+    knowledge_conventions: tuple[str, ...] = (),
+    knowledge_source_shelf_generation: str = "",
+    knowledge_source_shelf_topic_id: str = "",
 ) -> dict[str, Any]:
     """Build the bounded research-state slice intended for Codex turn input.
 
@@ -51,6 +57,12 @@ def build_aitp_context_pack(
     candidate_limit = max(1, min(int(candidate_limit), 8))
     selected_profile = _selected_context_profile(task_profile)
     profile_template_hint = _selected_profile_template_hint(task_profile)
+    knowledge_request = profile_knowledge_request(
+        ws, session_id, profile_id=task_profile, objective_text=objective_text,
+        user_goal=user_goal, framework=knowledge_framework, regime=knowledge_regime,
+        conventions=knowledge_conventions, source_shelf_generation=knowledge_source_shelf_generation,
+        source_shelf_topic_id=knowledge_source_shelf_topic_id,
+    )
     profile_warning = []
     if task_profile and not selected_profile:
         profile_warning.append(f"unknown_task_profile:{task_profile}")
@@ -63,6 +75,7 @@ def build_aitp_context_pack(
             objective_text=objective_text,
             user_goal=user_goal,
             recall_audit_ref=recall_audit_ref,
+            knowledge_request=knowledge_request,
             max_tokens=max_tokens,
             max_bytes=max_bytes,
             record_limit=max(24, candidate_limit * 8),
@@ -102,6 +115,8 @@ def build_aitp_context_pack(
     ]
     if profile_template_hint:
         derived_surfaces.append("context_profile_template_catalog")
+    if bundle.knowledge_context:
+        derived_surfaces.append("knowledge_context")
     source_records = _merge_source_records(
         compact.get("source_records") if isinstance(compact.get("source_records"), dict) else {},
         {"record_refs": list(bundle.record_refs)},
@@ -135,6 +150,7 @@ def build_aitp_context_pack(
         "warnings": list(compact.get("warnings") or []),
         "active_claim_focus_reconciliation": compact.get("active_claim_focus_reconciliation") or {},
         "retrieval_coverage": bundle.coverage,
+        "knowledge_context": bundle.knowledge_context,
         "index_status": bundle.index_status,
         "source_index_generation": bundle.source_index_generation,
         "partial": bool(bundle.partial or projection_omitted),
@@ -296,6 +312,13 @@ def _context_lines(payload: dict[str, Any], compact: dict[str, Any]) -> list[str
                 "",
             ]
         )
+    knowledge = payload.get("knowledge_context") if isinstance(payload.get("knowledge_context"), dict) else {}
+    if knowledge:
+        lines.extend([
+            f"Physics knowledge: {len(knowledge.get('entries') or [])} bounded entries; partial={bool(knowledge.get('partial'))}.",
+            "Physics knowledge exact expansion handles are available; this slice cannot update claim trust.",
+            "",
+        ])
     if payload.get("not_authoritative_for_current_goal_if_rebind_needed"):
         reconciliation = payload.get("active_claim_focus_reconciliation") or {}
         lines.extend(

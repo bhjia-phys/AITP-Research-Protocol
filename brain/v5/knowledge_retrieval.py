@@ -143,6 +143,7 @@ class KnowledgeRetrievalCoverage:
     checked_scope: dict[str, Any]
     excluded_scope: dict[str, int]
     pagination: dict[str, Any]
+    not_shown_refs: tuple[str, ...] = ()
     errors: tuple[str, ...] = ()
     truncated: bool = False
 
@@ -309,6 +310,15 @@ def _eligible_items(
                 continue
         eligible.append((item, lane))
     return eligible, excluded
+
+
+def eligible_knowledge_items(
+    snapshot: KnowledgeSnapshot,
+    query: KnowledgeQuery,
+) -> tuple[list[tuple[KnowledgeSnapshotItem, str]], dict[str, int]]:
+    """Apply the canonical knowledge scope and compatibility policy."""
+
+    return _eligible_items(snapshot, query)
 
 
 def _item_fields(item: KnowledgeSnapshotItem) -> dict[str, tuple[str, ...]]:
@@ -482,6 +492,7 @@ __all__ = [
     "KnowledgeRetrievalCoverage",
     "KnowledgeRetrievalHit",
     "KnowledgeRetrievalResult",
+    "eligible_knowledge_items",
     "evaluate_ranked_refs",
     "search_fielded_lexical",
 ]

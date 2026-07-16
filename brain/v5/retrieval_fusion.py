@@ -256,10 +256,12 @@ def fuse_knowledge_rankings(
     quotas = {key: int(value) for key, value in selected["lane_quotas"].items()}
     lane_counts: dict[str, int] = {}
     fused_all: list[KnowledgeRetrievalHit] = []
+    quota_excluded_refs: list[str] = []
     for row in ordered:
         hit = row["hit"]
         quota = quotas.get(hit.lane, query.max_results)
         if lane_counts.get(hit.lane, 0) >= quota:
+            quota_excluded_refs.append(hit.record_ref)
             continue
         lane_counts[hit.lane] = lane_counts.get(hit.lane, 0) + 1
         fused_all.append(
@@ -277,6 +279,15 @@ def fuse_knowledge_rankings(
     page_start = query.page_offset
     page_end = page_start + query.max_results
     fused = fused_all[page_start:page_end]
+    not_shown_refs = tuple(
+        dict.fromkeys(
+            [
+                *(hit.record_ref for hit in fused_all[:page_start]),
+                *(hit.record_ref for hit in fused_all[page_end:]),
+                *quota_excluded_refs,
+            ]
+        )
+    )
     component_truncated = any(
         bool(result.coverage.get("truncated")) for result in compatible
     )
@@ -368,6 +379,7 @@ def fuse_knowledge_rankings(
             )
         },
         pagination=pagination,
+        not_shown_refs=not_shown_refs,
         errors=tuple(dict.fromkeys(errors)),
         truncated=(
             component_truncated

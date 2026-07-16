@@ -305,7 +305,10 @@ def _rows_from_source_shelf(catalog: Mapping[str, Any]) -> list[dict[str, Any]]:
                     "canonical_name": [document["title"]],
                     "passage_text": [chunk["text"]],
                     "statement": [chunk["summary"]],
+                    "source_asset_ref": [anchor["source_asset_ref"]],
                     "source_anchors": list(anchor["source_location_refs"]),
+                    "anchor_kinds": list(anchor["anchor_kinds"]),
+                    "anchor_labels": list(anchor["anchor_labels"]),
                 },
                 "links": [anchor["source_asset_ref"], *anchor["source_location_refs"]],
             }
@@ -336,6 +339,7 @@ def _retrieval_fields(frontmatter: Mapping[str, Any], body: str) -> dict[str, li
         ),
         "assumptions": _values(frontmatter, "assumptions", "conditions", "unresolved_conditions"),
         "non_claims": _values(frontmatter, "non_claims", "failure_modes", "falsifiers"),
+        "speculation": _values(frontmatter, "speculation_level", "insight_kind"),
         "source_anchors": _values(
             frontmatter,
             "source_refs",

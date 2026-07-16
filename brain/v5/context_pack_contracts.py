@@ -6,6 +6,7 @@ from typing import Any
 
 from brain.v5.context_compiler import estimate_context_tokens
 from brain.v5.context_selection import NOT_SHOWN_REASON_CODES
+from brain.v5.knowledge_context_integration import knowledge_context_payload_errors
 from brain.v5.contracts import (
     ContractError,
     ContractResult,
@@ -62,6 +63,10 @@ def validate_aitp_context_pack(payload: dict[str, Any], *, path: str = "aitp_con
     _require_mapping(payload.get("expand"), f"{path}.expand", result)
     _require_mapping(payload.get("source_records"), f"{path}.source_records", result)
     _require_mapping(payload.get("retrieval_coverage"), f"{path}.retrieval_coverage", result)
+    _require_mapping(payload.get("knowledge_context"), f"{path}.knowledge_context", result)
+    if isinstance(payload.get("knowledge_context"), dict):
+        for suffix, message in knowledge_context_payload_errors(payload["knowledge_context"]):
+            result.add(f"{path}.knowledge_context.{suffix}", message)
     _require_mapping(payload.get("context_budget"), f"{path}.context_budget", result)
     _require_list(payload.get("record_refs"), f"{path}.record_refs", result)
     _validate_compiled_budget(payload, path, result)

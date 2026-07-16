@@ -5,9 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from brain.v5.indexed_topic_snapshot import (
-    load_indexed_topic_snapshot,
-)
+from brain.v5.indexed_topic_snapshot import load_indexed_topic_snapshot
 from brain.v5.context_selection import candidate_not_shown, select_candidate_summaries
 from brain.v5.context_compiler_support import (
     DEFAULT_CONTEXT_FAMILIES,
@@ -37,22 +35,20 @@ from brain.v5.context_disclosure import (
     scope_payload,
     validate_disclosure_level,
 )
-from brain.v5.context_recall import (
-    RecallContextError,
-    RecallContextFacts,
-    build_recall_context_facts,
-)
+from brain.v5.context_recall import RecallContextError, RecallContextFacts, build_recall_context_facts
 from brain.v5.formula_code_contracts import context_request_for_code_edit_capsule
+from brain.v5.knowledge_context_contracts import KnowledgeContextRequest
+from brain.v5.knowledge_context_integration import (
+    compile_requested_knowledge_context,
+    knowledge_context_handles,
+    knowledge_context_lines,
+    knowledge_coverage,
+)
 from brain.v5.paths import WorkspacePaths
 from brain.v5.query_index import build_query_index, load_query_manifest
 from brain.v5.record_envelope import RecordActor
 from brain.v5.record_repository import RecordRepository
-from brain.v5.research_retrieval import (
-    QuerySnapshotSession,
-    ResearchQuery,
-    RetrievalResult,
-    query_records,
-)
+from brain.v5.research_retrieval import QuerySnapshotSession, ResearchQuery, RetrievalResult, query_records
 from brain.v5.research_scope import ScopeResolution, resolve_session_scope
 
 
@@ -74,6 +70,7 @@ class ContextRequest:
     recall_audit_ref: str = ""
     exact_refs: tuple[str, ...] = ()
     exact_pins: tuple[Any, ...] = ()
+    knowledge_request: KnowledgeContextRequest | None = None
     families: tuple[str, ...] = _DEFAULT_CONTEXT_FAMILIES
     max_tokens: int = 1200
     max_bytes: int = 6000
@@ -89,6 +86,10 @@ class ContextRequest:
             raise ValueError("exact_expansion requires at least one exact ref")
         if not isinstance(self.include_cross_topic_discovery, bool):
             raise ValueError("include_cross_topic_discovery must be a boolean")
+        if self.knowledge_request is not None and not isinstance(
+            self.knowledge_request, KnowledgeContextRequest
+        ):
+            raise TypeError("knowledge_request must be a KnowledgeContextRequest")
         if self.max_tokens < 64:
             raise ValueError("max_tokens must be at least 64")
         if self.max_bytes < 384:
@@ -116,6 +117,7 @@ class ContextBundle:
     candidate_summaries: tuple[dict[str, Any], ...]
     record_refs: tuple[str, ...]
     expansion: dict[str, Any]
+    knowledge_context: dict[str, Any]
     coverage: dict[str, Any]
     read_errors: tuple[str, ...]
     not_found_refs: tuple[str, ...]
@@ -200,6 +202,16 @@ def compile_research_context(
     if request.disclosure_level == "route_hint":
         return _compile_route_hint(ws, request, scope)
 
+    knowledge_context = compile_requested_knowledge_context(
+        ws,
+        request.knowledge_request,
+        topic_id=topic_id,
+        program_id=scope.program_id,
+        disclosure_level=request.disclosure_level,
+        max_tokens=request.max_tokens,
+        max_bytes=request.max_bytes,
+    )
+
     if request.disclosure_level == "exact_expansion":
         result, expansion = _exact_disclosure_result(ws, request)
     else:
@@ -234,6 +246,7 @@ def compile_research_context(
         expansion=expansion,
         blocked_explicit_refs=blocked_explicit_refs,
         recall=recall,
+        knowledge_context=knowledge_context,
     )
 
 
@@ -244,6 +257,7 @@ def _compile_route_hint(
 ) -> ContextBundle:
     refs = route_hint_refs(scope)
     coverage = route_hint_coverage()
+    coverage.update(knowledge_coverage({}))
     raw_markdown = route_hint_markdown(scope, refs)
     markdown, budget_truncated = _bounded_markdown(
         raw_markdown.rstrip().splitlines(),
@@ -278,6 +292,7 @@ def _compile_route_hint(
             "requires_explicit_call": True,
             "full_record_bodies_in_default_context": False,
         },
+        knowledge_context={},
         coverage=coverage,
         read_errors=scope.read_errors,
         not_found_refs=(),
@@ -310,6 +325,7 @@ def _bundle_from_result(
     expansion: dict[str, Any],
     blocked_explicit_refs: tuple[str, ...],
     recall: RecallContextFacts,
+    knowledge_context: dict[str, Any],
 ) -> ContextBundle:
     topic_id = scope.primary_topic_id
     item_by_ref = {item.record_ref: item for item in result.items}
@@ -360,6 +376,7 @@ def _bundle_from_result(
     coverage["retrieval_can_claim_no_result"] = bool(coverage["can_claim_no_result"])
     coverage["can_claim_no_result"] = recall.can_claim_no_result
     coverage.update(recall.coverage)
+    coverage.update(knowledge_coverage(knowledge_context))
     scope_data = scope_payload(scope)
     scope_data["blocked_explicit_refs"] = list(blocked_explicit_refs)
     scope_data["not_shown_refs"] = list(
@@ -388,6 +405,7 @@ def _bundle_from_result(
         scope=scope_data,
     )
     lines.extend(recall.lines)
+    lines.extend(knowledge_context_lines(knowledge_context))
     markdown, budget_truncated = _bounded_markdown(
         lines,
         max_bytes=request.max_bytes,
@@ -406,6 +424,7 @@ def _bundle_from_result(
         or scope.excluded_refs
         or blocked_explicit_refs
         or recall.partial
+        or bool(knowledge_context.get("partial"))
     )
     can_claim_no_prior_result = bool(
         request.disclosure_level == "normal_research"
@@ -435,6 +454,7 @@ def _bundle_from_result(
     handles["exact_expansion_ref_count"] = len(expansion_refs)
     handles["exact_expansion_refs_truncated"] = len(expansion_refs) > 20
     handles["blocked_refs_require_exact_expansion"] = bool(blocked_explicit_refs)
+    handles.update(knowledge_context_handles(knowledge_context))
     return ContextBundle(
         session_id=request.session_id,
         topic_id=topic_id,
@@ -449,6 +469,7 @@ def _bundle_from_result(
         candidate_summaries=candidate_summaries,
         record_refs=record_refs,
         expansion=expansion,
+        knowledge_context=knowledge_context,
         coverage=coverage,
         read_errors=read_errors,
         not_found_refs=not_found_refs,
