@@ -142,34 +142,52 @@ Commit message: `v5: add procedural skill distillation records`.
 - Adds family: `skill_readiness_reports`
 - Produces: `assess_skill_readiness(ws, candidate_ref) -> SkillReadinessReportRecord`
 
-- [ ] **Step 1: Write failing readiness matrix tests**
+- [x] **Step 1: Write failing readiness matrix tests**
 
 Default readiness requires two independent validated uses, or one narrow
 validated use plus a decided expert-exception checkpoint. Require at least one
 relevant negative/failure case or an explicit justified none-known boundary,
 stable applicability, complete stop rules, and an executable validation fixture.
 
-- [ ] **Step 2: Test independence**
+- [x] **Step 2: Test independence**
 
 Two retries of one scientific run, duplicated records, the same artifact, or
 the same code/environment snapshot do not count as independent uses. Distinct
 topics may count only for workflow validation, not trust transfer.
 
-- [ ] **Step 3: Implement installed/external overlap audit**
+- [x] **Step 3: Implement installed/external overlap audit**
 
 Compare normalized purpose, selectors, steps, command templates, files, and
 declared domain against AITP-generated catalog and external/domain shims. Return
 `new`, `extension_candidate`, `duplicate`, or `conflict` with exact refs.
 
-- [ ] **Step 4: Persist readiness reasons and missing requirements**
+- [x] **Step 4: Persist readiness reasons and missing requirements**
 
 Reports contain checked refs, validation fixture refs, failures, overlap,
 blockers, required actions, status, and trust-neutral boundary. Readiness does
 not create a package.
 
-- [ ] **Step 5: Run readiness/domain-shim tests and commit**
+- [x] **Step 5: Run readiness/domain-shim tests and commit**
 
 Commit message: `v5: assess reviewed skill readiness`.
+
+**Task 2 implementation evidence (2026-07-16):**
+
+- Readiness defaults to two deterministic independent-use groups. One narrow
+  use is accepted only with a current v2 bound checkpoint whose exact candidate
+  pin, action, payload hash, scope, effect policy, and host receipt all verify.
+- Failure coverage accepts either typed failure/recovery rows or an explicit
+  none-known boundary. Stop rules, stable selectors, and a declared validation
+  fixture remain mandatory.
+- Project-local `aitp-generated` manifests and external domain-pack Skill refs
+  are classified as `new`, `extension_candidate`, `duplicate`, or `conflict`.
+  Duplicate/conflict and malformed catalog state block package readiness;
+  extension overlap remains visible for review.
+- The canonical readiness writer recomputes the current report before writing,
+  so a shape-valid forged `ready` result or post-assessment catalog drift cannot
+  enter the graph. No readiness path installs files or updates claim trust.
+- Task 2 broad checkpoint/domain/registry/query/architecture regression passed
+  108 tests; the final forged-report and focused suite passed 34 tests.
 
 ## Task 3: Host-Neutral Package Preview
 

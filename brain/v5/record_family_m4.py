@@ -7,12 +7,21 @@ M4_REGISTRY_ROWS = (
         "SkillDistillationCandidateRecord",
         "candidate_id",
     ),
+    (
+        "skill_readiness_reports",
+        "skill_readiness_report",
+        "SkillReadinessReportRecord",
+        "report_id",
+    ),
 )
 
-M4_RECORD_ROLES = {"skill_distillation_candidates": "candidate_record"}
-M4_SCHEMA_VERSIONS = {"skill_distillation_candidates": "v2"}
+M4_RECORD_ROLES = {
+    "skill_distillation_candidates": "candidate_record",
+    "skill_readiness_reports": "process_record",
+}
+M4_SCHEMA_VERSIONS = {family: "v2" for family, *_rest in M4_REGISTRY_ROWS}
 M4_CANDIDATE_ONLY_FAMILIES = frozenset({"skill_distillation_candidates"})
-M4_APPEND_ONLY_FAMILIES = frozenset()
+M4_APPEND_ONLY_FAMILIES = frozenset({"skill_readiness_reports"})
 
 M4_DEPENDENCY_FIELDS = {
     "skill_distillation_candidates": (
@@ -24,5 +33,9 @@ M4_DEPENDENCY_FIELDS = {
         "environment_refs[].record_ref",
         "source_program_refs[].record_ref",
         "source_refs[].record_ref",
+    ),
+    "skill_readiness_reports": (
+        "candidate_ref.record_ref",
+        "expert_exception_ref.record_ref",
     ),
 }

@@ -47,7 +47,7 @@ def test_record_family_registry_contract_is_self_consistent():
 
     assert payload["ok"] is True
     assert payload["errors"] == []
-    assert payload["registry_family_count"] == 63
+    assert payload["registry_family_count"] == 64
     assert payload["special_family_count"] == 4
     assert payload["truth_source"] == "record_family_specs"
     assert payload["can_update_kernel_state"] is False
@@ -116,6 +116,19 @@ def test_m4_skill_distillation_candidates_are_exact_and_candidate_only():
         "code_state_refs[].record_ref",
         "environment_refs[].record_ref",
     } <= set(spec.dependency_fields)
+
+
+def test_m4_skill_readiness_reports_are_append_only_process_records():
+    spec = record_family_specs()["skill_readiness_reports"]
+
+    assert spec.schema_version == "v2"
+    assert spec.trust_effect == "none"
+    assert spec.record_role == "process_record"
+    assert spec.lifecycle_policy == "append_only"
+    assert spec.dependency_fields == (
+        "candidate_ref.record_ref",
+        "expert_exception_ref.record_ref",
+    )
 
 
 def test_m1_lifecycle_families_are_trust_neutral_and_exact_expandable():

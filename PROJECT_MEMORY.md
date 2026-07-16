@@ -65,8 +65,10 @@ must follow the reviewed skill-candidate/install/use lifecycle.
   work, not hidden implemented capability. M4 Task 1 adds the canonical
   `skill_distillation_candidate` family before that legacy proposal/install
   path: it stores exact process/provenance pins, rejects semantic M3 content,
-  and cannot update claim trust. Readiness, package artifact, transactional
-  install, applicability, and usage records are still pending.
+  and cannot update claim trust. M4 Task 2 adds append-only readiness reports
+  with independent-use, failure/fixture, exact expert-exception, and
+  installed/external overlap checks. Package artifacts, transactional install,
+  applicability, and usage records are still pending.
 
 ## Key Conventions
 

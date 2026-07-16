@@ -96,6 +96,7 @@ def build_skill_distillation_candidate(
         applicability_selectors=dict(request.applicability_selectors),
         transfer_boundary=request.transfer_boundary.strip(),
         package_requirements=_strings(request.package_requirements),
+        failure_boundary=request.failure_boundary.strip(),
         created_at=created_at,
     )
     require_valid_skill_distillation_candidate(candidate)
@@ -199,7 +200,7 @@ def _missing_requirements(
         "outputs": request.outputs,
         "prerequisites": request.prerequisites,
         "stop_rules": request.stop_rules,
-        "known_failures_and_recovery": request.known_failures,
+        "failure_coverage": request.known_failures or request.failure_boundary.strip(),
         "applicability_selectors": request.applicability_selectors,
         "transfer_boundary": request.transfer_boundary.strip(),
         "package_requirements": request.package_requirements,

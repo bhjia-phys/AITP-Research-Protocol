@@ -1054,8 +1054,8 @@ through auditable hybrid lanes and exposed through bounded context.
 
 **Detailed plan:** `docs/superpowers/plans/2026-07-10-aitp-gate-4-skills.md`
 
-**Status (2026-07-16): in progress.** Task 4.1 canonical procedural
-distillation candidates are implemented; readiness, package artifacts,
+**Status (2026-07-16): in progress.** Tasks 4.1-4.2 canonical procedural
+distillation and readiness/overlap reports are implemented; package artifacts,
 transactional reviewed installation, applicability, and exact usage remain
 open.
 
@@ -1083,12 +1083,12 @@ host-neutral skill packages linked to their source research and actual usage.
 - Create: `brain/v5/skill_readiness_contracts.py`
 - Create: `tests/test_v5_skill_readiness.py`
 
-- [ ] Require two independent validated uses or one validated narrow use plus a
+- [x] Require two independent validated uses or one validated narrow use plus a
   typed expert exception.
-- [ ] Require relevant failure/negative coverage, stable boundary, and executable
+- [x] Require relevant failure/negative coverage, stable boundary, and executable
   validation fixture.
-- [ ] Detect overlap and duplication with installed/external skills.
-- [ ] Persist readiness reasons and missing requirements.
+- [x] Detect overlap and duplication with installed/external skills.
+- [x] Persist readiness reasons and missing requirements.
 
 ### Task 4.3: Host-Neutral Skill Package And Review-Gated Install
 

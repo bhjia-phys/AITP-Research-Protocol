@@ -90,7 +90,6 @@ def validate_skill_distillation_candidate(
         "outputs",
         "prerequisites",
         "stop_rules",
-        "known_failures",
         "independent_execution_keys",
         "package_requirements",
         "recipe_refs",
@@ -117,6 +116,14 @@ def validate_skill_distillation_candidate(
         result.add(f"{path}.input_kinds", f"semantic kinds must route to M3: {forbidden}")
     _validate_steps(payload.get("ordered_steps"), f"{path}.ordered_steps", result)
     _validate_failures(payload.get("known_failures"), f"{path}.known_failures", result)
+    failure_boundary = payload.get("failure_boundary")
+    if not isinstance(failure_boundary, str):
+        result.add(f"{path}.failure_boundary", "must be a string")
+    if not payload.get("known_failures") and not str(failure_boundary or "").strip():
+        result.add(
+            f"{path}.failure_boundary",
+            "must justify none-known when known_failures is empty",
+        )
     for field in _PIN_FIELDS:
         _validate_pins(payload.get(field), f"{path}.{field}", result)
     for field, expected in (
