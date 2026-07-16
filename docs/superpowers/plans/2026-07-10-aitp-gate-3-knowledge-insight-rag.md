@@ -248,7 +248,7 @@ the Evidence/trust/pre-tool/promotion/validation core passed 162 tests; the
 checkpoint/source-policy consumer suite passed 102 tests; and the focused CLI,
 adapter, runtime, capability, compact-surface, and architecture suite passed 61
 tests. These are overlapping scoped suites, not additive full-suite counts.
-Task 3 and overall M3 acceptance remain open.
+Task 3 is complete. Task 4 and overall M3 acceptance remain open.
 
 ## Task 3: Versioned Source Shelf And Structured Ingestion
 
@@ -284,30 +284,30 @@ Task 3 and overall M3 acceptance remain open.
   `SourceAcquisitionReceiptRecord`, and `apply_source_acquisition_receipt`
 - Adds families: `source_acquisition_decisions`, `source_acquisition_receipts`
 
-- [ ] **Step 1: Write failing source identity/version tests**
+- [x] **Step 1: Write failing source identity/version tests**
 
 Require source-asset ref, canonical URI, content hash, access/license note,
 reader/extractor version, curation rationale, acquired time, and stale-source
 diagnostics. Changed source bytes create a new derived generation.
 
-- [ ] **Step 2: Write failing physics-aware chunk tests**
+- [x] **Step 2: Write failing physics-aware chunk tests**
 
 Boundaries preserve definitions, equations/labels, theorem/proposition labels,
 derivation steps, figures/captions, caveats, bibliography anchors, symbols,
 assumptions, nearby prose, page/section, and exact source-location refs.
 
-- [ ] **Step 3: Implement a derived manifest, not a new truth store**
+- [x] **Step 3: Implement a derived manifest, not a new truth store**
 
 Source assets and reference locations remain canonical. Shelf manifests and
 passages live under the disposable knowledge index. Store bounded passage text
 and hashes; retain local source URI for reopening full content.
 
-- [ ] **Step 4: Record failures and conservative access behavior**
+- [x] **Step 4: Record failures and conservative access behavior**
 
 Encrypted, missing, unsupported, changed, or license-restricted sources produce
 explicit issues and incomplete coverage. Never silently omit a requested source.
 
-- [ ] **Step 4a: Enforce typed acquisition and source reconstruction**
+- [x] **Step 4a: Enforce typed acquisition and source reconstruction**
 
 Bind allow/deny/review decision, policy basis, access/license disposition,
 storage permission, connector/collector, canonical URI/identifier dedup key,
@@ -322,12 +322,12 @@ Unresolved labels and arbitrary `paper:*` strings remain orientation only and
 cannot satisfy completeness. Replace the old false-complete fixture with
 positive hash-pinned and negative unresolved/hash-mismatch cases.
 
-- [ ] **Step 5: Preserve curated RAG compatibility**
+- [x] **Step 5: Preserve curated RAG compatibility**
 
 Existing curated corpus/search/chunk APIs become adapters over the source shelf
 where available and remain trust-neutral.
 
-- [ ] **Step 6: Add bounded autonomous discovery handoff**
+- [x] **Step 6: Add bounded autonomous discovery handoff**
 
 Build a request only from a persisted recall/knowledge gap. Bind normalized
 query, topic/program/focus, framework/regime, required source types, prior audit
@@ -339,11 +339,23 @@ and location may enter source intake/shelf. Test repeated requests, wrong
 framework, duplicate identifiers, partial connector failure, license denial,
 and result-budget enforcement.
 
-- [ ] **Step 7: Run shelf/discovery/intake regressions and commit**
+- [x] **Step 7: Run shelf/discovery/intake regressions and commit**
 
 Run source shelf, literature discovery/intake, connector, extraction, candidate,
 registry, delta-index, and trust-boundary tests. Commit message:
 `v5: add versioned physics source shelf and discovery`.
+
+Completion evidence refreshed 2026-07-16: typed acquisition, exact source-byte
+binding, and reconstruction hardening landed in `7963be08`, `96864b73`, and
+`35702817`; the versioned source shelf and hardening landed in `412d3e2c` and
+`a8727a87`; bounded discovery landed in `f3896c02`; and the curated-RAG
+source-shelf adapter landed in `c8c06b34`. The final Task 3 broad suite passed
+299 tests across shelf, acquisition, discovery/intake/connectors,
+reconstruction, knowledge candidates, registry, query-index, evidence/trust,
+capability/public surfaces, and architecture. The exact staged adapter core
+passed 56 tests, and an independent final review reported no Critical,
+Important, or Minor findings and marked the change Approved. All tests ran in
+system Temp; this task wrote no real-topic canonical records.
 
 ## Task 4: Hybrid Retrieval Components And Fusion
 
