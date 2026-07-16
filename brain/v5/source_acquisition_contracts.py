@@ -86,7 +86,7 @@ def validate_source_acquisition_receipt_record(
     ):
         errors.append("errors must be a list of non-empty strings")
     if record.status == "succeeded":
-        if not _SHA256.fullmatch(record.byte_sha256):
+        if not isinstance(record.byte_sha256, str) or not _SHA256.fullmatch(record.byte_sha256):
             errors.append("byte_sha256 must be a lowercase SHA-256 digest for succeeded receipts")
         if record.hash_algorithm != "sha256":
             errors.append("hash_algorithm must be sha256 for succeeded receipts")

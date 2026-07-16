@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 
 def _record_complete_reconstruction_components(
     ws, claim, source_refs, *, supports_outputs=None
@@ -293,6 +295,152 @@ def test_source_reconstruction_accepts_exact_hash_pinned_acquisition(tmp_path):
     ]
     assert payload["components"]["dependency_graph"]["record_ids"] == [relation.relation_id]
     assert payload["components"]["reconstruction_path"]["record_ids"] == [evidence.evidence_id]
+
+
+@pytest.mark.parametrize(
+    ("mutation", "expected_code"),
+    [
+        ("missing", "source_blob_missing"),
+        ("changed", "source_blob_hash_mismatch"),
+    ],
+)
+def test_source_reconstruction_rechecks_current_blob_bytes(
+    tmp_path,
+    mutation,
+    expected_code,
+):
+    from pathlib import Path
+
+    from brain.v5.references import record_reference_location
+    from brain.v5.source_assets import acquire_pdf_source_asset
+    from brain.v5.source_reconstruction import audit_source_reconstruction
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="The counting sequence identifies the edge CFT in the recorded sector.",
+        evidence_profile="literature",
+        confidence_state="hypothesis",
+        active_uncertainty="finite-size aliasing",
+        scope="Fixed sector, finite-size counting table.",
+        strongest_failure_mode="wrong sector assignment",
+    )
+    pdf = tmp_path / "counting-current-bytes.pdf"
+    pdf.write_bytes(b"%PDF-1.4\nsource reconstruction\n%%EOF\n")
+    asset = acquire_pdf_source_asset(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        url=pdf.resolve().as_uri(),
+        title="Counting reference",
+    )
+    location = record_reference_location(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        connector_id="local_pdf",
+        location_type="paper",
+        uri=asset.uri,
+        label=asset.title,
+        source_ref=f"source_asset:{asset.asset_id}",
+    )
+    _record_complete_reconstruction_components(
+        ws,
+        claim,
+        [
+            f"reference_location:{location.location_id}",
+            f"source_asset:{asset.asset_id}",
+        ],
+    )
+    blob = Path(asset.metadata["local_path"])
+    if mutation == "missing":
+        blob.unlink()
+    else:
+        blob.write_bytes(b"%PDF-1.4\nchanged after acquisition\n%%EOF\n")
+
+    payload = audit_source_reconstruction(ws, claim_id=claim.claim_id)
+
+    assert payload["complete"] is False
+    assert payload["missing_components"] == ["source_locations"]
+    assert payload["source_resolution"]["resolved_location_ids"] == []
+    assert {issue["code"] for issue in payload["source_resolution"]["issues"]} == {
+        expected_code
+    }
+
+
+def test_source_reconstruction_rejects_cross_topic_reference_location(tmp_path):
+    from dataclasses import replace
+
+    from brain.v5.pinned_record_refs import pin_current_record
+    from brain.v5.references import record_reference_location
+    from brain.v5.record_envelope import RecordActor
+    from brain.v5.record_repository import RecordRepository, WritePolicy
+    from brain.v5.source_assets import acquire_pdf_source_asset
+    from brain.v5.source_reconstruction import audit_source_reconstruction
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    create_topic(ws, "other-topic", context_id="other", title="Other topic")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="The counting sequence identifies the edge CFT in the recorded sector.",
+        evidence_profile="literature",
+        confidence_state="hypothesis",
+        active_uncertainty="finite-size aliasing",
+        scope="Fixed sector, finite-size counting table.",
+        strongest_failure_mode="wrong sector assignment",
+    )
+    pdf = tmp_path / "cross-topic-location.pdf"
+    pdf.write_bytes(b"%PDF-1.4\nsource reconstruction\n%%EOF\n")
+    asset = acquire_pdf_source_asset(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        url=pdf.resolve().as_uri(),
+        title="Counting reference",
+    )
+    location = record_reference_location(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        connector_id="local_pdf",
+        location_type="paper",
+        uri=asset.uri,
+        label=asset.title,
+        source_ref=f"source_asset:{asset.asset_id}",
+    )
+    _record_complete_reconstruction_components(
+        ws,
+        claim,
+        [
+            f"reference_location:{location.location_id}",
+            f"source_asset:{asset.asset_id}",
+        ],
+    )
+    location_ref = f"reference_location:{location.location_id}"
+    current_pin = pin_current_record(ws, location_ref)
+    RecordRepository(
+        ws,
+        actor=RecordActor(actor_type="tool", actor_id="cross-topic-test", host="pytest"),
+    ).write(
+        "reference_locations",
+        replace(location, topic_id="other-topic"),
+        body="# Cross-topic revision\n\nMalformed migrated location fixture.\n",
+        policy=WritePolicy(mode="revision", expected_hash=current_pin.content_hash),
+    )
+
+    payload = audit_source_reconstruction(ws, claim_id=claim.claim_id)
+
+    assert payload["complete"] is False
+    assert payload["missing_components"] == ["source_locations"]
+    assert {issue["code"] for issue in payload["source_resolution"]["issues"]} == {
+        "reference_location_topic_mismatch"
+    }
 
 
 def test_source_reconstruction_audit_cli_mcp_and_runtime(tmp_path, capsys):

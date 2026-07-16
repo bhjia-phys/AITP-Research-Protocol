@@ -271,6 +271,12 @@ def test_contracts_reject_trust_mutation_and_bad_success_records(tmp_path):
     assert "status" in " ".join(
         validate_source_acquisition_receipt_record(replace(receipt, status=[]))
     )
+    for malformed_hash in ([], 0, False, None):
+        assert "byte_sha256" in " ".join(
+            validate_source_acquisition_receipt_record(
+                replace(receipt, byte_sha256=malformed_hash)
+            )
+        )
 
 
 @pytest.mark.parametrize(

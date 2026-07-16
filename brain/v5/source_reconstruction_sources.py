@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+
 from dataclasses import asdict
 from pathlib import Path
 
@@ -89,6 +91,12 @@ def _locations_for_anchor(anchor_ref, references, references_by_id):
 
 
 def _validate_source_chain(ws, topic_id, location, asset):
+    if location.topic_id != topic_id:
+        return _issue(
+            "reference_location_topic_mismatch",
+            location.source_ref,
+            f"reference location {location.location_id} belongs to another topic",
+        )
     if asset is None:
         return _issue(
             "missing_source_asset",
@@ -126,11 +134,39 @@ def _validate_source_chain(ws, topic_id, location, asset):
             f"source asset {asset.asset_id} disagrees with its acquisition receipt",
         )
     local_path = str(asset.metadata.get("local_path") or "").strip()
-    if not local_path or Path(local_path).resolve().as_uri() != resolution.receipt.stored_uri:
+    if not local_path:
         return _issue(
             "source_asset_storage_mismatch",
             location.source_ref,
             f"source asset {asset.asset_id} does not resolve to the receipted blob",
+        )
+    try:
+        resolved_path = Path(local_path).resolve(strict=True)
+    except (FileNotFoundError, OSError):
+        return _issue(
+            "source_blob_missing",
+            location.source_ref,
+            f"source asset {asset.asset_id} receipted blob is missing",
+        )
+    blob_root = (ws.root / "source_blobs").resolve()
+    if (
+        not resolved_path.is_file()
+        or not resolved_path.is_relative_to(blob_root)
+        or resolved_path.as_uri() != resolution.receipt.stored_uri
+    ):
+        return _issue(
+            "source_asset_storage_mismatch",
+            location.source_ref,
+            f"source asset {asset.asset_id} does not resolve to the authorized blob store",
+        )
+    if (
+        resolved_path.stat().st_size != resolution.receipt.byte_length
+        or _sha256(resolved_path) != resolution.receipt.byte_sha256
+    ):
+        return _issue(
+            "source_blob_hash_mismatch",
+            location.source_ref,
+            f"source asset {asset.asset_id} blob bytes disagree with the acquisition receipt",
         )
     if (
         asset.metadata.get("access_license_disposition") != resolution.decision.access_disposition
@@ -146,6 +182,14 @@ def _unverified(location, asset):
         location.source_ref,
         f"source asset {asset.asset_id} lacks a valid exact acquisition receipt",
     )
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
 
 
 def _issue(code: str, source_ref: str, detail: str) -> dict[str, str]:
