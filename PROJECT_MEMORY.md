@@ -97,10 +97,10 @@ must follow the reviewed skill-candidate/install/use lifecycle.
   logical shard complexity; then retain abstractions only when a real research
   vertical or required compatibility fixture owns them.
 - **Writer-audit lower bound**: Preserve the historical M0 111-row named-helper
-  baseline while classifying the current 127-row inventory separately from the
-  164-row direct-mutation inventory. The latter
+  baseline while classifying the current 161-row inventory separately from the
+  169-row direct-mutation inventory. The latter
   covers literal path/open/copy/rename/SQL mechanisms in declared production
-  trees and excludes tests. Its bounded policy currently parses 609/609
+  trees and excludes tests. Its bounded policy currently parses 709/709
   declared production Python files with zero errors, so
   `bounded_coverage_complete` is true. Universal `coverage_complete` remains
   false for dynamic/reflected/native I/O. Do not sum call sites into a semantic

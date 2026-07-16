@@ -6,13 +6,16 @@ Status: reviewed classification baseline plus accepted vertical extensions;
 CR1 changed compact visibility for six maintenance capabilities, and the
 new-software vertical added three full-surface human-gated Skill lifecycle
 capabilities. M1 then added six host-neutral lifecycle capabilities and six
-trust-neutral core record families.
+trust-neutral core record families. M3 added reviewed physics knowledge and
+source-memory capabilities/families; M4 Tasks 1-3 added procedural Skill
+candidate, readiness, package-artifact, and proposal families without compact
+or install authority.
 
-Writer scan status: all 146 current named-helper rows (111 at the M0 baseline)
-and all 168 current direct
+Writer scan status: all 161 current named-helper rows (111 at the M0 baseline)
+and all 169 current direct
 mutation rows are classified; scan coverage remains explicitly incomplete.
 
-Source baseline: accepted M0 staged core plus generation 11/schema-v2 real-store index.
+Source baseline: accepted M0 staged core plus reviewed M1-M4 vertical extensions.
 The protected Harness Feedback problem-dossier extension is listed separately
 and is not counted as core.
 
@@ -109,7 +112,7 @@ Review notes:
 - query index build is derived state and core infrastructure, not a scientific
   write.
 
-### 2.2 Vertical Extension (102)
+### 2.2 Vertical Extension (112)
 
 ```text
 acquire_arxiv_source_asset
@@ -145,6 +148,15 @@ ingest_curated_rag_corpus
 ingest_subagent_result
 interaction_recording_preview
 interaction_recording_worklist
+knowledge_build_discovery_request
+knowledge_build_source_shelf
+knowledge_compile_context
+knowledge_diagnose_candidate
+knowledge_get_source_shelf
+knowledge_normalize_discovery_result
+knowledge_promote_candidate
+knowledge_query
+knowledge_record_review
 lane_contract_record
 lane_exemplar_manifest
 lightweight_record_write_plan
@@ -199,6 +211,7 @@ research_cockpit_compact
 research_distillation_candidates
 research_event_classifier
 research_timeline
+request_promotion_checkpoint
 request_skill_install_review
 run_dir_provenance_extractor_plan
 source_reconstruction_audit
@@ -385,7 +398,7 @@ above but remain available.
 ### 2.6 Independent Protected Extension
 
 `harness_feedback_problem_dossier` is present only through protected user work
-in the primary worktree. It is excluded from the 247-capability staged core and from
+in the primary worktree. It is excluded from the 257-capability staged core and from
 this staging scope. Its intended lifecycle is a vertical extension with human
 review, not a reason to retain `harness_feedback_seed_bundle` automatically.
 
@@ -394,13 +407,13 @@ Capability accounting:
 | Class | Count |
 |---|---:|
 | Core | 59 |
-| Vertical extension | 102 |
+| Vertical extension | 112 |
 | Maintenance | 43 |
 | Migration | 43 |
 | Soft deprecated classification | 0 |
 | Maintenance tools soft-deprecated from compact | 6 |
-| Current staged core | 247 |
-| Current classified core plus verticals | 247 |
+| Current staged core | 257 |
+| Current classified core plus verticals | 257 |
 
 ## 3. Record-Family Candidates
 
@@ -434,7 +447,7 @@ validation_contracts
 validation_results
 ```
 
-### 3.2 Vertical Extension (28)
+### 3.2 Vertical Extension (37)
 
 ```text
 authorities
@@ -450,9 +463,12 @@ derivation_steps
 execution_baselines
 execution_environments
 exploratory_records
+insights
+knowledge_review_decisions
 lane_contracts
 monitor_snapshots
 object_relations
+physics_assertions
 physics_objects
 proof_obligations
 questions
@@ -461,17 +477,22 @@ research_runs
 routes
 scope_revalidation_decisions
 sensemaking_reports
+skill_distillation_candidates
+skill_package_artifacts
 skill_patch_proposals
+skill_proposals
+skill_readiness_reports
+source_acquisition_decisions
+source_acquisition_receipts
 source_reconstruction_reviews
 tool_recipes
 tool_runs
 ```
 
-Twelve registered families currently have zero real records. Eight are in this
-vertical group (`benchmarks`, `code_workspaces`, `monitor_snapshots`,
-`questions`, `skill_patch_proposals`) or the core/trust group
-(`active_claim_rebind_audits`, `failure_mode_reviews`, `promotion_packets`).
-They stay frozen until a vertical proves a concrete event and unique contract.
+M3/M4 additions stay vertical-owned: source/knowledge families require the
+QFT/QG source-memory journey, while procedural Skill families require repeated
+validated execution and the reviewed package lifecycle. Registration alone
+does not justify a new public tool or automatic write.
 
 ### 3.3 Migration (4)
 
@@ -500,18 +521,18 @@ Their concepts overlap existing exploratory records, research routes/intents,
 artifacts, validation, and closeout. They remain registered/readable during the
 review but may not receive new writes or be used to justify new APIs.
 
-Family accounting totals 61 with no unclassified family.
+Family accounting totals 70 with no unclassified family.
 
 ## 4. Writer Classification
 
-The current runtime audit reports 146 recognized semantic repository writes
+The current runtime audit reports 161 recognized semantic repository writes
 and low-level helper calls. Every reported call is classified below by its current storage role,
 not by the capability name or intended future architecture. A canonical row is
 a writer-convergence target even when it writes a non-registry canonical family
 or a topic-local mirror. A migration row may write a typed migration record but
 does not belong to the production research lifecycle.
 
-### 4.1 Canonical Record Or Repository (74)
+### 4.1 Canonical Record Or Repository (84)
 
 ~~~text
 brain/v5/_compat_shards/active_claim_focus/part_02.py:_write_rebind_audit:273:write_record | families=active_claim_rebind_audits | dynamic=false
@@ -588,9 +609,19 @@ brain/v5/skill_candidates.py:propose_procedural_skill:84:repository_write | fami
 brain/v5/skill_candidates.py:apply_project_skill:166:repository_write | families=skill_patch_proposals | dynamic=false
 brain/v5/validation.py:create_validation_contract:62:repository_write | families=validation_contracts | dynamic=false
 brain/v5/validation.py:record_validation_result:137:repository_write | families=validation_results | dynamic=false
+brain/v5/knowledge_lifecycle.py:record_knowledge_lifecycle_event:78:repository_write | families=lifecycle_events | dynamic=false
+brain/v5/knowledge_promotion.py:promote_knowledge_candidate:90:repository_write | families=insights | dynamic=false
+brain/v5/knowledge_review.py:_record_knowledge_review_decision:152:repository_write | families=knowledge_review_decisions | dynamic=false
+brain/v5/physics_assertions.py:record_physics_assertion:28:repository_write | families=physics_assertions | dynamic=false
+brain/v5/project_skill_packages.py:record_skill_proposal:212:repository_write | families=skill_proposals | dynamic=false
+brain/v5/skill_distillation_records.py:record_skill_distillation_candidate:127:repository_write | families=skill_distillation_candidates | dynamic=false
+brain/v5/skill_package_artifacts.py:record_skill_package_artifact:79:repository_write | families=skill_package_artifacts | dynamic=false
+brain/v5/skill_readiness.py:record_skill_readiness_report:135:repository_write | families=skill_readiness_reports | dynamic=false
+brain/v5/source_acquisition.py:record_source_acquisition_decision:91:repository_write | families=source_acquisition_decisions | dynamic=false
+brain/v5/source_acquisition.py:record_source_acquisition_receipt:157:repository_write | families=source_acquisition_receipts | dynamic=false
 ~~~
 
-### 4.2 Derived Index Or Surface (25)
+### 4.2 Derived Index Or Surface (29)
 
 ~~~text
 brain/v5/_compat_shards/cli/part_04.py:_dispatch_workspace_02:116:write_text_atomic | families=- | dynamic=false
@@ -618,9 +649,13 @@ brain/v5/workspace_recording_audit.py:write_workspace_recording_audit:199:write_
 brain/v5/workspace_recording_audit.py:write_workspace_recording_audit:203:write_text_atomic | families=- | dynamic=false
 brain/v5/workspace_recovery_audit.py:write_workspace_recovery_audit:165:write_text_atomic | families=- | dynamic=false
 brain/v5/workspace_recovery_audit.py:write_workspace_recovery_audit:169:write_text_atomic | families=- | dynamic=false
+brain/v5/project_skill_packages.py:_write_preview:323:write_text_atomic | families=- | dynamic=false
+brain/v5/source_shelf_storage.py:_write_shelf_files:247:write_text_atomic | families=- | dynamic=false
+brain/v5/source_shelf_storage.py:_write_shelf_files:251:write_text_atomic | families=- | dynamic=false
+brain/v5/source_shelf_storage.py:_write_shelf_files:255:write_text_atomic | families=- | dynamic=false
 ~~~
 
-### 4.3 Host Or Runtime (17)
+### 4.3 Host Or Runtime (18)
 
 ~~~text
 brain/v5/_compat_shards/lane_exemplars/part_01.py:record_lane_exemplar:119:write_md | families=- | dynamic=false
@@ -640,6 +675,7 @@ brain/v5/run_iterations.py:_write_iteration_files:138:write_md | families=- | dy
 brain/v5/run_iterations.py:_write_journal:156:write_md | families=- | dynamic=false
 brain/v5/skill_candidates.py:apply_project_skill:157:write_text_atomic | families=- | dynamic=false
 brain/v5/workspace.py:init_workspace:27:write_md | families=- | dynamic=false
+brain/v5/human_approval.py:persist_human_approval_receipt:95:write_text_atomic | families=- | dynamic=false
 ~~~
 
 ### 4.4 Migration Or Legacy Compatibility (28)
@@ -723,12 +759,12 @@ A second conservative AST scanner is now represented separately by
 `direct_mutation_candidates`. It excludes tests and recognizes direct
 `write_text`/`write_bytes`, literal write-mode `open`, write-flag `os.open`,
 `shutil` copy/move, `os` rename/replace, and literal SQL mutations. On the
-current repository it finds 168 additional mutation candidates across 63
+current repository it finds 169 additional mutation candidates across 65
 production files:
 
-- 118 direct path writes, 21 write-mode opens, 15 copy/move calls, and 10
+- 118 direct path writes, 23 write-mode opens, 15 copy/move calls, and 13
   rename/replace calls;
-- 57 calls in 25 `brain/v5` files;
+- 62 calls in 27 `brain/v5` files;
 - 40 calls in 20 legacy `brain` files;
 - 59 calls in 12 `scripts` files;
 - seven calls in five host-hook files;
@@ -741,7 +777,7 @@ silently added to the canonical-bypass count or ignored because they are not
 named helpers.
 
 The expanded runtime-audit contract now publishes two distinct closure facts.
-All 642 Python files under the declared production source prefixes are
+All 709 Python files under the declared production source prefixes are
 enumerated and parsed with zero errors, so
 `writer_scan_policy.bounded_coverage_complete` is true. Dynamic/aliased APIs,
 non-literal database mutations, unrecognized helpers, reflection, and native
@@ -771,7 +807,7 @@ The blob and patch bytes require receipt/hash ownership in the LibRPA and
 source-acquisition verticals. Their metadata records remain separate canonical
 records; copying bytes alone cannot create evidence or trust.
 
-### 4.6.2 Derived Index Or Surface (23)
+### 4.6.2 Derived Index Or Surface (24)
 
 ~~~text
 brain/v5/_compat_shards/curated_rag_corpus/part_01.py:ingest_curated_rag_corpus:141:write_text | mechanism=direct_path_write | target=corpus_path
@@ -789,6 +825,7 @@ brain/v5/topic_status.py:write_topic_status_surfaces:42:write_text | mechanism=d
 brain/v5/topic_status.py:write_topic_status_surfaces:43:write_text | mechanism=direct_path_write | target=Path(files['claim_relation_map'])
 brain/v5/topic_status.py:write_topic_status_surfaces:47:write_text | mechanism=direct_path_write | target=Path(files['runtime_protocol'])
 brain/v5/topic_status.py:write_topic_status_surfaces:48:write_text | mechanism=direct_path_write | target=Path(files['session_start'])
+brain/v5/source_shelf_storage.py:publish_source_shelf:71:rename | mechanism=rename_or_replace | target=target
 brain/v5/topic_status.py:_write_json:375:write_text | mechanism=direct_path_write | target=path
 brain/v5/topic_status_startup.py:write_topic_status_startup_surfaces:65:write_text | mechanism=direct_path_write | target=Path(files['topic_state'])
 brain/v5/topic_status_startup.py:write_topic_status_startup_surfaces:69:write_text | mechanism=direct_path_write | target=Path(files['topic_dashboard'])
@@ -962,7 +999,7 @@ brain/v5/_compat_shards/source_assets/part_02.py:_fetch_pdf_to_temp:273:copyfile
 brain/v5/_compat_shards/source_assets/part_02.py:_download_pdf_to_temp:313:open | mechanism=direct_open_write | target=tmp_path
 ~~~
 
-Direct mutation accounting totals 168 with no unclassified row. The three
+Direct mutation accounting totals 169 with no unclassified row. The three
 transient rows may create only temporary acquisition files; the final blob move
 and its typed metadata/receipt have separate ownership. Host/maintenance and
 derived rows remain outside canonical trust, while migration or archived legacy
@@ -970,18 +1007,18 @@ rows remain outside normal production research writes.
 
 ### 4.7 Current Verification
 
-- `runtime_audit.py`: 441 lines;
+- `runtime_audit.py`: 496 lines;
 - focused `writer_scan.py`: 496 lines;
 - final M1 foundation lane: 186 passed, 1 skipped;
 - exact capability/family and writer/direct-mutation classification tests:
   2 passed;
-- current direct-mutation classification: 168 of 168 rows, no duplicate or
+- current direct-mutation classification: 169 of 169 rows, no duplicate or
   unclassified signature;
-- current named-helper classification: 146 of 146 rows; the preserved M0
+- current named-helper classification: 161 of 161 rows; the preserved M0
   lower-bound baseline was 111;
 - production-tree probe: no filesystem import aliases, dynamic open modes, or
   SQL execute calls were found;
-- `writer_scan_policy.bounded_coverage_complete`: true for 642/642 declared
+- `writer_scan_policy.bounded_coverage_complete`: true for 709/709 declared
   production Python files with zero parse errors;
 - `writer_scan_policy.coverage_complete`: false, because absence of arbitrary
   dynamic, reflected, custom, or native mutation helpers is not statically
@@ -1067,10 +1104,10 @@ record_toy_numeric_finite_size_exemplar
 research_cockpit_compact
 ```
 
-For record families, retain the 25 core, 28 vertical, and four migration
-registrations under their existing write/read policies. The eight zero-record
-core/vertical families remain frozen until a concrete event proves their
-contract; four zero-record unimplemented-layout families remain soft-deprecation candidates.
-All 146 helper-writer and 168 direct-mutation rows retain the ownership classes
+For record families, retain the 25 core, 37 vertical, and four migration
+registrations under their existing write/read policies. New vertical families
+remain owned by their M3/M4 acceptance journeys; four zero-record
+unimplemented-layout families remain soft-deprecation candidates.
+All 161 helper-writer and 169 direct-mutation rows retain the ownership classes
 in section 4. Migration/archived rows do not re-enter production, and bounded
 scanner closure does not convert candidate counts into a no-bypass proof.

@@ -255,6 +255,7 @@ def _capability_inventory(directory: Path) -> dict[str, list[str]]:
     else:
         registry_rows = _capability_rows(registry_data, "MCP_ONLY_CAPABILITIES")
         registry_rows.extend(_execution_capability_rows(directory))
+        registry_rows.extend(_knowledge_capability_rows(directory))
         optional_rows = _capability_rows(registry_data, "OPTIONAL_MCP_CAPABILITIES")
         registry_rows.extend(row for row in optional_rows if row[1] in mcp_wrappers)
         registry_operations = sorted({*catalog, *(row[0] for row in registry_rows)})
@@ -347,6 +348,31 @@ def _execution_capability_rows(directory: Path) -> list[tuple[Any, ...]]:
                     "full",
                 )
             )
+    return rows
+
+
+def _knowledge_capability_rows(directory: Path) -> list[tuple[Any, ...]]:
+    path = directory / "knowledge_surface_contracts.py"
+    operations = _literal_named_assignment(path, "_OPERATIONS", default={})
+    if not isinstance(operations, dict):
+        return []
+    rows = []
+    for operation, value in operations.items():
+        if not isinstance(operation, str) or not isinstance(value, tuple) or not value:
+            continue
+        state_effect = value[0]
+        if not isinstance(state_effect, str):
+            continue
+        rows.append(
+            (
+                operation,
+                f"aitp_v5_{operation}",
+                f"aitp-v5 knowledge {operation} --payload-file <args>",
+                "knowledge_operation_result",
+                state_effect,
+                "full",
+            )
+        )
     return rows
 
 

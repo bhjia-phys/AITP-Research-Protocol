@@ -4,6 +4,7 @@ from pathlib import Path
 from brain.v5.runtime_audit import (
     _capability_rows,
     _execution_capability_rows,
+    _knowledge_capability_rows,
     _layout_families,
     build_runtime_capability_audit,
     render_runtime_capability_audit_markdown,
@@ -232,7 +233,7 @@ def test_runtime_audit_reports_capability_surface_drift(tmp_path):
     assert capabilities["wrapped_not_catalog"] == ["aitp_v5_orphan"]
 
 
-def test_static_capability_audit_expands_execution_row_provider():
+def test_static_capability_audit_expands_execution_and_knowledge_row_providers():
     from brain.v5.capability_registry_data import MCP_ONLY_CAPABILITIES
 
     source = Path(__file__).resolve().parents[1] / "brain" / "v5"
@@ -241,6 +242,7 @@ def test_static_capability_audit_expands_execution_row_provider():
         "MCP_ONLY_CAPABILITIES",
     )
     static_rows.extend(_execution_capability_rows(source))
+    static_rows.extend(_knowledge_capability_rows(source))
 
     assert set(static_rows) == set(MCP_ONLY_CAPABILITIES)
 
