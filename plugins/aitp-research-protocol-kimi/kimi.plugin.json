@@ -1,0 +1,45 @@
+{
+  "name": "aitp-research-protocol",
+  "version": "1.0.0+kimi.20260717",
+  "description": "Kimi Code plugin for the local AITP 1.0 v5 physics research graph kernel.",
+  "author": "bhjia-phys",
+  "homepage": "https://github.com/bhjia-phys/AITP-Research-Protocol",
+  "license": "MIT",
+  "keywords": [
+    "aitp",
+    "theoretical-physics",
+    "research-protocol",
+    "mcp",
+    "kimi-code"
+  ],
+  "skills": "./skills/",
+  "sessionStart": {
+    "skill": "using-aitp"
+  },
+  "mcpServers": {
+    "aitp": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "pyyaml",
+        "--with",
+        "jsonschema",
+        "--with",
+        "fastmcp",
+        "--with",
+        "pypdf>=5,<7",
+        "python",
+        "./scripts/launch_aitp_mcp_kimi.py"
+      ],
+      "cwd": "./"
+    }
+  },
+  "interface": {
+    "displayName": "AITP Research Protocol",
+    "shortDescription": "Use the local AITP research graph memory from Kimi Code.",
+    "longDescription": "Connects Kimi Code to the repository-backed AITP 1.0 v5 MCP server and installs skills for typed physics research memory workflows. Includes a first-run setup mode and session-start research routing.",
+    "developerName": "bhjia-phys",
+    "websiteURL": "https://github.com/bhjia-phys/AITP-Research-Protocol"
+  }
+}

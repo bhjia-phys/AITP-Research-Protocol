@@ -1,0 +1,10 @@
+{
+  "version": "2",
+  "plugins": [
+    {
+      "id": "aitp-research-protocol",
+      "displayName": "AITP Research Protocol",
+      "source": "./aitp-research-protocol-kimi"
+    }
+  ]
+}
