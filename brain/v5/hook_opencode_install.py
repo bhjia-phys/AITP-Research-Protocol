@@ -8,6 +8,10 @@ from pathlib import Path
 from typing import Any
 
 from brain.v5.hook_install_templates import write_opencode_plugin_bridge
+from brain.v5.legacy_injection_quarantine import (
+    detect_legacy_injection_conflicts,
+    require_matching_legacy_injection_replacement_plan,
+)
 
 
 _AITP_PLUGIN_MARKER = "AITP_V5_OPENCODE_PLUGIN"
@@ -21,11 +25,28 @@ def install_opencode_plugin_file(
     workspace_base: str,
     session_id: str,
     bridge_path: str | Path | None = None,
+    reviewed_replacement_plan_id: str = "",
 ) -> dict[str, Any]:
     """Write an OpenCode local plugin that calls the AITP v5 hook runner."""
 
     plugin_path = Path(path)
     resolved_bridge_path = Path(bridge_path) if bridge_path else _default_bridge_path(plugin_path)
+    created = not plugin_path.exists()
+    current_before = ""
+    replacement_plan: dict[str, Any] = {}
+    if not created:
+        current_before = plugin_path.read_text(encoding="utf-8")
+        conflicts = detect_legacy_injection_conflicts(current_before)
+        if conflicts:
+            replacement_plan = require_matching_legacy_injection_replacement_plan(
+                plugin_path,
+                runtime="opencode",
+                reviewed_plan_id=reviewed_replacement_plan_id,
+            )
+        elif reviewed_replacement_plan_id:
+            raise ValueError(
+                "reviewed replacement plan id does not match current legacy injection content"
+            )
     bridge = write_opencode_plugin_bridge(
         resolved_bridge_path,
         installation,
@@ -50,10 +71,15 @@ def install_opencode_plugin_file(
         "summary_inputs_trusted": False,
     }
     source = _plugin_source(plugin)
-    created = not plugin_path.exists()
     if not created:
         current = plugin_path.read_text(encoding="utf-8")
-        if _AITP_PLUGIN_MARKER not in current and current != source:
+        if current != current_before:
+            raise ValueError("OpenCode plugin changed after replacement plan validation")
+        if (
+            _AITP_PLUGIN_MARKER not in current
+            and current != source
+            and not replacement_plan
+        ):
             raise ValueError(f"refusing to overwrite non-AITP OpenCode plugin: {plugin_path}")
         changed = current != source
     else:
@@ -81,6 +107,9 @@ def install_opencode_plugin_file(
         "plugin": plugin,
         "created": created,
         "changed": changed,
+        "reviewed_replacement_plan_id": (
+            replacement_plan.get("plan_id", "") if replacement_plan else ""
+        ),
     }
 
 

@@ -284,10 +284,6 @@ _HOSTS = MappingProxyType(
                     "plan_only",
                 ),
             ),
-            (
-                "experimental.chat.system.transform: stale full-skill injection; "
-                "not a lifecycle start capability",
-            ),
         ),
     }
 )

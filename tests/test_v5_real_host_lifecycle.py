@@ -143,9 +143,7 @@ def test_matrix_characterizes_generated_events_from_current_owner_apis(tmp_path)
         for event in matrix.hosts["opencode"].automatic_events
     ] == [("pre_tool", "tool.execute.before"), ("post_tool", "tool.execute.after")]
 
-    assert matrix.hosts["opencode"].legacy_injection_conflicts == (
-        "experimental.chat.system.transform: stale full-skill injection; not a lifecycle start capability",
-    )
+    assert matrix.hosts["opencode"].legacy_injection_conflicts == ()
     assert all("session_end" not in {event.logical_event for event in host.automatic_events} for host in matrix.hosts.values())
 
 

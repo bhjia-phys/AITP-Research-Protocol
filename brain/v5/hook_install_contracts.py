@@ -204,6 +204,22 @@ def validate_runtime_hook_installation_audit(
     _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
     _require_bool_value(payload.get("can_update_kernel_state"), False, f"{path}.can_update_kernel_state", result)
     _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
+    if "automatic_replacement_allowed" in payload:
+        _require_bool_value(
+            payload.get("automatic_replacement_allowed"),
+            False,
+            f"{path}.automatic_replacement_allowed",
+            result,
+        )
+    if (
+        "replacement_policy" in payload
+        and payload.get("replacement_policy")
+        != "explicit_reviewed_host_install_plan_only"
+    ):
+        result.add(
+            f"{path}.replacement_policy",
+            "must be 'explicit_reviewed_host_install_plan_only'",
+        )
     _require_list(payload.get("checked_paths"), f"{path}.checked_paths", result)
     _require_list(payload.get("findings"), f"{path}.findings", result)
     _require_list(payload.get("required_actions"), f"{path}.required_actions", result)
@@ -379,6 +395,23 @@ def _validate_install_audit_finding(payload: Any, path: str, result: ContractRes
     _require_list(payload.get("expected"), f"{path}.expected", result)
     _require_list(payload.get("observed"), f"{path}.observed", result)
     _require_list(payload.get("messages"), f"{path}.messages", result)
+    if "legacy_injection_conflicts" in payload:
+        _require_list(
+            payload.get("legacy_injection_conflicts"),
+            f"{path}.legacy_injection_conflicts",
+            result,
+        )
+    if "replacement_plan" in payload:
+        _require_mapping(
+            payload.get("replacement_plan"), f"{path}.replacement_plan", result
+        )
+    if "automatic_replacement_allowed" in payload:
+        _require_bool_value(
+            payload.get("automatic_replacement_allowed"),
+            False,
+            f"{path}.automatic_replacement_allowed",
+            result,
+        )
     _require_bool_value(payload.get("runtime_metadata_only"), True, f"{path}.runtime_metadata_only", result)
 
 

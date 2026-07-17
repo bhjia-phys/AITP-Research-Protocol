@@ -67,6 +67,7 @@ def add_adapter_parser(sp) -> None:
     aih = aps.add_parser("install-hooks"); aih.add_argument("runtime"); aih.add_argument("session_id")
     aih.add_argument("--settings", default=""); aih.add_argument("--output", default="")
     aih.add_argument("--plugin", default=""); aih.add_argument("--bridge-output", default="")
+    aih.add_argument("--reviewed-replacement-plan-id", default="")
     aia = aps.add_parser("install-audit"); aia.add_argument("runtime")
     aia.add_argument("--settings", default=""); aia.add_argument("--output", default=""); aia.add_argument("--plugin", default="")
     ahr = aps.add_parser("host-readiness"); ahr.add_argument("runtime"); ahr.add_argument("--session", default="", dest="session_id")
@@ -365,6 +366,9 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
                         workspace_base=str(ws.base),
                         session_id=args.session_id,
                         bridge_path=args.bridge_output or None,
+                        reviewed_replacement_plan_id=(
+                            args.reviewed_replacement_plan_id
+                        ),
                     ),
                 }
                 return require_valid_public_surface("opencode_hook_installation", installed)

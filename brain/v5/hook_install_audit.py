@@ -6,6 +6,11 @@ import json
 from pathlib import Path
 from typing import Any
 
+from brain.v5.legacy_injection_quarantine import (
+    build_legacy_injection_replacement_plan,
+    detect_legacy_injection_conflicts,
+)
+
 
 _STATUS_ORDER = {"installed": 0, "partial": 1, "missing": 2, "conflict": 3}
 
@@ -37,6 +42,8 @@ def audit_hook_installation(
         "orientation_only": True,
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
+        "automatic_replacement_allowed": False,
+        "replacement_policy": "explicit_reviewed_host_install_plan_only",
         "status": finding["status"],
         "checked_paths": [finding["path"]],
         "findings": [finding],
@@ -56,6 +63,7 @@ def _audit_runtime_path(
         if settings_path:
             return _audit_text_path(
                 settings_path,
+                runtime=runtime,
                 expected=[
                     ("PreToolUse pre-tool runner", ["PreToolUse", "aitp_v5_adapter_event_runner.py", "pre-tool", "--bridge-path", workspace_base]),
                     ("PostToolUse post-tool runner", ["PostToolUse", "aitp_v5_adapter_event_runner.py", "post-tool", workspace_base]),
@@ -63,6 +71,7 @@ def _audit_runtime_path(
             )
         return _audit_text_path(
             output_path or str(Path(workspace_base) / ".codex" / "AITP_V5_HOOKS.json"),
+            runtime=runtime,
             expected=[
                 ("fixture pre-tool runner", ["pre_tool", "aitp_v5_adapter_event_runner.py", "pre-tool", "--bridge-path", workspace_base]),
                 ("fixture post-tool runner", ["post_tool", "aitp_v5_adapter_event_runner.py", "post-tool", workspace_base]),
@@ -71,6 +80,7 @@ def _audit_runtime_path(
     if runtime == "claude_code":
         return _audit_text_path(
             settings_path or str(Path(workspace_base) / ".claude" / "settings.local.json"),
+            runtime=runtime,
             expected=[
                 ("SessionStart Claude hook", ["SessionStart", "hooks/aitp_v5_claude_hook.py", "session-start", workspace_base]),
                 ("PreToolUse Claude hook", ["PreToolUse", "hooks/aitp_v5_claude_hook.py", "pre-tool", workspace_base]),
@@ -80,6 +90,7 @@ def _audit_runtime_path(
     if runtime == "kimi_code":
         return _audit_text_path(
             settings_path or output_path or str(Path(workspace_base) / ".kimi" / "config.toml"),
+            runtime=runtime,
             expected=[
                 ("SessionStart Kimi hook", ["[[hooks]]", "SessionStart", "hooks/aitp_v5_kimi_hook.py", "session-start", workspace_base]),
                 ("PreToolUse Kimi hook", ["[[hooks]]", "PreToolUse", "hooks/aitp_v5_kimi_hook.py", "pre-tool", workspace_base]),
@@ -90,6 +101,7 @@ def _audit_runtime_path(
         if plugin_path:
             return _audit_text_path(
                 plugin_path,
+                runtime=runtime,
                 expected=[
                     ("tool.execute.before pre-tool runner", ["tool.execute.before", "aitp_v5_adapter_event_runner.py", "pre-tool", "--bridge-path", workspace_base]),
                     ("tool.execute.after post-tool runner", ["tool.execute.after", "aitp_v5_adapter_event_runner.py", "post-tool", workspace_base]),
@@ -97,6 +109,7 @@ def _audit_runtime_path(
             )
         return _audit_text_path(
             output_path or str(Path(workspace_base) / ".opencode" / "AITP_V5_PLUGIN_HOOKS.json"),
+            runtime=runtime,
             expected=[
                 ("fixture pre-tool runner", ["plugin_hooks", "pre_tool", "aitp_v5_adapter_event_runner.py", "pre-tool", "--bridge-path", workspace_base]),
                 ("fixture post-tool runner", ["plugin_hooks", "post_tool", "aitp_v5_adapter_event_runner.py", "post-tool", workspace_base]),
@@ -105,14 +118,37 @@ def _audit_runtime_path(
     raise ValueError(f"unsupported runtime: {runtime}")
 
 
-def _audit_text_path(path: str, *, expected: list[tuple[str, list[str]]]) -> dict[str, Any]:
+def _audit_text_path(
+    path: str,
+    *,
+    runtime: str,
+    expected: list[tuple[str, list[str]]],
+) -> dict[str, Any]:
     target = Path(path)
     expected_labels = [label for label, _ in expected]
     if not target.exists():
-        return _finding(target, False, "missing", expected_labels, [], ["file does not exist"])
+        return _finding(
+            target,
+            False,
+            "missing",
+            expected_labels,
+            [],
+            ["file does not exist"],
+        )
     text = target.read_text(encoding="utf-8")
     observed = [label for label, tokens in expected if all(_contains(text, token) for token in tokens)]
-    if len(observed) == len(expected):
+    conflicts = detect_legacy_injection_conflicts(text)
+    replacement_plan = (
+        build_legacy_injection_replacement_plan(target, runtime=runtime)
+        if conflicts
+        else {}
+    )
+    if conflicts:
+        status = "conflict"
+        messages = [
+            "legacy full-context injection conflicts with bounded lifecycle recall"
+        ]
+    elif len(observed) == len(expected):
         status = "installed"
         messages: list[str] = []
     elif observed:
@@ -121,7 +157,16 @@ def _audit_text_path(path: str, *, expected: list[tuple[str, list[str]]]) -> dic
     else:
         status = "conflict"
         messages = ["file exists but does not contain AITP v5 lifecycle hooks"]
-    return _finding(target, True, status, expected_labels, observed, messages)
+    return _finding(
+        target,
+        True,
+        status,
+        expected_labels,
+        observed,
+        messages,
+        legacy_injection_conflicts=list(conflicts),
+        replacement_plan=replacement_plan,
+    )
 
 
 def _finding(
@@ -131,6 +176,9 @@ def _finding(
     expected: list[str],
     observed: list[str],
     messages: list[str],
+    *,
+    legacy_injection_conflicts: list[str] | None = None,
+    replacement_plan: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     return {
         "path": str(path),
@@ -139,6 +187,9 @@ def _finding(
         "expected": expected,
         "observed": observed,
         "messages": messages,
+        "legacy_injection_conflicts": legacy_injection_conflicts or [],
+        "replacement_plan": replacement_plan or {},
+        "automatic_replacement_allowed": False,
         "runtime_metadata_only": True,
     }
 
@@ -149,6 +200,12 @@ def _contains(text: str, token: str) -> bool:
 
 
 def _required_action(runtime: str, finding: dict[str, Any]) -> str:
+    replacement_plan = finding.get("replacement_plan") or {}
+    if replacement_plan:
+        return (
+            f"review host-install replacement plan {replacement_plan['plan_id']} for "
+            f"{finding['path']}; replacement is never automatic"
+        )
     if finding["status"] == "missing":
         return f"install AITP v5 {runtime} hooks at {finding['path']}"
     if finding["status"] == "partial":
