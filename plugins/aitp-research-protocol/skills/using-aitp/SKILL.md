@@ -37,7 +37,7 @@ After successful configuration, tell the user to restart the MCP server or open 
 - Canonical v5 store: `<topics-root>/.aitp/`.
 - MCP entrypoint: `<repo-root>/brain/v5/native_mcp.py`.
 - Codex plugin MCP surface: `AITP_MCP_SURFACE=codex` by default. Use `AITP_MCP_SURFACE=full` only for kernel development or maintenance.
-- Fallback CLI: `uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli`
+- Fallback CLI: `uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli`
 
 The workspace-root `.aitp/` directory is runtime/local state; do not treat it as the v5 topic store.
 
@@ -91,8 +91,8 @@ When an AITP tool returns a human decision point:
 Use these only when MCP tools are unavailable or setup is suspect:
 
 ```powershell
-uv run --with pyyaml --with jsonschema --with fastmcp python scripts/aitp-pm.py doctor
-uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "$env:AITP_TOPICS_ROOT" status context-pack <session-id>
-uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "$env:AITP_TOPICS_ROOT" brief <session-id>
-uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "$env:AITP_TOPICS_ROOT" relation-map <session-id>
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python scripts/aitp-pm.py doctor
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli --base "$env:AITP_TOPICS_ROOT" status context-pack <session-id>
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli --base "$env:AITP_TOPICS_ROOT" brief <session-id>
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli --base "$env:AITP_TOPICS_ROOT" relation-map <session-id>
 ```

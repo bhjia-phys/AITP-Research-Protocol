@@ -154,7 +154,7 @@ From the plugin root:
 
 ```powershell
 python <path-to-plugin-creator>/scripts/validate_plugin.py .
-uv run --with pyyaml --with jsonschema --with fastmcp python scripts/launch_aitp_mcp.py
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python scripts/launch_aitp_mcp.py
 ```
 
 The second command starts the MCP server and waits for Codex/MCP input.

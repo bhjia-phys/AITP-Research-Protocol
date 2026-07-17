@@ -91,7 +91,7 @@ AITP_INSTALL_LEGACY_STAGE_HOOKS=1 python scripts/aitp-pm.py install ...
 uv run --with pyyaml --with jsonschema --with fastmcp \
   python scripts/aitp-pm.py status
 
-uv run --with pyyaml --with jsonschema --with fastmcp \
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" \
   python scripts/aitp-pm.py doctor
 ```
 

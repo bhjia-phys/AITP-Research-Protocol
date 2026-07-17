@@ -774,7 +774,7 @@ def _write_mcp_json(
                     "run",
                     "--with", "pyyaml",
                     "--with", "jsonschema",
-                    "--with", "fastmcp",
+                    "--with", "fastmcp", "--with", "pypdf>=5,<7",
                     "python",
                     _mcp_entrypoint(repo_root),
                 ],
@@ -859,7 +859,7 @@ def _merge_codex_config_toml(
             "run",
             "--with", "pyyaml",
             "--with", "jsonschema",
-            "--with", "fastmcp",
+            "--with", "fastmcp", "--with", "pypdf>=5,<7",
             "python",
             _mcp_entrypoint(repo_root),
         ]
@@ -912,7 +912,7 @@ def _merge_kimi_config_toml(
             "run",
             "--with", "pyyaml",
             "--with", "jsonschema",
-            "--with", "fastmcp",
+            "--with", "fastmcp", "--with", "pypdf>=5,<7",
             "python",
             _mcp_entrypoint(repo_root),
         ]
@@ -2367,7 +2367,7 @@ def cmd_doctor(args) -> None:
         print(f"    OK (version {EXPECTED_PACKAGE_VERSION}, implementation {EXPECTED_IMPLEMENTATION})")
 
     # 3. Dependencies
-    for dep in ("fastmcp", "yaml", "jsonschema"):
+    for dep in ("fastmcp", "yaml", "jsonschema", "pypdf"):
         try:
             __import__(dep)
             print(f"  {dep}: OK")

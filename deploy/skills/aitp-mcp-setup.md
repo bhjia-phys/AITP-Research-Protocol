@@ -13,13 +13,13 @@ Expected project config path:
 Equivalent v5 entry:
 
 ```bash
-uv run --with pyyaml --with jsonschema --with fastmcp python {{REPO_ROOT}}/brain/v5/native_mcp.py
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python {{REPO_ROOT}}/brain/v5/native_mcp.py
 ```
 
 Verify with:
 
 ```powershell
-uv run --with pyyaml --with jsonschema --with fastmcp python {{REPO_ROOT}}/scripts/aitp-pm.py doctor
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python {{REPO_ROOT}}/scripts/aitp-pm.py doctor
 ```
 
 The legacy `brain/mcp_server.py` is compatibility-only. Do not install it as

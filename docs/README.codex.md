@@ -81,7 +81,7 @@ checkout. Use `scripts/aitp-pm.py install --agent codex` instead.
 ## Verify
 
 ```powershell
-uv run --with pyyaml --with jsonschema --with fastmcp python scripts/aitp-pm.py doctor
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python scripts/aitp-pm.py doctor
 ```
 
 The Codex section should show `using-aitp/SKILL.md`, `aitp-runtime/SKILL.md`,

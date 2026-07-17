@@ -13,7 +13,7 @@ Expected project config path:
 Install or refresh the project adapter with:
 
 ```powershell
-uv run --with pyyaml --with jsonschema --with fastmcp python {{REPO_ROOT}}/scripts/aitp-pm.py install --agent claude-code --scope project --target-root {{TARGET_ROOT}} --topics-root {{TOPICS_ROOT}}
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python {{REPO_ROOT}}/scripts/aitp-pm.py install --agent claude-code --scope project --target-root {{TARGET_ROOT}} --topics-root {{TOPICS_ROOT}}
 ```
 
 The active MCP entrypoint must be:
@@ -25,7 +25,7 @@ The active MCP entrypoint must be:
 Verify with:
 
 ```powershell
-uv run --with pyyaml --with jsonschema --with fastmcp python {{REPO_ROOT}}/scripts/aitp-pm.py doctor
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python {{REPO_ROOT}}/scripts/aitp-pm.py doctor
 ```
 
 The legacy `brain/mcp_server.py` is compatibility-only. Do not install it as

@@ -111,10 +111,10 @@ If no Codex-specific root exists, the installer creates
 Run:
 
 ```powershell
-uv run --with pyyaml --with jsonschema --with fastmcp `
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" `
   python scripts/aitp-pm.py doctor
 
-uv run --with pyyaml --with jsonschema --with fastmcp `
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" `
   python -m brain.v5.cli --help
 ```
 

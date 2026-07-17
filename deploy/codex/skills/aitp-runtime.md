@@ -225,8 +225,8 @@ Do not bury a failed check in prose. Record it as typed protocol state.
 ## Fallback Diagnostics
 
 ```powershell
-uv run --with pyyaml --with jsonschema --with fastmcp python scripts/aitp-pm.py doctor
-uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "{{TOPICS_ROOT}}" brief <session-id>
-uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "{{TOPICS_ROOT}}" relation-map <session-id>
-uv run --with pyyaml --with jsonschema --with fastmcp python -m py_compile brain/v5/native_mcp.py brain/v5/mcp_tools.py brain/v5/brief.py
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python scripts/aitp-pm.py doctor
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli --base "{{TOPICS_ROOT}}" brief <session-id>
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli --base "{{TOPICS_ROOT}}" relation-map <session-id>
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m py_compile brain/v5/native_mcp.py brain/v5/mcp_tools.py brain/v5/brief.py
 ```

@@ -219,17 +219,17 @@ Use these only when MCP tools are not available, when diagnosing setup, or when
 the MCP tool surface shown in Codex does not match the protocol text:
 
 ```powershell
-uv run --with pyyaml --with jsonschema --with fastmcp python scripts/aitp-pm.py doctor
-uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "{{TOPICS_ROOT}}" brief <session-id>
-uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "{{TOPICS_ROOT}}" relation-map <session-id>
-uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "{{TOPICS_ROOT}}" workspace inventory --workspace-root "{{TARGET_ROOT}}"
-uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "{{TOPICS_ROOT}}" workspace migration-plan --workspace-root "{{TARGET_ROOT}}"
-uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "{{TOPICS_ROOT}}" workspace old-store-manifest --workspace-root "{{TARGET_ROOT}}"
-uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "{{TOPICS_ROOT}}" legacy curated-known-topics
-uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.cli state show <topic>
-uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.cli gate check <topic>
-uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.cli --help
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python scripts/aitp-pm.py doctor
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli --base "{{TOPICS_ROOT}}" brief <session-id>
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli --base "{{TOPICS_ROOT}}" relation-map <session-id>
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli --base "{{TOPICS_ROOT}}" workspace inventory --workspace-root "{{TARGET_ROOT}}"
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli --base "{{TOPICS_ROOT}}" workspace migration-plan --workspace-root "{{TARGET_ROOT}}"
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli --base "{{TOPICS_ROOT}}" workspace old-store-manifest --workspace-root "{{TARGET_ROOT}}"
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli --base "{{TOPICS_ROOT}}" legacy curated-known-topics
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.cli state show <topic>
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.cli gate check <topic>
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.cli --help
 ```
 
 If `uv` is unavailable, use a Python environment that already has `pyyaml`,
-`jsonschema`, and `fastmcp` installed.
+`jsonschema`, `fastmcp`, and `pypdf` installed.

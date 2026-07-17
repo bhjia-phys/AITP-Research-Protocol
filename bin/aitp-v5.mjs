@@ -9,7 +9,7 @@ const pythonCommand = process.env.AITP_PYTHON_COMMAND ?? 'python';
 
 const child = spawn(
   uvCommand,
-  ['run', '--with', 'pyyaml', pythonCommand, '-m', 'brain.v5.cli', ...process.argv.slice(2)],
+  ['run', '--with', 'pyyaml', '--with', 'jsonschema', '--with', 'fastmcp', '--with', 'pypdf>=5,<7', pythonCommand, '-m', 'brain.v5.cli', ...process.argv.slice(2)],
   {
     cwd: repoRoot,
     stdio: 'inherit',

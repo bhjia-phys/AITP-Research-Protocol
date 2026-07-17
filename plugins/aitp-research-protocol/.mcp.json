@@ -11,6 +11,8 @@
         "jsonschema",
         "--with",
         "fastmcp",
+        "--with",
+        "pypdf>=5,<7",
         "python",
         "scripts/launch_aitp_mcp.py"
       ],
