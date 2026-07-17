@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import json
-import shutil
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
 from brain.v5.hook_install_audit import audit_hook_installation
+from brain.v5.host_readiness_process import (
+    fixture_audit,
+    normalized_lifecycle_fixture,
+    run_host_process,
+)
 from brain.v5.trace import hook_trace_event_path, read_trace_events
 
 
@@ -43,7 +47,9 @@ def audit_runtime_host_readiness(
     runtime = _normalize_runtime(runtime)
     command = command or _DEFAULT_COMMANDS.get(runtime, runtime)
     args = version_args if version_args is not None else ["--version"]
-    process = _run_process(command, args, cwd=ws.base, timeout_seconds=timeout_seconds)
+    process = run_host_process(
+        command, args, cwd=ws.base, timeout_seconds=timeout_seconds
+    )
     install = _installation_payload(
         ws,
         runtime=runtime,
@@ -83,15 +89,23 @@ def audit_runtime_host_lifecycle(
     command: str = "",
     args: list[str] | None = None,
     timeout_seconds: int = 60,
+    fixture_event: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run a host command and audit whether lifecycle hook signals appeared."""
 
     runtime = _normalize_runtime(runtime)
     command = command or _DEFAULT_COMMANDS.get(runtime, runtime)
     run_args = args if args is not None else ["--version"]
+    fixture = normalized_lifecycle_fixture(runtime, fixture_event)
     trace_path = hook_trace_event_path(ws)
     before = read_trace_events(trace_path)
-    process = _run_process(command, run_args, cwd=ws.base, timeout_seconds=timeout_seconds)
+    process = run_host_process(
+        command,
+        run_args,
+        cwd=ws.base,
+        timeout_seconds=timeout_seconds,
+        stdin_payload=fixture,
+    )
     after = read_trace_events(trace_path)
     new_events = after[len(before):] if len(after) >= len(before) else []
     hook_output = _hook_output_payload(process)
@@ -110,6 +124,7 @@ def audit_runtime_host_lifecycle(
             "new_event_ids": [event.event_id for event in new_events],
         },
         "hook_output": hook_output,
+        "fixture": fixture_audit(fixture, process),
         "truth_source": "runtime_process_and_hook_trace",
         "summary_inputs_trusted": False,
         "orientation_only": True,
@@ -163,7 +178,7 @@ def audit_priority_host_production_loops(
         "priority_hosts": list(_PRIORITY_HOST_ORDER),
         "deferred_hosts": ["opencode"],
         "runtime_count": len(items),
-        "ready_count": sum(1 for item in items if item["process_ok"]),
+        "ready_count": sum(1 for item in items if item["ready"]),
         "lifecycle_smoke_ran": run_lifecycle_smoke,
         "lifecycle_status_counts": _counts(
             item["lifecycle_smoke_status"]
@@ -192,9 +207,13 @@ def _production_item(audit: dict[str, Any], *, lifecycle: dict[str, Any] | None 
     next_actions = list(loop.get("next_actions") or [])
     if _lifecycle_probe_observed(lifecycle):
         next_actions = [action for action in next_actions if action != "run_runtime_host_lifecycle_probe"]
+    ready = _readiness_passed(str(audit.get("status") or ""))
+    if isinstance(lifecycle, dict):
+        ready = ready and _lifecycle_probe_observed(lifecycle)
     return {
         "runtime": str(audit.get("runtime") or ""),
         "status": str(audit.get("status") or ""),
+        "ready": ready,
         "process_ok": bool(process.get("ok")),
         "process_found": bool(process.get("found")),
         "command": str(process.get("command") or ""),
@@ -221,59 +240,6 @@ def _production_item(audit: dict[str, Any], *, lifecycle: dict[str, Any] | None 
 def _normalize_runtime(runtime: str) -> str:
     aliases = {"claude-code": "claude_code", "kimi-code": "kimi_code"}
     return aliases.get(runtime, runtime)
-
-
-def _run_process(command: str, args: list[str], *, cwd: Path, timeout_seconds: int) -> dict[str, Any]:
-    resolved = shutil.which(command)
-    if not resolved:
-        return {
-            "command": command,
-            "args": args,
-            "found": False,
-            "ok": False,
-            "exit_code": None,
-            "stdout": "",
-            "stderr": "command not found on PATH",
-        }
-    argv = _argv_for_resolved_command(resolved, args)
-    try:
-        completed = subprocess.run(
-            argv,
-            cwd=str(cwd),
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=timeout_seconds,
-            check=False,
-        )
-    except subprocess.TimeoutExpired as exc:
-        return {
-            "command": command,
-            "command_path": resolved,
-            "args": args,
-            "found": True,
-            "ok": False,
-            "exit_code": None,
-            "stdout": _trim(exc.stdout or ""),
-            "stderr": f"timed out after {timeout_seconds}s",
-        }
-    return {
-        "command": command,
-        "command_path": resolved,
-        "args": args,
-        "found": True,
-        "ok": completed.returncode == 0,
-        "exit_code": completed.returncode,
-        "stdout": _trim(completed.stdout),
-        "stderr": _trim(completed.stderr),
-    }
-
-
-def _argv_for_resolved_command(resolved: str, args: list[str]) -> list[str]:
-    if Path(resolved).suffix.lower() == ".ps1":
-        return ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", resolved, *args]
-    return [resolved, *args]
 
 
 def _installation_payload(
@@ -340,8 +306,15 @@ def _session_start_payload(ws, *, runtime: str, session_id: str, run: bool, time
 
 
 def _status(process: dict[str, Any], install: dict[str, Any], session_start: dict[str, Any]) -> str:
+    failure_kind = str(process.get("failure_kind") or "")
+    if failure_kind == "command_not_found":
+        return "host_command_unavailable"
+    if failure_kind == "timeout":
+        return "host_command_timed_out"
     if not process.get("ok"):
-        return "process_unavailable"
+        return "host_command_failed"
+    if not install.get("checked"):
+        return "process_ready_installation_unverified"
     if install.get("checked") and install.get("status") != "installed":
         return "process_ready_installation_incomplete"
     if session_start.get("ran") and not session_start.get("ok"):
@@ -382,7 +355,13 @@ def _production_next_actions(
 ) -> list[str]:
     actions: list[str] = []
     if not process.get("ok"):
-        actions.append("install_or_fix_host_command")
+        failure_kind = str(process.get("failure_kind") or "")
+        if failure_kind == "command_not_found":
+            actions.append("install_host_command")
+        elif failure_kind == "timeout":
+            actions.append("fix_host_command_timeout")
+        else:
+            actions.append("fix_host_command_failure")
         return actions
     if not install.get("checked"):
         actions.append("install_or_audit_runtime_hooks")
@@ -401,8 +380,13 @@ def _cli_runtime(runtime: str) -> str:
 
 
 def _lifecycle_status(process: dict[str, Any], *, trace_delta: int, hook_observed: bool) -> str:
+    failure_kind = str(process.get("failure_kind") or "")
+    if failure_kind == "command_not_found":
+        return "lifecycle_command_unavailable"
+    if failure_kind == "timeout":
+        return "lifecycle_command_timed_out"
     if not process.get("ok"):
-        return "process_unavailable"
+        return "lifecycle_command_failed"
     if trace_delta > 0 and hook_observed:
         return "lifecycle_observed"
     if trace_delta > 0:
@@ -410,6 +394,10 @@ def _lifecycle_status(process: dict[str, Any], *, trace_delta: int, hook_observe
     if hook_observed:
         return "hook_output_observed"
     return "process_ready_no_lifecycle_event_observed"
+
+
+def _readiness_passed(status: str) -> bool:
+    return status in {"process_ready", "ready_with_session_start_smoke"}
 
 
 def _lifecycle_probe_observed(lifecycle: dict[str, Any] | None) -> bool:

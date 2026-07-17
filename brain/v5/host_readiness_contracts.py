@@ -100,6 +100,10 @@ def _validate_process(payload: Any, path: str, result: ContractResult) -> None:
     for key in ("stdout", "stderr"):
         if not isinstance(payload.get(key), str):
             result.add(f"{path}.{key}", "must be a string")
+    if not isinstance(payload.get("failure_kind"), str):
+        result.add(f"{path}.failure_kind", "must be a string")
+    if not isinstance(payload.get("stdin_submitted"), bool):
+        result.add(f"{path}.stdin_submitted", "must be a bool")
 
 
 def _validate_install(payload: Any, path: str, result: ContractResult) -> None:
@@ -158,6 +162,7 @@ def _validate_production_item(payload: Any, path: str, result: ContractResult) -
     for key in (
         "process_ok",
         "process_found",
+        "ready",
         "install_audit_required",
         "session_start_smoke_available",
         "session_start_smoke_ran",

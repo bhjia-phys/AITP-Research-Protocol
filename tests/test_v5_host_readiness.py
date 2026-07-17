@@ -27,9 +27,9 @@ def test_runtime_host_readiness_runs_process_without_trusting_summaries(tmp_path
     assert validated["orientation_only"] is True
     assert validated["can_update_kernel_state"] is False
     assert validated["can_update_claim_trust"] is False
-    assert validated["status"] == "process_ready"
+    assert validated["status"] == "process_ready_installation_unverified"
     assert validated["production_loop"] == {
-        "status": "process_ready",
+        "status": "process_ready_installation_unverified",
         "runtime": "codex",
         "priority_host": True,
         "deferred_host": False,
@@ -136,8 +136,10 @@ def test_priority_host_production_loop_batches_codex_claude_and_kimi(tmp_path):
     assert validated["priority_hosts"] == ["codex", "claude_code", "kimi_code"]
     assert validated["deferred_hosts"] == ["opencode"]
     assert validated["runtime_count"] == 3
-    assert validated["ready_count"] == 3
-    assert validated["status_counts"] == {"process_ready": 3}
+    assert validated["ready_count"] == 0
+    assert validated["status_counts"] == {
+        "process_ready_installation_unverified": 3
+    }
     assert validated["next_action_counts"] == {
         "install_or_audit_runtime_hooks": 3,
         "run_runtime_host_lifecycle_probe": 3,
@@ -147,11 +149,74 @@ def test_priority_host_production_loop_batches_codex_claude_and_kimi(tmp_path):
     assert all(item["process_ok"] is True for item in validated["items"])
     assert validated["items"][1]["session_start_smoke_available"] is True
     assert validated["items"][2]["lifecycle_probe_command"] == "aitp-v5 adapter host-lifecycle kimi-code"
+    assert all(item["ready"] is False for item in validated["items"])
     assert validated["truth_source"] == "runtime_process_and_files"
     assert validated["summary_inputs_trusted"] is False
     assert validated["orientation_only"] is True
     assert validated["can_update_kernel_state"] is False
     assert validated["can_update_claim_trust"] is False
+
+
+def test_readiness_distinguishes_unavailable_failed_and_timed_out_host_commands(
+    tmp_path,
+):
+    from brain.v5.host_readiness import audit_runtime_host_readiness
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+    unavailable = audit_runtime_host_readiness(
+        ws,
+        runtime="codex",
+        command="aitp-host-command-that-does-not-exist",
+        check_installation=False,
+    )
+    failed = audit_runtime_host_readiness(
+        ws,
+        runtime="codex",
+        command=sys.executable,
+        version_args=["-c", "raise SystemExit(7)"],
+        check_installation=False,
+    )
+    timed_out = audit_runtime_host_readiness(
+        ws,
+        runtime="codex",
+        command=sys.executable,
+        version_args=["-c", "import time; time.sleep(2)"],
+        timeout_seconds=1,
+        check_installation=False,
+    )
+
+    assert unavailable["status"] == "host_command_unavailable"
+    assert unavailable["process"]["failure_kind"] == "command_not_found"
+    assert failed["status"] == "host_command_failed"
+    assert failed["process"]["failure_kind"] == "nonzero_exit"
+    assert failed["process"]["exit_code"] == 7
+    assert timed_out["status"] == "host_command_timed_out"
+    assert timed_out["process"]["failure_kind"] == "timeout"
+
+
+def test_priority_hosts_with_missing_installations_are_not_counted_ready(tmp_path):
+    from brain.v5.host_readiness import audit_priority_host_production_loops
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+    payload = audit_priority_host_production_loops(
+        ws,
+        command=sys.executable,
+        version_args=["--version"],
+        check_installation=True,
+    )
+    validated = require_valid_public_surface(
+        "runtime_host_production_loop_audit", payload
+    )
+
+    assert validated["ready_count"] == 0
+    assert all(item["process_ok"] is True for item in validated["items"])
+    assert all(item["ready"] is False for item in validated["items"])
+    assert validated["status_counts"] == {
+        "process_ready_installation_incomplete": 3
+    }
 
 
 def test_priority_host_production_loop_exposes_session_start_smoke_results(tmp_path):
@@ -185,8 +250,7 @@ def test_priority_host_production_loop_exposes_session_start_smoke_results(tmp_p
     assert by_runtime["kimi_code"]["session_start_smoke_ok"] is True
     assert "run_session_start_smoke" not in validated["next_action_counts"]
     assert validated["status_counts"] == {
-        "process_ready": 1,
-        "ready_with_session_start_smoke": 2,
+        "process_ready_installation_unverified": 3,
     }
     assert validated["can_update_claim_trust"] is False
 
@@ -293,8 +357,10 @@ def test_priority_host_production_loop_uses_separate_lifecycle_probe_command(tmp
     )
     validated = require_valid_public_surface("runtime_host_production_loop_audit", payload)
 
-    assert validated["ready_count"] == 3
-    assert validated["status_counts"] == {"process_ready": 3}
+    assert validated["ready_count"] == 0
+    assert validated["status_counts"] == {
+        "process_ready_installation_unverified": 3
+    }
     assert validated["lifecycle_status_counts"] == {"lifecycle_observed": 3}
     assert "run_runtime_host_lifecycle_probe" not in validated["next_action_counts"]
     assert all(item["command"] == sys.executable for item in validated["items"])
@@ -327,7 +393,7 @@ def test_priority_host_production_loop_cli_mcp_and_runtime(tmp_path, capsys):
 
     assert cli_payload["kind"] == "runtime_host_production_loop_audit"
     assert mcp_payload["kind"] == "runtime_host_production_loop_audit"
-    assert cli_payload["ready_count"] == 3
+    assert cli_payload["ready_count"] == 0
     assert mcp_payload["next_action_counts"]["run_runtime_host_lifecycle_probe"] == 3
     assert runtime_entrypoints()["runtime_host_production_loop_audit"] == {
         "cli": "aitp-v5 adapter host-production-loop",
@@ -529,3 +595,86 @@ def test_runtime_host_lifecycle_probe_cli_and_mcp(tmp_path, capsys):
     assert cli_payload["status"] == "process_ready_no_lifecycle_event_observed"
     assert mcp_payload["status"] == "process_ready_no_lifecycle_event_observed"
     assert Path(cli_payload["trace"]["path"]).name == "hook_trace_events.jsonl"
+
+
+def test_lifecycle_probe_submits_allowlisted_fixture_and_records_identity_only(tmp_path):
+    from brain.v5.host_readiness import audit_runtime_host_lifecycle
+    from brain.v5.trace import hook_trace_event_path
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+    trace_path = hook_trace_event_path(ws)
+    script = tmp_path / "fixture_hook.py"
+    script.write_text(
+        "\n".join(
+            [
+                "import json",
+                "import sys",
+                "from pathlib import Path",
+                "fixture = json.load(sys.stdin)",
+                "trace_path = Path(sys.argv[1])",
+                "trace_path.parent.mkdir(parents=True, exist_ok=True)",
+                "event = {'event_id': fixture['event_id'], 'session_id': fixture['session_id'], 'topic_id': '', 'event_type': 'tool_run_recorded', 'risk_level': 'guided', 'payload': {}, 'timestamp': '', 'kind': 'trace_event'}",
+                "with trace_path.open('a', encoding='utf-8') as handle:",
+                "    handle.write(json.dumps(event, sort_keys=True) + '\\n')",
+                "print(json.dumps({'aitp': {'kind': 'hook_trace_event_record'}}))",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    payload = audit_runtime_host_lifecycle(
+        ws,
+        runtime="opencode",
+        command=sys.executable,
+        args=[str(script), str(trace_path)],
+        timeout_seconds=10,
+        fixture_event={
+            "event_id": "fixture-opencode-1",
+            "event_type": "post_tool",
+            "host_session_id": "host-session-1",
+            "session_id": "s1",
+            "tool_name": "pytest",
+            "status": "completed",
+            "raw_prompt": "must-not-persist-fixture-secret",
+        },
+    )
+
+    assert payload["status"] == "lifecycle_observed"
+    assert payload["process"]["stdin_submitted"] is True
+    assert payload["fixture"] == {
+        "requested": True,
+        "submitted": True,
+        "event_id": "fixture-opencode-1",
+        "event_type": "post_tool",
+        "payload_sha256": payload["fixture"]["payload_sha256"],
+        "raw_payload_persisted": False,
+    }
+    assert len(payload["fixture"]["payload_sha256"]) == 64
+    assert payload["trace"]["new_event_ids"] == ["fixture-opencode-1"]
+    assert "must-not-persist-fixture-secret" not in json.dumps(payload)
+
+
+def test_lifecycle_probe_distinguishes_unavailable_and_failing_hook_commands(tmp_path):
+    from brain.v5.host_readiness import audit_runtime_host_lifecycle
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+    unavailable = audit_runtime_host_lifecycle(
+        ws,
+        runtime="codex",
+        command="aitp-lifecycle-command-that-does-not-exist",
+    )
+    failed = audit_runtime_host_lifecycle(
+        ws,
+        runtime="codex",
+        command=sys.executable,
+        args=["-c", "raise SystemExit(9)"],
+    )
+
+    assert unavailable["status"] == "lifecycle_command_unavailable"
+    assert unavailable["process"]["failure_kind"] == "command_not_found"
+    assert unavailable["fixture"]["submitted"] is False
+    assert failed["status"] == "lifecycle_command_failed"
+    assert failed["process"]["failure_kind"] == "nonzero_exit"
+    assert failed["fixture"]["submitted"] is True

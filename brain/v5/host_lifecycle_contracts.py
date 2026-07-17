@@ -108,6 +108,7 @@ def validate_runtime_host_lifecycle_audit(
     _validate_process(payload.get("process"), f"{path}.process", result)
     _validate_trace(payload.get("trace"), f"{path}.trace", result)
     _validate_hook_output(payload.get("hook_output"), f"{path}.hook_output", result)
+    _validate_fixture(payload.get("fixture"), f"{path}.fixture", result)
     return result
 
 
@@ -156,6 +157,23 @@ def _validate_hook_output(payload: Any, path: str, result: ContractResult) -> No
     if not isinstance(payload.get("observed"), bool):
         result.add(f"{path}.observed", "must be a bool")
     _require_list(payload.get("observed_kinds"), f"{path}.observed_kinds", result)
+
+
+def _validate_fixture(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    for key in ("requested", "submitted", "raw_payload_persisted"):
+        if not isinstance(payload.get(key), bool):
+            result.add(f"{path}.{key}", "must be a bool")
+    _require_bool_value(
+        payload.get("raw_payload_persisted"),
+        False,
+        f"{path}.raw_payload_persisted",
+        result,
+    )
+    for key in ("event_id", "event_type", "payload_sha256"):
+        _require_nonempty_str(payload, key, path, result)
 
 
 __all__ = [
