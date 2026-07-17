@@ -3,12 +3,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
 
 SOURCE_SHELF_SCHEMA_VERSION = 3
-SOURCE_SHELF_READER_VERSION = f"pypdf:{version('pypdf')};utf8-text:1"
+try:
+    _PYPDF_READER_VERSION = version("pypdf")
+except PackageNotFoundError:
+    # pypdf is a declared dependency, but a missing reader must not kill
+    # unrelated MCP/CLI startup; PDF extraction still fails closed at use.
+    _PYPDF_READER_VERSION = "unavailable"
+SOURCE_SHELF_READER_VERSION = f"pypdf:{_PYPDF_READER_VERSION};utf8-text:1"
 SOURCE_SHELF_EXTRACTOR_VERSION = "aitp-physics-blocks:3"
 
 

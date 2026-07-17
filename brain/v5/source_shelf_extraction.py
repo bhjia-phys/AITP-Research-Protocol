@@ -6,8 +6,6 @@ from io import BytesIO
 import re
 from dataclasses import dataclass
 
-from pypdf import PdfReader
-
 
 TEXT_SUFFIXES = {".md", ".markdown", ".txt", ".tex"}
 SUPPORTED_SUFFIXES = {*TEXT_SUFFIXES, ".pdf"}
@@ -127,6 +125,13 @@ def extract_source_passages(
 
 
 def _read_pdf_pages(source_bytes: bytes) -> tuple[tuple[int, str], ...]:
+    try:
+        from pypdf import PdfReader
+    except ImportError as exc:
+        raise SourceShelfExtractionError(
+            "source_reader_unavailable",
+            "PDF reader unavailable: install the declared pypdf dependency",
+        ) from exc
     try:
         reader = PdfReader(BytesIO(source_bytes))
     except Exception as exc:  # noqa: BLE001 - malformed PDFs need explicit coverage.
