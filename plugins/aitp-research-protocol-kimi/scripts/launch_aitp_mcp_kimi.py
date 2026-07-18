@@ -28,7 +28,7 @@ def main() -> None:
 
     topics_root = _resolve_topics_root(config, install_record)
     os.environ.setdefault("AITP_TOPICS_ROOT", str(topics_root))
-    os.environ.setdefault("AITP_MCP_SURFACE", "full")
+    os.environ.setdefault("AITP_MCP_SURFACE", "codex")
     topics_root.mkdir(parents=True, exist_ok=True)
 
     entrypoint = repo_root / "brain" / "v5" / "native_mcp.py"
@@ -148,7 +148,7 @@ class SetupMcpServer:
                 "Ask the user for the local AITP-Research-Protocol checkout path, "
                 "or ask whether Kimi Code should clone it into a chosen folder."
                 if repo_root is None
-                else "Run /reload or open a new Kimi Code session to load the full AITP v5 tools."
+                else "Run /reload or open a new Kimi Code session to load the compact Kimi Code AITP surface."
             ),
         }
 
@@ -196,7 +196,7 @@ class SetupMcpServer:
             "config_path": str(CONFIG_PATH),
             "repo_root": payload["repo_root"],
             "topics_root": payload["topics_root"],
-            "next_step": "Run /reload or open a new Kimi Code session so the full AITP v5 tools load.",
+            "next_step": "Run /reload or open a new Kimi Code session so the compact Kimi Code AITP surface loads.",
         }
 
     def serve(self) -> None:

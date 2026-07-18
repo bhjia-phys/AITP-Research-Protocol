@@ -3,9 +3,9 @@
 Date: 2026-07-18
 Scope: M5 Tasks 3-5 host lifecycle, explicit Research Moment, and generic
 Harness Feedback integration.
-Decision: repository code, generated-hook verticals, and the combined M0-M5
-release lanes are accepted; current workspace host installation and Kimi plugin
-package parity are not ready; M5 overall remains open.
+Decision: repository code, generated-hook verticals, the combined M0-M5 release
+lanes, and Kimi plugin package parity are accepted; current workspace project
+hook installation is not ready, so M5 overall remains open.
 
 ## Implemented Boundary
 
@@ -62,9 +62,14 @@ package parity are not ready; M5 overall remains open.
 - Host lifecycle/docs/deploy parity on the later Kimi-plugin HEAD:
   `95 passed` in externally authorized system Temp. The preceding managed-sandbox
   attempt was invalidated by pytest basetemp `WinError 5` and is not counted.
-- Kimi plugin read-only smoke: launcher `py_compile` passed; plugin manifest and
-  marketplace JSON parsed; all declared packaged Skill/launcher files existed.
-  This is not a substitute for the test-backed parity work listed below.
+- Kimi plugin contract: launcher `py_compile` passed and
+  `tests/test_v5_kimi_plugin_package.py` passed `5 passed`. The suite checks
+  manifest/marketplace/path closure, repository and topics-root precedence,
+  compact-by-default plus explicit-full launcher behavior, packaged-Skill
+  compact-call parity, and duplicate project/plugin MCP registration guidance.
+  The exact staged package/docs candidate then passed `51 passed`, adding MCP,
+  host-readiness, deployment-surface, and architecture-boundary coverage. This
+  closes package parity only; it is not project-hook lifecycle evidence.
 - The complete `tests/test_v5_adapters.py` file timed out twice at 244 seconds
   during the quarantine checkpoint and is not claimed as passed by this audit.
 - Generic Harness Feedback: the first exact staged tree passed `72 passed`; the
@@ -153,10 +158,6 @@ its project hooks before a real interactive event can pass.
 
 - Install project hooks only when explicitly requested and then rerun
   installation plus real lifecycle smoke. A host command alone is insufficient.
-- Add test-backed parity checks for the separately committed Kimi Code plugin
-  package (manifest, launcher/config resolution, packaged Skills, and duplicate
-  MCP/Skill registration guidance). Plugin availability must remain distinct
-  from project lifecycle-hook readiness.
 
-Until both items are closed, the roadmap must not mark M5 Acceptance or the
+Until this item is closed, the roadmap must not mark M5 Acceptance or the
 overall autonomous-host milestone complete.

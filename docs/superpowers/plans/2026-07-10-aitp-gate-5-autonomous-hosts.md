@@ -406,7 +406,8 @@ The repository-level vertical is commit `292445dc` (`v5: connect validated
 research moments to host lifecycle`). The release audit drift fix is a separate
 closeout commit so it cannot rewrite that implementation evidence.
 Do not call M5 complete until at least one installed project-hook lifecycle
-smoke and the separately packaged Kimi Code parity checks pass.
+event is observed. The separately packaged Kimi Code parity checks now pass,
+but plugin packaging is not project-hook installation evidence.
 
 ## M5 Completion Checklist
 
@@ -430,6 +431,6 @@ smoke and the separately packaged Kimi Code parity checks pass.
 - [ ] At least one repository-local project hook is installed and a real
   interactive lifecycle event is observed. Process availability or generated
   command smoke alone does not satisfy this item.
-- [ ] The separately packaged Kimi Code plugin has test-backed manifest,
+- [x] The separately packaged Kimi Code plugin has test-backed manifest,
   launcher/config resolution, packaged-Skill, and duplicate-registration parity.
   Plugin availability does not satisfy project lifecycle-hook readiness.

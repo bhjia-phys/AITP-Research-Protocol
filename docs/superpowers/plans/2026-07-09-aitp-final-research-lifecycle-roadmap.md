@@ -1357,9 +1357,16 @@ runtime registry and static layout both contain 74 families with zero drift.
 - [ ] At least one repository-local project hook is installed and a real
   interactive lifecycle event is observed; generated command tests and host
   process availability are insufficient. Until then M5 remains open.
-- [ ] The separately packaged Kimi Code plugin has test-backed manifest,
+- [x] The separately packaged Kimi Code plugin has test-backed manifest,
   launcher/config, packaged-Skill, and duplicate-registration parity. This is
   distinct from project lifecycle-hook installation and observation.
+
+Kimi package status: the launcher now defaults to the shared ten-tool compact
+facade (`AITP_MCP_SURFACE=codex`), preserves an explicit full maintenance
+override, and ships matching entry/runtime Skills plus duplicate-registration
+guidance. The package contract suite passes five focused tests. M5 remains open
+only for a real repository-local project-hook installation and observed
+interactive lifecycle event.
 
 ## 12. M6: Real Research End-To-End Acceptance
 

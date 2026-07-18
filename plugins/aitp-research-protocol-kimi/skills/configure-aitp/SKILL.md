@@ -17,7 +17,7 @@ Use this skill when the AITP plugin is newly installed, when AITP tools are miss
 4. If the user does not have a checkout, offer to clone `https://github.com/bhjia-phys/AITP-Research-Protocol.git` into a directory they choose.
 5. If the user has no preference for topics root, use `~/.aitp/topics`.
 6. Call `aitp_configure(repo_root=<repo path>, topics_root=<topics path or empty>)`.
-7. After success, tell the user to run `/reload` or open a new Kimi Code session so full `aitp_v5_*` tools load.
+7. After success, tell the user to run `/reload` or open a new Kimi Code session so the compact Kimi Code AITP surface loads.
 
 ## User Prompt Shape
 

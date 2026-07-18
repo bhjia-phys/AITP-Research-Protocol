@@ -1,176 +1,155 @@
 ---
 name: aitp-runtime
-description: Use after AITP v5 routing has claimed a theoretical-physics task; continue the work through typed records, validation gates, and summary regeneration instead of ad hoc notes.
+description: Continue an AITP v5 theoretical-physics topic through typed claims, source provenance, artifacts, evidence, validation gates, human checkpoints, and trust-controlled memory.
 ---
 
 # AITP Runtime v5 - Kimi Code
 
-## Runtime Loop
+Kimi Code uses the same host-neutral compact facade as the Codex plugin. The
+public names retain the `aitp_v5_codex_*` prefix for compatibility; they do not
+grant Codex-specific authority.
 
-Every real research turn starts by restoring the typed state:
+For every active AITP research iteration, decide whether the current request
+needs AITP before answering:
 
 ```text
-brief = aitp_v5_get_execution_brief(base=<workspace>, session_id=<session-id>)
-relation_map = aitp_v5_get_claim_relation_map(base=<workspace>, session_id=<session-id>)
+aitp_v5_codex_autoroute(base="", request_summary=<current user request>, session_id=<session-id if known>, topics=<topics if known>, semantic_assessment=<model semantic assessment>)
 ```
 
-Then decide the next action from the brief:
+If autoroute says `answer_without_aitp`, answer normally and do not write AITP
+records. If it returns `enter_existing_session`, `recover_topic`, or
+`recover_workspace`, call the returned `recommended_next_tool` with
+`recommended_args`, then restore the bounded entry card:
 
-- Missing definition or object: record a physics object or relation.
-- Missing provenance: record code state, evidence, reference location, or tool run.
-- Claim needs testing: create or update a validation contract, run the check, then record a validation result.
-- Interpretation needed: record a sensemaking report, clearly marked as orientation-only.
-- Trust change or L2 memory: use preflight, promotion packet, and human checkpoint gates.
-- Failure interpretation: read `relation_map.not_tested_by`,
-  `current_conclusion.cannot_say`, `current_blockers`, and
-  `next_valid_actions` before treating a failure as support or contradiction.
+```text
+aitp_v5_codex_enter(base="", session_id=<session-id>, request_summary=<current user request>, payload_profile="minimal")
+```
 
-## Interaction Modes And Lifecycle
+Use `base=""` unless the user explicitly provides a topics root. The launcher
+resolves the empty base through `AITP_TOPICS_ROOT`.
 
-Use the lightest mode that preserves truth:
+The entry card is orientation-only. Expand explicitly before trust-sensitive
+interpretation:
 
-- Progress or prior-topic status questions are read-only. Restore the brief and
-  relation map, summarize current claims, blockers, and next valid actions, and
-  do not write unless the user asks for a durable handoff or resolves a human
-  checkpoint.
-- Generic old-knowledge or textbook questions stay outside AITP unless they
-  name or affect an existing topic, claim, source, route, or gap. Topic-linked
-  answers restore context first, then write only durable corrections, sources,
-  gaps, or route changes.
-- Light exploratory discussion is read-mostly. Do not create a topic, claim,
-  or record just because an idea is interesting; wait until a route, question,
-  source, artifact, result, or gap becomes durable.
-- Active continuation, derivation, source reading, code/numerical execution,
-  validation, contradiction handling, final synthesis, trust update, and L2
-  promotion use the full typed runtime loop below.
+```text
+aitp_v5_codex_expand(base="", session_id=<session-id>, expansion="brief")
+aitp_v5_codex_expand(base="", session_id=<session-id>, expansion="relation_map")
+```
 
-At session start, first locate the topic/session/claim with recovery tools or a
-known session id. The start itself is normally read-only; run recording
-navigation only if continuation creates a durable start marker, route choice,
-or handoff state that future agents must recover.
+The full brief is the execution contract. The relation map is the conclusion
+boundary: inspect supported, limited, untested, contradicted, can-say,
+cannot-say, blocker, and next-action fields before interpreting the claim.
 
-At session end, write a handoff only when new durable state exists. The handoff
-should name the active claim, typed refs just created or relied on, open proof
-or validation gaps, human gates, and the next valid action. Verify the handoff
-or typed refs with `aitp_v5_verify_recording_effect`.
+## Typed Runtime Loop
+
+1. Autoroute the request.
+2. Restore the minimal entry card only when autoroute enters AITP.
+3. Expand brief and relation map only for audit, evidence, validation, trust,
+   or final synthesis.
+4. Present a human checkpoint plainly and wait when one is required.
+5. Collect missing source, evidence, or validation before any trust-changing
+   action.
+6. Do the physics, code, literature, or numerical work.
+7. Record only durable typed outputs.
+8. Inspect closeout or checkpoint `record_completeness_audit` before calling
+   the research record complete.
 
 ## Moment Policy
 
-AITP runtime is not a transcript logger. Record only durable research moments:
+AITP is not a transcript logger. Record only durable research moments:
 
-- source identity or source location becomes reusable,
-- tool/code run completes and produced research-relevant output,
-- artifact/report/table/plot/log/raw dump is produced,
-- result, anomaly, contradiction, negative result, or failed check is observed,
-- proof gap, validation gap, missing provenance, or route blocker is found,
-- route is selected, pivoted, abandoned, or split,
-- active claim scope/status changes are proposed,
-- final answer depends on an active claim,
-- trust update, promotion, or human decision is requested,
-- session-end handoff creates durable state.
+- reusable source identity or source location,
+- completed tool or code run with research-relevant output,
+- artifact, report, table, plot, log, or raw dump,
+- result, anomaly, contradiction, negative result, or failed check,
+- proof gap, validation gap, missing provenance, route blocker,
+- selected, pivoted, abandoned, or split route,
+- active claim scope or status change,
+- final answer that depends on an active claim,
+- trust update, promotion, or human decision request,
+- session-end handoff with new durable state.
 
 Do not record generic explanation, unaccepted brainstorming, repeated
-summaries, tool calls that only inspect files, failed setup checks with no
-research information, or old-knowledge answers that do not affect a topic.
-Those remain conversation or read-only context.
+summaries, file scans with no research change, or setup checks with no research
+information.
 
-Use this trigger rule:
+## Progressive Recording
 
-```text
-research-relevant fact changed or became durable -> classify and navigate
-only the agent's local reasoning changed -> do not write
-```
-
-For those moments, use progressive navigation:
+Use the lightest compact recording route:
 
 ```text
-aitp_v5_classify_recording_candidate(...)
-aitp_v5_get_recording_navigation_state(base="", session_id=<session-id>, claim_id=<claim-id>)
-aitp_v5_expand_recording_slot(base="", session_id=<session-id>, slot=<slot>, claim_id=<claim-id>)
-<existing typed write or preflight tool named by the slot expansion>
-aitp_v5_verify_recording_effect(base="", session_id=<session-id>, expected_refs=[...])
+aitp_v5_codex_recording_step(base="", session_id=<session-id>, event_type=<event>, summary=<durable moment>)
+aitp_v5_codex_recording_step(base="", session_id=<session-id>, event_type=<event>, summary=<durable moment>, slot=<one slot>)
+aitp_v5_codex_record_apply(base="", session_id=<session-id>, slot=<one slot>, payload=<typed slot payload>)
 ```
 
-If the classifier says `ignore` or `defer`, do not write. If a live host does
-not expose the recording navigator MCP tools, use the CLI fallback for read-only
-navigation and mutate only through existing v5 typed write tools.
+If the classifier says `ignore` or `defer`, do not write. Expand one slot at a
+time. The apply response includes verification. Full-kernel mutation tools are
+maintenance surfaces and are not part of the default Kimi plugin session.
 
-The first navigation answer should reveal only topic/session/claim position,
-first-level slots, blockers, and recommended moments. Expand exactly one slot
-at a time. The slot expansion must name an existing typed write or preflight
-tool, the minimum fields, known values, unknown values, and the verification
-step.
+## Record And Trust Boundaries
 
-`recording_navigation_state` is intentionally lightweight first-level
-navigation. It uses slot counts and relation-boundary hints; it does not replace
-`execution_brief` or `process_graph_slice`. Call those separately only when the
-next action really needs full context.
+- Definitions and systems use typed physics-object records.
+- Relations and equations use typed object-relation records.
+- Numerical and code work needs code state, tool recipe/run, artifact,
+  evidence, and validation records appropriate to the result.
+- Open theorem or review gaps remain proof obligations.
+- Interpretation remains orientation-only sensemaking unless backed by typed
+  evidence and validation.
+- Source references, artifacts, summaries, RAG chunks, context cards, hooks,
+  and Skills are not claim support by themselves.
+- Missing recommended closeout slots are plan-only gaps, not silently verified
+  records.
+- No compact operation may promote claim trust or install a Skill.
 
-## Typed Record Boundaries
+## Literature And Writing
 
-- `execution_brief` is the working control panel.
-- The claim relation map (`claim_relation_map`) is a read-only
-  conclusion-boundary layer, not evidence.
-- `summary_orientation` is useful for reading but is never a truth source.
-- Hook config and hook traces are runtime metadata, not evidence by themselves.
-- Source assets and reference locations are provenance/context, not claim
-  support by themselves.
-- A validation result supports only the exact checks and failure modes it covers.
-- Partial validation should be recorded as a narrow result, not as a pass for a broad contract.
+Use the compact literature facade for source registration and note recovery:
 
-## Kimi Native Hooks
+```text
+aitp_v5_codex_literature_step(base="", session_id=<session-id>, action="suggest", uri=<url-or-path>, label=<source label>)
+aitp_v5_codex_literature_step(base="", session_id=<session-id>, action="record_reference", uri=<url-or-path>, label=<source label>)
+aitp_v5_codex_expand(base="", session_id=<session-id>, expansion="note_outline", style="jhep")
+```
 
-Kimi Code supports TOML lifecycle hooks. AITP v5 installs:
+Register references in layers: source identity, exact location, reading
+artifact, claim-linked evidence, physics object/relation, validation basis, and
+trust basis. A paper or note is not evidence until a typed record links it to a
+specific claim and scope.
 
-- `PreToolUse`: checks risky or trust-changing tool calls before execution.
-- `PostToolUse`: appends trace events after meaningful tools.
+Do not rely on a Kimi Code stop hook for research closeout. Use:
 
-Install:
+```text
+aitp_v5_codex_closeout(base="", session_id=<session-id>, summary=<handoff summary>)
+```
+
+Closeout previews by default. Set `apply=true` only for a durable handoff or
+quiet checkpoint. It cannot update claim trust.
+
+## Kimi Project Hooks
+
+Plugin MCP registration and repository-local lifecycle hooks are independent.
+Only install a project hook when the user explicitly requests it:
 
 ```powershell
 python -m brain.v5.cli --base <workspace> adapter install-hooks kimi-code <session-id> --settings <workspace>/.kimi/config.toml
-python -m brain.v5.cli --base <workspace> adapter install-hooks kimi-code <session-id> --settings <workspace>/.kimi-code/config.toml
-```
-
-Audit:
-
-```powershell
 python -m brain.v5.cli --base <workspace> adapter install-audit kimi-code --settings <workspace>/.kimi/config.toml
-python -m brain.v5.cli --base <workspace> adapter install-audit kimi-code --settings <workspace>/.kimi-code/config.toml
 ```
 
-Smoke coverage is visible through:
+The hook is runtime metadata, not evidence or canonical research state.
+
+## Physics Validation Obligations
+
+Before treating a result as strong, check dimensional and algebraic
+consistency, relevant limits and symmetries, approximation validity, numerical
+convergence, benchmark agreement, and error estimates. Record failed checks as
+typed protocol state rather than burying them in prose.
+
+## Fallback Commands
 
 ```powershell
-python -m brain.v5.cli adapter smoke-coverage
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python scripts/aitp-pm.py doctor
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli --base "$env:AITP_TOPICS_ROOT" status context-pack <session-id>
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli --base "$env:AITP_TOPICS_ROOT" brief <session-id>
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli --base "$env:AITP_TOPICS_ROOT" relation-map <session-id>
 ```
-
-For Kimi CLI builds that support explicit project paths, launch with project
-assets directly:
-
-```powershell
-$env:PYTHONIOENCODING = "utf-8"
-$env:PYTHONUTF8 = "1"
-kimi --work-dir <workspace> --config-file .kimi-code/config.toml --mcp-config-file .kimi-code/mcp.json --skills-dir .kimi-code/skills
-```
-
-## Research Workflow
-
-For a natural physics conversation, keep the user-facing flow simple:
-
-1. Restore the brief.
-2. Explain the current claim, uncertainty, and next useful check in plain language.
-3. Do the math or computation.
-4. Record the durable typed objects, evidence, tool runs, validations, and interpretation.
-5. Refresh the brief before stating what is now known.
-
-## Failure Discipline
-
-Record these immediately:
-
-- wrong formula or shortcut
-- missing source provenance
-- dirty or unknown code state behind a numerical result
-- incomplete coverage of a validation contract
-- finite-size, operator-choice, gauge, normalization, or sector-selection artifacts
-- any conclusion that is interpretation rather than validation

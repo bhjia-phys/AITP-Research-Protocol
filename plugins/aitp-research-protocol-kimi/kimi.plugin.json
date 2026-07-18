@@ -1,6 +1,6 @@
 {
   "name": "aitp-research-protocol",
-  "version": "1.0.0+kimi.20260717",
+  "version": "1.0.0+kimi.20260718",
   "description": "Kimi Code plugin for the local AITP 1.0 v5 physics research graph kernel.",
   "author": "bhjia-phys",
   "homepage": "https://github.com/bhjia-phys/AITP-Research-Protocol",
@@ -38,7 +38,7 @@
   "interface": {
     "displayName": "AITP Research Protocol",
     "shortDescription": "Use the local AITP research graph memory from Kimi Code.",
-    "longDescription": "Connects Kimi Code to the repository-backed AITP 1.0 v5 MCP server and installs skills for typed physics research memory workflows. Includes a first-run setup mode and session-start research routing.",
+    "longDescription": "Connects Kimi Code to the repository-backed AITP 1.0 v5 MCP server and installs skills for compact-first typed physics research memory workflows. Includes a first-run setup mode and session-start research routing; full maintenance tools remain an explicit override.",
     "developerName": "bhjia-phys",
     "websiteURL": "https://github.com/bhjia-phys/AITP-Research-Protocol"
   }

@@ -1,197 +1,98 @@
 ---
 name: using-aitp
-description: HIGHEST PRIORITY - Use for ANY theoretical-physics research, topic continuation, exploratory physics discussion, old-knowledge Q&A tied to project topics, prior topic progress/status inquiries, idea steering, paper learning, derivation work, validation planning, or study of physical systems. Classify request intensity before deciding read-only or write-capable flow.
+description: Enter the local AITP v5 research protocol from Kimi Code for theoretical-physics work, topic continuation, prior progress checks, paper reading, derivations, validation, and trust-controlled research memory.
 ---
 
-# Using AITP v5 - Kimi Code
+# Using AITP v5 In Kimi Code
 
-## Hard Gate
+Use this skill whenever the user asks for theoretical-physics research work, a project-linked physics explanation, prior topic status, topic continuation, paper learning, derivation work, validation planning, or research steering.
 
-Use this skill before substantial theoretical-physics work. This includes
-brainstorming that may become a route, literature exploration, derivation,
-validation planning, prior-topic progress/status inquiries, old-knowledge Q&A
-tied to a project topic, and long-running theoretical-physics work.
-
-Do not treat chat summaries, Markdown notes, or generated hook config as scientific truth. AITP v5 truth comes from typed records, execution briefs, validation results, promotion packets, and approved memory entries.
+AITP is protocol-first. Kimi Code is the executor; the AITP typed records under the configured topics root are the authority.
 
 ## First-Run Setup
 
-Before research calls in a new installation, check whether the AITP MCP server
-is in setup mode:
+Before using research tools in a new installation, check whether the AITP MCP server is in setup mode:
 
 ```text
 aitp_config_status()
 ```
 
-If that tool exists and reports `configured=false`, do not proceed with
-research calls yet. Ask the user for the local `AITP-Research-Protocol`
-checkout path and a topics root (default `~/.aitp/topics`), then call:
+If that tool exists and reports `configured=false`, do not proceed with research calls yet. Ask the user for:
+
+1. The local `AITP-Research-Protocol` checkout path.
+2. The topics root where AITP should store records.
+
+Offer the default topics root `~/.aitp/topics` if the user does not already have a project store. Then call:
 
 ```text
 aitp_configure(repo_root=<repo path>, topics_root=<topics path or empty>)
 ```
 
-After successful configuration, tell the user to run `/reload` or open a new
-Kimi Code session so the full `aitp_v5_*` surface loads. If the user has no
-checkout, offer to clone `https://github.com/bhjia-phys/AITP-Research-Protocol.git`
-into a user-chosen directory first.
+After successful configuration, tell the user to run `/reload` or open a new Kimi Code session so the compact Kimi Code AITP surface loads. If the user does not have a checkout, offer to clone `https://github.com/bhjia-phys/AITP-Research-Protocol.git` into a user-chosen directory before calling `aitp_configure`.
 
-## Environment
+## Local Wiring
 
-- AITP v5 runs through the native MCP entrypoint at `<repo-root>/brain/v5/native_mcp.py`, resolved by the plugin launcher (env `AITP_REPO_ROOT` -> `~/.aitp/kimi-plugin-config.json` -> `~/.aitp/install-record.json` -> `vendor/AITP-Research-Protocol`). Pass `base=""` to AITP v5 tools when the topics root is unknown; the MCP server resolves the empty base to its configured `AITP_TOPICS_ROOT`.
-- Kimi Code should expose the MCP server as `aitp`; typed tools are named
-  `aitp_v5_*`.
-- Project installs may also expose legacy-friendly discovery aliases
-  `aitp_list_topics`, `aitp_get_execution_brief`, and `aitp_bootstrap_topic`
-  from the same v5 native MCP server. Treat these aliases as discovery or
-  bootstrap compatibility only; they are not the execution contract for v5 work.
-- Legacy L0-L4 write tools are read-only guards by default. If an old `aitp_*`
-  write call returns `legacy_aitp_writes_disabled`, do not retry it; continue
-  through v5 migration/binding and typed `aitp_v5_*` writes.
-- Current AITP project installs use `.kimi/config.toml` and `.kimi/skills/`.
-- Newer Kimi Code installs may use `.kimi-code/config.toml`, `.kimi-code/mcp.json`, and `.kimi-code/skills/`.
-- If the local Kimi CLI supports explicit paths, load project assets with `--config-file`, `--mcp-config-file`, and `--skills-dir`.
-- On Windows terminals, set `PYTHONIOENCODING=utf-8` and `PYTHONUTF8=1` before `kimi mcp test` if the CLI crashes while printing Unicode status symbols.
+- Repository root: resolved by the plugin launcher from `AITP_REPO_ROOT`, `~/.aitp/kimi-plugin-config.json`, `~/.aitp/install-record.json`, or `vendor/AITP-Research-Protocol`.
+- Topics root and v5 base: resolved by the launcher from `AITP_TOPICS_ROOT`, `~/.aitp/kimi-plugin-config.json`, `~/.aitp/install-record.json`, or the default `~/.aitp/topics`.
+- Canonical v5 store: `<topics-root>/.aitp/`.
+- MCP entrypoint: `<repo-root>/brain/v5/native_mcp.py`.
+- Kimi Code plugin MCP surface: `AITP_MCP_SURFACE=codex` by default. The shared compact facade retains `aitp_v5_codex_*` tool names on every host. Use `AITP_MCP_SURFACE=full` only for kernel development or maintenance.
+- Fallback CLI: `uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli`
 
-## Entry Procedure
+The workspace-root `.aitp/` directory is runtime/local state; do not treat it as the v5 topic store.
 
-### Request Intensity
+When the exact topics root is unknown, pass `base=""` to AITP v5 tools. The MCP server resolves the empty base to `AITP_TOPICS_ROOT`.
 
-Classify the request before deciding how much AITP to load:
+## Entry Rules
 
-- Status or prior-progress inquiry: read-only recovery, execution brief, and
-  claim relation map. Do not write unless the user asks for a handoff or an
-  unresolved human checkpoint must be answered.
-- Old-knowledge/textbook Q&A: answer normally if generic. If tied to a known
-  topic or claim, restore brief plus relation map; write only durable sources,
-  gaps, routes, or corrections.
-- Light exploratory discussion: restore known topic context, but record only
-  when a durable route, question, source, artifact, result, or gap emerges.
-- Continuation, derivation, source reading, code/numerical work, validation,
-  contradiction, final synthesis, trust update, or L2 promotion: restore the v5
-  session and follow typed runtime gates.
+1. If the request is generic textbook knowledge and does not touch a project topic, answer normally.
+2. If only setup tools are exposed, complete first-run setup before any AITP research operation.
+3. First call `aitp_v5_codex_tool_catalog(profile="entry")` if the available surface is unclear.
+4. For any request that may involve a research topic, project-linked physics result, source, route, artifact, validation, failed path, latest prior result, or durable research memory, first make a semantic assessment, then call `aitp_v5_codex_autoroute(base="", request_summary=<user request>, session_id=<if known>, topics=<if known>, visible_files=<if relevant>, semantic_assessment=<assessment>)` before answering. The assessment should set fields such as `task_kind`, `needs_prior_research_state`, `needs_latest_topic_state`, `concerns_existing_topic_or_claim`, `creates_or_updates_durable_research_output`, `needs_validation_or_evidence_boundary`, `mentions_failed_or_superseded_route`, `trust_or_claim_status_sensitive`, `is_generic_textbook_question`, `should_use_aitp`, `confidence`, and `rationale`.
+5. If autoroute returns `decision="answer_without_aitp"`, answer normally. Do not write AITP records.
+6. If autoroute returns `enter_existing_session`, `recover_topic`, or `recover_workspace`, call the returned `recommended_next_tool` with `recommended_args`; this is normally `aitp_v5_codex_enter(..., payload_profile="minimal")`. Treat the returned `entry_card` as the model-facing default. Then expand through `aitp_v5_codex_expand` as recommended. Do not dump the full graph or request `payload_profile="context_pack"` unless the next step needs it.
+7. If only a topic slug is known, use the autoroute recommendation and then use a `recovery_ready` row's session and claim before creating or migrating anything.
+8. If no usable v5 session exists, use v5 migration or topic/claim/session creation tools through a full-kernel maintenance surface only after user confirmation. Do not write progress into old L0/L1/L3/L4 files.
+9. Load `aitp-runtime` before active continuation, derivation, validation, numerical work, final synthesis, trust updates, L2 promotion, literature registration, writing, or closeout.
 
-### Intent Matrix
+## Intensity Policy
 
-Use the lightest AITP path that preserves truth.
+- Status or prior-progress inquiry: read-only recovery, context pack, and concise summary. Expand to brief/relation map only when the answer depends on full boundary detail. Do not write unless the user asks for a durable handoff or resolves a human checkpoint.
+- Project-linked old-knowledge Q&A: restore context first; write only durable corrections, sources, gaps, route changes, or claim-boundary changes.
+- Light exploratory discussion: read topic context when known; write only after a durable route, question, source, artifact, result, or gap emerges.
+- Continuation, derivation, source reading, code/numerical work, validation, contradiction, final synthesis, trust update, or L2 promotion: follow typed gates through AITP v5 tools.
 
-| User intent | AITP read depth | Recording default | Escalate to write when |
-|---|---|---|---|
-| Generic textbook or old-knowledge Q&A | None, unless the answer names an existing topic or claim | No write | The answer corrects project memory, finds a durable gap, or introduces a reusable source |
-| Project-linked old-knowledge Q&A | Recovery audit, brief, relation map | No write | The answer changes a claim boundary, source role, route, or proof/validation obligation |
-| Prior progress/status inquiry | Recovery audit, brief, relation map, summaries | No write | User asks for a handoff/status artifact or resolves a human checkpoint |
-| Light exploratory discussion | Topic context if known; classifier only after a durable moment appears | No write | User accepts a route/question, identifies a source, or exposes a reusable gap |
-| Topic continuation or derivation | Brief, relation map, lightweight recording navigation; process graph only when needed | Write at durable moments | Source, artifact, result, proof obligation, route decision, or validation state changes |
-| Code/numerical/literature execution | Brief, relation map, source/code context, recording navigation | Write provenance and outputs | Tool run completes, artifact appears, validation passes/fails, or anomaly is observed |
-| Final claim/trust/L2/memory action | Brief, relation map, trust/promotion preflight | Human-gated write only | Explicit v5 gate and user decision allow it |
+When unsure, choose the read-only path first.
 
-When unsure between two rows, choose the read-only row first and let the
-recording classifier decide whether a durable moment exists. Do not create a
-new topic, claim, session, or binding merely because a conversation is
-interesting.
+## Hard Rules
 
-0. If `ResearchAction` is available, open a WorkFrame before substantive AITP
-   reads:
-   `ResearchAction(open_work_frame, topic=<topic>, goal=<restore-or-research-goal>)`.
-   After the execution brief and claim relation map are loaded, call
-   `ResearchAction(compile_context_pack, work_frame_id=<frame-id>)` before final
-   synthesis. If `ResearchAction` is not available, continue with the AITP MCP
-   steps below.
-1. If the request might belong to theoretical physics, call
-   `aitp_v5_get_execution_brief` for the active session before doing
-   substantive work.
-   Also call `aitp_v5_get_claim_relation_map` for the same session before
-   interpreting failures, blockers, support, limitations, or next actions.
-2. If only a topic slug is known, first call
-   `aitp_v5_build_workspace_recovery_audit` for that topic. If the row is
-   `recovery_ready`, use the selected `session_id` and `active_claim_id`; then
-   call `aitp_v5_get_execution_brief` and `aitp_v5_get_claim_relation_map` for
-   that session. Do not migrate, create, bind, or update claim status during
-   recovery when a ready v5 session already exists.
-3. Use `aitp_list_topics` and `aitp_get_execution_brief` only to orient legacy
-   topics after the v5 recovery audit has failed. Before substantive research,
-   migrate/bind a v5 session with `aitp_v5_migrate_curated_legacy_topic_to_v5`
-   for known curated topics, `aitp_v5_migrate_legacy_topic_to_v5` for generic
-   preservation, or create a new v5 topic/claim/session with
-   `aitp_v5_create_topic`, `aitp_v5_create_claim`, and
-   `aitp_v5_bind_session`.
-   Do not write new progress back into old L0/L1/L3/L4 files.
-4. Read the execution brief and follow its risk, claim, evidence, validation, and next-action fields.
-   Read the claim relation map as the read-only conclusion-boundary layer; it
-   cannot update claim trust.
-5. For every meaningful result, use typed writes:
-   - `aitp_v5_record_physics_object`
-   - `aitp_v5_record_object_relation`
-   - `aitp_v5_record_evidence`
-   - `aitp_v5_record_tool_run`
-   - `aitp_v5_create_validation_contract`
-   - `aitp_v5_record_validation_result`
-   - `aitp_v5_record_sensemaking_report`
-6. Before trust changes or L2 memory promotion, use the v5 trust/promotion gate. Never promote from a summary alone.
+- Do not manually edit AITP topic-state files.
+- Do not treat legacy `stage`, `gate_status`, or L0-L4 files as v5 truth.
+- Do not enable `AITP_LEGACY_ENABLE_WRITES=1` during normal research.
+- Do not create or bind a session merely to restore an existing topic if recovery already finds a usable session.
+- Do not turn runtime/setup failures into algorithm or physics evidence.
+- Do not treat an AITP context pack as evidence, validation, L2 memory, or claim-trust support.
+- Do not treat `ok=true` from closeout or quiet checkpoint as complete AITP recording. Inspect `record_completeness_audit`; for numerical work, missing `artifact`, `code_state`, or `validation_result` means the durable package is incomplete and must be reported or filled through typed tools after confirmation.
+- Do not promote to L2 without v5 trust preflight, validation coverage, and the explicit human gate.
+- Preserve uncertainty, failed attempts, anomalies, and open gaps.
 
-## Progressive Recording Navigation
+## Human Gates
 
-Do not write AITP records at every chat step. Trigger navigation at durable
-moments: known-topic session start, active claim creation/change, durable source
-identity/location, completed tool run, produced artifact, observed result or
-anomaly, negative result, proof or validation gap, route pivot, final answer
-about an active claim, trust/promotion request, or session-end handoff.
+When an AITP tool returns a human decision point:
 
-Use this sequence, mapped to the available Kimi/Hakimi tool names:
+1. Stop other work.
+2. Present the choices plainly.
+3. Wait for the user's explicit answer.
+4. Resolve the decision through AITP.
+5. Continue only after resolution.
 
-```text
-aitp_v5_build_workspace_recording_audit(base="")      # read-only, if placement is unclear
-aitp_v5_classify_recording_candidate(base="", ...)    # read-only
-aitp_v5_get_recording_navigation_state(base="", session_id=<session-id>, claim_id=<claim-id>)  # read-only
-aitp_v5_expand_recording_slot(base="", session_id=<session-id>, slot=<slot>, claim_id=<claim-id>)  # read-only
-<existing typed write or preflight tool named by the slot expansion>
-aitp_v5_verify_recording_effect(base="", session_id=<session-id>, expected_refs=[...])  # read-only
-```
+## Fallback Diagnostics
 
-Audit, classifier, navigation, slot expansion, and verification surfaces cannot
-update claim trust. Only the deepest typed write or preflight tool may mutate
-kernel state, and trust still requires explicit trust/human gates.
-
-Do not run the progressive navigator for generic explanation, vague
-brainstorming, duplicate status summaries, or source/file scans that do not
-change a claim, route, gap, artifact, or validation state. If a light
-discussion becomes research, first restate the durable moment in one sentence,
-then classify that candidate.
-
-## Kimi Hook Installation
-
-Generate or merge project-local Kimi hooks from the v5 kernel:
+Use these only when MCP tools are unavailable or setup is suspect:
 
 ```powershell
-python -m brain.v5.cli --base <workspace> adapter install-hooks kimi-code <session-id> --settings <workspace>/.kimi/config.toml
-python -m brain.v5.cli --base <workspace> adapter install-hooks kimi-code <session-id> --settings <workspace>/.kimi-code/config.toml
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python scripts/aitp-pm.py doctor
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli --base "$env:AITP_TOPICS_ROOT" status context-pack <session-id>
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli --base "$env:AITP_TOPICS_ROOT" brief <session-id>
+uv run --with pyyaml --with jsonschema --with fastmcp --with "pypdf>=5,<7" python -m brain.v5.cli --base "$env:AITP_TOPICS_ROOT" relation-map <session-id>
 ```
-
-Audit the installed Kimi config:
-
-```powershell
-python -m brain.v5.cli --base <workspace> adapter install-audit kimi-code --settings <workspace>/.kimi/config.toml
-python -m brain.v5.cli --base <workspace> adapter install-audit kimi-code --settings <workspace>/.kimi-code/config.toml
-```
-
-The installed hooks are lifecycle guards only. They can block risky pre-tool actions and append post-tool trace events, but they cannot update claim trust.
-
-## Working Style
-
-- Talk naturally with the researcher, but record durable scientific content as typed records.
-- Keep definitions, claims, evidence, tool runs, validation contracts, validation results, and sensemaking separate.
-- Record negative results and failure modes immediately.
-- If Kimi hooks are unavailable, continue through MCP tools and note the hook gap as runtime metadata only.
-
-## Red Flags
-
-Stop and re-enter AITP v5 if you catch yourself saying:
-
-- "I can make substantial recovery calls before opening the available WorkFrame."
-- "I can answer this research question directly without a brief."
-- "This summary is enough to promote memory."
-- "The hook config says this happened, so the claim is validated."
-- "This runtime/application failure proves the algorithm works or fails."
-- "I need to bind or update claim status just to restore an existing ready topic."
-- "I can enable AITP_LEGACY_ENABLE_WRITES during normal research."
-- "I'll record the tool run later."

@@ -1,20 +1,25 @@
-# AITP Research Protocol — Kimi Code Plugin
+# AITP Research Protocol - Kimi Code Plugin
 
-Kimi Code plugin for the local AITP 1.0 v5 physics research graph kernel.
-It mirrors the Codex plugin (`../aitp-research-protocol/`) for Kimi Code hosts:
+Kimi Code plugin for the local AITP v5 theoretical-physics research operating
+memory.
 
-- declares the `aitp` MCP server (full `aitp_v5_*` tool surface),
-- ships the `using-aitp` / `aitp-runtime` / `configure-aitp` skills,
-- auto-loads `using-aitp` at session start (`sessionStart.skill`),
-- provides a first-run setup mode (`aitp_config_status`, `aitp_suggest_config`,
-  `aitp_configure`) when no AITP checkout is configured yet.
+The package:
+
+- registers the `aitp` MCP server with the compact 10-tool research surface,
+- ships the `using-aitp`, `aitp-runtime`, and `configure-aitp` Skills,
+- auto-loads `using-aitp` at session start,
+- exposes setup-only tools when no AITP checkout is configured.
+
+The default is `AITP_MCP_SURFACE=codex`. This is a shared host-neutral compact
+facade whose public names retain the `aitp_v5_codex_*` prefix for compatibility.
+Set `AITP_MCP_SURFACE=full` explicitly only for kernel development or
+maintenance.
 
 ## Requirements
 
 - Kimi Code CLI with plugin support (`/plugins`).
-- `uv` on `PATH` (the MCP server runs through `uv run --with ...`).
-- A local checkout of `AITP-Research-Protocol` (first-run setup can also clone
-  or locate one).
+- `uv` on `PATH`.
+- A local checkout of `AITP-Research-Protocol`.
 
 ## Install
 
@@ -24,47 +29,58 @@ From Kimi Code:
 /plugins install F:/AI_Workspace/repos/AITP-Research-Protocol/plugins/aitp-research-protocol-kimi
 ```
 
-or browse the repo-local marketplace catalog:
+Or browse the repo-local marketplace catalog:
 
 ```text
 /plugins marketplace F:/AI_Workspace/repos/AITP-Research-Protocol/plugins/marketplace.kimi.json
 ```
 
-Then run `/reload` (or open a new session).
-
-Kimi Code installs plugins per user (all projects) and always runs the managed
-copy; re-install to pick up changes from this directory.
+Then run `/reload` or open a new session. Kimi Code uses a managed user-level
+copy; reinstall the plugin to pick up changes from this directory.
 
 ## First-Run Configuration
 
-If no AITP checkout is configured, the MCP server starts in setup mode and
-exposes only `aitp_config_status`, `aitp_suggest_config`, and `aitp_configure`.
-Tell Kimi where your `AITP-Research-Protocol` checkout is (or let it clone
-`https://github.com/bhjia-phys/AITP-Research-Protocol.git`), then run `/reload`
-so the full `aitp_v5_*` tools load.
+If no AITP checkout is configured, the MCP server exposes only
+`aitp_config_status`, `aitp_suggest_config`, and `aitp_configure`. Configure the
+repository and topics root, then run `/reload` so the compact Kimi Code AITP
+surface loads.
 
-Configuration is stored in `~/.aitp/kimi-plugin-config.json`, independent from
-the Codex plugin's `~/.aitp/codex-plugin-config.json`.
+The launcher resolves the repository root in this order:
+
+1. `AITP_REPO_ROOT`
+2. `~/.aitp/kimi-plugin-config.json`
+3. `~/.aitp/install-record.json`
+4. the packaged `vendor/AITP-Research-Protocol` checkout
+
+It resolves the topics root from `AITP_TOPICS_ROOT`, the Kimi plugin config,
+the install record, or `~/.aitp/topics`. Kimi and Codex plugin configuration
+files remain separate.
 
 ## Interaction With Project-Scope Installs
 
 Do not run this plugin together with a project-scope AITP install in the same
-workspace: both register an MCP server named `aitp`. In workspaces that already
-have a project-level AITP MCP config (for example the `Theoretical-Physics`
-workspace with `.kimi-code/config.toml`), either skip installing this plugin or
-disable only its MCP server and keep the skills:
+workspace because both register an MCP server named `aitp`. This includes
+project MCP configuration under `.kimi/config.toml` or
+`.kimi-code/config.toml`.
+
+Either skip the plugin in that workspace or disable only its MCP server and
+keep the skills:
 
 ```text
 /plugins mcp disable aitp-research-protocol aitp
 ```
 
+Plugin MCP registration is distinct from project lifecycle-hook installation.
+A Kimi hook may be installed and audited separately, only with explicit user
+approval, and is runtime metadata rather than canonical research state.
+
 ## Update
 
-Plugins do not auto-update. Re-run `/plugins install <path>` (or accept the
-update offered in the `/plugins` marketplace tab) and `/reload`.
+Plugins do not auto-update. Re-run `/plugins install <path>` or accept the
+marketplace update, then run `/reload`.
 
 ## Layout
 
-- `kimi.plugin.json` — Kimi Code plugin manifest
-- `scripts/launch_aitp_mcp_kimi.py` — MCP launcher with first-run setup mode
-- `skills/` — `using-aitp`, `aitp-runtime`, `configure-aitp`
+- `kimi.plugin.json` - Kimi Code plugin manifest
+- `scripts/launch_aitp_mcp_kimi.py` - launcher and first-run setup mode
+- `skills/` - `using-aitp`, `aitp-runtime`, and `configure-aitp`
