@@ -1,7 +1,7 @@
 # AITP Dynamic Multi-Topic Hook Routing Design
 
 Date: 2026-07-18
-Status: approved direction; implementation planning pending written-spec review
+Status: approved; implementation tracked by the 2026-07-18 TDD plan
 
 ## 1. Decision
 

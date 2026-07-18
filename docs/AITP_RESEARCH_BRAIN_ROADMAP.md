@@ -34,6 +34,12 @@ real literature substrate for QFT, quantum gravity, LibRPA, and other domains.
 ## Architecture Target
 
 ```text
+Bounded host prompt/lifecycle event
+        |
+        v
+Dynamic multi-topic route (runtime-only, fail closed)
+        |
+        v
 Domain skills and literature connectors
         |
         v
@@ -245,6 +251,36 @@ Each exemplar should include:
 - can-say/cannot-say boundary;
 - promotion status and blocked conditions.
 
+## Workstream E: Dynamic Multi-Topic Host Entry
+
+Objective: let one AITP-enabled research workspace enter the correct existing
+research scope without making repository layout or a permanently configured
+session id decide the science.
+
+Required surfaces:
+
+- a bounded host-neutral route request containing project/repository/path hints,
+  explicit refs, host-session identity, and a prompt/objective summary;
+- a read-only decision with `outside_aitp`, `selected`, `ambiguous`,
+  `workspace_recovery`, `conflict`, or `coverage_blocked` status;
+- coherent indexed candidate discovery followed by exact canonical reads;
+- one primary single-topic `SessionBinding`, with supporting topics represented
+  only as reviewed scope/focus proposals requiring target revalidation;
+- disposable hashed host-session mappings below `.aitp/runtime`;
+- dynamic installation as the default and explicit pinned mode as a
+  single-topic compatibility/optimization path;
+- pre-selection hooks limited to generic policy and runtime trace; only a
+  validated selected route may enter bounded context or Research Moment logic.
+
+The route layer is not another research graph, RAG backend, prompt store, or
+agent orchestrator. It cannot create topics/sessions, update claim trust,
+transfer cross-topic evidence authority, install Skills, persist full
+transcripts, or add an eleventh compact MCP tool.
+
+Real acceptance requires one installed project hook to select two different
+existing topic/session pairs from two relevant turns while an ambiguous turn
+does not silently choose or write.
+
 ## Implementation Discipline
 
 - Do not add new record families unless an existing family cannot represent the
@@ -256,6 +292,10 @@ Each exemplar should include:
 - Treat external skills as procedural memory, not truth.
 - Keep domain isolation: LibRPA, QFT, quantum gravity, and topological order
   should not contaminate each other without an explicit bridge.
+- Route before loading session-specific context, and preserve ambiguity rather
+  than guessing from recency or similarity.
+- Keep host-route continuity in disposable runtime state; canonical research
+  records remain the only scientific truth source.
 
 ## Completion Criteria
 
@@ -270,3 +310,9 @@ answer:
 6. What can be said, what cannot be said, and what must be verified?
 7. What should be recorded next?
 8. What is eligible for long-term memory, and what is explicitly not eligible?
+9. Which existing topic/session best matches this turn, and which candidates
+   were checked but not selected?
+10. Is routing coverage strong enough for session-specific context/recording,
+    or must the agent ask for an explicit choice?
+11. Can the same installed project entry switch safely between two research
+    topics without transferring claim trust or modifying canonical memory?

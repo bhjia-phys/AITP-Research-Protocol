@@ -19,6 +19,9 @@
 - Grounded knowledge, reviewed insight, L2 promotion, claim-trust mutation, and skill installation preserve their stated review gates.
 - Active claims are never rebound automatically.
 - Startup context is bounded, coverage-declared, and progressively expandable.
+- Multi-topic project hooks route dynamically by default. A fixed session pin is
+  an explicit compatibility/optimization mode, never an implicit workspace
+  default; ambiguous or incomplete routing performs no canonical write.
 - `brain/v5/native_mcp.py` and `aitp_v5_*` are the only production research-write
   runtime. Legacy L0-L4 surfaces remain read-only by default for audit,
   interpretation, migration, and rollback.
@@ -37,6 +40,7 @@ This roadmap is the authoritative successor to the earlier lifecycle-only task
 ordering in this file. It implements the approved architecture in:
 
 - `docs/superpowers/specs/2026-07-10-aitp-final-research-operating-memory-design.md`
+- `docs/superpowers/specs/2026-07-18-aitp-dynamic-multi-topic-hook-routing-design.md`
 
 It incorporates and re-baselines useful work from:
 
@@ -83,7 +87,7 @@ These measurements are acceptance inputs, not estimates.
 
 | Research moment | AITP behavior | User-visible result | Boundary |
 |---|---|---|---|
-| First relevant turn | Resolve program/topic/focus and query indexed state. | Small resume, current boundary, applicable skills, exact expansion handles. | No full topic-memory injection. |
+| First relevant turn | Read-only route against the current workspace, then resolve program/topic/focus only after one session is safely selected. | Small resume, current boundary, applicable skills, exact expansion handles; ambiguity remains visible. | No recency-only selection, full topic-memory injection, or route-time canonical write. |
 | Normal theory or code discussion | Expand only the required process, knowledge, execution, or source lane. | Relevant prior work without AITP maintenance ceremony. | Context declares checked and unchecked scope. |
 | Source, code, tool, HPC, or artifact event | Capture exact objective process state when idempotent. | Usually silent; visible through closeout or explicit audit. | Process capture has no claim-trust effect. |
 | Definition, formula, mapping, derivation, interpretation, or insight appears | Stage and coalesce a semantic candidate. | One milestone review batch. | No automatic canonical scientific promotion. |
@@ -91,6 +95,53 @@ These measurements are acceptance inputs, not estimates.
 | Session closeout | Persist process closeout and candidate batch; compile a resume card. | Next session starts from useful memory. | Closeout updates process state, not claim trust. |
 | Workflow repeats successfully | Draft a procedural skill candidate and readiness report. | Reviewable package and applicability preview. | No automatic install or overwrite. |
 | AITP friction is observed | Write one generic problem dossier. | Human-reviewable harness issue. | Research runtime does not author an optimization plan. |
+
+### 3.1 Goal Amendment: Dynamic Multi-Topic Host Entry
+
+This amendment is a binding part of the overall Goal. It corrects the earlier
+M5 assumption that installing a hook permanently bound to one `session_id`
+could satisfy real host acceptance.
+
+**Required user effect:** one AITP installation at a multi-topic project root
+must recover the topic/session relevant to the current research turn. A
+LibRPA/HPC turn and a QFT/quantum-gravity turn in the same project may select
+different existing sessions. A mixed or under-specified turn must return a
+bounded choice/recovery card instead of silently selecting or writing.
+
+**Implementation principle:** hooks are bounded trigger and transport adapters.
+They normalize host identity, project/repository/path hints, explicit refs, and
+a prompt/objective summary, then call the shared read-only route/query/recovery
+services. They do not own scientific interpretation, topic creation, session
+creation, context compilation, Research Moment policy, Skill logic, or claim
+trust.
+
+**Architecture boundaries:**
+
+- production installation defaults to `routing_mode=dynamic` and contains no
+  permanent session id;
+- `routing_mode=pinned` remains an explicit single-topic optimization and
+  compatibility mode; an explicit conflicting topic/session fails closed;
+- `SessionBinding` remains single-topic; clear cross-topic work uses one primary
+  session plus reviewed supporting scope/focus proposals and target-side
+  revalidation, never trust transfer;
+- host-session route mappings live only below `.aitp/runtime`, use hashed
+  identities, are disposable, and require exact canonical revalidation before
+  reuse;
+- stale, malformed, truncated, partial, conflicting, or ambiguous coverage
+  cannot produce a write-authorizing route;
+- hosts without prompt-submit routing continue through the existing compact
+  first-relevant-prompt fallback; compact MCP remains exactly ten tools.
+
+**Acceptance consequence:** M5 remains open until one installed dynamic project
+hook in a real multi-topic workspace demonstrates topic/session A, then
+topic/session B, while an ambiguous request performs no canonical write. Host
+process availability, generated fixtures, and a fixed-session smoke are useful
+compatibility evidence but do not satisfy this item.
+
+This amendment does not add a general agent orchestrator, infer the most recent
+topic as a default, create research scopes from every conversation, persist full
+prompts/transcripts, or make hook installation necessary for correct manual AITP
+use.
 
 ## 4. Milestone Dependency Graph
 
@@ -1287,6 +1338,47 @@ installed. The 2026-07-17 live audit found all four host commands but no
 repository-local AITP hook installation; see
 `docs/superpowers/progress/2026-07-10-aitp-gate-5-release-audit.md`.
 
+### Task 5.2c: Dynamic Multi-Topic Host Entry
+
+**Detailed implementation plan:**
+`docs/superpowers/plans/2026-07-18-aitp-dynamic-multi-topic-hook-routing.md`
+
+**Files:**
+- Create: `brain/v5/host_route_contracts.py`
+- Create: `brain/v5/dynamic_host_routing.py`
+- Create: `brain/v5/host_route_cache.py`
+- Modify: `brain/v5/compact_mcp_tools.py`
+- Modify: `brain/v5/codex_facade.py`
+- Modify: `brain/v5/host_lifecycle_contracts.py`
+- Modify: `brain/v5/host_lifecycle_dispatch.py`
+- Modify: `hooks/aitp_v5_adapter_event_runner.py`
+- Modify: focused host installers, installation audit, CLI, and contracts
+- Create: `tests/test_v5_dynamic_host_routing.py`
+- Create: `tests/test_v5_dynamic_multi_topic_host_e2e.py`
+
+**Interfaces:**
+- Produces: `HostRouteRequest`, `HostRouteCandidate`, `HostRouteDecision`
+- Produces: `resolve_host_research_route(ws, request, *, query_session=None)`
+- Produces runtime-only read/write/clear helpers for exact host-session routes.
+- Extends the existing compact autoroute and install/audit surfaces without
+  adding a compact MCP tool or canonical record family.
+
+- [ ] Reuse one coherent query snapshot plus exact record reads to distinguish
+  `outside_aitp`, `selected`, `ambiguous`, `workspace_recovery`, `conflict`, and
+  `coverage_blocked`.
+- [ ] Rank explicit refs and validated repository/path anchors above runtime
+  continuity and text similarity; never select from recency alone.
+- [ ] Exact-read every selected session/topic and invalidate stale runtime
+  mappings; keep all mappings below `.aitp/runtime` and watermark-neutral.
+- [ ] Route before session-specific context or Research Moment handling. Before
+  selection, hooks may enforce generic policy and append bounded trace only.
+- [ ] Make new installs dynamic by default while preserving explicit pinned
+  compatibility; audit routing mode, project/topics roots, pins, and legacy
+  injection conflicts.
+- [ ] Prove one multi-topic project routes two prompts to two sessions and that
+  ambiguity, conflicts, stale coverage, malformed records, and missing refs
+  produce zero canonical writes.
+
 ### Task 5.3: One Generic Harness Feedback Dossier
 
 **Files:**
@@ -1354,9 +1446,16 @@ runtime registry and static layout both contain 74 families with zero drift.
 - [x] Host context stays within budget and is traceable to exact refs.
 - [x] Harness feedback produces only a reviewable problem dossier.
 - [x] Harness feedback cannot create any Skill or automatic optimization action.
-- [ ] At least one repository-local project hook is installed and a real
-  interactive lifecycle event is observed; generated command tests and host
-  process availability are insufficient. Until then M5 remains open.
+- [ ] One repository-local hook is installed in dynamic mode at a real
+  multi-topic project root; separate host sessions or explicit topic shifts
+  select and enter existing topic/session A and B through the same installation.
+- [ ] An ambiguous real prompt through that installation produces a bounded
+  choice/recovery result, no silent selection, and no canonical write.
+- [ ] The installed route/context evidence is bounded and exact-ref traceable;
+  compact MCP remains ten tools and the canonical watermark changes only for a
+  separately validated durable Research Moment.
+- [x] Fixed-session installation remains test-backed as explicit pinned
+  compatibility, but it is not M5 production acceptance evidence.
 - [x] The separately packaged Kimi Code plugin has test-backed manifest,
   launcher/config, packaged-Skill, and duplicate-registration parity. This is
   distinct from project lifecycle-hook installation and observation.
@@ -1365,8 +1464,8 @@ Kimi package status: the launcher now defaults to the shared ten-tool compact
 facade (`AITP_MCP_SURFACE=codex`), preserves an explicit full maintenance
 override, and ships matching entry/runtime Skills plus duplicate-registration
 guidance. The package contract suite passes five focused tests. M5 remains open
-only for a real repository-local project-hook installation and observed
-interactive lifecycle event.
+for the dynamic multi-topic implementation and its real installed acceptance;
+neither package availability nor a fixed-session project-hook smoke closes it.
 
 ## 12. M6: Real Research End-To-End Acceptance
 
@@ -1557,3 +1656,6 @@ separate grounded knowledge from speculative insight; compile repeated validated
 procedures into reviewed versioned skills; expose the correct context and skill
 to a later session; and pass the LibRPA/HPC, QFT/QG, new-software, and multi-topic
 end-to-end journeys without any path that silently changes scientific trust.
+One installation in a multi-topic project must select the right existing
+session from current research intent, preserve ambiguity when selection is not
+safe, and leave routing/cache operations outside canonical scientific memory.

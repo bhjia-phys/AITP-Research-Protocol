@@ -4,7 +4,7 @@
 
 **Goal:** Make AITP a quiet assistant inside real host sessions: recall relevant state, capture exact process events, stage semantic candidates, expose applicable Skills, and record AITP friction without taking scientific or engineering authority.
 
-**Architecture:** Host adapters normalize native events into a small logical research-event protocol. A pure Research Moment Controller chooses one bounded action; trusted scientific changes still use existing explicit gates. Context injections and raw candidates are runtime state, canonical objective process records use M0 writers, and Harness Feedback produces one generic human-reviewable dossier record rather than an optimization plan.
+**Architecture:** Host adapters normalize native events into a small logical research-event protocol. A read-only dynamic route resolver selects one existing primary session or preserves ambiguity before session-specific context or recording is allowed. A pure Research Moment Controller then chooses one bounded action; trusted scientific changes still use existing explicit gates. Context injections, host-route mappings, and raw candidates are runtime state, canonical objective process records use M0 writers, and Harness Feedback produces one generic human-reviewable dossier record rather than an optimization plan.
 
 **Tech Stack:** Python 3.12, dataclasses, JSON/JSONL hook payloads, Markdown/YAML process records, Codex/Claude/Kimi host adapters, M1 lifecycle/recording, M4 Skill matching, pytest host fixtures.
 
@@ -33,6 +33,14 @@
   an explicit idempotent begin-turn/closeout facade fallback.
 - M0 compatibility loaders/shards receive only narrow imports/re-exports;
   focused M5 modules and installer/template owners contain behavior.
+- Multi-topic project installation defaults to dynamic routing and contains no
+  permanent `session_id`; explicit pinned mode remains compatibility only.
+- Route ambiguity, conflict, stale/partial coverage, malformed records, or
+  missing exact reads cannot authorize session-specific context or canonical
+  Research Moment writes.
+- Dynamic routing reuses the compact facade, unified query layer, exact
+  repository reads, and single-topic `SessionBinding`; it adds no compact tool,
+  canonical family, or second host orchestrator.
 
 ## Test Protocol
 
@@ -406,8 +414,93 @@ The repository-level vertical is commit `292445dc` (`v5: connect validated
 research moments to host lifecycle`). The release audit drift fix is a separate
 closeout commit so it cannot rewrite that implementation evidence.
 Do not call M5 complete until at least one installed project-hook lifecycle
-event is observed. The separately packaged Kimi Code parity checks now pass,
-but plugin packaging is not project-hook installation evidence.
+event is observed through the dynamic multi-topic contract below. The
+separately packaged Kimi Code parity checks now pass, but plugin packaging and
+fixed-session hook smokes are not project-hook production evidence.
+
+## Task 6: Dynamic Multi-Topic Host Entry Correction
+
+**Design:**
+`docs/superpowers/specs/2026-07-18-aitp-dynamic-multi-topic-hook-routing-design.md`
+
+**Implementation plan:**
+`docs/superpowers/plans/2026-07-18-aitp-dynamic-multi-topic-hook-routing.md`
+
+**Files:**
+- Create: `brain/v5/host_route_contracts.py`
+- Create: `brain/v5/dynamic_host_routing.py`
+- Create: `brain/v5/host_route_cache.py`
+- Modify: `brain/v5/compact_mcp_tools.py`
+- Modify: `brain/v5/codex_facade.py`
+- Modify: `brain/v5/host_lifecycle_contracts.py`
+- Modify: `brain/v5/host_lifecycle_dispatch.py`
+- Modify: `hooks/aitp_v5_adapter_event_runner.py`
+- Modify: `brain/v5/cli_adapters.py`
+- Modify: `brain/v5/hook_codex_install.py`
+- Modify: `brain/v5/hook_install_templates.py`
+- Modify: `brain/v5/hook_kimi_install.py`
+- Modify: `brain/v5/hook_opencode_install.py`
+- Modify: `brain/v5/hook_install_audit.py`
+- Modify: `brain/v5/hook_install_contracts.py`
+- Create: `tests/test_v5_dynamic_host_routing.py`
+- Create: `tests/test_v5_dynamic_multi_topic_host_e2e.py`
+
+**Interfaces:**
+- Produces: immutable request/candidate/decision contracts with statuses
+  `outside_aitp`, `selected`, `ambiguous`, `workspace_recovery`, `conflict`, and
+  `coverage_blocked`.
+- Produces: `resolve_host_research_route(ws, request, *, query_session=None)`.
+- Produces: runtime-only host-route mapping helpers under
+  `.aitp/runtime/host_routes` with exact canonical revalidation.
+- Extends: existing compact autoroute, lifecycle dispatch, installer, audit,
+  and runner surfaces without increasing the ten-tool compact catalog.
+
+- [ ] **Step 1: Lock route contracts with failing tests**
+
+Require bounded candidate cards, reason codes, coverage, index generation,
+canonical watermark, input fingerprint, next operation, and false trust/write
+authority. Reject raw transcripts and unbounded host payloads.
+
+- [ ] **Step 2: Implement the read-only resolver**
+
+Use one `QuerySnapshotSession`; rank explicit topic/session/record refs first,
+then validated project/repository/path anchors, exact-valid runtime continuity,
+and bounded text matches. Recency is tie-break only. Exact-read selected session,
+topic, focus, and claim anchors before returning `selected`.
+
+- [ ] **Step 3: Add runtime route continuity**
+
+Hash workspace/host/host-session path identity, write atomically below
+`.aitp/runtime`, validate content fingerprints and exact refs on every read, and
+prove canonical before/after bytes and watermark are unchanged.
+
+- [ ] **Step 4: Compose compact autoroute and lifecycle dispatch**
+
+Resolve dynamic routes on the first relevant prompt. Before `selected`, pre/post
+tool events may return generic policy and runtime trace only. After `selected`,
+reuse the existing bounded context and validated Research Moment paths.
+
+- [ ] **Step 5: Make installation mode explicit**
+
+New CLI installs default to dynamic with no session argument. Preserve the old
+positional session command as `pinned_compat`; explicit `--routing-mode pinned`
+requires `--session-id`, while explicit dynamic mode conflicts with a pin.
+Generated config and audit output declare routing mode, project root, topics
+root, optional pin, and legacy-injection migration state.
+
+- [ ] **Step 6: Prove multi-topic and fail-closed behavior**
+
+In one fixture project, prompts A and B select different existing sessions;
+mixed, stale, malformed, truncated, missing-ref, and pin-conflict inputs perform
+zero canonical writes. Cross-topic supporting candidates require target
+revalidation and transfer no trust. Compact tool count remains ten.
+
+- [ ] **Step 7: Run split release lanes and update installation docs**
+
+Run deterministic routing/installer/runner tests with unique system-Temp roots;
+run existing slow adapter and real-host probes as separate bounded lanes. Record
+timeouts as unverified, never passed. Do not modify a real project hook until an
+exact configuration diff receives separate authorization.
 
 ## M5 Completion Checklist
 
@@ -428,9 +521,15 @@ but plugin packaging is not project-hook installation evidence.
   distillation action.
 - [x] A normal research lifecycle requires no manual AITP file editing in the
   generated-hook and fixture vertical.
-- [ ] At least one repository-local project hook is installed and a real
-  interactive lifecycle event is observed. Process availability or generated
-  command smoke alone does not satisfy this item.
+- [ ] One repository-local project hook is installed in dynamic mode in a real
+  multi-topic project. Through that one installation, one prompt enters
+  topic/session A and another host session or explicit shift enters B.
+- [ ] An ambiguous real prompt preserves the candidate set and performs no
+  session-specific context injection or canonical write.
+- [ ] Installed route evidence is bounded, exact-ref traceable, watermark
+  neutral, and leaves compact MCP at exactly ten tools.
+- [x] Explicit fixed-session/pinned installation remains compatibility-tested;
+  it does not satisfy the dynamic production item.
 - [x] The separately packaged Kimi Code plugin has test-backed manifest,
   launcher/config resolution, packaged-Skill, and duplicate-registration parity.
   Plugin availability does not satisfy project lifecycle-hook readiness.
