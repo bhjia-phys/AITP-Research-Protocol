@@ -42,7 +42,13 @@
 **New focused modules**
 
 - `brain/v5/host_route_contracts.py`: immutable route request, candidate,
-  coverage, and decision contracts plus validation/serialization.
+  coverage, and decision contracts with stable re-export entrypoints.
+- `brain/v5/host_route_normalization.py`: shared bounded text/id/ref/JSON
+  normalization helpers used by route contracts.
+- `brain/v5/host_route_requests.py`: request normalization and deterministic
+  input fingerprinting.
+- `brain/v5/host_route_payloads.py`: decision payload encoding, decoding, and
+  authority revalidation across runtime boundaries.
 - `brain/v5/dynamic_host_routing.py`: pure orchestration of intent assessment,
   indexed discovery, exact verification, scoring, ambiguity, and supporting
   scope proposals.
@@ -103,6 +109,9 @@ loop, while slow lanes remain separately observable.
 
 **Files:**
 - Create: `brain/v5/host_route_contracts.py`
+- Create: `brain/v5/host_route_normalization.py`
+- Create: `brain/v5/host_route_requests.py`
+- Create: `brain/v5/host_route_payloads.py`
 - Create: `tests/test_v5_dynamic_host_routing.py`
 - Modify: `brain/v5/public_surfaces.py` only if an existing surface validator
   cannot express the nested route payload; do not register a new MCP operation.
@@ -123,25 +132,25 @@ loop, while slow lanes remain separately observable.
   operation, and fixed false trust/write authority.
 - Produces: `normalize_host_route_request(...)` and `route_decision_payload(...)`.
 
-- [ ] **Step 1: Write failing contract tests**
+- [x] **Step 1: Write failing contract tests**
 
 Test all six statuses, candidate limit, normalized/sorted exact inputs, maximum
 summary/path counts and lengths, rejection of raw transcript/tool-output fields,
 and deterministic serialization/fingerprints.
 
-- [ ] **Step 2: Prove authority invariants in RED**
+- [x] **Step 2: Prove authority invariants in RED**
 
 Require `orientation_only=True`, `summary_inputs_trusted=False`,
 `canonical_write_allowed=False`, `can_update_kernel_state=False`, and
 `can_update_claim_trust=False`. Reject a `selected` decision without one exact
 topic/session pair or with blocked coverage.
 
-- [ ] **Step 3: Implement minimal frozen contracts**
+- [x] **Step 3: Implement minimal frozen contracts**
 
 Use immutable tuples/mappings and existing timestamp/id/path normalization where
 appropriate. Do not import repository writers or lifecycle application code.
 
-- [ ] **Step 4: Run focused GREEN and review field flow**
+- [x] **Step 4: Run focused GREEN and review field flow**
 
 ```powershell
 python -m pytest tests/test_v5_dynamic_host_routing.py -q -k contract
@@ -150,9 +159,18 @@ python -m pytest tests/test_v5_dynamic_host_routing.py -q -k contract
 Review every request field for an actual producer and every decision field for
 an actual consumer. Delete speculative fields before commit.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Commit message: `v5: define trust-neutral host route contracts`.
+
+Execution note: nine focused route-contract tests cover deterministic request
+normalization/fingerprints, bounded candidate decisions, strong-coverage
+selection, ambiguity, target revalidation, fixed false authority, and JSON
+round-trip tamper rejection. The initial all-in-one contract module exceeded
+the 500-line architecture budget, so request normalization and payload codecs
+were split into focused modules without changing the public API. The combined
+route, public-surface, generic-contract, and architecture lane passed 77 tests
+in 226.51 seconds using an explicit system-Temp basetemp.
 
 ### Task 2: Implement Coherent Read-Only Route Resolution
 
