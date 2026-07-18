@@ -1,0 +1,25 @@
+{
+  "topic_id": "nio-magnetic-gw",
+  "problem_type": "missing_workflow_provenance",
+  "friction": "The resumed calculation does not identify the exact magnetic setup used by the prior run.",
+  "expected_behavior": "Recall should expose the pinned input, code state, and run references before reuse.",
+  "actual_behavior": "The compact summary names the result but omits the executable provenance chain.",
+  "impact": "A later calculation can reuse an incompatible setup while appearing to follow the same workflow.",
+  "reproduction_steps": [
+    "Resume the NiO magnetic GW topic in a fresh host session.",
+    "Request the compact execution context.",
+    "Inspect whether the FHI-aims input and LibRPA code-state references are present."
+  ],
+  "host_id": "codex",
+  "runtime_context": {
+    "event": "session_start",
+    "surface": "compact"
+  },
+  "source_refs": [
+    "tool_run:nio-gw-run-17",
+    "code_state:librpa-nio-state-4"
+  ],
+  "proposed_direction": "Expose the exact input and code-state references in the compact execution entry.",
+  "affected_capability": "execution_recall",
+  "affected_record_family": "tool_runs"
+}

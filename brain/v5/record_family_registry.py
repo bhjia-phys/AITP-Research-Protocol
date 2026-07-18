@@ -60,6 +60,7 @@ _REGISTRY_ROWS: tuple[tuple[str, str, str | None, str], ...] = (
     ("execution_baselines", "execution_baseline", "ExecutionBaselineRecord", "baseline_id"),
     ("exploratory_records", "exploratory_record", "ExploratoryRecord", "record_id"),
     ("failure_mode_reviews", "failure_mode_review_result", "FailureModeReviewResultRecord", "result_id"),
+    ("harness_feedback_cases", "harness_feedback_case", "HarnessFeedbackCaseRecord", "case_id"),
     ("ideas", "idea", None, "idea_id"),
     ("intents", "research_intent", None, "intent_id"),
     ("lane_contracts", "lane_contract", "LaneContractRecord", "contract_id"),
@@ -145,6 +146,7 @@ _RECORD_ROLES = {
     "code_patch_manifests": "immutable_provenance_record",
     "cross_topic_relations": "orientation_only_record",
     "derivation_reviews": "review_record",
+    "harness_feedback_cases": "review_input_record",
     "quiet_checkpoints": "process_record",
     "recall_audits": "process_record",
     "recording_candidate_batches": "process_record",
@@ -241,6 +243,12 @@ _DEPENDENCY_FIELDS = {
         "source_anchor_refs[].record_ref",
     ),
     "evidence": ("support_basis_refs", "trace_context_refs"),
+    "harness_feedback_cases": (
+        "duplicate_of_refs",
+        "related_case_refs",
+        "source_refs",
+        "supersedes_case_refs",
+    ),
     "execution_environments": (
         "source_refs[].record_ref",
     ),

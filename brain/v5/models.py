@@ -72,3 +72,6 @@ from brain.v5.skill_models import (  # noqa: E402 - typed M4 reviewed-Skill reco
     SkillUsageRecord,
     SkillValidationExecutionRequest,
 )
+from brain.v5.harness_feedback_models import (  # noqa: E402 - typed M5 review inputs.
+    HarnessFeedbackCaseRecord,
+)
