@@ -2,48 +2,24 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import hashlib
 import json
 from types import MappingProxyType
-from typing import Any, Callable, Mapping
+from typing import Callable, Mapping
 
 from brain.v5.context_injection_contracts import ContextInjectionRequest
 from brain.v5.context_injection_events import prepare_context_injection
 from brain.v5.host_lifecycle_contracts import HostLifecycleDispatch, HostLifecycleEvent
+from brain.v5.host_lifecycle_normalization import normalize_host_lifecycle_event
 from brain.v5.paths import WorkspacePaths
 from brain.v5.research_moment_contracts import (
     ResearchEvent,
     normalize_research_event,
-    normalize_timestamp,
 )
 from brain.v5.research_scope_contracts import canonical_typed_ref
 from brain.v5.workspace import get_session_binding
 
 
-_OBJECTIVE_TEXT_FIELDS = frozenset(
-    {
-        "context_profile",
-        "focus_set_ref",
-        "objective_text",
-        "program_id",
-        "recall_audit_ref",
-        "user_goal",
-    }
-)
-_OBJECTIVE_BOOL_FIELDS = frozenset(
-    {"include_cross_topic_discovery", "research_relevant"}
-)
-_PROCESS_TEXT_FIELDS = frozenset(
-    {
-        "artifact_ref",
-        "code_state_ref",
-        "source_ref",
-        "status",
-        "tool_name",
-        "tool_run_ref",
-    }
-)
 _OPERATION_ALLOWLIST = MappingProxyType(
     {
         "session_start": MappingProxyType(
@@ -89,80 +65,6 @@ def authorize_host_lifecycle_operation(
     return effect
 
 
-def normalize_host_lifecycle_event(
-    host: str,
-    native_event: str,
-    payload: Mapping[str, Any],
-    *,
-    session_id: str,
-) -> HostLifecycleEvent:
-    """Reduce a host payload to stable identity and explicitly allowlisted fields."""
-
-    from brain.v5.host_lifecycle_facade import host_lifecycle_capability
-
-    capability = host_lifecycle_capability(host)
-    native_event = _required_text(native_event, "native_event")
-    session_id = _required_text(session_id, "session_id")
-    if not isinstance(payload, Mapping):
-        raise TypeError("payload must be a mapping")
-
-    event_id = _required_text(payload.get("event_id"), "event_id")
-    host_session_id = _required_text(
-        payload.get("host_session_id"), "host_session_id"
-    )
-    automatic_event = next(
-        (
-            event
-            for event in capability.automatic_events
-            if event.native_event == native_event
-        ),
-        None,
-    )
-    fallback = next(
-        (
-            item
-            for item in capability.fallbacks
-            if item.operation == native_event
-        ),
-        None,
-    )
-    if automatic_event is None and fallback is None:
-        raise ValueError(
-            f"host {host!r} does not expose lifecycle event {native_event!r}"
-        )
-
-    occurred_at = payload.get("occurred_at")
-    if occurred_at is None:
-        occurred_at = datetime.now(timezone.utc).isoformat()
-    else:
-        occurred_at = normalize_timestamp(occurred_at, "occurred_at")
-    topic_id = _optional_text(payload.get("topic_id"), "topic_id")
-    subject_refs = _typed_refs(payload.get("subject_refs", ()), "subject_refs")
-    objective_payload = _objective_payload(payload)
-    process_payload = _process_payload(payload)
-
-    logical_event = (
-        automatic_event.logical_event
-        if automatic_event is not None
-        else fallback.unsupported_event
-    )
-    return HostLifecycleEvent(
-        event_id=event_id,
-        logical_event=logical_event,
-        native_event=native_event,
-        occurred_at=occurred_at,
-        host=capability.host,
-        host_session_id=host_session_id,
-        session_id=session_id,
-        topic_id=topic_id,
-        subject_refs=subject_refs,
-        objective_payload=MappingProxyType(objective_payload),
-        process_payload=MappingProxyType(process_payload),
-        automatic=automatic_event is not None,
-        origin="host_native" if automatic_event is not None else "explicit_fallback",
-    )
-
-
 def begin_research_turn(
     ws: WorkspacePaths,
     event: HostLifecycleEvent,
@@ -177,6 +79,9 @@ def begin_research_turn(
     if deliver_context is not None and not callable(deliver_context):
         raise TypeError("deliver_context must be callable")
     authorize_host_lifecycle_operation(event, "prepare_context_injection")
+    event, route_failure = _resolved_lifecycle_event(ws, event)
+    if route_failure is not None:
+        return route_failure
     binding, failure = _bound_session(ws, event)
     if failure is not None:
         return failure
@@ -252,6 +157,9 @@ def closeout_session(
     if event.automatic:
         raise ValueError("automatic session closeout is not supported")
     authorize_host_lifecycle_operation(event, "plan_session_closeout")
+    event, route_failure = _resolved_lifecycle_event(ws, event)
+    if route_failure is not None:
+        return route_failure
     binding, failure = _bound_session(ws, event)
     if failure is not None:
         return failure
@@ -279,6 +187,9 @@ def dispatch_host_lifecycle_event(
         return begin_research_turn(ws, event, deliver_context=deliver_context)
     if event.logical_event == "session_end":
         return closeout_session(ws, event, actor=actor)
+    event, route_failure = _resolved_lifecycle_event(ws, event)
+    if route_failure is not None:
+        return route_failure
     binding, failure = _bound_session(ws, event)
     if failure is not None:
         return failure
@@ -388,6 +299,32 @@ def _bound_session(ws: WorkspacePaths, event: HostLifecycleEvent):
     return binding, None
 
 
+def _resolved_lifecycle_event(ws: WorkspacePaths, event: HostLifecycleEvent):
+    from brain.v5.host_lifecycle_routing import resolve_host_lifecycle_route
+
+    resolution = resolve_host_lifecycle_route(ws, event)
+    if resolution.status == "selected":
+        return resolution.event, None
+    status = {
+        "ambiguous": "route_ambiguous",
+        "coverage_blocked": "route_coverage_blocked",
+        "conflict": "route_conflict",
+        "outside_aitp": "route_not_required",
+    }.get(resolution.status, "route_required")
+    operation = {
+        "pre_tool": "delegate_existing_pre_tool_policy",
+        "post_tool": "delegate_existing_post_tool_trace",
+        "session_end": "route_before_closeout",
+    }.get(event.logical_event, "route_before_context_injection")
+    return resolution.event, _dispatch(
+        resolution.event,
+        topic_id="",
+        status=status,
+        operation=operation,
+        reason_codes=resolution.reason_codes,
+    )
+
+
 def _dispatch(
     event: HostLifecycleEvent,
     *,
@@ -420,39 +357,13 @@ def _dispatch(
         status=status,
         operation=operation,
         reason_codes=reason_codes,
+        routing_mode=event.routing_mode,
+        route_status=event.route_status,
         receipt_id=receipt_id,
         receipt_status=receipt_status,
         runtime_write=runtime_write,
         canonical_write=canonical_write,
     )
-
-
-def _objective_payload(payload: Mapping[str, Any]) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    for field in _OBJECTIVE_TEXT_FIELDS:
-        if field in payload:
-            result[field] = _optional_text(payload[field], field)
-    for field in _OBJECTIVE_BOOL_FIELDS:
-        if field in payload:
-            if not isinstance(payload[field], bool):
-                raise TypeError(f"{field} must be a boolean")
-            result[field] = payload[field]
-    if "exact_refs" in payload:
-        result["exact_refs"] = _typed_refs(payload["exact_refs"], "exact_refs")
-    return dict(sorted(result.items()))
-
-
-def _process_payload(payload: Mapping[str, Any]) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    for field in _PROCESS_TEXT_FIELDS:
-        if field in payload:
-            result[field] = _optional_text(payload[field], field)
-    if "exit_code" in payload:
-        value = payload["exit_code"]
-        if isinstance(value, bool) or not isinstance(value, int):
-            raise TypeError("exit_code must be an integer")
-        result["exit_code"] = value
-    return dict(sorted(result.items()))
 
 
 def _typed_refs(value: object, label: str) -> tuple[str, ...]:
@@ -487,6 +398,7 @@ def _optional_text(value: object, label: str) -> str:
 def _require_event(event: HostLifecycleEvent) -> None:
     if not isinstance(event, HostLifecycleEvent):
         raise TypeError("event must be a HostLifecycleEvent")
+
 
 __all__ = [
     "HostLifecycleDispatch",

@@ -311,12 +311,27 @@ def host_lifecycle_capability(host: str) -> HostLifecycleCapability:
         raise ValueError(f"unsupported host: {host!r}") from exc
 
 
-def normalize_host_lifecycle_event(host, native_event, payload, *, session_id):
+def normalize_host_lifecycle_event(
+    host,
+    native_event,
+    payload,
+    *,
+    session_id="",
+    routing_mode="pinned_compat",
+    route_status="",
+):
     from brain.v5.host_lifecycle_dispatch import (
         normalize_host_lifecycle_event as _normalize,
     )
 
-    return _normalize(host, native_event, payload, session_id=session_id)
+    return _normalize(
+        host,
+        native_event,
+        payload,
+        session_id=session_id,
+        routing_mode=routing_mode,
+        route_status=route_status,
+    )
 
 
 def begin_research_turn(ws, event, *, deliver_context=None):

@@ -1342,3 +1342,424 @@ def test_compact_autoroute_rejects_unknown_route_context_fields(tmp_path):
                 "raw_transcript": "must never enter the route contract",
             },
         )
+
+
+@pytest.mark.parametrize(
+    ("native_event", "expected_operation"),
+    (
+        ("PreToolUse", "delegate_existing_pre_tool_policy"),
+        ("PostToolUse", "delegate_existing_post_tool_trace"),
+    ),
+)
+def test_unresolved_dynamic_lifecycle_is_route_gated_before_bound_operations(
+    tmp_path,
+    monkeypatch,
+    native_event,
+    expected_operation,
+):
+    from brain.v5.host_lifecycle_facade import (
+        dispatch_host_lifecycle_event,
+        normalize_host_lifecycle_event,
+    )
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+
+    def forbidden(*_args, **_kwargs):
+        pytest.fail("unresolved dynamic lifecycle crossed a bound or writer boundary")
+
+    monkeypatch.setattr("brain.v5.host_lifecycle_dispatch.get_session_binding", forbidden)
+    monkeypatch.setattr("brain.v5.host_lifecycle_dispatch.prepare_context_injection", forbidden)
+    monkeypatch.setattr("brain.v5.research_moments.apply_research_moment_decision", forbidden)
+    for target in (
+        "brain.v5.evidence.record_evidence",
+        "brain.v5.trust_updates.apply_trust_update",
+        "brain.v5.memory.apply_promotion_packet",
+        "brain.v5.skill_candidates.apply_project_skill",
+        "brain.v5.skill_install_transactions.apply_skill_install_plan",
+        "brain.v5.execution_baselines.accept_execution_baseline",
+        "brain.v5.active_claim_focus.confirm_active_claim_rebind",
+        "brain.v5.research_scope.record_session_focus_set",
+        "brain.v5.workspace.bind_session",
+        "brain.v5.lifecycle_facade.apply_session_closeout",
+    ):
+        monkeypatch.setattr(target, forbidden)
+    event = normalize_host_lifecycle_event(
+        "codex",
+        native_event,
+        {
+            "event_id": f"event-unresolved-{native_event}",
+            "host_session_id": "host-unresolved",
+            "topic_id": "untrusted-topic-from-host",
+            "tool_name": "pytest",
+            "status": "completed",
+            "raw_prompt": "must not be routed or persisted",
+            "tool_output": {"nested": "must not become semantic input"},
+        },
+        session_id="",
+        routing_mode="dynamic",
+    )
+
+    result = dispatch_host_lifecycle_event(ws, event)
+
+    assert event.session_id == ""
+    assert event.routing_mode == "dynamic"
+    assert event.route_status == "unresolved"
+    assert result.status == "route_required"
+    assert result.operation == expected_operation
+    assert result.session_id == ""
+    assert result.topic_id == ""
+    assert result.runtime_write is False
+    assert result.canonical_write is False
+    assert result.trust_effect == "none"
+    assert "raw_prompt" not in repr(event)
+    assert "nested" not in repr(event)
+
+
+def test_dynamic_prompt_selects_before_context_and_pretool_reuses_exact_cache(
+    tmp_path,
+    monkeypatch,
+):
+    from types import SimpleNamespace
+
+    from brain.v5.host_lifecycle_facade import (
+        dispatch_host_lifecycle_event,
+        normalize_host_lifecycle_event,
+    )
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    captured = {}
+
+    def prepare(ws_arg, request, *, deliver=None):
+        captured["workspace"] = ws_arg
+        captured["request"] = request
+        return SimpleNamespace(
+            receipt_id="context-injection-dynamic",
+            injection_status="prepared",
+        )
+
+    monkeypatch.setattr("brain.v5.host_lifecycle_dispatch.prepare_context_injection", prepare)
+    prompt = normalize_host_lifecycle_event(
+        "codex",
+        "aitp_v5_codex_enter",
+        {
+            "event_id": "event-dynamic-prompt-qg",
+            "host_session_id": "host-dynamic-qg",
+            "research_relevant": True,
+            "objective_text": "Continue the quantum gravity von Neumann algebra notes",
+            "project_root": str(ws.base),
+            "repo_id": "multi-topic-repository",
+            "branch": "main",
+        },
+        session_id="",
+        routing_mode="dynamic",
+    )
+
+    result = dispatch_host_lifecycle_event(ws, prompt)
+
+    assert result.status == "context_prepared"
+    assert result.session_id == "session-qg"
+    assert result.topic_id == "quantum-gravity-notes"
+    assert result.routing_mode == "dynamic"
+    assert result.route_status == "selected"
+    assert captured["request"].session_id == "session-qg"
+    assert captured["request"].topic_id == "quantum-gravity-notes"
+
+    pre_tool = normalize_host_lifecycle_event(
+        "codex",
+        "PreToolUse",
+        {
+            "event_id": "event-dynamic-pretool-qg",
+            "host_session_id": "host-dynamic-qg",
+            "project_root": str(ws.base),
+            "repo_id": "multi-topic-repository",
+            "branch": "main",
+            "tool_name": "pytest",
+        },
+        session_id="",
+        routing_mode="dynamic",
+    )
+    pre_result = dispatch_host_lifecycle_event(ws, pre_tool)
+
+    assert pre_result.status == "policy_only"
+    assert pre_result.session_id == "session-qg"
+    assert pre_result.topic_id == "quantum-gravity-notes"
+    assert pre_result.route_status == "selected"
+
+
+def test_dynamic_prompt_exact_ref_is_selection_evidence_not_a_later_event_requirement(
+    tmp_path,
+    monkeypatch,
+):
+    from types import SimpleNamespace
+
+    from brain.v5.host_lifecycle_facade import (
+        dispatch_host_lifecycle_event,
+        normalize_host_lifecycle_event,
+    )
+    from brain.v5.query_index import build_query_index
+    from brain.v5.workspace import create_claim
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    claim = create_claim(
+        ws,
+        topic_id="quantum-gravity-notes",
+        statement="The exact QG claim selects the formal-theory session.",
+        evidence_profile="formal_theory",
+        confidence_state="candidate",
+        active_uncertainty="The claim is routing evidence only.",
+    )
+    build_query_index(ws)
+    monkeypatch.setattr(
+        "brain.v5.host_lifecycle_dispatch.prepare_context_injection",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            receipt_id="context-injection-exact-ref",
+            injection_status="prepared",
+        ),
+    )
+    prompt = normalize_host_lifecycle_event(
+        "codex",
+        "aitp_v5_codex_enter",
+        {
+            "event_id": "event-dynamic-prompt-exact-ref",
+            "host_session_id": "host-dynamic-exact-ref",
+            "research_relevant": True,
+            "objective_text": "Continue the exact referenced research item",
+            "subject_refs": [f"claim:{claim.claim_id}"],
+            "project_root": str(ws.base),
+            "repo_id": "multi-topic-repository",
+            "branch": "main",
+        },
+        routing_mode="dynamic",
+    )
+    selected = dispatch_host_lifecycle_event(ws, prompt)
+    assert selected.route_status == "selected"
+    assert selected.session_id == "session-qg"
+
+    pre_tool = normalize_host_lifecycle_event(
+        "codex",
+        "PreToolUse",
+        {
+            "event_id": "event-dynamic-pretool-after-exact-ref",
+            "host_session_id": "host-dynamic-exact-ref",
+            "project_root": str(ws.base),
+            "repo_id": "multi-topic-repository",
+            "branch": "main",
+            "tool_name": "pytest",
+        },
+        routing_mode="dynamic",
+    )
+    result = dispatch_host_lifecycle_event(ws, pre_tool)
+
+    assert result.status == "policy_only"
+    assert result.route_status == "selected"
+    assert result.session_id == "session-qg"
+    assert result.topic_id == "quantum-gravity-notes"
+
+
+def test_ambiguous_dynamic_prompt_never_prepares_context_or_cache(tmp_path, monkeypatch):
+    from brain.v5.host_lifecycle_facade import (
+        dispatch_host_lifecycle_event,
+        normalize_host_lifecycle_event,
+    )
+    from brain.v5.query_index import build_query_index
+    from brain.v5.workspace import create_claim
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    for topic_id in ("librpa-screening", "quantum-gravity-notes"):
+        create_claim(
+            ws,
+            topic_id=topic_id,
+            statement="Shared lifecycle ambiguity anchor",
+            evidence_profile="formal_theory",
+            confidence_state="candidate",
+            active_uncertainty="No primary topic has been selected.",
+        )
+    build_query_index(ws)
+
+    def forbidden(*_args, **_kwargs):
+        pytest.fail("ambiguous dynamic prompt must not prepare session context")
+
+    monkeypatch.setattr("brain.v5.host_lifecycle_dispatch.prepare_context_injection", forbidden)
+    event = normalize_host_lifecycle_event(
+        "codex",
+        "aitp_v5_codex_enter",
+        {
+            "event_id": "event-dynamic-ambiguous",
+            "host_session_id": "host-dynamic-ambiguous",
+            "research_relevant": True,
+            "objective_text": "Continue the shared lifecycle ambiguity anchor",
+            "project_root": str(ws.base),
+        },
+        session_id="",
+        routing_mode="dynamic",
+    )
+
+    result = dispatch_host_lifecycle_event(ws, event)
+
+    assert result.status == "route_ambiguous"
+    assert result.session_id == ""
+    assert result.topic_id == ""
+    assert result.runtime_write is False
+    assert result.canonical_write is False
+    route_root = ws.root / "runtime" / "host_routes"
+    assert not route_root.exists() or not list(route_root.rglob("*.json"))
+
+
+def _seed_dynamic_qg_lifecycle_route(ws, monkeypatch, *, host_session_id):
+    from types import SimpleNamespace
+
+    from brain.v5.host_lifecycle_facade import (
+        dispatch_host_lifecycle_event,
+        normalize_host_lifecycle_event,
+    )
+    from brain.v5.query_index import build_query_index
+    from brain.v5.workspace import create_claim
+
+    claim = create_claim(
+        ws,
+        topic_id="quantum-gravity-notes",
+        statement="The bounded QG route may stage a reviewed open direction.",
+        evidence_profile="formal_theory",
+        confidence_state="candidate",
+        active_uncertainty="The open direction is not evidence.",
+    )
+    build_query_index(ws)
+    monkeypatch.setattr(
+        "brain.v5.host_lifecycle_dispatch.prepare_context_injection",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            receipt_id="context-injection-dynamic-moment",
+            injection_status="prepared",
+        ),
+    )
+    prompt = normalize_host_lifecycle_event(
+        "codex",
+        "aitp_v5_codex_enter",
+        {
+            "event_id": "event-dynamic-prompt-moment",
+            "host_session_id": host_session_id,
+            "research_relevant": True,
+            "objective_text": "Continue the quantum gravity von Neumann algebra notes",
+            "project_root": str(ws.base),
+        },
+        routing_mode="dynamic",
+    )
+    selected = dispatch_host_lifecycle_event(ws, prompt)
+    assert selected.route_status == "selected"
+    assert selected.session_id == "session-qg"
+    return claim
+
+
+def _dynamic_qg_research_payload(claim_id, *, host_session_id, event_overrides=None):
+    from dataclasses import asdict
+    from datetime import datetime, timezone
+
+    from brain.v5.research_moment_contracts import ResearchEvent
+
+    source_event_id = "event-dynamic-post-moment"
+    event = ResearchEvent(
+        event_id="moment-event-dynamic-qg",
+        event_type="RouteChanged",
+        occurred_at=datetime.now(timezone.utc).isoformat(),
+        host="codex",
+        host_session_id=host_session_id,
+        session_id="session-qg",
+        topic_id="quantum-gravity-notes",
+        subject_refs=(f"claim:{claim_id}",),
+        objective_payload={},
+        semantic_payload={
+            "candidate_kind": "open_direction",
+            "semantic_key": "bounded-qg-open-direction",
+            "summary": "Review the bounded QG open direction.",
+            "payload": {"status": "open"},
+        },
+        source_event_id=source_event_id,
+        recursion_origin="host_native",
+    )
+    if event_overrides:
+        event = replace(event, **event_overrides)
+    return {
+        "event_id": source_event_id,
+        "host_session_id": host_session_id,
+        "tool_name": "pytest",
+        "status": "completed",
+        "aitp_research_event": asdict(event),
+    }
+
+
+def test_dynamic_hook_moment_uses_exact_cached_route_and_preserves_five_pins(
+    tmp_path,
+    monkeypatch,
+):
+    from brain.v5.hook_research_moment_bridge import (
+        process_explicit_hook_research_moment,
+    )
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    host_session_id = "host-dynamic-moment"
+    claim = _seed_dynamic_qg_lifecycle_route(
+        ws,
+        monkeypatch,
+        host_session_id=host_session_id,
+    )
+    result = process_explicit_hook_research_moment(
+        ws,
+        _dynamic_qg_research_payload(
+            claim.claim_id,
+            host_session_id=host_session_id,
+        ),
+        host="codex",
+        session_id="",
+        routing_mode="dynamic",
+    )
+
+    assert result["operation"] == "dispatch_validated_research_moment"
+    assert result["status"] == "moment_staged"
+    assert result["session_id"] == "session-qg"
+    assert result["topic_id"] == "quantum-gravity-notes"
+    assert result["route_status"] == "selected"
+    assert result["canonical_write"] is False
+
+
+@pytest.mark.parametrize(
+    ("field", "replacement"),
+    (
+        ("host", "claude_code"),
+        ("host_session_id", "other-host-session"),
+        ("session_id", "session-librpa"),
+        ("topic_id", "librpa-screening"),
+        ("source_event_id", "other-source-event"),
+    ),
+)
+def test_dynamic_hook_moment_rejects_each_identity_pin_drift(
+    tmp_path,
+    monkeypatch,
+    field,
+    replacement,
+):
+    from brain.v5.hook_research_moment_bridge import (
+        process_explicit_hook_research_moment,
+    )
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    host_session_id = "host-dynamic-moment-drift"
+    claim = _seed_dynamic_qg_lifecycle_route(
+        ws,
+        monkeypatch,
+        host_session_id=host_session_id,
+    )
+    result = process_explicit_hook_research_moment(
+        ws,
+        _dynamic_qg_research_payload(
+            claim.claim_id,
+            host_session_id=host_session_id,
+            event_overrides={field: replacement},
+        ),
+        host="codex",
+        session_id="",
+        routing_mode="dynamic",
+    )
+
+    assert result["kind"] == "research_moment_hook_diagnostic"
+    assert result["status"] == "rejected"
+    assert result["can_update_kernel_state"] is False
+    assert result["can_update_claim_trust"] is False

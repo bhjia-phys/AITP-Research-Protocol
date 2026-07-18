@@ -109,6 +109,203 @@ def _run_node_script(script_path, *args):
     )
 
 
+def _runner_script():
+    return Path(__file__).resolve().parents[1] / "hooks" / "aitp_v5_adapter_event_runner.py"
+
+
+def _run_adapter_event_runner(tmp_path, command, event, *extra_args):
+    return subprocess.run(
+        [
+            sys.executable,
+            str(_runner_script()),
+            command,
+            "--base",
+            str(tmp_path),
+            "--runtime",
+            "codex",
+            *extra_args,
+        ],
+        input=json.dumps(event),
+        capture_output=True,
+        encoding="utf-8",
+        check=False,
+    )
+
+
+def _write_dynamic_runner_route(tmp_path, *, host_session_id):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_cache import write_host_route_mapping
+    from brain.v5.host_route_contracts import HostRouteRequest
+    from brain.v5.query_index import build_query_index
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+    build_query_index(ws)
+    request = HostRouteRequest(
+        request_summary="Continue the LibRPA GW research session",
+        host="codex",
+        host_session_id=host_session_id,
+        project_root=str(tmp_path),
+        repo_id="runner-fixture",
+        branch="main",
+        routing_mode="dynamic",
+        semantic_assessment={
+            "task_kind": "topic_continuation",
+            "needs_prior_research_state": True,
+            "should_use_aitp": "required",
+        },
+    )
+    decision = resolve_host_research_route(ws, request)
+    assert decision.status == "selected"
+    assert decision.selected_session_id == "s1"
+    write_host_route_mapping(ws, request, decision)
+
+
+def _dynamic_runner_event(tmp_path, *, host_session_id, event_id):
+    return {
+        "event_id": event_id,
+        "host_session_id": host_session_id,
+        "project_root": str(tmp_path),
+        "repo_id": "runner-fixture",
+        "branch": "main",
+        "tool_name": "pytest",
+        "status": "completed",
+        "tool_output": {
+            "session_id": "nested-session-must-not-route",
+            "topic_id": "nested-topic-must-not-route",
+        },
+    }
+
+
+def test_dynamic_runner_without_cache_returns_bounded_route_dispatch_for_pre_and_post(
+    tmp_path,
+):
+    _seed_session(tmp_path)
+    for command in ("pre-tool", "post-tool"):
+        result = _run_adapter_event_runner(
+            tmp_path,
+            command,
+            _dynamic_runner_event(
+                tmp_path,
+                host_session_id=f"host-no-route-{command}",
+                event_id=f"event-no-route-{command}",
+            ),
+            "--routing-mode",
+            "dynamic",
+        )
+
+        assert result.returncode == 0, result.stderr
+        payload = json.loads(result.stdout)
+        assert payload["kind"] == "host_route_dispatch"
+        assert payload["status"] == "route_required"
+        assert payload["session_id"] == ""
+        assert payload["topic_id"] == ""
+        assert payload["runtime_write"] is False
+        assert payload["canonical_write"] is False
+        assert payload["can_update_claim_trust"] is False
+    assert not (tmp_path / ".aitp" / "runtime" / "hook_trace_events.jsonl").exists()
+
+
+def test_dynamic_post_runner_reuses_exact_route_before_persisting_trace(tmp_path):
+    from brain.v5.trace import read_trace_events
+
+    claim = _seed_session(tmp_path)
+    host_session_id = "host-dynamic-post-route"
+    _write_dynamic_runner_route(tmp_path, host_session_id=host_session_id)
+
+    result = _run_adapter_event_runner(
+        tmp_path,
+        "post-tool",
+        _dynamic_runner_event(
+            tmp_path,
+            host_session_id=host_session_id,
+            event_id="event-dynamic-post-route",
+        ),
+        "--routing-mode",
+        "dynamic",
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["kind"] == "hook_trace_event_record"
+    events = read_trace_events(payload["trace_path"])
+    assert len(events) == 1
+    assert events[0].session_id == "s1"
+    assert events[0].topic_id == "librpa-gw"
+    assert events[0].claim_id == claim.claim_id
+
+
+def test_dynamic_pre_runner_reuses_exact_route_before_policy(tmp_path):
+    claim = _seed_session(tmp_path)
+    host_session_id = "host-dynamic-pre-route"
+    _write_dynamic_runner_route(tmp_path, host_session_id=host_session_id)
+    bridge = _write_codex_bridge(tmp_path)
+    event = _dynamic_runner_event(
+        tmp_path,
+        host_session_id=host_session_id,
+        event_id="event-dynamic-pre-route",
+    )
+    event.update(
+        {
+            "tool_name": "mcp__aitp__aitp_v5_record_evidence",
+            "tool_input": {
+                "topic_id": "librpa-gw",
+                "claim_id": claim.claim_id,
+                "source_kind": "findings",
+                "orientation_only": True,
+            },
+        }
+    )
+
+    result = _run_adapter_event_runner(
+        tmp_path,
+        "pre-tool",
+        event,
+        "--routing-mode",
+        "dynamic",
+        "--bridge-path",
+        bridge["payload_path"],
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 2
+    assert payload["kind"] == "hook_decision"
+    assert payload["runtime_event"]["runtime"] == "codex"
+    assert payload["action"] == "record_evidence"
+    assert payload["block"] is True
+
+
+def test_runner_rejects_conflicting_routing_mode_and_session_combinations(tmp_path):
+    _seed_session(tmp_path)
+    event = _dynamic_runner_event(
+        tmp_path,
+        host_session_id="host-routing-mode-conflict",
+        event_id="event-routing-mode-conflict",
+    )
+
+    dynamic_with_pin = _run_adapter_event_runner(
+        tmp_path,
+        "post-tool",
+        event,
+        "--routing-mode",
+        "dynamic",
+        "--session-id",
+        "s1",
+    )
+    pinned_without_session = _run_adapter_event_runner(
+        tmp_path,
+        "post-tool",
+        event,
+        "--routing-mode",
+        "pinned",
+    )
+
+    assert dynamic_with_pin.returncode != 0
+    assert "dynamic routing does not accept --session-id" in dynamic_with_pin.stderr
+    assert pinned_without_session.returncode != 0
+    assert "pinned routing requires --session-id" in pinned_without_session.stderr
+
+
 def test_adapter_event_runner_reads_stdin_and_uses_bridge_sidecar(tmp_path):
     claim = _seed_session(tmp_path)
     bridge = _write_codex_bridge(tmp_path)

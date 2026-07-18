@@ -17,6 +17,18 @@ from brain.v5.contracts import (
 
 HOST_LIFECYCLE_EVENT_SCHEMA_VERSION = "aitp.host_lifecycle_event.v1"
 HOST_LIFECYCLE_DISPATCH_SCHEMA_VERSION = "aitp.host_lifecycle_dispatch.v1"
+HOST_LIFECYCLE_ROUTING_MODES = frozenset({"dynamic", "pinned", "pinned_compat"})
+HOST_LIFECYCLE_ROUTE_STATUSES = frozenset(
+    {
+        "selected",
+        "unresolved",
+        "outside_aitp",
+        "ambiguous",
+        "workspace_recovery",
+        "conflict",
+        "coverage_blocked",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -36,7 +48,17 @@ class HostLifecycleEvent:
     process_payload: Mapping[str, Any]
     automatic: bool
     origin: str
+    routing_mode: str = "pinned_compat"
+    route_status: str = "selected"
     schema_version: str = HOST_LIFECYCLE_EVENT_SCHEMA_VERSION
+
+    def __post_init__(self) -> None:
+        if self.routing_mode not in HOST_LIFECYCLE_ROUTING_MODES:
+            raise ValueError("unsupported host lifecycle routing mode")
+        if self.route_status not in HOST_LIFECYCLE_ROUTE_STATUSES:
+            raise ValueError("unsupported host lifecycle route status")
+        if self.routing_mode != "dynamic" and not self.session_id:
+            raise ValueError("pinned host lifecycle events require session_id")
 
 
 @dataclass(frozen=True)
@@ -53,6 +75,8 @@ class HostLifecycleDispatch:
     status: str
     operation: str
     reason_codes: tuple[str, ...]
+    routing_mode: str = "pinned_compat"
+    route_status: str = "selected"
     receipt_id: str = ""
     receipt_status: str = ""
     runtime_write: bool = False
@@ -61,6 +85,14 @@ class HostLifecycleDispatch:
     schema_version: str = HOST_LIFECYCLE_DISPATCH_SCHEMA_VERSION
 
     def __post_init__(self) -> None:
+        if self.routing_mode not in HOST_LIFECYCLE_ROUTING_MODES:
+            raise ValueError("unsupported host lifecycle dispatch routing mode")
+        if self.route_status not in HOST_LIFECYCLE_ROUTE_STATUSES:
+            raise ValueError("unsupported host lifecycle dispatch route status")
+        if self.status.startswith("route_") and (
+            self.runtime_write or self.canonical_write
+        ):
+            raise ValueError("unresolved route dispatches cannot write state")
         if self.canonical_write and (
             self.operation != "dispatch_validated_research_moment"
             or not self.runtime_write
@@ -185,6 +217,8 @@ def _validate_fixture(payload: Any, path: str, result: ContractResult) -> None:
 __all__ = [
     "HOST_LIFECYCLE_DISPATCH_SCHEMA_VERSION",
     "HOST_LIFECYCLE_EVENT_SCHEMA_VERSION",
+    "HOST_LIFECYCLE_ROUTE_STATUSES",
+    "HOST_LIFECYCLE_ROUTING_MODES",
     "HostLifecycleDispatch",
     "HostLifecycleEvent",
     "require_valid_runtime_host_lifecycle_audit",

@@ -20,7 +20,8 @@ def process_explicit_hook_research_moment(
     platform_payload: Mapping[str, Any],
     *,
     host: str,
-    session_id: str,
+    session_id: str = "",
+    routing_mode: str = "pinned_compat",
 ) -> dict[str, Any] | None:
     """Apply only a top-level, complete event envelope; never infer from tool output."""
 
@@ -44,19 +45,33 @@ def process_explicit_hook_research_moment(
         )
         if native_post_tool is None:
             raise ValueError(f"host {host!r} has no automatic post-tool event")
+        host_session_id = _platform_identity(
+            platform_payload,
+            "host_session_id",
+            fallback=research_event.host_session_id,
+            required=routing_mode == "dynamic",
+        )
+        source_event_id = _platform_identity(
+            platform_payload,
+            "event_id",
+            fallback=research_event.source_event_id,
+            required=routing_mode == "dynamic",
+        )
         host_event = normalize_host_lifecycle_event(
             host,
             native_post_tool,
             {
-                "event_id": research_event.source_event_id,
-                "host_session_id": research_event.host_session_id,
+                "event_id": source_event_id,
+                "host_session_id": host_session_id,
                 "occurred_at": research_event.occurred_at,
                 "topic_id": research_event.topic_id,
                 "subject_refs": list(research_event.subject_refs),
                 "tool_name": _tool_name(platform_payload),
                 "status": _status(platform_payload),
+                **_route_fields(platform_payload),
             },
             session_id=session_id,
+            routing_mode=routing_mode,
         )
         dispatch = dispatch_host_lifecycle_event(
             ws,
@@ -79,6 +94,30 @@ def process_explicit_hook_research_moment(
             "can_update_kernel_state": False,
             "can_update_claim_trust": False,
         }
+
+
+def _platform_identity(
+    payload: Mapping[str, Any],
+    field: str,
+    *,
+    fallback: str,
+    required: bool,
+) -> str:
+    value = payload.get(field)
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    if required:
+        raise ValueError(f"dynamic hook research moments require top-level {field}")
+    return fallback
+
+
+def _route_fields(payload: Mapping[str, Any]) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for field in ("project_root", "current_path", "repo_id", "branch"):
+        value = payload.get(field)
+        if isinstance(value, str) and value.strip():
+            result[field] = value.strip()
+    return result
 
 
 def _tool_name(payload: Mapping[str, Any]) -> str:

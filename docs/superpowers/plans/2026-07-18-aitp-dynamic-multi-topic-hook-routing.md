@@ -59,6 +59,10 @@
   supporting-only target-revalidation proposals.
 - `brain/v5/host_route_cache.py`: disposable, atomically written, content-bound
   host-session route continuity below `.aitp/runtime/host_routes`.
+- `brain/v5/host_lifecycle_normalization.py`: bounded host-event normalization
+  with explicit dynamic/pinned mode and no raw prompt or tool-output retention.
+- `brain/v5/host_lifecycle_routing.py`: route-first lifecycle gate that resolves
+  fresh prompt/start events and exact-revalidates cached pre/post-tool routes.
 - `brain/v5/hook_routing_mode.py`: one parser/normalizer for dynamic, pinned,
   and legacy-pinned installation/runner behavior.
 - `tests/test_v5_dynamic_host_routing.py`: deterministic unit and service tests.
@@ -382,39 +386,54 @@ lanes.
 - Preserves: existing bounded context and validated Research Moment operations
   after exact binding succeeds.
 
-- [ ] **Step 1: Write failing unresolved-event tests**
+- [x] **Step 1: Write failing unresolved-event tests**
 
 Dynamic pre/post-tool events with no selected route must not call
 `get_session_binding`, context injection, Research Moment application, or any
 canonical writer. Generic pre-tool policy and bounded trace remain available.
 
-- [ ] **Step 2: Add runner routing-mode parsing**
+- [x] **Step 2: Add runner routing-mode parsing**
 
 `--routing-mode dynamic` accepts no session id and derives host-session identity
 from allowlisted stdin fields. `--routing-mode pinned --session-id X` validates
 the pin. Never read a full raw prompt or nested output for routing.
 
-- [ ] **Step 3: Resolve exact cached route before bound operations**
+- [x] **Step 3: Resolve exact cached route before bound operations**
 
 On prompt/start events, route from bounded objective data when supported. On
 pre/post-tool events, reuse only an exact-valid runtime mapping. A missing or
 invalid mapping returns policy/trace-only status.
 
-- [ ] **Step 4: Preserve validated Research Moment identity pins**
+Prompt-only exact refs select and anchor the cached route but are not required
+on every later tool event. The runtime mapping still exact-revalidates the
+selected session, topic, candidate anchors, index generation, and canonical
+watermark before reuse.
+
+- [x] **Step 4: Preserve validated Research Moment identity pins**
 
 The explicit top-level event envelope must still match host, host-session,
 selected session, topic, and source event. Dynamic routing cannot weaken the
 five-pin check or turn raw tool output into semantic input.
 
-- [ ] **Step 5: Run writer-sentinel and recursion tests**
+- [x] **Step 5: Run writer-sentinel and recursion tests**
 
 Monkeypatch trust, evidence, baseline, Skill, active-claim, focus-set, and
 canonical family writers. All unresolved/ambiguous paths must pass with zero
 calls.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Commit message: `v5: gate host lifecycle on exact dynamic routes`.
+
+**Evidence:** The route/lifecycle RED cases first failed on the absent public
+`routing_mode` and runner interfaces, and the exact-ref continuity case failed
+with `route_required` after a successful exact-ref prompt selection. After the
+implementation and module split, the dynamic-routing plus architecture lane
+passed `59 passed, 1 skipped`; the complete adapter-runner lane passed
+`17 passed`; host lifecycle plus Gate 5 passed `37 passed`; and Research Moment
+recursion plus architecture passed `35 passed`. The skip is the existing
+Windows symlink-creation limitation. All pytest runs used unique system-Temp
+basetemps with cache disabled and no real canonical records.
 
 ### Task 6: Make Dynamic Installation The Default
 
