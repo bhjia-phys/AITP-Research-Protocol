@@ -109,6 +109,22 @@ def _run_node_script(script_path, *args):
     )
 
 
+def _write_dynamic_codex_bridge(tmp_path):
+    from brain.v5.adapter_protocols import build_adapter_protocols
+    from brain.v5.hook_install_templates import build_runtime_hook_installation, write_codex_hook_bridge
+    from brain.v5.hook_routing_mode import normalize_hook_routing_mode
+
+    protocols = build_adapter_protocols()
+    return write_codex_hook_bridge(
+        tmp_path / "codex" / "AITP_V5_DYNAMIC_HOOK_BRIDGE.md",
+        build_runtime_hook_installation("codex", protocols["runtime_hook_protocols"]),
+        protocols["runtime_gate_protocols"],
+        routing=normalize_hook_routing_mode("dynamic", ""),
+        topics_root=str(tmp_path),
+        project_root=str(tmp_path),
+    )
+
+
 def _runner_script():
     return Path(__file__).resolve().parents[1] / "hooks" / "aitp_v5_adapter_event_runner.py"
 
@@ -239,7 +255,7 @@ def test_dynamic_pre_runner_reuses_exact_route_before_policy(tmp_path):
     claim = _seed_session(tmp_path)
     host_session_id = "host-dynamic-pre-route"
     _write_dynamic_runner_route(tmp_path, host_session_id=host_session_id)
-    bridge = _write_codex_bridge(tmp_path)
+    bridge = _write_dynamic_codex_bridge(tmp_path)
     event = _dynamic_runner_event(
         tmp_path,
         host_session_id=host_session_id,

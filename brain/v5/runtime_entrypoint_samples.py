@@ -43,13 +43,13 @@ def adapter_sample_args(template: str) -> list[str] | None:
     if template.startswith("adapter hook-settings"):
         return ["--output", ".claude/settings.local.json"]
     if template.startswith("adapter install-hooks kimi-code"):
-        return ["--settings", ".kimi/config.toml"]
+        return ["--project-root", ".", "--settings", ".kimi/config.toml"]
     if template.startswith("adapter install-hooks codex"):
-        return ["--output", ".codex/AITP_V5_HOOKS.json"]
+        return ["--project-root", ".", "--output", ".codex/AITP_V5_HOOKS.json"]
     if template.startswith("adapter install-hooks opencode"):
-        return ["--output", ".opencode/AITP_V5_PLUGIN_HOOKS.json"]
+        return ["--project-root", ".", "--output", ".opencode/AITP_V5_PLUGIN_HOOKS.json"]
     if template.startswith("adapter install-hooks"):
-        return ["--settings", ".claude/settings.local.json"]
+        return ["--project-root", ".", "--settings", ".claude/settings.local.json"]
     if template.startswith("adapter pre-tool-event"):
         return [
             "--bridge-json",

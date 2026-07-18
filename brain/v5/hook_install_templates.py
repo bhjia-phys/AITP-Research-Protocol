@@ -8,8 +8,13 @@ from pathlib import Path
 from typing import Any
 
 from brain.v5.hook_bridge_markdown import codex_bridge_markdown, opencode_bridge_markdown
+from brain.v5.hook_claude_install import install_claude_code_hook_settings, write_claude_code_hook_settings
 from brain.v5.hook_entrypoint_schemas import pre_tool_event_platform_schema, pre_tool_policy_input_schema
-from brain.v5.hook_python import stable_python_executable
+from brain.v5.hook_routing_mode import (
+    HookRoutingMode,
+    hook_routing_metadata,
+    resolve_installer_hook_routing,
+)
 from brain.v5.hook_runner_payloads import build_pre_tool_event_runner
 
 
@@ -70,11 +75,21 @@ def write_codex_hook_bridge(
     installation: dict[str, Any],
     runtime_gate_protocols: dict[str, Any] | None = None,
     *,
-    session_id: str = "<session-id>",
+    session_id: str = "",
+    routing: HookRoutingMode | None = None,
+    project_root: str = "",
+    topics_root: str = "",
 ) -> dict[str, Any]:
     """Write Codex guard-call instructions derived from hook installation metadata."""
 
     bridge_path = Path(path)
+    resolved_routing, routing_metadata = _resolve_hook_routing_context(
+        bridge_path,
+        routing=routing,
+        session_id=session_id,
+        project_root=project_root,
+        topics_root=topics_root,
+    )
     guard_calls = [
         {
             "hook_name": hook["hook_name"],
@@ -101,7 +116,14 @@ def write_codex_hook_bridge(
         "gate_protocols": _gate_protocol_payload(runtime_gate_protocols),
         "path": str(bridge_path),
         "payload_path": str(_payload_sidecar_path(bridge_path)),
-        "pre_tool_event_runner": build_pre_tool_event_runner("codex", session_id, _payload_sidecar_path(bridge_path)),
+        **routing_metadata,
+        "pre_tool_event_runner": build_pre_tool_event_runner(
+            "codex",
+            _payload_sidecar_path(bridge_path),
+            routing=resolved_routing,
+            topics_root=str(routing_metadata["topics_root"]),
+            project_root=str(routing_metadata["project_root"]),
+        ),
         "guard_calls": guard_calls,
     }
     bridge_path.parent.mkdir(parents=True, exist_ok=True)
@@ -115,11 +137,21 @@ def write_opencode_plugin_bridge(
     installation: dict[str, Any],
     runtime_gate_protocols: dict[str, Any] | None = None,
     *,
-    session_id: str = "<session-id>",
+    session_id: str = "",
+    routing: HookRoutingMode | None = None,
+    project_root: str = "",
+    topics_root: str = "",
 ) -> dict[str, Any]:
     """Write OpenCode plugin bridge instructions derived from hook installation metadata."""
 
     bridge_path = Path(path)
+    resolved_routing, routing_metadata = _resolve_hook_routing_context(
+        bridge_path,
+        routing=routing,
+        session_id=session_id,
+        project_root=project_root,
+        topics_root=topics_root,
+    )
     lifecycle_calls = [
         {
             "hook_name": hook["hook_name"],
@@ -143,6 +175,7 @@ def write_opencode_plugin_bridge(
         "can_update_claim_trust": False,
         "path": str(bridge_path),
         "payload_path": str(_payload_sidecar_path(bridge_path)),
+        **routing_metadata,
         "plugin_bridge": {
             "setup": ["load AITP skills", "connect AITP MCP server", "read v5 adapter packet"],
             "lifecycle_calls": lifecycle_calls,
@@ -150,9 +183,12 @@ def write_opencode_plugin_bridge(
             "pre_tool_event_entrypoint": deepcopy(_PRE_TOOL_EVENT_ENTRYPOINT),
             "pre_tool_event_runner": build_pre_tool_event_runner(
                 "opencode",
-                session_id,
                 _payload_sidecar_path(bridge_path),
+                routing=resolved_routing,
+                topics_root=str(routing_metadata["topics_root"]),
+                project_root=str(routing_metadata["project_root"]),
             ),
+            **routing_metadata,
             "recording_trigger_protocol": deepcopy(installation.get("recording_trigger_protocol", {})),
             "gate_protocols": _gate_protocol_payload(runtime_gate_protocols),
             "persistence_entrypoint": "aitp_v5_persist_hook_trace_event",
@@ -163,79 +199,6 @@ def write_opencode_plugin_bridge(
     bridge_path.write_text(opencode_bridge_markdown(bridge), encoding="utf-8")
     _write_payload_sidecar(bridge)
     return bridge
-
-
-def write_claude_code_hook_settings(
-    path: str | Path,
-    installation: dict[str, Any],
-    *,
-    workspace_base: str,
-    session_id: str,
-) -> dict[str, Any]:
-    """Write Claude Code hook settings derived from hook installation metadata."""
-
-    settings_path = Path(path)
-    payload = _claude_settings_payload(settings_path, installation, workspace_base=workspace_base, session_id=session_id)
-    settings_path.parent.mkdir(parents=True, exist_ok=True)
-    settings_path.write_text(
-        json.dumps(payload["settings"], ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
-    return payload
-
-
-def install_claude_code_hook_settings(
-    path: str | Path,
-    installation: dict[str, Any],
-    *,
-    workspace_base: str,
-    session_id: str,
-) -> dict[str, Any]:
-    """Merge AITP v5 Claude hooks into an existing settings file without clobbering it."""
-
-    settings_path = Path(path)
-    generated = _claude_settings_payload(
-        settings_path,
-        installation,
-        workspace_base=workspace_base,
-        session_id=session_id,
-    )
-    created = not settings_path.exists()
-    merged_settings = _read_claude_settings(settings_path) if not created else {}
-    hooks = merged_settings.setdefault("hooks", {})
-    if not isinstance(hooks, dict):
-        raise ValueError("Claude Code settings field 'hooks' must be an object")
-
-    added_hooks = 0
-    for event_name, event_hooks in generated["settings"]["hooks"].items():
-        current_hooks = hooks.setdefault(event_name, [])
-        if not isinstance(current_hooks, list):
-            raise ValueError(f"Claude Code settings hooks.{event_name} must be a list")
-        current_hooks[:] = [
-            hook
-            for hook in current_hooks
-            if not _is_stale_claude_v5_hook(hook, expected_hooks=event_hooks)
-        ]
-        for event_hook in event_hooks:
-            if event_hook not in current_hooks:
-                current_hooks.append(deepcopy(event_hook))
-                added_hooks += 1
-
-    settings_path.parent.mkdir(parents=True, exist_ok=True)
-    settings_path.write_text(
-        json.dumps(merged_settings, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
-
-    return {
-        **generated,
-        "kind": "claude_code_hook_installation",
-        "settings_kind": generated["kind"],
-        "created": created,
-        "merged": True,
-        "added_hooks": added_hooks,
-        "settings": merged_settings,
-    }
 
 
 def _hook_template(hook_name: str, protocol: dict[str, Any]) -> dict[str, Any]:
@@ -258,95 +221,6 @@ def _gate_protocol_payload(runtime_gate_protocols: dict[str, Any] | None) -> dic
     payload = {"source_protocol_field": "runtime_gate_protocols"}
     for action in runtime_gate_protocols:
         payload[action] = deepcopy(runtime_gate_protocols[action])
-    return payload
-
-
-def _claude_event(matcher: str, command: str) -> dict[str, Any]:
-    return {
-        "matcher": matcher,
-        "hooks": [
-            {
-                "type": "command",
-                "command": command,
-            }
-        ],
-    }
-
-
-def _is_stale_claude_v5_hook(event_hook: Any, *, expected_hooks: list[dict[str, Any]]) -> bool:
-    if event_hook in expected_hooks or not isinstance(event_hook, dict):
-        return False
-    command_hooks = event_hook.get("hooks")
-    if not isinstance(command_hooks, list):
-        return False
-    return any(
-        isinstance(command_hook, dict)
-        and "aitp_v5_claude_hook.py" in str(command_hook.get("command", ""))
-        for command_hook in command_hooks
-    )
-
-
-def _claude_settings_payload(
-    settings_path: Path,
-    installation: dict[str, Any],
-    *,
-    workspace_base: str,
-    session_id: str,
-) -> dict[str, Any]:
-    hook_script = (Path(__file__).resolve().parents[2] / "hooks" / "aitp_v5_claude_hook.py").as_posix()
-    python_exe = stable_python_executable()
-    command_base = f'"{python_exe}" "{hook_script}" {{command}} --base "{workspace_base}" --session-id {session_id}'
-    session_start_command = command_base.format(command="session-start")
-    pre_tool_command = command_base.format(command="pre-tool")
-    post_tool_command = command_base.format(command="post-tool")
-    settings = {
-        "hooks": {
-            "SessionStart": [_claude_event("startup|resume", session_start_command)],
-            "PreToolUse": [_claude_event("*", pre_tool_command)],
-            "PostToolUse": [_claude_event("*", post_tool_command)],
-        }
-    }
-    return {
-        "kind": "claude_code_hook_settings",
-        "runtime": "claude_code",
-        "source_protocol_field": "runtime_hook_installation",
-        "installation_mode": installation["installation_mode"],
-        "native_installer_available": installation["native_installer_available"],
-        "summary_inputs_trusted": False,
-        "can_update_claim_trust": False,
-        "can_write_trace_events": True,
-        "path": str(settings_path),
-        "events": [
-            {
-                "hook_event_name": "SessionStart",
-                "matcher": "startup|resume",
-                "protocol_hook": "session_start",
-                "command": session_start_command,
-            },
-            {
-                "hook_event_name": "PreToolUse",
-                "matcher": "*",
-                "protocol_hook": "pre_tool",
-                "command": pre_tool_command,
-            },
-            {
-                "hook_event_name": "PostToolUse",
-                "matcher": "*",
-                "protocol_hook": "post_tool",
-                "command": post_tool_command,
-            },
-        ],
-        "settings": settings,
-    }
-
-
-def _read_claude_settings(settings_path: Path) -> dict[str, Any]:
-    text = settings_path.read_text(encoding="utf-8")
-    if not text.strip():
-        return {}
-    payload = json.loads(text)
-    if not isinstance(payload, dict):
-        raise ValueError("Claude Code settings must be a JSON object")
     return payload
 
 
@@ -375,6 +249,24 @@ def _write_payload_sidecar(bridge: dict[str, Any]) -> None:
         json.dumps(bridge, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
+
+def _resolve_hook_routing_context(
+    bridge_path: Path,
+    *,
+    routing: HookRoutingMode | None,
+    session_id: str,
+    project_root: str,
+    topics_root: str,
+) -> tuple[HookRoutingMode, dict[str, object]]:
+    resolved_routing = resolve_installer_hook_routing(routing, session_id=session_id)
+    fallback_root = bridge_path.parent.resolve(strict=False)
+    metadata = hook_routing_metadata(
+        resolved_routing,
+        project_root=project_root or fallback_root,
+        topics_root=topics_root or fallback_root,
+    )
+    return resolved_routing, metadata
 
 
 def _normalize_runtime(runtime: str) -> str:

@@ -6,7 +6,14 @@ import json
 from pathlib import Path
 from typing import Any
 
+from brain.v5.hook_command_line import render_hook_command
 from brain.v5.hook_python import stable_python_executable
+from brain.v5.hook_routing_mode import (
+    HookRoutingMode,
+    hook_routing_metadata,
+    resolve_installer_hook_routing,
+)
+from brain.v5.hook_runner_payloads import build_native_lifecycle_hook_argv
 
 
 _KIMI_BEGIN_MARKER = "# BEGIN AITP V5 KIMI HOOKS"
@@ -18,16 +25,24 @@ def write_kimi_code_hook_config(
     installation: dict[str, Any],
     *,
     workspace_base: str,
-    session_id: str,
+    session_id: str = "",
+    routing: HookRoutingMode | None = None,
+    project_root: str = "",
 ) -> dict[str, Any]:
     """Write standalone Kimi Code hook TOML derived from hook metadata."""
 
     config_path = Path(path)
+    resolved_routing = resolve_installer_hook_routing(routing, session_id=session_id)
+    routing_metadata = hook_routing_metadata(
+        resolved_routing,
+        project_root=project_root or workspace_base,
+        topics_root=workspace_base,
+    )
     payload = _kimi_config_payload(
         config_path,
         installation,
-        workspace_base=workspace_base,
-        session_id=session_id,
+        routing=resolved_routing,
+        routing_metadata=routing_metadata,
     )
     config_path.parent.mkdir(parents=True, exist_ok=True)
     config_path.write_text(payload["config_text"], encoding="utf-8")
@@ -39,16 +54,24 @@ def install_kimi_code_hook_config(
     installation: dict[str, Any],
     *,
     workspace_base: str,
-    session_id: str,
+    session_id: str = "",
+    routing: HookRoutingMode | None = None,
+    project_root: str = "",
 ) -> dict[str, Any]:
     """Merge AITP v5 Kimi hooks into an existing TOML config without clobbering it."""
 
     config_path = Path(path)
+    resolved_routing = resolve_installer_hook_routing(routing, session_id=session_id)
+    routing_metadata = hook_routing_metadata(
+        resolved_routing,
+        project_root=project_root or workspace_base,
+        topics_root=workspace_base,
+    )
     generated = _kimi_config_payload(
         config_path,
         installation,
-        workspace_base=workspace_base,
-        session_id=session_id,
+        routing=resolved_routing,
+        routing_metadata=routing_metadata,
     )
     created = not config_path.exists()
     existing_text = "" if created else config_path.read_text(encoding="utf-8")
@@ -70,33 +93,41 @@ def _kimi_config_payload(
     config_path: Path,
     installation: dict[str, Any],
     *,
-    workspace_base: str,
-    session_id: str,
+    routing: HookRoutingMode,
+    routing_metadata: dict[str, object],
 ) -> dict[str, Any]:
     hook_script = (Path(__file__).resolve().parents[2] / "hooks" / "aitp_v5_kimi_hook.py").as_posix()
     python_exe = stable_python_executable()
-    command_base = (
-        f'"{python_exe}" "{hook_script}" {{command}} '
-        f'--base "{workspace_base}" --session-id {session_id}'
-    )
+    def command(name: str) -> str:
+        return render_hook_command(
+            build_native_lifecycle_hook_argv(
+                executable=python_exe,
+                hook_path=hook_script,
+                command=name,
+                topics_root=str(routing_metadata["topics_root"]),
+                project_root=str(routing_metadata["project_root"]),
+                routing=routing,
+            )
+        )
+
     events = [
         {
             "hook_event_name": "SessionStart",
             "matcher": "startup|resume",
             "protocol_hook": "session_start",
-            "command": command_base.format(command="session-start"),
+            "command": command("session-start"),
         },
         {
             "hook_event_name": "PreToolUse",
             "matcher": "*",
             "protocol_hook": "pre_tool",
-            "command": command_base.format(command="pre-tool"),
+            "command": command("pre-tool"),
         },
         {
             "hook_event_name": "PostToolUse",
             "matcher": "*",
             "protocol_hook": "post_tool",
-            "command": command_base.format(command="post-tool"),
+            "command": command("post-tool"),
         },
     ]
     return {
@@ -109,6 +140,7 @@ def _kimi_config_payload(
         "can_update_claim_trust": False,
         "can_write_trace_events": True,
         "path": str(config_path),
+        **routing_metadata,
         "events": events,
         "config_text": _kimi_hooks_toml(events),
     }

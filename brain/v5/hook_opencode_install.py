@@ -8,6 +8,12 @@ from pathlib import Path
 from typing import Any
 
 from brain.v5.hook_install_templates import write_opencode_plugin_bridge
+from brain.v5.hook_routing_mode import (
+    HookRoutingMode,
+    hook_routing_metadata,
+    resolve_installer_hook_routing,
+)
+from brain.v5.hook_runner_payloads import build_adapter_event_runner_argv
 from brain.v5.legacy_injection_quarantine import (
     detect_legacy_injection_conflicts,
     require_matching_legacy_injection_replacement_plan,
@@ -23,13 +29,21 @@ def install_opencode_plugin_file(
     runtime_gate_protocols: dict[str, Any] | None = None,
     *,
     workspace_base: str,
-    session_id: str,
+    session_id: str = "",
+    routing: HookRoutingMode | None = None,
+    project_root: str = "",
     bridge_path: str | Path | None = None,
     reviewed_replacement_plan_id: str = "",
 ) -> dict[str, Any]:
     """Write an OpenCode local plugin that calls the AITP v5 hook runner."""
 
     plugin_path = Path(path)
+    resolved_routing = resolve_installer_hook_routing(routing, session_id=session_id)
+    routing_metadata = hook_routing_metadata(
+        resolved_routing,
+        project_root=project_root or workspace_base,
+        topics_root=workspace_base,
+    )
     resolved_bridge_path = Path(bridge_path) if bridge_path else _default_bridge_path(plugin_path)
     created = not plugin_path.exists()
     current_before = ""
@@ -51,14 +65,19 @@ def install_opencode_plugin_file(
         resolved_bridge_path,
         installation,
         runtime_gate_protocols,
-        session_id=session_id,
+        routing=resolved_routing,
+        project_root=str(routing_metadata["project_root"]),
+        topics_root=str(routing_metadata["topics_root"]),
     )
     pre_tool_hook = _pre_tool_hook(
-        workspace_base=workspace_base,
-        session_id=session_id,
+        routing=resolved_routing,
+        routing_metadata=routing_metadata,
         bridge_payload_path=bridge["payload_path"],
     )
-    post_tool_hook = _post_tool_hook(workspace_base=workspace_base, session_id=session_id)
+    post_tool_hook = _post_tool_hook(
+        routing=resolved_routing,
+        routing_metadata=routing_metadata,
+    )
     plugin = {
         "kind": "opencode_local_plugin",
         "runtime": "opencode",
@@ -69,6 +88,7 @@ def install_opencode_plugin_file(
         "post_tool": post_tool_hook,
         "truth_rule": "plugin is runtime metadata only; typed records remain authoritative",
         "summary_inputs_trusted": False,
+        **routing_metadata,
     }
     source = _plugin_source(plugin)
     if not created:
@@ -110,6 +130,7 @@ def install_opencode_plugin_file(
         "reviewed_replacement_plan_id": (
             replacement_plan.get("plan_id", "") if replacement_plan else ""
         ),
+        **routing_metadata,
     }
 
 
@@ -119,25 +140,27 @@ def _default_bridge_path(plugin_path: Path) -> Path:
     return plugin_path.parent / "AITP_V5_PLUGIN_BRIDGE.md"
 
 
-def _pre_tool_hook(*, workspace_base: str, session_id: str, bridge_payload_path: str) -> dict[str, Any]:
+def _pre_tool_hook(
+    *,
+    routing: HookRoutingMode,
+    routing_metadata: dict[str, object],
+    bridge_payload_path: str,
+) -> dict[str, Any]:
     runner = _adapter_event_runner_path()
     return {
         "lifecycle_event": "pre_tool",
         "command_kind": "stdin_json_runner",
         "cwd": str(_repo_root()),
-        "argv": [
-            sys.executable,
-            str(runner),
-            "pre-tool",
-            "--base",
-            workspace_base,
-            "--runtime",
-            "opencode",
-            "--session-id",
-            session_id,
-            "--bridge-path",
-            bridge_payload_path,
-        ],
+        "argv": build_adapter_event_runner_argv(
+            executable=sys.executable,
+            runner_path=str(runner),
+            event="pre-tool",
+            runtime="opencode",
+            topics_root=str(routing_metadata["topics_root"]),
+            project_root=str(routing_metadata["project_root"]),
+            routing=routing,
+            bridge_payload_path=bridge_payload_path,
+        ),
         "stdin": "<platform-event-json>",
         "output_kind": "pre_tool_policy_decision",
         "may_block": True,
@@ -145,23 +168,25 @@ def _pre_tool_hook(*, workspace_base: str, session_id: str, bridge_payload_path:
     }
 
 
-def _post_tool_hook(*, workspace_base: str, session_id: str) -> dict[str, Any]:
+def _post_tool_hook(
+    *,
+    routing: HookRoutingMode,
+    routing_metadata: dict[str, object],
+) -> dict[str, Any]:
     runner = _adapter_event_runner_path()
     return {
         "lifecycle_event": "post_tool",
         "command_kind": "stdin_json_runner",
         "cwd": str(_repo_root()),
-        "argv": [
-            sys.executable,
-            str(runner),
-            "post-tool",
-            "--base",
-            workspace_base,
-            "--runtime",
-            "opencode",
-            "--session-id",
-            session_id,
-        ],
+        "argv": build_adapter_event_runner_argv(
+            executable=sys.executable,
+            runner_path=str(runner),
+            event="post-tool",
+            runtime="opencode",
+            topics_root=str(routing_metadata["topics_root"]),
+            project_root=str(routing_metadata["project_root"]),
+            routing=routing,
+        ),
         "stdin": "<platform-event-json>",
         "output_kind": "hook_trace_event_record",
         "may_block": False,
@@ -173,11 +198,15 @@ def _plugin_source(plugin: dict[str, Any]) -> str:
     return f"""// {_AITP_PLUGIN_MARKER}
 // Generated by AITP v5. Runtime metadata only; typed kernel records remain authoritative.
 import {{ spawnSync }} from "node:child_process"
+import {{ randomUUID }} from "node:crypto"
 
 const PRE_TOOL_ARGV = {_js(plugin["pre_tool"]["argv"])}
 const POST_TOOL_ARGV = {_js(plugin["post_tool"]["argv"])}
 const RUNNER_CWD = {_js(plugin["pre_tool"]["cwd"])}
-const SESSION_ID = {_js(plugin["pre_tool"]["argv"][8])}
+const ROUTING_MODE = {_js(plugin["routing_mode"])}
+const PINNED_SESSION_ID = {_js(plugin["pinned_session_id"])}
+const PROJECT_ROOT = {_js(plugin["project_root"])}
+const HOST_SESSION_FALLBACK = randomUUID()
 
 function normalizeToolName(input, output) {{
   if (typeof input?.tool === "string") return input.tool
@@ -194,17 +223,49 @@ function normalizeToolInput(input, output) {{
   return {{}}
 }}
 
+function firstString(...values) {{
+  return values.find((value) => typeof value === "string" && value.length > 0) || ""
+}}
+
+function hostSessionId(input, output) {{
+  return firstString(
+    input?.host_session_id,
+    output?.host_session_id,
+    input?.session_id,
+    output?.session_id,
+    input?.conversation_id,
+    input?.thread_id,
+    HOST_SESSION_FALLBACK,
+  )
+}}
+
+function eventId(input, output) {{
+  return firstString(
+    input?.event_id,
+    output?.event_id,
+    input?.tool_call_id,
+    output?.tool_call_id,
+    input?.call_id,
+    output?.call_id,
+    randomUUID(),
+  )
+}}
+
 function eventPayload(lifecycleEvent, input, output) {{
   const toolName = normalizeToolName(input, output)
-  return {{
+  const payload = {{
     runtime: "opencode",
     lifecycle_event: lifecycleEvent,
-    session_id: SESSION_ID,
+    event_id: eventId(input, output),
+    host_session_id: hostSessionId(input, output),
+    project_root: firstString(input?.project_root, input?.cwd, output?.cwd, PROJECT_ROOT),
     tool_name: toolName,
     tool: {{ name: toolName, input: normalizeToolInput(input, output) }},
     opencode_input: input,
     opencode_output: output,
   }}
+  if (ROUTING_MODE !== "dynamic") payload.session_id = PINNED_SESSION_ID
+  return payload
 }}
 
 function runAitp(argv, event) {{

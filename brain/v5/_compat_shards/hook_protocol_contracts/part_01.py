@@ -19,7 +19,13 @@ from brain.v5.contracts import (
     _require_nonempty_str,
 )
 
-from brain.v5.hook_entrypoint_schemas import pre_tool_event_platform_schema, pre_tool_policy_input_schema
+from brain.v5.hook_entrypoint_schemas import pre_tool_policy_input_schema
+from brain.v5.hook_routing_contracts import (
+    validate_hook_routing_metadata,
+    validate_native_hook_commands,
+    validate_pre_tool_event_entrypoint,
+    validate_pre_tool_event_runner_payload,
+)
 
 def validate_runtime_hook_protocols(payload: Any, path: str, result: ContractResult) -> None:
     """Validate lifecycle hook metadata advertised to runtime adapters."""
@@ -111,7 +117,7 @@ def validate_codex_hook_bridge(
         f"{path}.pre_tool_policy_entrypoint",
         result,
     )
-    _validate_pre_tool_event_entrypoint(
+    validate_pre_tool_event_entrypoint(
         payload.get("pre_tool_event_entrypoint"),
         f"{path}.pre_tool_event_entrypoint",
         result,
@@ -122,6 +128,13 @@ def validate_codex_hook_bridge(
         result,
     )
     _validate_gate_protocols(payload.get("gate_protocols"), f"{path}.gate_protocols", result)
+    validate_hook_routing_metadata(payload, path, result)
+    validate_pre_tool_event_runner_payload(
+        payload.get("pre_tool_event_runner"),
+        payload,
+        f"{path}.pre_tool_event_runner",
+        result,
+    )
 
     for key in ("installation_mode", "path"):
         _require_nonempty_str(payload, key, path, result)
@@ -174,6 +187,25 @@ def validate_opencode_plugin_bridge(
     _require_mapping(payload.get("plugin_bridge"), f"{path}.plugin_bridge", result)
     bridge = payload.get("plugin_bridge")
     if isinstance(bridge, dict):
+        validate_hook_routing_metadata(payload, path, result)
+        validate_hook_routing_metadata(bridge, f"{path}.plugin_bridge", result)
+        for key in (
+            "routing_mode",
+            "pinned_session_id",
+            "project_root",
+            "topics_root",
+            "legacy_pinned",
+            "migration_required",
+            "runtime_metadata_only",
+        ):
+            if bridge.get(key) != payload.get(key):
+                result.add(f"{path}.plugin_bridge.{key}", "must match top-level routing metadata")
+        validate_pre_tool_event_runner_payload(
+            bridge.get("pre_tool_event_runner"),
+            bridge,
+            f"{path}.plugin_bridge.pre_tool_event_runner",
+            result,
+        )
         if bridge.get("persistence_entrypoint") != "aitp_v5_persist_hook_trace_event":
             result.add(f"{path}.plugin_bridge.persistence_entrypoint", "must be 'aitp_v5_persist_hook_trace_event'")
         _validate_pre_tool_policy_entrypoint(
@@ -181,7 +213,7 @@ def validate_opencode_plugin_bridge(
             f"{path}.plugin_bridge.pre_tool_policy_entrypoint",
             result,
         )
-        _validate_pre_tool_event_entrypoint(
+        validate_pre_tool_event_entrypoint(
             bridge.get("pre_tool_event_entrypoint"),
             f"{path}.plugin_bridge.pre_tool_event_entrypoint",
             result,
@@ -233,6 +265,8 @@ def validate_claude_code_hook_settings(
         _require_nonempty_str(payload, key, path, result)
     _require_list(payload.get("events"), f"{path}.events", result)
     _require_mapping(payload.get("settings"), f"{path}.settings", result)
+    validate_hook_routing_metadata(payload, path, result)
+    validate_native_hook_commands(payload.get("events"), payload, f"{path}.events", result)
     return result
 
 def require_valid_claude_code_hook_settings(payload: dict[str, Any]) -> dict[str, Any]:
@@ -276,6 +310,8 @@ def validate_claude_code_hook_installation(
     _require_nonempty_str(payload, "path", path, result)
     _require_list(payload.get("events"), f"{path}.events", result)
     _require_mapping(payload.get("settings"), f"{path}.settings", result)
+    validate_hook_routing_metadata(payload, path, result)
+    validate_native_hook_commands(payload.get("events"), payload, f"{path}.events", result)
     return result
 
 def require_valid_claude_code_hook_installation(payload: dict[str, Any]) -> dict[str, Any]:
@@ -437,26 +473,6 @@ def _validate_pre_tool_policy_entrypoint(payload: Any, path: str, result: Contra
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
         "input_schema": pre_tool_policy_input_schema(),
-    }
-    for key, value in expected.items():
-        if payload.get(key) != value:
-            result.add(f"{path}.{key}", f"must be {value!r}")
-
-def _validate_pre_tool_event_entrypoint(payload: Any, path: str, result: ContractResult) -> None:
-    _require_mapping(payload, path, result)
-    if not isinstance(payload, dict):
-        return
-    expected = {
-        "cli": "aitp-v5 adapter pre-tool-event <runtime> <session-id> <args>",
-        "mcp": "aitp_v5_evaluate_adapter_pre_tool_event",
-        "surface": "pre_tool_policy_decision",
-        "truth_source": "typed_records",
-        "summary_inputs_trusted": False,
-        "can_update_kernel_state": False,
-        "can_update_claim_trust": False,
-        "requires_bridge_payload": True,
-        "requires_platform_event": True,
-        "platform_event_schema": pre_tool_event_platform_schema(),
     }
     for key, value in expected.items():
         if payload.get(key) != value:

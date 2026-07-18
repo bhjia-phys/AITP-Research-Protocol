@@ -79,6 +79,8 @@ def _sample_argv(template: str) -> list[str]:
             argv.append("codex")
         elif token == "<session-id>":
             argv.append("s1")
+        elif token == "<mode>":
+            argv.append("dynamic")
         else:
             argv.append(token)
     return argv

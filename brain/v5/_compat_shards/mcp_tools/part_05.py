@@ -1,6 +1,8 @@
 # Compatibility shard 5 for mcp_tools.
 from __future__ import annotations
 
+from brain.v5.hook_install_request import prepare_hook_install_request
+
 def aitp_v5_write_claude_code_hook_settings(base: str, *, session_id: str, output_path: str) -> dict:
     ws = _ws(base)
     packet = require_valid_public_surface("adapter_packet", build_adapter_packet(ws, session_id, runtime="claude_code"))
@@ -16,11 +18,29 @@ def aitp_v5_evaluate_adapter_pre_tool_event(
         evaluate_platform_pre_tool_event(_ws(base), bridge_payload, platform_event),
     )
 
-def aitp_v5_install_claude_code_hook_settings(base: str, *, session_id: str, settings_path: str) -> dict:
+def aitp_v5_install_claude_code_hook_settings(
+    base: str,
+    *,
+    settings_path: str,
+    session_id: str = "",
+    routing_mode: str = "",
+    project_root: str = "",
+) -> dict:
     ws = _ws(base)
-    packet = require_valid_public_surface("adapter_packet", build_adapter_packet(ws, session_id, runtime="claude_code"))
+    request = prepare_hook_install_request(
+        ws,
+        runtime="claude_code",
+        routing_mode=routing_mode,
+        session_id=session_id,
+        project_root=project_root,
+    )
     installed = {"ok": True, **install_claude_code_hook_settings(
-        settings_path, packet["runtime_hook_installation"], workspace_base=str(ws.base), session_id=session_id)}
+        settings_path,
+        request.installation,
+        workspace_base=str(ws.base),
+        routing=request.routing,
+        project_root=request.project_root,
+    )}
     return require_valid_public_surface("claude_code_hook_installation", installed)
 
 def aitp_v5_get_adapter_protocol_registry() -> dict:

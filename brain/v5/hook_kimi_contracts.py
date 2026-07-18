@@ -12,6 +12,7 @@ from brain.v5.contracts import (
     _require_mapping,
     _require_nonempty_str,
 )
+from brain.v5.hook_routing_contracts import validate_hook_routing_metadata, validate_native_hook_commands
 
 
 def validate_kimi_code_hook_config(
@@ -43,6 +44,8 @@ def validate_kimi_code_hook_config(
     _require_nonempty_str(payload, "config_text", path, result)
     _validate_kimi_events(payload.get("events"), path, result)
     _validate_config_text(payload.get("config_text"), path, result)
+    validate_hook_routing_metadata(payload, path, result)
+    validate_native_hook_commands(payload.get("events"), payload, f"{path}.events", result)
     return result
 
 

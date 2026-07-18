@@ -13,6 +13,7 @@ from brain.v5.contracts import (
     _require_nonempty_str,
 )
 from brain.v5.hook_protocol_contracts import validate_codex_hook_bridge, validate_opencode_plugin_bridge
+from brain.v5.hook_routing_contracts import validate_fixture_hook_routing, validate_hook_routing_metadata
 
 
 def validate_codex_hook_installation(
@@ -44,6 +45,7 @@ def validate_codex_hook_installation(
         result.add(f"{path}.native_installer_available", "must be a boolean")
     for key in ("path", "bridge_path", "bridge_payload_path"):
         _require_nonempty_str(payload, key, path, result)
+    validate_hook_routing_metadata(payload, path, result)
 
     bridge = payload.get("bridge")
     if isinstance(bridge, dict):
@@ -57,6 +59,7 @@ def validate_codex_hook_installation(
     if fixture is None and hooks_file is None:
         result.add(path, "must include either fixture or native hooks payload")
     if isinstance(fixture, dict):
+        validate_hook_routing_metadata(fixture, f"{path}.fixture", result)
         if fixture.get("kind") != "codex_hook_installation_fixture":
             result.add(f"{path}.fixture.kind", "must be 'codex_hook_installation_fixture'")
         _require_bool_value(
@@ -70,6 +73,7 @@ def validate_codex_hook_installation(
         if isinstance(hooks, dict):
             _validate_pre_tool_hook(hooks.get("pre_tool"), f"{path}.fixture.hooks.pre_tool", result)
             _validate_post_tool_hook(hooks.get("post_tool"), f"{path}.fixture.hooks.post_tool", result)
+            validate_fixture_hook_routing(hooks, fixture, f"{path}.fixture.hooks", result)
     elif fixture is not None:
         _require_mapping(fixture, f"{path}.fixture", result)
     if isinstance(hooks_file, dict):
@@ -121,6 +125,7 @@ def validate_opencode_hook_installation(
         result.add(f"{path}.native_installer_available", "must be a boolean")
     for key in ("path", "bridge_path", "bridge_payload_path"):
         _require_nonempty_str(payload, key, path, result)
+    validate_hook_routing_metadata(payload, path, result)
 
     bridge = payload.get("bridge")
     if isinstance(bridge, dict):
@@ -134,6 +139,7 @@ def validate_opencode_hook_installation(
     if fixture is None and plugin is None:
         result.add(path, "must include either fixture or native plugin payload")
     if isinstance(fixture, dict):
+        validate_hook_routing_metadata(fixture, f"{path}.fixture", result)
         if fixture.get("kind") != "opencode_hook_installation_fixture":
             result.add(f"{path}.fixture.kind", "must be 'opencode_hook_installation_fixture'")
         _require_bool_value(
@@ -147,9 +153,11 @@ def validate_opencode_hook_installation(
         if isinstance(hooks, dict):
             _validate_pre_tool_hook(hooks.get("pre_tool"), f"{path}.fixture.plugin_hooks.pre_tool", result)
             _validate_post_tool_hook(hooks.get("post_tool"), f"{path}.fixture.plugin_hooks.post_tool", result)
+            validate_fixture_hook_routing(hooks, fixture, f"{path}.fixture.plugin_hooks", result)
     elif fixture is not None:
         _require_mapping(fixture, f"{path}.fixture", result)
     if isinstance(plugin, dict):
+        validate_hook_routing_metadata(plugin, f"{path}.plugin", result)
         if plugin.get("kind") != "opencode_local_plugin":
             result.add(f"{path}.plugin.kind", "must be 'opencode_local_plugin'")
         _require_bool_value(
@@ -164,6 +172,12 @@ def validate_opencode_hook_installation(
             result.add(f"{path}.plugin.lifecycle_events", "must be ['tool.execute.before', 'tool.execute.after']")
         _validate_pre_tool_hook(plugin.get("pre_tool"), f"{path}.plugin.pre_tool", result)
         _validate_post_tool_hook(plugin.get("post_tool"), f"{path}.plugin.post_tool", result)
+        validate_fixture_hook_routing(
+            {"pre_tool": plugin.get("pre_tool"), "post_tool": plugin.get("post_tool")},
+            plugin,
+            f"{path}.plugin",
+            result,
+        )
         for key in ("created", "changed"):
             if not isinstance(payload.get(key), bool):
                 result.add(f"{path}.{key}", "must be a boolean")

@@ -7,6 +7,8 @@ from io import BytesIO
 import subprocess
 import sys
 
+import pytest
+
 _MCP_COMPAT_TOOL_NAMES = {
     "aitp_list_topics",
     "aitp_get_execution_brief",
@@ -168,6 +170,31 @@ def _invoke(args, capsys):
     assert main(args) == 0
     output = capsys.readouterr().out
     return json.loads(output)
+
+
+def _argv_option(argv, option):
+    return argv[argv.index(option) + 1]
+
+
+def _assert_hook_route_argv(
+    argv,
+    *,
+    mode,
+    topics_root,
+    project_root,
+    session_id="",
+    bridge_path="",
+):
+    assert argv[1].replace("\\", "/").endswith("hooks/aitp_v5_adapter_event_runner.py")
+    assert _argv_option(argv, "--base") == str(Path(topics_root).resolve())
+    assert _argv_option(argv, "--project-root") == str(Path(project_root).resolve())
+    assert _argv_option(argv, "--routing-mode") == mode
+    if session_id:
+        assert _argv_option(argv, "--session-id") == session_id
+    else:
+        assert "--session-id" not in argv
+    if bridge_path:
+        assert _argv_option(argv, "--bridge-path") == str(bridge_path)
 
 
 def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_path):
@@ -629,31 +656,18 @@ def test_cli_adapter_hook_bridge_writes_codex_bridge_from_packet(tmp_path, capsy
     assert payload["gate_protocols"]["record_tool_run"]["policy_reasons_field"] == "policy_reasons"
     assert payload["path"] == str(bridge_path)
     assert payload["payload_path"] == str(bridge_path.with_suffix(".json"))
-    assert payload["pre_tool_event_runner"]["argv"] == [
-        "aitp-v5",
-        "adapter",
-        "pre-tool-event",
-        "codex",
-        "s1",
-        "--bridge-path",
-        str(bridge_path.with_suffix(".json")),
-        "--event-json",
-        "<platform-event-json>",
-    ]
+    _assert_hook_route_argv(
+        payload["pre_tool_event_runner"]["argv"],
+        mode="pinned_compat",
+        topics_root=tmp_path,
+        project_root=tmp_path,
+        session_id="s1",
+        bridge_path=bridge_path.with_suffix(".json"),
+    )
     assert payload["pre_tool_event_runner"]["summary_inputs_trusted"] is False
-    assert payload["pre_tool_event_runner"]["stdin_runner"]["argv"] == [
-        "python",
-        "hooks/aitp_v5_adapter_event_runner.py",
-        "pre-tool",
-        "--base",
-        "<workspace>",
-        "--runtime",
-        "codex",
-        "--session-id",
-        "s1",
-        "--bridge-path",
-        str(bridge_path.with_suffix(".json")),
-    ]
+    assert payload["pre_tool_event_runner"]["stdin_runner"]["argv"] == payload[
+        "pre_tool_event_runner"
+    ]["argv"]
     assert payload["pre_tool_event_runner"]["stdin_runner"]["stdin"] == "<platform-event-json>"
     assert [call["hook_name"] for call in payload["guard_calls"]] == ["pre_commit", "pre_tool", "post_tool"]
     sidecar = json.loads(bridge_path.with_suffix(".json").read_text(encoding="utf-8"))
@@ -689,9 +703,14 @@ def test_mcp_codex_hook_bridge_wrapper_returns_contract_payload(tmp_path):
     assert payload["kind"] == "codex_hook_bridge"
     assert payload["summary_inputs_trusted"] is False
     assert payload["gate_protocols"]["validate_claim"]["pre_tool_policy"] == "aitp_v5_evaluate_pre_tool_policy"
-    assert payload["pre_tool_event_runner"]["argv"][4] == "s1"
-    assert payload["pre_tool_event_runner"]["argv"][6] == str(bridge_path.with_suffix(".json"))
-    assert payload["pre_tool_event_runner"]["stdin_runner"]["argv"][8] == "s1"
+    _assert_hook_route_argv(
+        payload["pre_tool_event_runner"]["argv"],
+        mode="pinned_compat",
+        topics_root=tmp_path,
+        project_root=tmp_path,
+        session_id="s1",
+        bridge_path=bridge_path.with_suffix(".json"),
+    )
     assert bridge_path.exists()
 
 
@@ -1942,30 +1961,16 @@ def test_opencode_plugin_bridge_is_rendered_from_installation_template(tmp_path)
     assert "packet" in bridge["plugin_bridge"]["pre_tool_event_entrypoint"]["platform_event_schema"]["tool_input_optional"]
     assert bridge["path"] == str(bridge_path)
     assert bridge["payload_path"] == str(bridge_path.with_suffix(".json"))
-    assert bridge["plugin_bridge"]["pre_tool_event_runner"]["argv"] == [
-        "aitp-v5",
-        "adapter",
-        "pre-tool-event",
-        "opencode",
-        "<session-id>",
-        "--bridge-path",
-        str(bridge_path.with_suffix(".json")),
-        "--event-json",
-        "<platform-event-json>",
-    ]
-    assert bridge["plugin_bridge"]["pre_tool_event_runner"]["stdin_runner"]["argv"] == [
-        "python",
-        "hooks/aitp_v5_adapter_event_runner.py",
-        "pre-tool",
-        "--base",
-        "<workspace>",
-        "--runtime",
-        "opencode",
-        "--session-id",
-        "<session-id>",
-        "--bridge-path",
-        str(bridge_path.with_suffix(".json")),
-    ]
+    _assert_hook_route_argv(
+        bridge["plugin_bridge"]["pre_tool_event_runner"]["argv"],
+        mode="dynamic",
+        topics_root=bridge_path.parent,
+        project_root=bridge_path.parent,
+        bridge_path=bridge_path.with_suffix(".json"),
+    )
+    assert bridge["plugin_bridge"]["pre_tool_event_runner"]["stdin_runner"]["argv"] == bridge[
+        "plugin_bridge"
+    ]["pre_tool_event_runner"]["argv"]
     assert [call["hook_name"] for call in bridge["plugin_bridge"]["lifecycle_calls"]] == [
         "pre_commit",
         "pre_tool",
@@ -2012,9 +2017,14 @@ def test_cli_adapter_hook_bridge_writes_opencode_bridge_from_packet(tmp_path, ca
     assert payload["runtime"] == "opencode"
     assert payload["plugin_bridge"]["lifecycle_calls"][1]["hook_name"] == "pre_tool"
     assert payload["plugin_bridge"]["pre_tool_policy_entrypoint"]["surface"] == "pre_tool_policy_decision"
-    assert payload["plugin_bridge"]["pre_tool_event_runner"]["argv"][4] == "s1"
-    assert payload["plugin_bridge"]["pre_tool_event_runner"]["argv"][6] == str(bridge_path.with_suffix(".json"))
-    assert payload["plugin_bridge"]["pre_tool_event_runner"]["stdin_runner"]["argv"][8] == "s1"
+    _assert_hook_route_argv(
+        payload["plugin_bridge"]["pre_tool_event_runner"]["argv"],
+        mode="pinned_compat",
+        topics_root=tmp_path,
+        project_root=tmp_path,
+        session_id="s1",
+        bridge_path=bridge_path.with_suffix(".json"),
+    )
     assert payload["plugin_bridge"]["pre_tool_event_entrypoint"] == {
         "cli": "aitp-v5 adapter pre-tool-event <runtime> <session-id> <args>",
         "mcp": "aitp_v5_evaluate_adapter_pre_tool_event",
@@ -4093,3 +4103,354 @@ def test_mcp_adapter_packet_wrapper_returns_contract_payload(tmp_path):
     assert payload["ok"] is True
     assert payload["runtime"] == "opencode"
     assert payload["truth_sources"] == ["typed_records", "execution_brief"]
+
+
+def test_hook_routing_mode_normalizes_dynamic_pinned_and_legacy_compatibility():
+    from brain.v5.hook_routing_mode import normalize_hook_routing_mode
+
+    default_dynamic = normalize_hook_routing_mode("", "")
+    explicit_dynamic = normalize_hook_routing_mode("dynamic", "")
+    explicit_pinned = normalize_hook_routing_mode("pinned", "s1")
+    legacy = normalize_hook_routing_mode("", "s1", legacy_positional=True)
+
+    assert default_dynamic.routing_mode == "dynamic"
+    assert default_dynamic.pinned_session_id == ""
+    assert default_dynamic.legacy_pinned is False
+    assert default_dynamic.migration_required is False
+    assert explicit_dynamic == default_dynamic
+    assert explicit_pinned.routing_mode == "pinned"
+    assert explicit_pinned.pinned_session_id == "s1"
+    assert explicit_pinned.legacy_pinned is False
+    assert explicit_pinned.migration_required is False
+    assert legacy.routing_mode == "pinned_compat"
+    assert legacy.pinned_session_id == "s1"
+    assert legacy.legacy_pinned is True
+    assert legacy.migration_required is True
+
+
+@pytest.mark.parametrize(
+    ("routing_mode", "session_id", "legacy_positional", "message"),
+    (
+        ("dynamic", "s1", False, "dynamic routing does not accept a session pin"),
+        ("pinned", "", False, "pinned routing requires a session pin"),
+        ("", "s1", False, "session pin requires explicit pinned routing"),
+        ("pinned_compat", "s1", False, "pinned_compat is reserved"),
+        ("unknown", "", False, "unsupported hook routing mode"),
+    ),
+)
+def test_hook_routing_mode_rejects_ambiguous_or_conflicting_inputs(
+    routing_mode,
+    session_id,
+    legacy_positional,
+    message,
+):
+    from brain.v5.hook_routing_mode import normalize_hook_routing_mode
+
+    with pytest.raises(ValueError, match=message):
+        normalize_hook_routing_mode(
+            routing_mode,
+            session_id,
+            legacy_positional=legacy_positional,
+        )
+
+
+def test_cli_dynamic_codex_install_needs_no_session_and_declares_both_roots(
+    tmp_path,
+    capsys,
+):
+    from brain.v5.workspace import init_workspace
+
+    topics_root = tmp_path / "topics-root"
+    project_root = tmp_path / "research-project"
+    init_workspace(topics_root)
+    fixture_path = project_root / ".codex" / "AITP_V5_HOOKS.json"
+
+    payload = _invoke(
+        [
+            "--base",
+            str(topics_root),
+            "adapter",
+            "install-hooks",
+            "codex",
+            "--routing-mode",
+            "dynamic",
+            "--project-root",
+            str(project_root),
+            "--output",
+            str(fixture_path),
+        ],
+        capsys,
+    )
+
+    assert payload["routing_mode"] == "dynamic"
+    assert payload["pinned_session_id"] == ""
+    assert payload["project_root"] == str(project_root.resolve())
+    assert payload["topics_root"] == str(topics_root.resolve())
+    assert payload["legacy_pinned"] is False
+    assert payload["migration_required"] is False
+    assert payload["runtime_metadata_only"] is True
+    for hook in payload["fixture"]["hooks"].values():
+        assert hook["argv"][hook["argv"].index("--routing-mode") + 1] == "dynamic"
+        assert "--session-id" not in hook["argv"]
+        assert hook["argv"][hook["argv"].index("--project-root") + 1] == str(
+            project_root.resolve()
+        )
+    assert payload["bridge"]["routing_mode"] == "dynamic"
+    assert payload["bridge"]["pinned_session_id"] == ""
+
+
+def test_dynamic_codex_install_contract_rejects_pin_or_project_root_drift(
+    tmp_path,
+    capsys,
+):
+    from brain.v5.contracts import ContractError
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import init_workspace
+
+    topics_root = tmp_path / "topics-root"
+    project_root = tmp_path / "research-project"
+    init_workspace(topics_root)
+    payload = _invoke(
+        [
+            "--base",
+            str(topics_root),
+            "adapter",
+            "install-hooks",
+            "codex",
+            "--routing-mode",
+            "dynamic",
+            "--project-root",
+            str(project_root),
+            "--output",
+            str(project_root / ".codex" / "AITP_V5_HOOKS.json"),
+        ],
+        capsys,
+    )
+
+    pinned_payload = json.loads(json.dumps(payload))
+    pinned_payload["pinned_session_id"] = "s1"
+    with pytest.raises(ContractError) as pin_error:
+        require_valid_public_surface("codex_hook_installation", pinned_payload)
+    assert any(
+        issue.path == "codex_hook_installation.pinned_session_id"
+        for issue in pin_error.value.result.issues
+    )
+
+    drifted_payload = json.loads(json.dumps(payload))
+    pre_tool_argv = drifted_payload["fixture"]["hooks"]["pre_tool"]["argv"]
+    pre_tool_argv[pre_tool_argv.index("--project-root") + 1] = str(
+        (tmp_path / "wrong-project").resolve()
+    )
+    with pytest.raises(ContractError) as root_error:
+        require_valid_public_surface("codex_hook_installation", drifted_payload)
+    assert any(
+        issue.path == "codex_hook_installation.fixture.hooks.pre_tool.argv"
+        for issue in root_error.value.result.issues
+    )
+
+
+def test_cli_explicit_pinned_and_legacy_positional_installs_remain_distinct(
+    tmp_path,
+    capsys,
+):
+    topics_root = tmp_path / "topics-root"
+    project_root = tmp_path / "research-project"
+    _seed_session(topics_root)
+
+    pinned = _invoke(
+        [
+            "--base",
+            str(topics_root),
+            "adapter",
+            "install-hooks",
+            "codex",
+            "--routing-mode",
+            "pinned",
+            "--session-id",
+            "s1",
+            "--project-root",
+            str(project_root),
+            "--output",
+            str(project_root / ".codex" / "PINNED.json"),
+        ],
+        capsys,
+    )
+    legacy = _invoke(
+        [
+            "--base",
+            str(topics_root),
+            "adapter",
+            "install-hooks",
+            "codex",
+            "s1",
+            "--output",
+            str(project_root / ".codex" / "LEGACY.json"),
+        ],
+        capsys,
+    )
+
+    assert pinned["routing_mode"] == "pinned"
+    assert pinned["pinned_session_id"] == "s1"
+    assert pinned["legacy_pinned"] is False
+    assert pinned["migration_required"] is False
+    assert pinned["project_root"] == str(project_root.resolve())
+    assert legacy["routing_mode"] == "pinned_compat"
+    assert legacy["pinned_session_id"] == "s1"
+    assert legacy["legacy_pinned"] is True
+    assert legacy["migration_required"] is True
+    for payload, mode in ((pinned, "pinned"), (legacy, "pinned_compat")):
+        for hook in payload["fixture"]["hooks"].values():
+            argv = hook["argv"]
+            assert argv[argv.index("--routing-mode") + 1] == mode
+            assert argv[argv.index("--session-id") + 1] == "s1"
+
+
+@pytest.mark.parametrize("runtime", ("opencode", "claude-code", "kimi-code"))
+def test_cli_dynamic_install_emits_unpinned_route_metadata_for_each_host(
+    tmp_path,
+    capsys,
+    runtime,
+):
+    from brain.v5.workspace import init_workspace
+
+    topics_root = tmp_path / "topics-root"
+    project_root = tmp_path / "research-project"
+    init_workspace(topics_root)
+    output = project_root / f"{runtime}.json"
+    args = [
+        "--base",
+        str(topics_root),
+        "adapter",
+        "install-hooks",
+        runtime,
+        "--routing-mode",
+        "dynamic",
+        "--project-root",
+        str(project_root),
+    ]
+    if runtime == "opencode":
+        args.extend(["--output", str(output)])
+    else:
+        args.extend(["--settings", str(output)])
+
+    payload = _invoke(args, capsys)
+
+    assert payload["routing_mode"] == "dynamic"
+    assert payload["pinned_session_id"] == ""
+    assert payload["topics_root"] == str(topics_root.resolve())
+    assert payload["project_root"] == str(project_root.resolve())
+    assert payload["runtime_metadata_only"] is True
+    if runtime == "opencode":
+        hooks = payload["fixture"]["plugin_hooks"].values()
+        for hook in hooks:
+            _assert_hook_route_argv(
+                hook["argv"],
+                mode="dynamic",
+                topics_root=topics_root,
+                project_root=project_root,
+                bridge_path=(
+                    payload["bridge_payload_path"]
+                    if hook["lifecycle_event"] == "pre_tool"
+                    else ""
+                ),
+            )
+    else:
+        for event in payload["events"]:
+            command = event["command"]
+            assert "--routing-mode dynamic" in command
+            assert "--project-root" in command
+            assert str(project_root.resolve()) in command
+            assert "--session-id" not in command
+
+
+def test_dynamic_opencode_native_plugin_is_route_explicit_and_byte_stable(tmp_path):
+    from brain.v5.adapter_protocols import build_adapter_protocols
+    from brain.v5.hook_install_templates import build_runtime_hook_installation
+    from brain.v5.hook_opencode_install import install_opencode_plugin_file
+    from brain.v5.hook_routing_mode import normalize_hook_routing_mode
+    from brain.v5.workspace import init_workspace
+
+    topics_root = tmp_path / "topics-root"
+    project_root = tmp_path / "research-project"
+    init_workspace(topics_root)
+    protocols = build_adapter_protocols()
+    installation = build_runtime_hook_installation(
+        "opencode",
+        protocols["runtime_hook_protocols"],
+    )
+    plugin_path = project_root / ".opencode" / "plugins" / "aitp-v5.js"
+    kwargs = {
+        "workspace_base": str(topics_root),
+        "project_root": str(project_root),
+        "routing": normalize_hook_routing_mode("dynamic", ""),
+    }
+
+    first = install_opencode_plugin_file(
+        plugin_path,
+        installation,
+        protocols["runtime_gate_protocols"],
+        **kwargs,
+    )
+    source = plugin_path.read_text(encoding="utf-8")
+    second = install_opencode_plugin_file(
+        plugin_path,
+        installation,
+        protocols["runtime_gate_protocols"],
+        **kwargs,
+    )
+
+    assert first["routing_mode"] == "dynamic"
+    assert "--session-id" not in first["plugin"]["pre_tool"]["argv"]
+    assert _argv_option(first["plugin"]["pre_tool"]["argv"], "--routing-mode") == "dynamic"
+    assert "const ROUTING_MODE = \"dynamic\"" in source
+    assert "const PINNED_SESSION_ID = \"\"" in source
+    assert "const SESSION_ID" not in source
+    assert "host_session_id: hostSessionId" in source
+    assert second["changed"] is False
+    assert plugin_path.read_text(encoding="utf-8") == source
+
+
+@pytest.mark.parametrize("runtime", ("codex", "opencode", "claude_code", "kimi_code"))
+def test_mcp_hook_installers_default_to_dynamic_without_session(tmp_path, runtime):
+    from brain.v5.mcp_hook_install import (
+        aitp_v5_install_codex_hook_fixture,
+        aitp_v5_install_opencode_hook_fixture,
+    )
+    from brain.v5.mcp_kimi_hooks import aitp_v5_install_kimi_code_hook_config
+    from brain.v5.mcp_tools import aitp_v5_install_claude_code_hook_settings
+    from brain.v5.workspace import init_workspace
+
+    topics_root = tmp_path / "topics-root"
+    project_root = tmp_path / "research-project"
+    init_workspace(topics_root)
+    target = project_root / f"{runtime}.json"
+    common = {
+        "base": str(topics_root),
+        "project_root": str(project_root),
+    }
+    if runtime == "codex":
+        payload = aitp_v5_install_codex_hook_fixture(
+            output_path=str(target),
+            **common,
+        )
+    elif runtime == "opencode":
+        payload = aitp_v5_install_opencode_hook_fixture(
+            output_path=str(target),
+            **common,
+        )
+    elif runtime == "claude_code":
+        payload = aitp_v5_install_claude_code_hook_settings(
+            settings_path=str(target),
+            **common,
+        )
+    else:
+        payload = aitp_v5_install_kimi_code_hook_config(
+            settings_path=str(target),
+            **common,
+        )
+
+    assert payload["ok"] is True
+    assert payload["routing_mode"] == "dynamic"
+    assert payload["pinned_session_id"] == ""
+    assert payload["topics_root"] == str(topics_root.resolve())
+    assert payload["project_root"] == str(project_root.resolve())

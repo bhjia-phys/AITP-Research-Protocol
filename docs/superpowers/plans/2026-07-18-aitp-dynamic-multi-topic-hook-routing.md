@@ -460,36 +460,47 @@ basetemps with cache disabled and no real canonical records.
 - Compatibility CLI: old positional session with no explicit mode becomes
   `pinned_compat` and emits a deprecation/migration field.
 
-- [ ] **Step 1: Write CLI RED for all mode combinations**
+- [x] **Step 1: Write CLI RED for all mode combinations**
 
 Default no-session install is dynamic. Pinned without a session fails. Explicit
 dynamic plus any pin fails. Legacy positional session remains readable and is
 never mislabeled dynamic.
 
-- [ ] **Step 2: Centralize generated runner argv**
+- [x] **Step 2: Centralize generated runner argv**
 
 All Codex/Claude/Kimi/OpenCode fixture and native installers emit explicit
 `--routing-mode`. Dynamic argv contains no `--session-id`; pinned argv contains
 one exact session. Bridge payloads declare mode and roots.
 
-- [ ] **Step 3: Preserve unrelated configuration and idempotence**
+- [x] **Step 3: Preserve unrelated configuration and idempotence**
 
 Run merge tests for JSON, TOML, and JavaScript targets. Reinstall is byte-stable,
 does not duplicate hooks, and cannot overwrite unrelated or conflicted legacy
 injection without the existing reviewed replacement-plan boundary.
 
-- [ ] **Step 4: Update contracts without loosening authority**
+- [x] **Step 4: Update contracts without loosening authority**
 
 Validate routing mode, optional pin, project root, topics root, runtime-only
 status, false trust authority, and required runner tokens. Preserve existing
 installation kinds unless a versioned compatibility adapter is required.
 
-- [ ] **Step 5: Run installer/runner fixture lane**
+- [x] **Step 5: Run installer/runner fixture lane**
 
 Run host-specific files separately from the slow all-adapters file; record
 exact counts and duration.
 
-- [ ] **Step 6: Commit**
+Evidence (isolated system-Temp basetemps, cache disabled, no real canonical
+records):
+
+- Routing mode/default/negative-contract slice: `17 passed, 88 deselected in
+  1.95s`.
+- Adapter Hook lane: `42 passed, 63 deselected in 169.73s`.
+- Adapter event runner: `17 passed in 30.04s`.
+- Native Hook scripts: `28 passed in 14.16s`.
+- Runtime/public Hook surfaces: `14 passed, 14 deselected in 16.04s`.
+- Architecture and M0 boundaries: `12 passed in 3.13s`.
+
+- [x] **Step 6: Commit**
 
 Commit message: `v5: install dynamic multi-topic hooks by default`.
 

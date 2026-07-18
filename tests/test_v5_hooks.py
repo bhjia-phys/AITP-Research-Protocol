@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 
 def test_pre_tool_use_allows_and_logs_by_default():
     from brain.v5.hooks import decide_pre_tool_use
@@ -1127,3 +1129,139 @@ def test_claude_hook_script_pre_tool_blocks_summary_sourced_human_checkpoint_dec
             "message": "derived summary surfaces are orientation only and cannot justify trust-changing actions",
         }
     ]
+
+
+def _seed_native_dynamic_hook_route(tmp_path, *, host, host_session_id):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_cache import write_host_route_mapping
+    from brain.v5.host_route_contracts import HostRouteRequest
+    from brain.v5.query_index import build_query_index
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "librpa-gw", context_id="gw-methods", title="LibRPA GW")
+    claim = create_claim(
+        ws,
+        topic_id="librpa-gw",
+        statement="The runtime route preserves the LibRPA benchmark provenance.",
+        evidence_profile="code_method",
+        confidence_state="hypothesis",
+        active_uncertainty="native hook route remains under test",
+    )
+    bind_session(
+        ws,
+        "s1",
+        topic_id="librpa-gw",
+        context_id="gw-methods",
+        active_claim=claim.claim_id,
+    )
+    build_query_index(ws)
+    request = HostRouteRequest(
+        request_summary="Continue the LibRPA GW research session",
+        host=host,
+        host_session_id=host_session_id,
+        project_root=str(tmp_path),
+        routing_mode="dynamic",
+        semantic_assessment={
+            "task_kind": "topic_continuation",
+            "needs_prior_research_state": True,
+            "should_use_aitp": "required",
+        },
+    )
+    decision = resolve_host_research_route(ws, request)
+    assert decision.status == "selected"
+    write_host_route_mapping(ws, request, decision)
+    return claim
+
+
+def _run_native_dynamic_hook(tmp_path, *, host, command, payload):
+    import json
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    script_name = "aitp_v5_claude_hook.py" if host == "claude_code" else "aitp_v5_kimi_hook.py"
+    script = Path(__file__).resolve().parents[1] / "hooks" / script_name
+    return subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            command,
+            "--base",
+            str(tmp_path),
+            "--project-root",
+            str(tmp_path),
+            "--routing-mode",
+            "dynamic",
+        ],
+        input=json.dumps(payload),
+        capture_output=True,
+        encoding="utf-8",
+        check=False,
+    )
+
+
+@pytest.mark.parametrize("host", ("claude_code", "kimi_code"))
+def test_dynamic_native_pre_tool_keeps_generic_risk_guard_without_route(tmp_path, host):
+    import json
+
+    from brain.v5.workspace import init_workspace
+
+    init_workspace(tmp_path)
+    result = _run_native_dynamic_hook(
+        tmp_path,
+        host=host,
+        command="pre-tool",
+        payload={
+            "event_id": f"event-{host}-pre",
+            "host_session_id": f"host-{host}-unrouted",
+            "project_root": str(tmp_path),
+            "tool_name": "Bash",
+            "tool_input": {"command": "rm -rf data"},
+        },
+    )
+
+    assert result.returncode == 0, result.stderr
+    output = json.loads(result.stdout)
+    assert output["hookSpecificOutput"]["permissionDecision"] == "deny"
+    assert output["aitp"]["route"]["route_status"] == "workspace_recovery"
+    assert output["aitp"]["route"]["canonical_write"] is False
+    assert not (tmp_path / ".aitp" / "runtime" / "hook_trace_events.jsonl").exists()
+
+
+@pytest.mark.parametrize("host", ("claude_code", "kimi_code"))
+def test_dynamic_native_post_tool_uses_host_session_alias_only_after_exact_route(
+    tmp_path,
+    host,
+):
+    import json
+
+    from brain.v5.trace import read_trace_events
+
+    host_session_id = f"host-{host}-selected"
+    claim = _seed_native_dynamic_hook_route(
+        tmp_path,
+        host=host,
+        host_session_id=host_session_id,
+    )
+    result = _run_native_dynamic_hook(
+        tmp_path,
+        host=host,
+        command="post-tool",
+        payload={
+            "event_id": f"event-{host}-post",
+            "session_id": host_session_id,
+            "project_root": str(tmp_path),
+            "tool_name": "pytest",
+            "status": "completed",
+        },
+    )
+
+    assert result.returncode == 0, result.stderr
+    output = json.loads(result.stdout)
+    assert output["aitp"]["kind"] == "hook_trace_event_record"
+    events = read_trace_events(output["aitp"]["trace_path"])
+    assert len(events) == 1
+    assert events[0].session_id == "s1"
+    assert events[0].topic_id == "librpa-gw"
+    assert events[0].claim_id == claim.claim_id

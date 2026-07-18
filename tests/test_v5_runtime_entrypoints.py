@@ -157,7 +157,7 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
         "surface": "codex_hook_bridge",
     }
     assert entrypoints["codex_hook_installation"] == {
-        "cli": "aitp-v5 adapter install-hooks codex <session-id> <args>",
+        "cli": "aitp-v5 adapter install-hooks codex --routing-mode <mode> <args>",
         "mcp": "aitp_v5_install_codex_hook_fixture",
         "surface": "codex_hook_installation",
     }
@@ -167,7 +167,7 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
         "surface": "opencode_plugin_bridge",
     }
     assert entrypoints["opencode_hook_installation"] == {
-        "cli": "aitp-v5 adapter install-hooks opencode <session-id> <args>",
+        "cli": "aitp-v5 adapter install-hooks opencode --routing-mode <mode> <args>",
         "mcp": "aitp_v5_install_opencode_hook_fixture",
         "surface": "opencode_hook_installation",
     }
@@ -177,7 +177,7 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
         "surface": "claude_code_hook_settings",
     }
     assert entrypoints["claude_code_hook_installation"] == {
-        "cli": "aitp-v5 adapter install-hooks claude-code <session-id> <args>",
+        "cli": "aitp-v5 adapter install-hooks claude-code --routing-mode <mode> <args>",
         "mcp": "aitp_v5_install_claude_code_hook_settings",
         "surface": "claude_code_hook_installation",
     }
@@ -187,7 +187,7 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
         "surface": "kimi_code_hook_config",
     }
     assert entrypoints["kimi_code_hook_installation"] == {
-        "cli": "aitp-v5 adapter install-hooks kimi-code <session-id> <args>",
+        "cli": "aitp-v5 adapter install-hooks kimi-code --routing-mode <mode> <args>",
         "mcp": "aitp_v5_install_kimi_code_hook_config",
         "surface": "kimi_code_hook_installation",
     }

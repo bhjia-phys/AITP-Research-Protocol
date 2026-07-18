@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
 from brain.v5.hook_adapters import hook_trace_event_payload
+from brain.v5.hook_native_routing import standardize_dynamic_host_payload
 from brain.v5.host_lifecycle_facade import (
     dispatch_host_lifecycle_event,
     host_lifecycle_capability,
@@ -41,6 +42,7 @@ def _build_parser() -> argparse.ArgumentParser:
     pre_tool = subparsers.add_parser("pre-tool")
     pre_tool.add_argument("--base", required=True)
     pre_tool.add_argument("--runtime", required=True)
+    pre_tool.add_argument("--project-root", default="")
     pre_tool.add_argument("--session-id", default="")
     pre_tool.add_argument(
         "--routing-mode",
@@ -51,6 +53,7 @@ def _build_parser() -> argparse.ArgumentParser:
     post_tool = subparsers.add_parser("post-tool")
     post_tool.add_argument("--base", required=True)
     post_tool.add_argument("--runtime", required=True)
+    post_tool.add_argument("--project-root", default="")
     post_tool.add_argument("--session-id", default="")
     post_tool.add_argument(
         "--routing-mode",
@@ -68,7 +71,15 @@ def _dispatch(args: argparse.Namespace, platform_event: dict[str, Any]) -> dict[
     if args.command != "pre-tool":
         raise SystemExit(f"unsupported adapter event command: {args.command}")
     bridge = _read_bridge(args.bridge_path)
-    _validate_runner(bridge, runtime=args.runtime, session_id=args.session_id, bridge_path=args.bridge_path)
+    _validate_runner(
+        bridge,
+        runtime=args.runtime,
+        session_id=args.session_id,
+        routing_mode=args.routing_mode,
+        topics_root=args.base,
+        project_root=args.project_root or args.base,
+        bridge_path=args.bridge_path,
+    )
     event = _with_pre_tool_defaults(platform_event, runtime=args.runtime, session_id=args.session_id)
     return require_valid_public_surface(
         "pre_tool_policy_decision",
@@ -81,13 +92,22 @@ def _dispatch_dynamic(
     platform_event: dict[str, Any],
 ) -> dict[str, Any]:
     ws = init_workspace(args.base)
-    route = _dynamic_lifecycle_dispatch(ws, args, platform_event)
+    try:
+        event_payload = standardize_dynamic_host_payload(
+            host=args.runtime,
+            command=args.command,
+            payload=platform_event,
+            project_root=args.project_root or args.base,
+        )
+    except ValueError:
+        return _dynamic_identity_required_payload(args.runtime)
+    route = _dynamic_lifecycle_dispatch(ws, args, event_payload)
     if route.route_status != "selected":
         return _route_dispatch_payload(route)
     if args.command == "post-tool":
         return _dispatch_post_tool(
             args,
-            platform_event,
+            event_payload,
             selected_session_id=route.session_id,
             selected_topic_id=route.topic_id,
         )
@@ -100,10 +120,13 @@ def _dispatch_dynamic(
         bridge,
         runtime=args.runtime,
         session_id=route.session_id,
+        routing_mode=args.routing_mode,
+        topics_root=args.base,
+        project_root=args.project_root or args.base,
         bridge_path=args.bridge_path,
     )
     event = _with_pre_tool_defaults(
-        platform_event,
+        event_payload,
         runtime=args.runtime,
         session_id=route.session_id,
     )
@@ -197,6 +220,25 @@ def _route_dispatch_payload(dispatch) -> dict[str, Any]:
     }
 
 
+def _dynamic_identity_required_payload(runtime: str) -> dict[str, Any]:
+    return {
+        "kind": "host_route_dispatch",
+        "ok": True,
+        "host": runtime,
+        "status": "route_workspace_recovery",
+        "route_status": "workspace_recovery",
+        "operation": "orientation_required",
+        "reason_codes": ["host_session_identity_required"],
+        "routing_mode": "dynamic",
+        "session_id": "",
+        "topic_id": "",
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+        "exit_code": 0,
+    }
+
+
 def _read_stdin_payload() -> dict[str, Any]:
     raw = sys.stdin.read().strip()
     if not raw:
@@ -216,10 +258,10 @@ def _read_bridge(path: str) -> dict[str, Any]:
 
 def _with_pre_tool_defaults(event: dict[str, Any], *, runtime: str, session_id: str) -> dict[str, Any]:
     payload = dict(event)
-    payload.setdefault("runtime", runtime)
-    payload.setdefault("session_id", session_id)
-    payload.setdefault("hook_name", "pre_tool")
-    payload.setdefault("lifecycle_event", "pre_tool")
+    payload["runtime"] = runtime
+    payload["session_id"] = session_id
+    payload["hook_name"] = "pre_tool"
+    payload["lifecycle_event"] = "pre_tool"
     return payload
 
 
@@ -312,12 +354,28 @@ def _string_value(value: Any) -> str:
     return value if isinstance(value, str) and value else ""
 
 
-def _validate_runner(bridge: dict[str, Any], *, runtime: str, session_id: str, bridge_path: str) -> None:
+def _validate_runner(
+    bridge: dict[str, Any],
+    *,
+    runtime: str,
+    session_id: str,
+    routing_mode: str,
+    topics_root: str,
+    project_root: str,
+    bridge_path: str,
+) -> None:
     runner = _runner_payload(bridge)
     if runner.get("runtime") != runtime:
         raise SystemExit("bridge runner runtime does not match requested runtime")
-    if runner.get("session_id") != session_id:
-        raise SystemExit("bridge runner session_id does not match requested session")
+    if runner.get("routing_mode") != routing_mode:
+        raise SystemExit("bridge runner routing mode does not match requested mode")
+    expected_pin = "" if routing_mode == "dynamic" else session_id
+    if runner.get("pinned_session_id") != expected_pin:
+        raise SystemExit("bridge runner session pin does not match requested mode")
+    if Path(str(runner.get("topics_root"))).resolve() != Path(topics_root).resolve():
+        raise SystemExit("bridge runner topics root does not match requested base")
+    if Path(str(runner.get("project_root"))).resolve() != Path(project_root).resolve():
+        raise SystemExit("bridge runner project root does not match requested project")
     argv = runner.get("argv")
     if not isinstance(argv, list):
         raise SystemExit("bridge runner argv must be a list")

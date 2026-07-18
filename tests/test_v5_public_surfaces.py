@@ -1,5 +1,27 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+
+def _dynamic_hook_route_metadata():
+    return {
+        "routing_mode": "dynamic",
+        "pinned_session_id": "",
+        "project_root": str((Path.cwd() / "research-project").resolve()),
+        "topics_root": str((Path.cwd() / "aitp-topics").resolve()),
+        "legacy_pinned": False,
+        "migration_required": False,
+        "runtime_metadata_only": True,
+    }
+
+
+def _dynamic_native_hook_command(script, command):
+    metadata = _dynamic_hook_route_metadata()
+    return (
+        f'python hooks/{script} {command} --base "{metadata["topics_root"]}" '
+        f'--project-root "{metadata["project_root"]}" --routing-mode dynamic'
+    )
+
 
 def test_public_surface_registry_names_all_runtime_facing_payloads():
     from brain.v5.capability_surface_contracts import capability_surface_names
@@ -223,6 +245,7 @@ def test_public_surface_validator_accepts_codex_hook_bridge():
         "native_installer_available": False,
         "summary_inputs_trusted": False,
         "can_update_kernel_state": False,
+        **_dynamic_hook_route_metadata(),
         "recording_trigger_protocol": mandatory_recording_trigger_protocol(),
         "pre_tool_policy_entrypoint": {
             "cli": "aitp-v5 policy pre-tool <args>",
@@ -251,6 +274,44 @@ def test_public_surface_validator_accepts_codex_hook_bridge():
             **mandatory_gate_protocols(),
         },
         "path": "AITP_V5_HOOK_BRIDGE.md",
+        "pre_tool_event_runner": {
+            "kind": "pre_tool_event_runner",
+            "runtime": "codex",
+            "session_id": "",
+            **_dynamic_hook_route_metadata(),
+            "argv": [
+                "python",
+                "hooks/aitp_v5_adapter_event_runner.py",
+                "pre-tool",
+                "--base",
+                _dynamic_hook_route_metadata()["topics_root"],
+                "--runtime",
+                "codex",
+                "--bridge-path",
+                "AITP_V5_HOOK_BRIDGE.json",
+                "--project-root",
+                _dynamic_hook_route_metadata()["project_root"],
+                "--routing-mode",
+                "dynamic",
+            ],
+            "stdin_runner": {
+                "argv": [
+                    "python",
+                    "hooks/aitp_v5_adapter_event_runner.py",
+                    "pre-tool",
+                    "--base",
+                    _dynamic_hook_route_metadata()["topics_root"],
+                    "--runtime",
+                    "codex",
+                    "--bridge-path",
+                    "AITP_V5_HOOK_BRIDGE.json",
+                    "--project-root",
+                    _dynamic_hook_route_metadata()["project_root"],
+                    "--routing-mode",
+                    "dynamic",
+                ]
+            },
+        },
         "guard_calls": [
             {
                 "hook_name": "pre_tool",
@@ -316,24 +377,25 @@ def test_public_surface_validator_accepts_claude_code_hook_settings():
         "can_update_claim_trust": False,
         "can_write_trace_events": True,
         "path": ".claude/settings.local.json",
+        **_dynamic_hook_route_metadata(),
         "events": [
             {
                 "hook_event_name": "SessionStart",
                 "matcher": "startup|resume",
                 "protocol_hook": "session_start",
-                "command": "python hooks/aitp_v5_claude_hook.py session-start",
+                "command": _dynamic_native_hook_command("aitp_v5_claude_hook.py", "session-start"),
             },
             {
                 "hook_event_name": "PreToolUse",
                 "matcher": "*",
                 "protocol_hook": "pre_tool",
-                "command": "python hooks/aitp_v5_claude_hook.py pre-tool",
+                "command": _dynamic_native_hook_command("aitp_v5_claude_hook.py", "pre-tool"),
             },
             {
                 "hook_event_name": "PostToolUse",
                 "matcher": "*",
                 "protocol_hook": "post_tool",
-                "command": "python hooks/aitp_v5_claude_hook.py post-tool",
+                "command": _dynamic_native_hook_command("aitp_v5_claude_hook.py", "post-tool"),
             },
         ],
         "settings": {"hooks": {"SessionStart": [], "PreToolUse": [], "PostToolUse": []}},
@@ -359,24 +421,25 @@ def test_public_surface_validator_accepts_claude_code_hook_installation():
         "merged": True,
         "added_hooks": 3,
         "path": ".claude/settings.local.json",
+        **_dynamic_hook_route_metadata(),
         "events": [
             {
                 "hook_event_name": "SessionStart",
                 "matcher": "startup|resume",
                 "protocol_hook": "session_start",
-                "command": "python hooks/aitp_v5_claude_hook.py session-start",
+                "command": _dynamic_native_hook_command("aitp_v5_claude_hook.py", "session-start"),
             },
             {
                 "hook_event_name": "PreToolUse",
                 "matcher": "*",
                 "protocol_hook": "pre_tool",
-                "command": "python hooks/aitp_v5_claude_hook.py pre-tool",
+                "command": _dynamic_native_hook_command("aitp_v5_claude_hook.py", "pre-tool"),
             },
             {
                 "hook_event_name": "PostToolUse",
                 "matcher": "*",
                 "protocol_hook": "post_tool",
-                "command": "python hooks/aitp_v5_claude_hook.py post-tool",
+                "command": _dynamic_native_hook_command("aitp_v5_claude_hook.py", "post-tool"),
             },
         ],
         "settings": {"hooks": {"SessionStart": [], "PreToolUse": [], "PostToolUse": []}},
@@ -399,24 +462,25 @@ def test_public_surface_validator_accepts_kimi_code_hook_config():
         "can_update_claim_trust": False,
         "can_write_trace_events": True,
         "path": ".kimi/config.toml",
+        **_dynamic_hook_route_metadata(),
         "events": [
             {
                 "hook_event_name": "SessionStart",
                 "matcher": "startup|resume",
                 "protocol_hook": "session_start",
-                "command": "python hooks/aitp_v5_kimi_hook.py session-start",
+                "command": _dynamic_native_hook_command("aitp_v5_kimi_hook.py", "session-start"),
             },
             {
                 "hook_event_name": "PreToolUse",
                 "matcher": "*",
                 "protocol_hook": "pre_tool",
-                "command": "python hooks/aitp_v5_kimi_hook.py pre-tool",
+                "command": _dynamic_native_hook_command("aitp_v5_kimi_hook.py", "pre-tool"),
             },
             {
                 "hook_event_name": "PostToolUse",
                 "matcher": "*",
                 "protocol_hook": "post_tool",
-                "command": "python hooks/aitp_v5_kimi_hook.py post-tool",
+                "command": _dynamic_native_hook_command("aitp_v5_kimi_hook.py", "post-tool"),
             },
         ],
         "config_text": '[[hooks]]\nevent = "SessionStart"\ncommand = "python hooks/aitp_v5_kimi_hook.py session-start"\n[[hooks]]\nevent = "PreToolUse"\ncommand = "python hooks/aitp_v5_kimi_hook.py pre-tool"\n[[hooks]]\nevent = "PostToolUse"\ncommand = "python hooks/aitp_v5_kimi_hook.py post-tool"\n',
@@ -443,24 +507,25 @@ def test_public_surface_validator_accepts_kimi_code_hook_installation():
         "merged": True,
         "added_hooks": 3,
         "path": ".kimi/config.toml",
+        **_dynamic_hook_route_metadata(),
         "events": [
             {
                 "hook_event_name": "SessionStart",
                 "matcher": "startup|resume",
                 "protocol_hook": "session_start",
-                "command": "python hooks/aitp_v5_kimi_hook.py session-start",
+                "command": _dynamic_native_hook_command("aitp_v5_kimi_hook.py", "session-start"),
             },
             {
                 "hook_event_name": "PreToolUse",
                 "matcher": "*",
                 "protocol_hook": "pre_tool",
-                "command": "python hooks/aitp_v5_kimi_hook.py pre-tool",
+                "command": _dynamic_native_hook_command("aitp_v5_kimi_hook.py", "pre-tool"),
             },
             {
                 "hook_event_name": "PostToolUse",
                 "matcher": "*",
                 "protocol_hook": "post_tool",
-                "command": "python hooks/aitp_v5_kimi_hook.py post-tool",
+                "command": _dynamic_native_hook_command("aitp_v5_kimi_hook.py", "post-tool"),
             },
         ],
         "config_text": '[[hooks]]\nevent = "SessionStart"\ncommand = "python hooks/aitp_v5_kimi_hook.py session-start"\n[[hooks]]\nevent = "PreToolUse"\ncommand = "python hooks/aitp_v5_kimi_hook.py pre-tool"\n[[hooks]]\nevent = "PostToolUse"\ncommand = "python hooks/aitp_v5_kimi_hook.py post-tool"\n',

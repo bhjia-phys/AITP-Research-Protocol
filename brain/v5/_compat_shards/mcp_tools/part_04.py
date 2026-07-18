@@ -468,6 +468,8 @@ def aitp_v5_write_codex_hook_bridge(base: str, *, session_id: str, output_path: 
             packet["runtime_hook_installation"],
             packet["runtime_gate_protocols"],
             session_id=session_id,
+            project_root=str(ws.base),
+            topics_root=str(ws.base),
         ),
     }
     return require_valid_public_surface("codex_hook_bridge", bridge)
@@ -482,6 +484,8 @@ def aitp_v5_write_opencode_plugin_bridge(base: str, *, session_id: str, output_p
             packet["runtime_hook_installation"],
             packet["runtime_gate_protocols"],
             session_id=session_id,
+            project_root=str(ws.base),
+            topics_root=str(ws.base),
         ),
     }
     return require_valid_public_surface("opencode_plugin_bridge", bridge)

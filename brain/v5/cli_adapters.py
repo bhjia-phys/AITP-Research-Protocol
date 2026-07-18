@@ -11,6 +11,7 @@ from typing import Any
 from brain.v5.adapter_protocols import adapter_protocol_registry, record_gate_coverage_audit
 from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
 from brain.v5.adapters import build_adapter_packet
+from brain.v5.cli_adapter_install import dispatch_adapter_install_hooks
 from brain.v5.cli_progress import compact_final_readiness
 from brain.v5.curated_rag_corpus import (
     curated_rag_corpus,
@@ -19,19 +20,15 @@ from brain.v5.curated_rag_corpus import (
     search_curated_rag_corpus,
 )
 from brain.v5.final_readiness import audit_final_engineering_readiness
-from brain.v5.hook_codex_install import install_codex_hooks_json
-from brain.v5.hook_fixture_templates import install_codex_hook_fixture, install_opencode_hook_fixture
 from brain.v5.hook_install_templates import (
-    install_claude_code_hook_settings,
     write_claude_code_hook_settings,
     write_codex_hook_bridge,
     write_opencode_plugin_bridge,
 )
-from brain.v5.hook_kimi_install import install_kimi_code_hook_config, write_kimi_code_hook_config
+from brain.v5.hook_kimi_install import write_kimi_code_hook_config
 from brain.v5.hook_install_audit import audit_hook_installation
 from brain.v5.hook_install_paths import discover_hook_install_paths
 from brain.v5.hook_smoke_coverage import runtime_hook_smoke_coverage_report
-from brain.v5.hook_opencode_install import install_opencode_plugin_file
 from brain.v5.host_readiness import audit_priority_host_production_loops, audit_runtime_host_lifecycle, audit_runtime_host_readiness
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
 from brain.v5.record_refs import lookup_record_refs
@@ -64,7 +61,10 @@ def add_adapter_parser(sp) -> None:
     ahb.add_argument("--output", required=True)
     ahs = aps.add_parser("hook-settings"); ahs.add_argument("runtime"); ahs.add_argument("session_id")
     ahs.add_argument("--output", required=True)
-    aih = aps.add_parser("install-hooks"); aih.add_argument("runtime"); aih.add_argument("session_id")
+    aih = aps.add_parser("install-hooks"); aih.add_argument("runtime"); aih.add_argument("legacy_session_id", nargs="?", default="")
+    aih.add_argument("--routing-mode", choices=("dynamic", "pinned"), default="")
+    aih.add_argument("--session-id", default="", dest="pinned_session_id")
+    aih.add_argument("--project-root", default="")
     aih.add_argument("--settings", default=""); aih.add_argument("--output", default="")
     aih.add_argument("--plugin", default=""); aih.add_argument("--bridge-output", default="")
     aih.add_argument("--reviewed-replacement-plan-id", default="")
@@ -289,6 +289,9 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
             ),
         }
 
+    if args.adapter_command == "install-hooks":
+        return dispatch_adapter_install_hooks(args, ws)
+
     packet = require_valid_public_surface(
         "adapter_packet",
         build_adapter_packet(ws, args.session_id, runtime=args.runtime),
@@ -296,7 +299,7 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
     if args.adapter_command == "packet":
         return {"ok": True, **packet}
     if args.adapter_command == "hook-bridge":
-        return _dispatch_hook_bridge(args, packet)
+        return _dispatch_hook_bridge(args, packet, ws)
     if args.adapter_command == "pre-tool-event":
         return require_valid_public_surface(
             "pre_tool_policy_decision",
@@ -326,108 +329,10 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
             ),
         }
         return require_valid_public_surface("claude_code_hook_settings", settings)
-    if args.adapter_command == "install-hooks":
-        if packet["runtime"] == "codex":
-            if args.settings:
-                installed = {
-                    "ok": True,
-                    **install_codex_hooks_json(
-                        args.settings,
-                        packet["runtime_hook_installation"],
-                        packet["runtime_gate_protocols"],
-                        workspace_base=str(ws.base),
-                        session_id=args.session_id,
-                        bridge_path=args.bridge_output or None,
-                    ),
-                }
-                return require_valid_public_surface("codex_hook_installation", installed)
-            if not args.output:
-                raise SystemExit("adapter install-hooks codex requires --output or --settings")
-            installed = {
-                "ok": True,
-                **install_codex_hook_fixture(
-                    args.output,
-                    packet["runtime_hook_installation"],
-                    packet["runtime_gate_protocols"],
-                    workspace_base=str(ws.base),
-                    session_id=args.session_id,
-                    bridge_path=args.bridge_output or None,
-                ),
-            }
-            return require_valid_public_surface("codex_hook_installation", installed)
-        if packet["runtime"] == "opencode":
-            if args.plugin:
-                installed = {
-                    "ok": True,
-                    **install_opencode_plugin_file(
-                        args.plugin,
-                        packet["runtime_hook_installation"],
-                        packet["runtime_gate_protocols"],
-                        workspace_base=str(ws.base),
-                        session_id=args.session_id,
-                        bridge_path=args.bridge_output or None,
-                        reviewed_replacement_plan_id=(
-                            args.reviewed_replacement_plan_id
-                        ),
-                    ),
-                }
-                return require_valid_public_surface("opencode_hook_installation", installed)
-            if not args.output:
-                raise SystemExit("adapter install-hooks opencode requires --output or --plugin")
-            installed = {
-                "ok": True,
-                **install_opencode_hook_fixture(
-                    args.output,
-                    packet["runtime_hook_installation"],
-                    packet["runtime_gate_protocols"],
-                    workspace_base=str(ws.base),
-                    session_id=args.session_id,
-                    bridge_path=args.bridge_output or None,
-                ),
-            }
-            return require_valid_public_surface("opencode_hook_installation", installed)
-        if packet["runtime"] == "kimi_code":
-            if args.settings:
-                installed = {
-                    "ok": True,
-                    **install_kimi_code_hook_config(
-                        args.settings,
-                        packet["runtime_hook_installation"],
-                        workspace_base=str(ws.base),
-                        session_id=args.session_id,
-                    ),
-                }
-                return require_valid_public_surface("kimi_code_hook_installation", installed)
-            if not args.output:
-                raise SystemExit("adapter install-hooks kimi-code requires --settings or --output")
-            config = {
-                "ok": True,
-                **write_kimi_code_hook_config(
-                    args.output,
-                    packet["runtime_hook_installation"],
-                    workspace_base=str(ws.base),
-                    session_id=args.session_id,
-                ),
-            }
-            return require_valid_public_surface("kimi_code_hook_config", config)
-        if packet["runtime"] != "claude_code":
-            raise SystemExit("adapter install-hooks currently supports codex, opencode, claude-code, and kimi-code runtimes")
-        if not args.settings:
-            raise SystemExit("adapter install-hooks claude-code requires --settings")
-        installed = {
-            "ok": True,
-            **install_claude_code_hook_settings(
-                args.settings,
-                packet["runtime_hook_installation"],
-                workspace_base=str(ws.base),
-                session_id=args.session_id,
-            ),
-        }
-        return require_valid_public_surface("claude_code_hook_installation", installed)
     raise SystemExit(f"unknown adapter command: {args.adapter_command}")
 
 
-def _dispatch_hook_bridge(args: Namespace, packet: dict[str, Any]) -> dict[str, Any]:
+def _dispatch_hook_bridge(args: Namespace, packet: dict[str, Any], ws: Any) -> dict[str, Any]:
     if packet["runtime"] == "opencode":
         bridge = {
             "ok": True,
@@ -436,6 +341,8 @@ def _dispatch_hook_bridge(args: Namespace, packet: dict[str, Any]) -> dict[str, 
                 packet["runtime_hook_installation"],
                 packet["runtime_gate_protocols"],
                 session_id=args.session_id,
+                project_root=str(ws.base),
+                topics_root=str(ws.base),
             ),
         }
         return require_valid_public_surface("opencode_plugin_bridge", bridge)
@@ -448,6 +355,8 @@ def _dispatch_hook_bridge(args: Namespace, packet: dict[str, Any]) -> dict[str, 
             packet["runtime_hook_installation"],
             packet["runtime_gate_protocols"],
             session_id=args.session_id,
+            project_root=str(ws.base),
+            topics_root=str(ws.base),
         ),
     }
     return require_valid_public_surface("codex_hook_bridge", bridge)

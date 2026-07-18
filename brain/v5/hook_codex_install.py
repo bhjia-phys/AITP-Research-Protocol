@@ -12,6 +12,12 @@ from typing import Any
 
 from brain.v5.hook_install_templates import write_codex_hook_bridge
 from brain.v5.hook_python import stable_python_executable
+from brain.v5.hook_routing_mode import (
+    HookRoutingMode,
+    hook_routing_metadata,
+    resolve_installer_hook_routing,
+)
+from brain.v5.hook_runner_payloads import build_adapter_event_runner_argv
 
 
 def install_codex_hooks_json(
@@ -20,23 +26,33 @@ def install_codex_hooks_json(
     runtime_gate_protocols: dict[str, Any] | None = None,
     *,
     workspace_base: str,
-    session_id: str,
+    session_id: str = "",
+    routing: HookRoutingMode | None = None,
+    project_root: str = "",
     bridge_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Merge AITP v5 hook runners into a Codex hooks.json file."""
 
     hooks_path = Path(path)
+    resolved_routing = resolve_installer_hook_routing(routing, session_id=session_id)
+    routing_metadata = hook_routing_metadata(
+        resolved_routing,
+        project_root=project_root or workspace_base,
+        topics_root=workspace_base,
+    )
     resolved_bridge_path = Path(bridge_path) if bridge_path else hooks_path.parent / "AITP_V5_HOOK_BRIDGE.md"
     bridge = write_codex_hook_bridge(
         resolved_bridge_path,
         installation,
         runtime_gate_protocols,
-        session_id=session_id,
+        routing=resolved_routing,
+        project_root=str(routing_metadata["project_root"]),
+        topics_root=str(routing_metadata["topics_root"]),
     )
     generated = _codex_hooks_payload(
         hooks_path,
-        workspace_base=workspace_base,
-        session_id=session_id,
+        routing=resolved_routing,
+        routing_metadata=routing_metadata,
         bridge_payload_path=bridge["payload_path"],
     )
     created = not hooks_path.exists()
@@ -50,6 +66,11 @@ def install_codex_hooks_json(
         current_hooks = hooks.setdefault(event_name, [])
         if not isinstance(current_hooks, list):
             raise ValueError(f"Codex hooks.{event_name} must be a list")
+        current_hooks[:] = [
+            hook
+            for hook in current_hooks
+            if not _is_stale_codex_v5_hook(hook, expected_hooks=event_hooks)
+        ]
         for event_hook in event_hooks:
             if event_hook not in current_hooks:
                 current_hooks.append(deepcopy(event_hook))
@@ -81,6 +102,7 @@ def install_codex_hooks_json(
         "created": created,
         "merged": True,
         "added_hooks": added_hooks,
+        **routing_metadata,
     }
 
 
@@ -99,48 +121,57 @@ def _codex_event(matcher: str, command: str) -> dict[str, Any]:
 def _codex_hooks_payload(
     hooks_path: Path,
     *,
-    workspace_base: str,
-    session_id: str,
+    routing: HookRoutingMode,
+    routing_metadata: dict[str, object],
     bridge_payload_path: str,
 ) -> dict[str, Any]:
     runner = (_repo_root() / "hooks" / "aitp_v5_adapter_event_runner.py").as_posix()
     pre_tool = _shell_command(
-        [
-            stable_python_executable(),
-            runner,
-            "pre-tool",
-            "--base",
-            workspace_base,
-            "--runtime",
-            "codex",
-            "--session-id",
-            session_id,
-            "--bridge-path",
-            bridge_payload_path,
-        ]
+        build_adapter_event_runner_argv(
+            executable=stable_python_executable(),
+            runner_path=runner,
+            event="pre-tool",
+            runtime="codex",
+            topics_root=str(routing_metadata["topics_root"]),
+            project_root=str(routing_metadata["project_root"]),
+            routing=routing,
+            bridge_payload_path=bridge_payload_path,
+        )
     )
     post_tool = _shell_command(
-        [
-            stable_python_executable(),
-            runner,
-            "post-tool",
-            "--base",
-            workspace_base,
-            "--runtime",
-            "codex",
-            "--session-id",
-            session_id,
-        ]
+        build_adapter_event_runner_argv(
+            executable=stable_python_executable(),
+            runner_path=runner,
+            event="post-tool",
+            runtime="codex",
+            topics_root=str(routing_metadata["topics_root"]),
+            project_root=str(routing_metadata["project_root"]),
+            routing=routing,
+        )
     )
     return {
         "kind": "codex_hooks_json",
         "runtime": "codex",
         "path": str(hooks_path),
+        **routing_metadata,
         "hooks": {
             "PreToolUse": [_codex_event("*", pre_tool)],
             "PostToolUse": [_codex_event("*", post_tool)],
         },
     }
+
+
+def _is_stale_codex_v5_hook(event_hook: Any, *, expected_hooks: list[dict[str, Any]]) -> bool:
+    if event_hook in expected_hooks or not isinstance(event_hook, dict):
+        return False
+    command_hooks = event_hook.get("hooks")
+    if not isinstance(command_hooks, list):
+        return False
+    return any(
+        isinstance(command_hook, dict)
+        and "aitp_v5_adapter_event_runner.py" in str(command_hook.get("command", ""))
+        for command_hook in command_hooks
+    )
 
 
 def _read_codex_hooks(hooks_path: Path) -> dict[str, Any]:

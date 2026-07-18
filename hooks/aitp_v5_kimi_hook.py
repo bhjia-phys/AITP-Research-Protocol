@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from brain.v5.brief import build_execution_brief
 from brain.v5.hook_adapters import hook_decision_payload, hook_trace_event_payload
+from brain.v5.hook_native_routing import resolve_native_hook_route, validate_native_hook_routing_args
 from brain.v5.hook_research_moment_bridge import process_explicit_hook_research_moment
 from brain.v5.hooks import decide_pre_tool_use, post_tool_use_trace_event
 from brain.v5.policy import PolicyDecision, PolicyReason
@@ -54,6 +55,7 @@ _TRUSTED_APPLY_SOURCE_KINDS = {
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
+    validate_native_hook_routing_args(parser, args)
     payload = _dispatch(args, _read_stdin_payload())
     json.dump(payload, sys.stdout, ensure_ascii=True, sort_keys=True)
     sys.stdout.write("\n")
@@ -64,7 +66,13 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="aitp-v5-kimi-hook")
     parent = argparse.ArgumentParser(add_help=False)
     parent.add_argument("--base", required=True)
-    parent.add_argument("--session-id", required=True)
+    parent.add_argument("--session-id", default="")
+    parent.add_argument("--project-root", default="")
+    parent.add_argument(
+        "--routing-mode",
+        choices=("dynamic", "pinned", "pinned_compat"),
+        default="pinned_compat",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("session-start", parents=[parent])
     subparsers.add_parser("pre-tool", parents=[parent])
@@ -73,30 +81,50 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _dispatch(args: argparse.Namespace, kimi_payload: dict[str, Any]) -> dict[str, Any]:
+    ws = init_workspace(args.base)
+    route = resolve_native_hook_route(
+        ws,
+        host="kimi_code",
+        command=args.command,
+        payload=kimi_payload,
+        routing_mode=args.routing_mode,
+        pinned_session_id=args.session_id,
+        project_root=args.project_root or args.base,
+    )
     if args.command == "session-start":
-        ws = init_workspace(args.base)
-        refresh = refresh_workspace_startup_views(ws, session_id=args.session_id)
-        return _kimi_continue({"aitp": compact_workspace_refresh(refresh)})
+        if not route.selected:
+            return _kimi_continue({"aitp": route.diagnostic})
+        refresh = refresh_workspace_startup_views(ws, session_id=route.session_id)
+        return _kimi_continue(
+            {"aitp": compact_workspace_refresh(refresh), "aitp_route": route.diagnostic}
+        )
     if args.command == "pre-tool":
         action = _action_from_kimi_tool(kimi_payload)
         policy_decision = _policy_from_kimi_tool(
             action,
             kimi_payload,
             base=args.base,
-            session_id=args.session_id,
+            session_id=route.session_id,
         )
         decision = decide_pre_tool_use(
             action=action,
             risk_level="guided",
             policy_decision=policy_decision,
         )
-        return _kimi_pre_tool_output(decision, action=action, policy_decision=policy_decision)
+        output = _kimi_pre_tool_output(
+            decision,
+            action=action,
+            policy_decision=policy_decision,
+        )
+        output["aitp"]["route"] = route.diagnostic
+        return output
     if args.command == "post-tool":
-        ws = init_workspace(args.base)
-        binding = get_session_binding(ws, args.session_id)
-        risk_level = _risk_level(ws, args.session_id)
+        if not route.selected:
+            return _kimi_continue({"aitp": route.diagnostic})
+        binding = get_session_binding(ws, route.session_id)
+        risk_level = _risk_level(ws, route.session_id)
         event = post_tool_use_trace_event(
-            session_id=args.session_id,
+            session_id=route.session_id,
             topic_id=binding.topic_id,
             risk_level=risk_level,
             claim_id=binding.active_claim,
@@ -107,9 +135,10 @@ def _dispatch(args: argparse.Namespace, kimi_payload: dict[str, Any]) -> dict[st
         record = persist_hook_trace_event(ws, hook_payload)
         moment = process_explicit_hook_research_moment(
             ws,
-            kimi_payload,
+            route.event_payload,
             host="kimi_code",
-            session_id=args.session_id,
+            session_id=route.session_id,
+            routing_mode=args.routing_mode,
         )
         if moment is not None:
             record = {**record, "research_moment": moment}
