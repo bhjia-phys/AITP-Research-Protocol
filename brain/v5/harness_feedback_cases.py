@@ -55,9 +55,20 @@ def record_harness_feedback_case(
 
         if update_mode == "related":
             if base_record is None:
-                raise HarnessFeedbackCaseConflict(
-                    "related case requires an existing case with the same source fingerprint"
+                if not request.related_case_refs:
+                    raise HarnessFeedbackCaseConflict(
+                        "a new source fingerprint requires explicit related_case_refs"
+                    )
+                _require_existing_case_refs(repository, request.related_case_refs)
+                record = _build_record(
+                    request,
+                    case_id=base_case_id,
+                    source_fingerprint=source_fingerprint,
+                    content_fingerprint=content_fingerprint,
+                    created_at=timestamp,
+                    updated_at=timestamp,
                 )
+                return _write_new(repository, record)
             related_case_id = f"{base_case_id}-{content_fingerprint[:12]}"
             related_read = repository.read(f"harness_feedback_case:{related_case_id}")
             related_record = _case_record_or_none(related_read)
@@ -140,6 +151,25 @@ def harness_feedback_source_fingerprint(request: HarnessFeedbackCaseRequest) -> 
 
 def harness_feedback_content_fingerprint(request: HarnessFeedbackCaseRequest) -> str:
     return _fingerprint(asdict(request))
+
+
+def harness_feedback_case_write_payload(result: WriteResult) -> dict[str, Any]:
+    """Return the bounded write receipt exposed by CLI and full MCP surfaces."""
+
+    return {
+        "ok": True,
+        "kind": "harness_feedback_case_write",
+        **asdict(result),
+        "requires_human_review": True,
+        "orientation_only": True,
+        "can_modify_harness": False,
+        "produces_harness_optimization_plan": False,
+        "produces_skill_implementation_plan": False,
+        "can_emit_skill_artifacts": False,
+        "can_install_skill": False,
+        "can_install_skill_artifacts": False,
+        "can_update_claim_trust": False,
+    }
 
 
 def render_harness_feedback_case(record: HarnessFeedbackCaseRecord) -> str:
@@ -334,6 +364,21 @@ def _case_record_or_none(read_result: Any) -> HarnessFeedbackCaseRecord | None:
     if read_result.status == "found":
         raise HarnessFeedbackCaseConflict("Harness Feedback case has the wrong record type")
     return None
+
+
+def _require_existing_case_refs(
+    repository: RecordRepository,
+    record_refs: tuple[str, ...],
+) -> None:
+    for record_ref in record_refs:
+        current_ref = str(record_ref).split("@sha256:", 1)[0]
+        read_result = repository.read(current_ref)
+        if read_result.status != "found" or not isinstance(
+            read_result.record, HarnessFeedbackCaseRecord
+        ):
+            raise HarnessFeedbackCaseConflict(
+                f"related Harness Feedback case is not readable: {record_ref}"
+            )
 
 
 def _timestamp(value: datetime | None) -> str:

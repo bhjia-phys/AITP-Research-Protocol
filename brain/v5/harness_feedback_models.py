@@ -36,7 +36,10 @@ class HarnessFeedbackCaseRecord:
     requires_human_review: bool = True
     orientation_only: bool = True
     can_modify_harness: bool = False
+    produces_harness_optimization_plan: bool = False
+    produces_skill_implementation_plan: bool = False
     can_emit_skill_artifacts: bool = False
+    can_install_skill: bool = False
     can_install_skill_artifacts: bool = False
     can_update_claim_trust: bool = False
     kind: str = "harness_feedback_case"
@@ -52,4 +55,3 @@ class HarnessFeedbackCaseRecord:
             object.__setattr__(self, field_name, tuple(getattr(self, field_name) or ()))
         if isinstance(self.runtime_context, Mapping):
             object.__setattr__(self, "runtime_context", dict(self.runtime_context))
-

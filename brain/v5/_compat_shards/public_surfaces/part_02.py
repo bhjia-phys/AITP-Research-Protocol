@@ -199,9 +199,14 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     )
     from brain.v5.harness_feedback_contracts import (
         require_valid_harness_feedback_bundle,
+        require_valid_harness_feedback_problem_dossier,
         require_valid_monitor_snapshot_record,
         require_valid_run_dir_provenance_extractor_plan,
         require_valid_skill_patch_proposal_record,
+    )
+    from brain.v5.harness_feedback_case_contracts import (
+        require_valid_harness_feedback_case_write,
+        require_valid_harness_feedback_review_view,
     )
     from brain.v5.hpc_cockpit_contracts import require_valid_hpc_cockpit
     from brain.v5.lane_contracts_contracts import require_valid_lane_contract_record
@@ -281,6 +286,9 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "final_engineering_readiness_audit": require_valid_final_engineering_readiness_audit,
         "final_output_profile": require_valid_final_output_profile,
         "harness_feedback_bundle": require_valid_harness_feedback_bundle,
+        "harness_feedback_case_write": require_valid_harness_feedback_case_write,
+        "harness_feedback_problem_dossier": require_valid_harness_feedback_problem_dossier,
+        "harness_feedback_repeated_case_view": require_valid_harness_feedback_review_view,
         "human_checkpoint_record": require_valid_human_checkpoint_record,
         "hook_trace_event_record": require_valid_hook_trace_event_record,
         "interaction_recording_preview": require_valid_interaction_recording_preview,

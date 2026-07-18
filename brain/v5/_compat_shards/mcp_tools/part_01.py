@@ -60,8 +60,6 @@ from brain.v5.exploration import exploratory_record_payload, record_exploratory_
 
 from brain.v5.final_readiness import audit_final_engineering_readiness
 
-from brain.v5.harness_feedback import build_nio_harness_feedback_bundle, plan_run_dir_provenance_extractor
-
 from brain.v5.hook_install_audit import audit_hook_installation
 
 from brain.v5.hook_install_paths import discover_hook_install_paths

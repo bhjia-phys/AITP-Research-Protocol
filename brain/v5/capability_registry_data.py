@@ -286,7 +286,8 @@ MCP_ONLY_CAPABILITIES = (
     ("assess_risk", "aitp_v5_assess_risk", None, "risk_assessment", "read_only", "full"),
     ("audit_record_routing", "aitp_v5_audit_record_routing", None, "record_routing_audit", "read_only", "full"),
     ("bind_session", "aitp_v5_bind_session", None, "session_binding_record", "kernel_write", "full"),
-    ("harness_feedback_seed_bundle", "aitp_v5_build_harness_feedback_seed_bundle", None, "harness_feedback_bundle", "read_only", "full"),
+    ("harness_feedback_case_write", "aitp_v5_record_harness_feedback_case", "aitp-v5 harness-feedback record --request-json-file <path>", "harness_feedback_case_write", "kernel_write", "full"),
+    ("harness_feedback_review_view", "aitp_v5_build_harness_feedback_review_view", "aitp-v5 harness-feedback review-view", "harness_feedback_repeated_case_view", "read_only", "full"),
     ("build_rehome_plan", "aitp_v5_build_rehome_plan", None, "record_rehome_plan", "read_only", "full"),
     ("codex_autoroute", "aitp_v5_codex_autoroute", None, "codex_auto_route_decision", "read_only", "compact"),
     ("codex_closeout", "aitp_v5_codex_closeout", None, "codex_closeout", "kernel_write", "compact"),
@@ -302,7 +303,6 @@ MCP_ONLY_CAPABILITIES = (
     ("init_workspace", "aitp_v5_init_workspace", "aitp-v5 init <base>", "workspace_initialization", "kernel_write", "full"),
     ("curated_legacy_topics", "aitp_v5_list_curated_legacy_topics", None, "curated_legacy_topic_catalog", "read_only", "full"),
     ("migrate_curated_legacy_topic", "aitp_v5_migrate_curated_legacy_topic_to_v5", None, "legacy_migration_result", "kernel_write", "full"),
-    ("run_dir_provenance_extractor_plan", "aitp_v5_plan_run_dir_provenance_extractor", None, "run_dir_provenance_extractor_plan", "read_only", "full"),
     ("capability_registry", "aitp_v5_get_capability_registry", "aitp-v5 context capability-audit", "capability_registry_audit", "read_only", "full"),
     ("runtime_capability_audit", "aitp_v5_get_runtime_capability_audit", "aitp-v5 context runtime-audit", "runtime_capability_audit", "read_only", "full"),
     ("query_index_build", "aitp_v5_build_query_index", "aitp-v5 query index-build", "query_index_build_report", "runtime_write", "full"),
@@ -319,9 +319,7 @@ MCP_ONLY_CAPABILITIES = (
 
 # Independently shipped extensions are registered only when their MCP wrapper
 # is present in the active runtime.
-OPTIONAL_MCP_CAPABILITIES = (
-    ("harness_feedback_problem_dossier", "aitp_v5_build_harness_feedback_problem_dossier", None, "harness_feedback_problem_dossier", "read_only", "full"),
-)
+OPTIONAL_MCP_CAPABILITIES = ()
 
 # host operation, runtime entrypoint key, role, existing bridge state effect
 BRIDGE_TARGET_SPECS = (

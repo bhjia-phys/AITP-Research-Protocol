@@ -218,19 +218,6 @@ def aitp_v5_audit_final_engineering_readiness(base: str, *, migration_dir: str =
 def aitp_v5_describe_public_surfaces() -> dict:
     return {"ok": True, "public_surfaces": describe_public_surfaces()}
 
-def aitp_v5_build_harness_feedback_seed_bundle(base: str = "") -> dict:
-    return require_valid_public_surface("harness_feedback_bundle", build_nio_harness_feedback_bundle())
-
-def aitp_v5_plan_run_dir_provenance_extractor(
-    base: str = "",
-    *,
-    case_id: str = "g0w0-magnetic-nio",
-) -> dict:
-    return require_valid_public_surface(
-        "run_dir_provenance_extractor_plan",
-        plan_run_dir_provenance_extractor(case_id=case_id),
-    )
-
 def aitp_v5_evaluate_pre_tool_policy(
     base: str, *, session_id: str, action: str, claim_id: str = "",
     evidence_refs: list[str] | None = None, code_state_ids: list[str] | None = None,

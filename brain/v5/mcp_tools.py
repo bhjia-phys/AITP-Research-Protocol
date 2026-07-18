@@ -45,6 +45,10 @@ from brain.v5.mcp_monitor_snapshots import (
     aitp_v5_list_monitor_history,
     aitp_v5_record_monitor_snapshot_v2,
 )
+from brain.v5.mcp_harness_feedback import (
+    aitp_v5_build_harness_feedback_review_view,
+    aitp_v5_record_harness_feedback_case,
+)
 from brain.v5.mcp_execution import (
     aitp_v5_execution_apply_bound_action,
     aitp_v5_execution_assess_baseline_readiness,

@@ -8,6 +8,13 @@ from datetime import datetime
 from typing import Any, Mapping
 
 from brain.v5.harness_feedback_models import HarnessFeedbackCaseRecord
+from brain.v5.contracts import (
+    ContractError,
+    ContractResult,
+    _require_list,
+    _require_mapping,
+    _require_nonempty_str,
+)
 
 
 _FINGERPRINT_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -83,8 +90,8 @@ def validate_harness_feedback_request(request: HarnessFeedbackCaseRequest) -> tu
     if request.status not in _STATUSES:
         errors.append(f"status must be one of {', '.join(sorted(_STATUSES))}")
     for field_name in ("duplicate_of_refs", "related_case_refs"):
-        if any(not _is_typed_ref(item) for item in getattr(request, field_name)):
-            errors.append(f"{field_name} must contain typed record refs")
+        if any(not _is_case_ref(item) for item in getattr(request, field_name)):
+            errors.append(f"{field_name} must contain Harness Feedback case refs")
     return tuple(errors)
 
 
@@ -136,14 +143,17 @@ def validate_harness_feedback_case(record: HarnessFeedbackCaseRecord) -> tuple[s
         errors.append("orientation_only must remain true")
     for field_name in (
         "can_modify_harness",
+        "produces_harness_optimization_plan",
+        "produces_skill_implementation_plan",
         "can_emit_skill_artifacts",
+        "can_install_skill",
         "can_install_skill_artifacts",
         "can_update_claim_trust",
     ):
         if getattr(record, field_name) is not False:
             errors.append(f"{field_name} must remain false")
-    if any(not _is_typed_ref(item) for item in record.supersedes_case_refs):
-        errors.append("supersedes_case_refs must contain typed or pinned record refs")
+    if any(not _is_case_ref(item) for item in record.supersedes_case_refs):
+        errors.append("supersedes_case_refs must contain Harness Feedback case refs")
     return tuple(errors)
 
 
@@ -156,6 +166,56 @@ def require_valid_harness_feedback_case(
     return record
 
 
+def validate_harness_feedback_case_write(
+    payload: dict[str, Any],
+    *,
+    path: str = "harness_feedback_case_write",
+) -> ContractResult:
+    result = _surface_base(payload, path, kind="harness_feedback_case_write")
+    if result.issues:
+        return result
+    for field_name in ("record_ref", "path", "content_hash"):
+        _require_nonempty_str(payload, field_name, path, result)
+    if payload.get("status") not in {"created", "unchanged", "revised"}:
+        result.add(f"{path}.status", "must be created, unchanged, or revised")
+    if payload.get("requires_human_review") is not True:
+        result.add(f"{path}.requires_human_review", "must be true")
+    if payload.get("orientation_only") is not True:
+        result.add(f"{path}.orientation_only", "must be true")
+    _require_false_authority(payload, path, result)
+    return result
+
+
+def require_valid_harness_feedback_case_write(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid_surface(validate_harness_feedback_case_write(payload), payload)
+
+
+def validate_harness_feedback_review_view(
+    payload: dict[str, Any],
+    *,
+    path: str = "harness_feedback_repeated_case_view",
+) -> ContractResult:
+    result = _surface_base(
+        payload,
+        path,
+        kind="harness_feedback_repeated_case_view",
+        require_ok=False,
+    )
+    if result.issues:
+        return result
+    _require_list(payload.get("groups"), f"{path}.groups", result)
+    _require_list(payload.get("errors"), f"{path}.errors", result)
+    if payload.get("orientation_only") is not True:
+        result.add(f"{path}.orientation_only", "must be true")
+    if payload.get("can_update_claim_trust") is not False:
+        result.add(f"{path}.can_update_claim_trust", "must be false")
+    return result
+
+
+def require_valid_harness_feedback_review_view(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid_surface(validate_harness_feedback_review_view(payload), payload)
+
+
 def _is_typed_ref(value: Any) -> bool:
     candidate = str(value or "").strip()
     if not candidate or ":" not in candidate:
@@ -164,3 +224,60 @@ def _is_typed_ref(value: Any) -> bool:
     kind, separator, record_id = base.partition(":")
     return bool(separator and kind.strip() and record_id.strip())
 
+
+def _is_case_ref(value: Any) -> bool:
+    candidate = str(value or "").strip()
+    base = candidate.split("@sha256:", 1)[0]
+    kind, separator, record_id = base.partition(":")
+    return bool(
+        separator
+        and kind.strip().replace("-", "_") == "harness_feedback_case"
+        and record_id.strip()
+    )
+
+
+def _surface_base(
+    payload: Any,
+    path: str,
+    *,
+    kind: str,
+    require_ok: bool = True,
+) -> ContractResult:
+    result = ContractResult()
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return result
+    if require_ok and payload.get("ok") is not True:
+        result.add(f"{path}.ok", "must be true")
+    if not require_ok and not isinstance(payload.get("ok"), bool):
+        result.add(f"{path}.ok", "must be a boolean")
+    if payload.get("kind") != kind:
+        result.add(f"{path}.kind", f"must be {kind!r}")
+    return result
+
+
+def _require_false_authority(
+    payload: dict[str, Any],
+    path: str,
+    result: ContractResult,
+) -> None:
+    for field_name in (
+        "can_modify_harness",
+        "produces_harness_optimization_plan",
+        "produces_skill_implementation_plan",
+        "can_emit_skill_artifacts",
+        "can_install_skill",
+        "can_install_skill_artifacts",
+        "can_update_claim_trust",
+    ):
+        if payload.get(field_name) is not False:
+            result.add(f"{path}.{field_name}", "must be false")
+
+
+def _require_valid_surface(
+    result: ContractResult,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    if not result.ok:
+        raise ContractError(result)
+    return payload

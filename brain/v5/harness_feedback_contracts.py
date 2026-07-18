@@ -108,10 +108,15 @@ def validate_harness_feedback_bundle(
         "meta_topic_path",
         "case_report_path",
         "backlog_path",
-        "skill_draft_path",
     ):
         _require_nonempty_str(payload, key, path, result)
     _require_mapping(payload.get("files"), f"{path}.files", result)
+    boundary = payload.get("skill_distillation_boundary")
+    if isinstance(boundary, dict):
+        if boundary.get("produces_skill_draft") is not False:
+            result.add(f"{path}.skill_distillation_boundary.produces_skill_draft", "must be false")
+        if boundary.get("can_install_skill") is not False:
+            result.add(f"{path}.skill_distillation_boundary.can_install_skill", "must be false")
     _require_list(payload.get("backlog_items"), f"{path}.backlog_items", result)
     for index, item in enumerate(payload.get("backlog_items") or []):
         if not isinstance(item, dict):
@@ -165,6 +170,50 @@ def validate_run_dir_provenance_extractor_plan(
 
 def require_valid_run_dir_provenance_extractor_plan(payload: dict[str, Any]) -> dict[str, Any]:
     return _require_valid(validate_run_dir_provenance_extractor_plan(payload), payload)
+
+
+def validate_harness_feedback_problem_dossier(
+    payload: dict[str, Any],
+    *,
+    path: str = "harness_feedback_problem_dossier",
+) -> ContractResult:
+    result = _validate_base(payload, path, kind="harness_feedback_problem_dossier")
+    if result.issues:
+        return result
+    for key in ("problem_id", "case_id", "problem_dossier_path"):
+        _require_nonempty_str(payload, key, path, result)
+    for key in ("files", "problem_capture_boundary"):
+        _require_mapping(payload.get(key), f"{path}.{key}", result)
+    _require_false_flags(payload, path, result)
+    if payload.get("orientation_only") is not True:
+        result.add(f"{path}.orientation_only", "must be true")
+    if payload.get("can_update_kernel_state") is not False:
+        result.add(f"{path}.can_update_kernel_state", "must be false")
+
+    boundary = payload.get("problem_capture_boundary")
+    if isinstance(boundary, dict):
+        if boundary.get("research_side_role") != "discover_and_record_problem":
+            result.add(f"{path}.problem_capture_boundary.research_side_role", "must be discover_and_record_problem")
+        if boundary.get("harness_side_role") != "review_and_optimize_later":
+            result.add(f"{path}.problem_capture_boundary.harness_side_role", "must be review_and_optimize_later")
+        if boundary.get("produces_harness_optimization_plan") is not False:
+            result.add(f"{path}.problem_capture_boundary.produces_harness_optimization_plan", "must be false")
+        if boundary.get("produces_skill_implementation_plan") is not False:
+            result.add(f"{path}.problem_capture_boundary.produces_skill_implementation_plan", "must be false")
+        if boundary.get("writes_project_files") is not False:
+            result.add(f"{path}.problem_capture_boundary.writes_project_files", "must be false")
+
+    skill = payload.get("skill_boundary")
+    if isinstance(skill, dict):
+        if skill.get("produces_skill_draft") is not False:
+            result.add(f"{path}.skill_boundary.produces_skill_draft", "must be false")
+        if skill.get("can_install_skill") is not False:
+            result.add(f"{path}.skill_boundary.can_install_skill", "must be false")
+    return result
+
+
+def require_valid_harness_feedback_problem_dossier(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid(validate_harness_feedback_problem_dossier(payload), payload)
 
 
 def _validate_base(payload: Any, path: str, *, kind: str) -> ContractResult:

@@ -95,13 +95,46 @@ def test_generic_case_is_idempotent_and_preserves_false_authority_flags(tmp_path
     assert record.requires_human_review is True
     assert record.orientation_only is True
     assert record.can_modify_harness is False
+    assert record.produces_harness_optimization_plan is False
+    assert record.produces_skill_implementation_plan is False
     assert record.can_emit_skill_artifacts is False
+    assert record.can_install_skill is False
     assert record.can_install_skill_artifacts is False
     assert record.can_update_claim_trust is False
 
     report = RecordRepository(ws, actor=_actor()).list("harness_feedback_cases")
     assert report.loaded_count == 1
     assert report.malformed == ()
+
+
+@pytest.mark.parametrize(
+    "field_name",
+    (
+        "can_modify_harness",
+        "produces_harness_optimization_plan",
+        "produces_skill_implementation_plan",
+        "can_emit_skill_artifacts",
+        "can_install_skill",
+        "can_install_skill_artifacts",
+        "can_update_claim_trust",
+    ),
+)
+def test_case_contract_rejects_every_authority_flag(field_name, tmp_path):
+    from brain.v5.harness_feedback_case_contracts import require_valid_harness_feedback_case
+    from brain.v5.harness_feedback_cases import record_harness_feedback_case
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+    write = record_harness_feedback_case(
+        ws,
+        _request(),
+        actor=_actor(),
+        now=datetime(2026, 7, 18, 8, 0, tzinfo=UTC),
+    )
+    record = _read_case(ws, write.record_ref)
+
+    with pytest.raises(ValueError, match=field_name):
+        require_valid_harness_feedback_case(replace(record, **{field_name: True}))
 
 
 def test_changed_information_requires_explicit_revision_or_related_case(tmp_path):
@@ -210,6 +243,44 @@ def test_related_cases_feed_a_read_only_repeated_problem_view(tmp_path):
     ]
 
 
+def test_new_source_fingerprint_requires_an_explicit_related_case_ref(tmp_path):
+    from brain.v5.harness_feedback_cases import (
+        HarnessFeedbackCaseConflict,
+        record_harness_feedback_case,
+    )
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+    now = datetime(2026, 7, 18, 8, 0, tzinfo=UTC)
+    first = record_harness_feedback_case(ws, _request(), actor=_actor(), now=now)
+    new_source = replace(
+        _request(),
+        source_refs=("derivation_chain:qg-chain-8",),
+        actual_behavior="A second derivation chain reproduces the missing source anchor.",
+    )
+
+    with pytest.raises(HarnessFeedbackCaseConflict, match="explicit related_case_refs"):
+        record_harness_feedback_case(
+            ws,
+            new_source,
+            actor=_actor(),
+            now=now + timedelta(days=1),
+            update_mode="related",
+        )
+
+    linked = record_harness_feedback_case(
+        ws,
+        replace(new_source, related_case_refs=(first.record_ref,)),
+        actor=_actor(),
+        now=now + timedelta(days=1),
+        update_mode="related",
+    )
+    linked_record = _read_case(ws, linked.record_ref)
+    assert linked.status == "created"
+    assert linked.record_ref != first.record_ref
+    assert linked_record.related_case_refs == (first.record_ref,)
+
+
 def test_renderer_is_generic_and_fixture_driven(tmp_path):
     from brain.v5.harness_feedback_cases import (
         record_harness_feedback_case,
@@ -255,12 +326,15 @@ def test_renderer_is_generic_and_fixture_driven(tmp_path):
 
 def test_recording_case_cannot_invoke_any_skill_write_or_install_path(tmp_path, monkeypatch):
     from brain.v5 import (
-        harness_feedback,
         skill_candidates,
         skill_distillation,
         skill_distillation_records,
+        skill_facade,
+        skill_install_planning,
         skill_install_transactions,
         skill_package_artifacts,
+        skill_patch_install_planning,
+        skill_usage,
     )
     from brain.v5.harness_feedback_cases import record_harness_feedback_case
     from brain.v5.workspace import init_workspace
@@ -269,12 +343,12 @@ def test_recording_case_cannot_invoke_any_skill_write_or_install_path(tmp_path, 
         raise AssertionError("Harness Feedback crossed into the Skill lifecycle")
 
     for module, names in (
-        (harness_feedback, ("record_skill_patch_proposal",)),
         (
             skill_distillation,
             ("build_procedural_skill_candidates", "propose_detected_procedural_skill"),
         ),
         (skill_distillation_records, ("record_skill_distillation_candidate",)),
+        (skill_facade, ("invoke_skill_operation",)),
         (
             skill_candidates,
             (
@@ -284,7 +358,10 @@ def test_recording_case_cannot_invoke_any_skill_write_or_install_path(tmp_path, 
             ),
         ),
         (skill_package_artifacts, ("record_skill_package_artifact", "rebuild_skill_package_preview")),
+        (skill_install_planning, ("build_skill_install_plan",)),
+        (skill_patch_install_planning, ("build_skill_patch_install_plan",)),
         (skill_install_transactions, ("apply_skill_install_plan",)),
+        (skill_usage, ("build_skill_patch_proposal",)),
     ):
         for name in names:
             monkeypatch.setattr(module, name, forbidden)
