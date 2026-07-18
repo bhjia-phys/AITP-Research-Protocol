@@ -195,16 +195,17 @@ Commit message: `v5: audit bounded context injections`.
 - Create: `brain/v5/host_lifecycle_facade.py`
 - Create: `tests/test_v5_real_host_lifecycle.py`
 
-- [ ] **Step 1: Capture current host behavior as characterization tests**
+- [x] **Step 1: Capture current host behavior as characterization tests**
 
 Build a versioned host capability matrix from installer/configuration owners,
-including OpenCode's plugin-based system transform and its available events.
+capturing OpenCode's then-existing plugin-based system transform as a legacy
+injection conflict alongside its available events.
 Fixture native SessionStart, prompt-submit, pre/post-tool, and stop/session-end
 events only where each host actually exposes them, plus Codex compact-facade
 first prompt. Record current output, trace, unsupported events, fallback,
 failure, and timeout behavior before modification.
 
-- [ ] **Step 2: Map native events to logical events only**
+- [x] **Step 2: Map native events to logical events only**
 
 Adapters normalize ids, refs, objective/process payload, host capability, and
 origin. They call shared moment/context APIs and translate receipts back to
@@ -214,27 +215,37 @@ when supported. Otherwise the installer advertises the gap and the host calls
 idempotent `begin_research_turn` / `closeout_session` facade operations. No plan
 may claim automatic closeout from pre/post-tool events alone.
 
-- [ ] **Step 3: Enforce host write allowlists**
+- [x] **Step 3: Enforce host write allowlists**
 
 Tests monkeypatch evidence/trust/memory/skill-install/baseline/active-claim
 writers to fail. Every hook path must pass. Only runtime receipts, exact process
-auto-captures, and staged candidates are allowed.
+auto-captures, and candidates produced through the validated Research Moment
+Controller are allowed; a host cannot call a semantic staging writer directly.
 
-- [ ] **Step 4: Quarantine stale legacy injection paths**
+- [x] **Step 4: Quarantine stale legacy injection paths**
 
 Detect templates/configs that inject stage guidance or complete MEMORY bodies.
 Install/doctor reports them as conflicts and replaces them only through an
 explicit reviewed host-install plan.
 
-- [ ] **Step 5: Add real process smoke tests and readiness reports**
+- [x] **Step 5: Add real process smoke tests and readiness reports**
 
 For each available host, launch the documented command, submit one fixture
 event, verify trace delta/output/receipt, and distinguish unavailable host from
 failing hook. Never claim an uninstalled host passed.
 
-- [ ] **Step 6: Run hook/install/readiness regressions and commit**
+- [x] **Step 6: Run hook/install/readiness regressions and commit**
 
 Commit message: `v5: connect real hosts to research lifecycle`.
+
+Execution note: this task was delivered as reviewable commits for capability
+characterization, normalized dispatch, writer boundaries, legacy-injection
+quarantine, and truthful readiness. The implementation distinguishes host
+command availability from hook installation. On 2026-07-17 all four commands
+were available, but all four repository-local hook audits were `missing`; none
+was reported production-ready. This task's completion is a code, contract, and
+documentation result, not a claim that the current workspace has installed
+host hooks.
 
 ## Task 4: Generic Harness Feedback Case
 

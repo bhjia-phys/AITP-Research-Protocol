@@ -1266,19 +1266,26 @@ skills/context, and records its own friction without taking engineering authorit
 - Modify: `tests/test_aitp_pm_deploy_surfaces.py`
 - Create: `tests/test_v5_real_host_lifecycle.py`
 
-- [ ] Map native hooks to host-neutral research events.
-- [ ] Use first relevant prompt as ResearchTurnStart when SessionStart is absent.
-- [ ] Wire prompt-submit and stop/session-end only where supported; advertise and
+- [x] Map native hooks to host-neutral research events.
+- [x] Use first relevant prompt as ResearchTurnStart when SessionStart is absent.
+- [x] Wire prompt-submit and stop/session-end only where supported; advertise and
   test idempotent begin-turn/closeout facade fallbacks elsewhere.
-- [ ] Inject only bounded context fingerprints/refs and selected content.
-- [ ] Persist injection audits without full context duplication.
-- [ ] Namespace receipt/dedup identity by workspace/host/session/topic-focus/
+- [x] Inject only bounded context fingerprints/refs and selected content.
+- [x] Persist injection audits without full context duplication.
+- [x] Namespace receipt/dedup identity by workspace/host/session/topic-focus/
   event/profile and enforce named 800/4000 and 1500/7500 token/byte profiles.
-- [ ] Encode context receipt paths from canonical namespace SHA-256 rather than
+- [x] Encode context receipt paths from canonical namespace SHA-256 rather than
   raw host ids; reject traversal, reserved-name, and symlink escapes.
-- [ ] Prove hooks cannot write trusted evidence, promote memory, install skills,
+- [x] Prove hooks cannot write trusted evidence, promote memory, install skills,
   or mutate claim trust.
-- [ ] Quarantine legacy paths that inject stale stage guidance or full memories.
+- [x] Quarantine legacy paths that inject stale stage guidance or full memories.
+
+Implementation status: the repository owners, normalized dispatch, writer
+sentinels, bounded context delivery, legacy-injection quarantine, and truthful
+readiness reports are implemented. This does not assert that a local host is
+installed. The 2026-07-17 live audit found all four host commands but no
+repository-local AITP hook installation; see
+`docs/superpowers/progress/2026-07-10-aitp-gate-5-release-audit.md`.
 
 ### Task 5.3: One Generic Harness Feedback Dossier
 

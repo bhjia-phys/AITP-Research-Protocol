@@ -18,5 +18,12 @@ Start with `aitp_v5_codex_autoroute`, restore bounded state with
 `aitp_v5_codex_expand`, and use the guided recording/closeout facades only at
 durable research moments.
 
+The workspace hook owner can install `PreToolUse` and `PostToolUse` runners in
+`.codex/hooks.json`. Codex has no owned automatic SessionStart, prompt-submit,
+or session-end event in the current matrix. The first relevant research turn
+therefore enters through `aitp_v5_codex_enter`; closeout remains an explicit,
+reviewed plan. A working `codex` executable does not prove these hooks are
+installed.
+
 Legacy L0-L4 files are read/migration context only. Do not enable legacy writes
 or treat adapter text, summaries, RAG output, or Skills as scientific evidence.

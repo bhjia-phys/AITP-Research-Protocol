@@ -17,5 +17,11 @@ Restore an existing topic through the v5 recovery audit, execution brief, and
 claim relation map before expanding or recording. Use explicit typed writes at
 durable research moments and preserve every human, validation, and trust gate.
 
+The workspace installer owns `SessionStart`, `PreToolUse`, and `PostToolUse` in
+`.claude/settings.local.json`. It does not own prompt-submit or session-end;
+closeout remains an explicit `plan_session_closeout` operation. SessionStart
+delivers bounded workspace orientation, not the complete gateway Skill or all
+topic memory. Verify installation separately from command availability.
+
 Legacy stage files and aliases are migration/read-only compatibility surfaces;
 they are not the active research lifecycle.

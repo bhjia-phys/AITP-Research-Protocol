@@ -16,4 +16,7 @@ Such an integration must use bounded v5 recovery/context reads and explicit
 typed writes. It must not enable legacy L0-L4 writes, auto-promote trust, install
 Skills, or claim host lifecycle support that has not passed a host fixture.
 
+OpenClaw is not included in the v5 host lifecycle capability matrix. Manual MCP
+availability is not an installation, lifecycle-smoke, or readiness claim.
+
 Use Codex for the supported default interactive workflow.

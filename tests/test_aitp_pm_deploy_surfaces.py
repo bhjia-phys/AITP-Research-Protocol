@@ -129,6 +129,7 @@ def test_agent_facing_templates_do_not_teach_legacy_active_wiring():
     for relative_path in (
         "adapters/codex/SKILL.md",
         "adapters/claude-code/SKILL.md",
+        "adapters/kimi-code/SKILL.md",
         "adapters/opencode/SKILL.md",
         "adapters/openclaw/SKILL.md",
     ):

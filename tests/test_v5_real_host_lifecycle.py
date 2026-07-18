@@ -751,3 +751,44 @@ def test_all_normalized_host_paths_pass_high_authority_writer_sentinels(
     }
     assert all(result.canonical_write is False for result in results)
     assert current_canonical_watermark(ws) == before
+
+
+def test_adapter_docs_match_v5_host_lifecycle_and_legacy_injection_boundaries():
+    interface = Path("docs/protocols/adapter_interface.md").read_text(
+        encoding="utf-8"
+    )
+    opencode = Path("adapters/opencode/SKILL.md").read_text(encoding="utf-8")
+    kimi = Path("adapters/kimi-code/SKILL.md").read_text(encoding="utf-8")
+    adapter_index = Path("adapters/README.md").read_text(encoding="utf-8")
+    adapter_index_flat = " ".join(adapter_index.split())
+
+    for required in (
+        "v5 is the only production research lifecycle",
+        "SessionStart, PreToolUse, PostToolUse",
+        "PreToolUse, PostToolUse",
+        "tool.execute.before, tool.execute.after",
+        "process_ready_installation_incomplete",
+        "begin_research_turn",
+        "plan_session_closeout",
+        "bounded context",
+        "cannot update claim trust",
+    ):
+        assert required in interface
+
+    for stale in (
+        "promotion gates respected (no L2 writes without human approval)",
+        "Only enter normal L0-L4 routing",
+        "aitp_get_topic_popup",
+        "Hook integration | Full | Partial | None",
+        "experimental.chat.system.transform",
+        "full content of your using-aitp skill",
+        "equivalent to Claude Code's SessionStart",
+    ):
+        assert stale not in interface
+        assert stale not in opencode
+
+    assert "registers the packaged Skill path" in opencode
+    assert "Kimi Code" in adapter_index
+    assert "plugins/aitp-research-protocol-kimi/" in adapter_index
+    assert "Installing the plugin does not prove" in kimi
+    assert "not an installation or readiness claim" in adapter_index_flat

@@ -789,6 +789,30 @@ must follow the reviewed skill-candidate/install/use lifecycle.
   PowerShell `Set-Content -Encoding UTF8` output is safe. The packet remains
   orientation-only and should be used to preserve commit ranges, tests, smoke
   commands, blocking backlogs, and next actions for cross-session review.
+- M5 host lifecycle integration uses one immutable host capability matrix and
+  one normalized event/dispatch boundary. Claude Code and Kimi Code own
+  `SessionStart`, `PreToolUse`, and `PostToolUse`; Codex owns `PreToolUse` and
+  `PostToolUse`; OpenCode owns `tool.execute.before` and
+  `tool.execute.after`. Missing first-turn or session-end events use explicit,
+  idempotent facade fallbacks. Closeout is plan-only and remains reviewed.
+- Host lifecycle writers are centrally allowlisted. Hooks may prepare bounded
+  runtime context, evaluate existing pre-tool policy, append runtime trace, or
+  delegate one validated research moment. They cannot write evidence or trust,
+  rebind a session, accept a baseline, install or patch a Skill, promote
+  memory, or apply closeout.
+- Host command availability is not host readiness. `host-readiness` requires a
+  successful process probe plus an installed, conflict-free project hook audit;
+  skipped and incomplete installation audits remain not-ready. A lifecycle
+  probe submits only an allowlisted fixture and persists its identity/hash, not
+  raw host payload. The 2026-07-17 audit found all four local commands but no
+  repository-local hook installation, so every host was
+  `process_ready_installation_incomplete`. Re-run the audit before relying on
+  this transient status.
+- OpenCode Skill registration and lifecycle handling are separate. The
+  repository bootstrap registers a Skill path without injecting complete Skill
+  bodies, `MEMORY.md`, or stage guidance. The generated project plugin owns
+  pre/post-tool events. A stale full-context injection configuration is a
+  conflict and can be replaced only by an exact content-bound reviewed plan.
 
 ## V5 Layer Map
 
