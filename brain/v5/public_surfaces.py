@@ -37,6 +37,11 @@ from brain.v5.skill_surface_contracts import (
     skill_surface_purposes as _skill_surface_purposes,
     skill_surface_validators as _skill_surface_validators,
 )
+from brain.v5.research_moment_surface_contracts import (
+    research_moment_surface_names as _research_moment_surface_names,
+    research_moment_surface_purposes as _research_moment_surface_purposes,
+    research_moment_surface_validators as _research_moment_surface_validators,
+)
 
 
 _PUBLIC_SURFACE_NAMES = tuple(
@@ -46,6 +51,7 @@ _PUBLIC_SURFACE_NAMES = tuple(
         *_execution_surface_names(),
         *_knowledge_surface_names(),
         *_skill_surface_names(),
+        *_research_moment_surface_names(),
     ))
 )
 _PUBLIC_SURFACE_PURPOSES = {
@@ -54,6 +60,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     **_execution_surface_purposes(),
     **_knowledge_surface_purposes(),
     **_skill_surface_purposes(),
+    **_research_moment_surface_purposes(),
 }
 _validators_without_lifecycle = _validators
 
@@ -65,4 +72,5 @@ def _validators():
     validators.update(_evidence_surface_validators())
     validators.update(_knowledge_surface_validators())
     validators.update(_skill_surface_validators())
+    validators.update(_research_moment_surface_validators())
     return validators

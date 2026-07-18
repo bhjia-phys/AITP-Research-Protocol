@@ -1,9 +1,10 @@
 # AITP M5 Host Lifecycle Release Audit
 
 Date: 2026-07-18
-Scope: M5 Tasks 3-4 host lifecycle and generic Harness Feedback integration.
-Decision: host and Harness Feedback implementation accepted; current workspace
-host installation not ready; M5 overall remains open.
+Scope: M5 Tasks 3-5 host lifecycle, explicit Research Moment, and generic
+Harness Feedback integration.
+Decision: repository code and generated-hook verticals accepted; current
+workspace host installation not ready; M5 overall remains open.
 
 ## Implemented Boundary
 
@@ -23,6 +24,15 @@ host installation not ready; M5 overall remains open.
   an optimization plan, emit Skill lifecycle artifacts, or update claim trust.
 - Topic-specific NiO content is fixture-only; historical bundle/dossier
   validators remain read-only compatibility surfaces without runtime builders.
+- One full-only MCP/file-backed CLI surface accepts a complete explicit
+  Research Event and returns one bounded decision plus an optional receipt.
+- All four generated post-tool owners use the same bridge. Raw output remains
+  trace-only; only a top-level envelope with five matching identities may enter
+  the controller. Nested output is ignored and malformed envelopes return an
+  orientation-only diagnostic.
+- Dispatch receipts report an actual canonical process write only when the
+  validated controller returns new kernel record refs. Semantic staging and all
+  ordinary trace/policy/context paths remain `canonical_write=False`.
 
 ## Commit Evidence
 
@@ -61,6 +71,17 @@ host installation not ready; M5 overall remains open.
   typed writes, idempotency/revision/related cases, repeated review, every
   false-authority flag, prohibited Skill paths, registry/capability parity,
   CLI/full MCP, deployment, and architecture budgets.
+- Explicit Research Moment and M5 vertical: exact code staged tree
+  `ee847d918f1f4eb5834a419377b3bbca463de1f8` passed 186 focused tests in split
+  system-Temp runs: core/MCP/architecture `137 passed`, new normal/noise/friction
+  vertical `15 passed`, existing real-host lifecycle `21 passed`, and existing
+  adapter runners `13 passed`. The adapter file passed in 346.52 seconds after
+  earlier combined runs exceeded their 3/5-minute command limits. Compact MCP
+  was read back as exactly ten tools.
+- Post-truthfulness staged candidate
+  `0586993e67a0920ccab885d5f51da14d3d2037ba` passed `70 passed`, covering the
+  exact objective host write, deep decision/receipt effect parity, four-host
+  semantics, public surfaces, and architecture limits.
 
 All test workspaces and runtime receipts above were isolated under system Temp.
 The host dispatch tests assert unchanged canonical watermarks, and this task did
@@ -84,11 +105,10 @@ its project hooks before a real interactive event can pass.
 
 ## Remaining M5 Work
 
-- Run the normal-session, noise/recursion/failure, and friction-to-dossier M5
-  vertical acceptances.
 - Run the combined M0-M5 release lanes, architecture budgets, staged-tree audit,
   capability/family drift report, and real canonical watermark proof required
-  by M5 Task 5.
+  by M5 Task 5. The focused staged-tree architecture audit is green; the broad
+  combined release evidence remains pending.
 - Install project hooks only when explicitly requested and then rerun
   installation plus real lifecycle smoke. A host command alone is insufficient.
 - Add test-backed parity checks for the separately committed Kimi Code plugin

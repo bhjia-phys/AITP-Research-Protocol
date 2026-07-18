@@ -331,12 +331,25 @@ def closeout_session(ws, event, *, actor=None):
     return _closeout(ws, event, actor=actor)
 
 
-def dispatch_host_lifecycle_event(ws, event, *, actor=None, deliver_context=None):
+def dispatch_host_lifecycle_event(
+    ws,
+    event,
+    *,
+    actor=None,
+    deliver_context=None,
+    research_event=None,
+):
     from brain.v5.host_lifecycle_dispatch import (
         dispatch_host_lifecycle_event as _dispatch,
     )
 
-    return _dispatch(ws, event, actor=actor, deliver_context=deliver_context)
+    return _dispatch(
+        ws,
+        event,
+        actor=actor,
+        deliver_context=deliver_context,
+        research_event=research_event,
+    )
 
 
 def host_lifecycle_operation_allowlist():

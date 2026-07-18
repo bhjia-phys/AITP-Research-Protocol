@@ -42,6 +42,11 @@ from brain.v5.cli_skills import (
     dispatch_skill_command as _dispatch_skill_command,
     is_skill_command as _is_skill_command,
 )
+from brain.v5.cli_research_moments import (
+    add_research_moment_parser as _add_research_moment_parser,
+    dispatch_research_moment_command as _dispatch_research_moment_command,
+    is_research_moment_command as _is_research_moment_command,
+)
 
 
 _add_parser_section_04_without_lifecycle = _add_parser_section_04
@@ -54,12 +59,15 @@ def _add_parser_section_04(sp):
     _add_promotion_checkpoint_parser(sp)
     _add_knowledge_parser(sp)
     _add_skill_parser(sp)
+    _add_research_moment_parser(sp)
 
 
 _dispatch_without_lifecycle = _dispatch
 
 
 def _dispatch(args):
+    if _is_research_moment_command(args):
+        return _dispatch_research_moment_command(args, init_workspace(args.base))
     if _is_skill_command(args):
         return _dispatch_skill_command(args)
     if _is_knowledge_command(args):

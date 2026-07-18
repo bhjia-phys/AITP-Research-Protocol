@@ -324,7 +324,9 @@ system Temp.
 **Files:**
 - Create: `brain/v5/mcp_research_moments.py`
 - Create: `brain/v5/cli_research_moments.py`
+- Create: `brain/v5/research_moment_facade.py`
 - Create: `brain/v5/research_moment_surface_contracts.py`
+- Create: `brain/v5/hook_research_moment_bridge.py`
 - Create: `tests/test_v5_research_moment_facade.py`
 - Create: `tests/test_v5_gate5_host_e2e.py`
 - Create: `docs/superpowers/progress/2026-07-10-aitp-gate-5-release-audit.md`
@@ -333,11 +335,16 @@ system Temp.
 - Modify: `brain/v5/public_surfaces.py`
 - Modify: `brain/v5/mcp_tools.py`
 - Modify: `brain/v5/cli.py`
+- Modify: `brain/v5/host_lifecycle_dispatch.py`
+- Modify: `brain/v5/host_lifecycle_facade.py`
+- Modify: `hooks/aitp_v5_adapter_event_runner.py`
+- Modify: `hooks/aitp_v5_claude_hook.py`
+- Modify: `hooks/aitp_v5_kimi_hook.py`
 - Modify: `README.md`
 - Modify: `PROJECT_MEMORY.md`
 - Modify: `docs/superpowers/plans/2026-07-09-aitp-final-research-lifecycle-roadmap.md`
 
-- [ ] **Step 1: Register event/decision/apply/injection/feedback capabilities**
+- [x] **Step 1: Register event/decision/apply/injection/feedback capabilities**
 
 Pure decisions/read views are read-only; runtime staging/injection receipts are
 runtime writes; objective process records and feedback cases are trust-neutral
@@ -346,26 +353,47 @@ Register deep validators, host capability/fallback contracts, CLI/MCP parity,
 pre-tool policies, and compact visibility for every operation. Loader files
 receive only focused-module imports.
 
-- [ ] **Step 2: Run a normal-session vertical acceptance**
+Implemented as one full-only `process_research_moment` capability with a shared
+deep surface contract and file-backed CLI. Existing context injection and
+Harness Feedback capabilities remain separate. Compact stays exactly ten tools;
+the controller is reached through the existing compact recording workflow or an
+explicit full-surface event rather than another compact tool.
+
+- [x] **Step 2: Run a normal-session vertical acceptance**
 
 First relevant turn recalls bounded context and applicable Skills; source/code/
 run/artifact events capture exact process state; semantic events stage; milestone
 coalesces one batch; closeout persists one record; next session resumes. No
 manual `.aitp` file edit occurs. Include one knowledge-gap event that issues a
-bounded metadata search, records connector coverage, acquires one allowed hashed
-source, and leaves every snippet/unacquired result outside grounded knowledge.
+bounded discovery handoff and preserves connector coverage. Connector execution,
+allowed hashed-source acquisition, and grounded promotion remain M3/M6 work;
+M5 must not duplicate that authority. Search snippets and unacquired results
+remain process-only.
 
-- [ ] **Step 3: Run noise/recursion/failure acceptance**
+`tests/test_v5_gate5_host_e2e.py` proves bounded first-turn recall, explicit
+semantic staging, one closeout review batch, plan-only host closeout, and next-
+session resume. Exact objective process writers and the bounded knowledge-gap
+handoff remain covered by `tests/test_v5_research_moments.py`.
+
+- [x] **Step 3: Run noise/recursion/failure acceptance**
 
 Repeated polls, unchanged files, AITP tool output, malformed host payload,
 missing session, stale index, unavailable host, and hook timeout produce bounded
 diagnostics without recursive writes or scientific promotion.
 
-- [ ] **Step 4: Run a friction-to-dossier acceptance**
+Raw post-tool output stays trace-only. Only a complete top-level event envelope
+may enter the controller; five identity pins are checked before application.
+Nested tool output is ignored and malformed envelopes return a bounded,
+orientation-only diagnostic without exposing their content.
+
+- [x] **Step 4: Run a friction-to-dossier acceptance**
 
 A real research-side recording/context failure produces one generic case and a
 review view. Assert no optimization plan, code patch, Skill candidate/patch/
 preview/install/distillation action, or claim-trust change exists.
+
+The vertical writes one generic case and reads the recurring-case view. A single
+incident is counted but correctly does not fabricate a recurring group.
 
 - [ ] **Step 5: Run M0-M5, host smokes, architecture, and staged-tree audits**
 
@@ -374,23 +402,29 @@ hash effects, and capability/family drift.
 
 - [ ] **Step 6: Update docs, release audit, and commit**
 
-Commit message: `v5: complete M5 autonomous host lifecycle`.
+Commit message for the repository-level vertical: `v5: connect validated research moments to host lifecycle`.
+Do not call M5 complete until the combined release lanes and at least one
+installed project-hook lifecycle smoke pass.
 
 ## M5 Completion Checklist
 
-- [ ] Every host event maps to one host-neutral logical event.
-- [ ] Every moment returns exactly one bounded decision.
-- [ ] Objective capture is exact, idempotent, and low-noise.
-- [ ] Knowledge gaps may trigger budgeted read-only literature discovery; full
+- [x] Every host event maps to one host-neutral logical event.
+- [x] Every moment returns exactly one bounded decision.
+- [x] Objective capture is exact, idempotent, and low-noise.
+- [x] Knowledge gaps may trigger budgeted read-only literature discovery; full
   source acquisition and semantic promotion retain their separate gates.
-- [ ] Semantic candidates remain review gated and coalesced.
-- [ ] Context injections are bounded, fingerprinted, and ref-traceable.
-- [ ] Hooks cannot write trust, evidence promotion, baselines, or Skill installs.
-- [ ] Hosts without SessionStart use first relevant prompt safely.
-- [ ] Prompt-submit/stop events are wired only where supported; every missing
+- [x] Semantic candidates remain review gated and coalesced.
+- [x] Context injections are bounded, fingerprinted, and ref-traceable.
+- [x] Hooks cannot write trust, evidence promotion, baselines, or Skill installs.
+- [x] Hosts without SessionStart use first relevant prompt safely.
+- [x] Prompt-submit/stop events are wired only where supported; every missing
   event has an audited begin-turn/closeout facade fallback.
 - [x] One generic Harness Feedback family replaces case-specific runtime logic.
 - [x] Feedback creates a problem dossier, never an optimization plan.
 - [x] Feedback cannot emit any Skill candidate, patch, preview, install, or
   distillation action.
-- [ ] A normal research lifecycle requires no manual AITP file editing.
+- [x] A normal research lifecycle requires no manual AITP file editing in the
+  generated-hook and fixture vertical.
+- [ ] At least one repository-local project hook is installed and a real
+  interactive lifecycle event is observed. Process availability or generated
+  command smoke alone does not satisfy this item.

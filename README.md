@@ -148,6 +148,17 @@ read-only review view. This path cannot produce an optimization plan, Skill
 candidate, patch, preview, distillation request, install action, or trust
 update.
 
+Research Moment ingestion is also explicit. The full-MCP
+`aitp_v5_process_research_moment` and file-backed CLI
+`aitp-v5 research-moment process --request-json-file <path>` accept one complete
+host-neutral event, return one bounded decision, and optionally apply only the
+controller's allowlisted effect. Normal post-tool output remains trace-only.
+Generated Codex, Claude Code, Kimi Code, and OpenCode hooks enter the controller
+only when the host supplies a top-level `aitp_research_event` envelope whose
+host, host session, AITP session, topic, and source event identities all match.
+Nested tool output cannot inject this envelope, malformed envelopes degrade to
+an orientation-only diagnostic, and no Research Moment can update claim trust.
+
 This is separate from a broader theory-discussion knowledge base. Long physics
 discussions can produce insight that is not a reusable workflow skill. That
 knowledge layer remains an explicit deferred gap while the workflow-candidate
@@ -654,10 +665,11 @@ mode instead of failing. Setup mode exposes `aitp_config_status`,
 The plugin saves this to `~/.aitp/codex-plugin-config.json`. After
 configuration, restart Codex or open a new thread. The plugin launcher sets
 `AITP_MCP_SURFACE=codex` by default, so Codex sees a compact facade:
-`aitp_v5_codex_autoroute`, `aitp_v5_codex_enter`,
-`aitp_v5_codex_expand`, `aitp_v5_codex_recording_step`,
-`aitp_v5_codex_record_apply`, `aitp_v5_codex_literature_step`, and
-`aitp_v5_codex_closeout`. Set
+`aitp_v5_codex_autoroute`, `aitp_v5_codex_enter`, `aitp_v5_codex_expand`,
+`aitp_v5_codex_recording_step`, `aitp_v5_codex_record_apply`,
+`aitp_v5_codex_literature_step`, `aitp_v5_codex_closeout`,
+`aitp_v5_codex_tool_catalog`, `aitp_v5_evaluate_pre_tool_policy`, and
+`aitp_v5_preflight_trust_update`. Set
 `AITP_MCP_SURFACE=full` only for kernel
 development or maintenance sessions that need the complete `aitp_v5_*` surface.
 

@@ -1321,16 +1321,36 @@ dossier contracts remain compatibility readers only. The exact staged tree
 surface, CLI/MCP, deployment, and architecture tests. This completes Task 5.3,
 not M5 overall acceptance.
 
+Task 5.4 now exposes one full-only, file-backed Research Moment process ingress
+and connects generated Codex, Claude Code, Kimi Code, and OpenCode post-tool
+commands to the same controller only for a complete top-level explicit event
+envelope. Raw post-tool output remains trace-only; five host/session/topic/source
+identity pins fail closed, nested tool output cannot inject an event, and
+malformed envelopes degrade to bounded diagnostics. The exact code staged tree
+`ee847d918f1f4eb5834a419377b3bbca463de1f8` passed 186 split focused tests:
+137 core/MCP/architecture, 15 M5 vertical, 21 existing real-host lifecycle, and
+13 existing adapter-runner tests. The adapter file required a separate 8-minute
+budget in the exported system-Temp tree and passed in 346.52 seconds. Compact
+MCP remains exactly ten tools. A subsequent truthfulness fix makes the host
+dispatch report `canonical_write=True` only when the validated controller
+actually returns new kernel record refs; semantic staging and ordinary hook
+paths remain false. Post-fix staged candidate
+`0586993e67a0920ccab885d5f51da14d3d2037ba` passed 70 host, public-contract,
+and architecture tests.
+
 ### M5 Acceptance
 
-- [ ] A normal research session can start, retrieve, work, capture, review, and
-  close without manual AITP file editing.
-- [ ] Objective capture is idempotent and low-noise.
-- [ ] Semantic candidates remain review gated.
-- [ ] Search snippets and unacquired literature results remain process-only.
-- [ ] Host context stays within budget and is traceable to exact refs.
+- [x] A generated-hook/fixture research session can start, retrieve, work,
+  capture, review, and close without manual AITP file editing.
+- [x] Objective capture is idempotent and low-noise.
+- [x] Semantic candidates remain review gated.
+- [x] Search snippets and unacquired literature results remain process-only.
+- [x] Host context stays within budget and is traceable to exact refs.
 - [x] Harness feedback produces only a reviewable problem dossier.
 - [x] Harness feedback cannot create any Skill or automatic optimization action.
+- [ ] At least one repository-local project hook is installed and a real
+  interactive lifecycle event is observed; generated command tests and host
+  process availability are insufficient. Until then M5 remains open.
 
 ## 12. M6: Real Research End-To-End Acceptance
 

@@ -288,6 +288,7 @@ MCP_ONLY_CAPABILITIES = (
     ("bind_session", "aitp_v5_bind_session", None, "session_binding_record", "kernel_write", "full"),
     ("harness_feedback_case_write", "aitp_v5_record_harness_feedback_case", "aitp-v5 harness-feedback record --request-json-file <path>", "harness_feedback_case_write", "kernel_write", "full"),
     ("harness_feedback_review_view", "aitp_v5_build_harness_feedback_review_view", "aitp-v5 harness-feedback review-view", "harness_feedback_repeated_case_view", "read_only", "full"),
+    ("process_research_moment", "aitp_v5_process_research_moment", "aitp-v5 research-moment process --request-json-file <path>", "research_moment_process_result", "kernel_write", "full"),
     ("build_rehome_plan", "aitp_v5_build_rehome_plan", None, "record_rehome_plan", "read_only", "full"),
     ("codex_autoroute", "aitp_v5_codex_autoroute", None, "codex_auto_route_decision", "read_only", "compact"),
     ("codex_closeout", "aitp_v5_codex_closeout", None, "codex_closeout", "kernel_write", "compact"),

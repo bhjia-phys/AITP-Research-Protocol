@@ -797,9 +797,14 @@ must follow the reviewed skill-candidate/install/use lifecycle.
   idempotent facade fallbacks. Closeout is plan-only and remains reviewed.
 - Host lifecycle writers are centrally allowlisted. Hooks may prepare bounded
   runtime context, evaluate existing pre-tool policy, append runtime trace, or
-  delegate one validated research moment. They cannot write evidence or trust,
-  rebind a session, accept a baseline, install or patch a Skill, promote
-  memory, or apply closeout.
+  delegate one validated research moment. Raw post-tool output remains
+  trace-only: delegation requires a complete top-level `aitp_research_event`
+  envelope with matching host, host-session, AITP-session, topic, and source
+  event identities. Nested tool output is never treated as an envelope, and a
+  malformed envelope returns only a bounded diagnostic. The explicit full-MCP
+  and file-backed CLI ingress share the same contract; compact remains ten
+  tools. Hooks cannot write evidence or trust, rebind a session, accept a
+  baseline, install or patch a Skill, promote memory, or apply closeout.
 - Host command availability is not host readiness. `host-readiness` requires a
   successful process probe plus an installed, conflict-free project hook audit;
   skipped and incomplete installation audits remain not-ready. A lifecycle

@@ -61,8 +61,14 @@ class HostLifecycleDispatch:
     schema_version: str = HOST_LIFECYCLE_DISPATCH_SCHEMA_VERSION
 
     def __post_init__(self) -> None:
-        if self.canonical_write is not False:
-            raise ValueError("host lifecycle dispatch cannot authorize canonical writes")
+        if self.canonical_write and (
+            self.operation != "dispatch_validated_research_moment"
+            or not self.runtime_write
+            or not self.receipt_id
+        ):
+            raise ValueError(
+                "canonical host dispatch writes require a validated moment receipt"
+            )
         if self.trust_effect != "none":
             raise ValueError("host lifecycle dispatch must remain trust-neutral")
 

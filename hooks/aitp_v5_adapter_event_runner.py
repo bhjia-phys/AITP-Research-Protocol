@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
 from brain.v5.hook_adapters import hook_trace_event_payload
+from brain.v5.hook_research_moment_bridge import process_explicit_hook_research_moment
 from brain.v5.hooks import post_tool_use_trace_event
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.trace import persist_hook_trace_event
@@ -68,10 +69,16 @@ def _dispatch_post_tool(args: argparse.Namespace, platform_event: dict[str, Any]
         evidence_status=event["evidence_status"],
     )
     hook_payload = hook_trace_event_payload(trace_event, hook_name="post_tool")
-    return require_valid_public_surface(
-        "hook_trace_event_record",
-        persist_hook_trace_event(ws, hook_payload),
+    record = persist_hook_trace_event(ws, hook_payload)
+    moment = process_explicit_hook_research_moment(
+        ws,
+        platform_event,
+        host=args.runtime,
+        session_id=args.session_id,
     )
+    if moment is not None:
+        record = {**record, "research_moment": moment}
+    return require_valid_public_surface("hook_trace_event_record", record)
 
 
 def _read_stdin_payload() -> dict[str, Any]:

@@ -12,7 +12,11 @@ from brain.v5.context_injection_contracts import ContextInjectionRequest
 from brain.v5.context_injection_events import prepare_context_injection
 from brain.v5.host_lifecycle_contracts import HostLifecycleDispatch, HostLifecycleEvent
 from brain.v5.paths import WorkspacePaths
-from brain.v5.research_moment_contracts import normalize_timestamp
+from brain.v5.research_moment_contracts import (
+    ResearchEvent,
+    normalize_research_event,
+    normalize_timestamp,
+)
 from brain.v5.research_scope_contracts import canonical_typed_ref
 from brain.v5.workspace import get_session_binding
 
@@ -266,6 +270,7 @@ def dispatch_host_lifecycle_event(
     *,
     actor: object | None = None,
     deliver_context: Callable[[str], None] | None = None,
+    research_event: ResearchEvent | None = None,
 ) -> HostLifecycleDispatch:
     """Route one normalized event without adding scientific writer logic."""
 
@@ -289,6 +294,14 @@ def dispatch_host_lifecycle_event(
             reason_codes=("existing_host_policy_owner",),
         )
     if event.logical_event == "post_tool":
+        if research_event is not None:
+            return _dispatch_validated_research_moment(
+                ws,
+                event,
+                research_event,
+                actor=actor,
+                topic_id=binding.topic_id,
+            )
         authorize_host_lifecycle_operation(
             event, "delegate_existing_post_tool_trace"
         )
@@ -300,6 +313,49 @@ def dispatch_host_lifecycle_event(
             reason_codes=("exact_process_capture_not_requested",),
         )
     raise ValueError(f"unsupported logical lifecycle event: {event.logical_event!r}")
+
+
+def _dispatch_validated_research_moment(
+    ws: WorkspacePaths,
+    host_event: HostLifecycleEvent,
+    research_event: ResearchEvent,
+    *,
+    actor: object | None,
+    topic_id: str,
+) -> HostLifecycleDispatch:
+    authorize_host_lifecycle_operation(host_event, "dispatch_validated_research_moment")
+    if actor is None:
+        raise ValueError("a typed actor is required to apply a host research moment")
+    event = normalize_research_event(research_event)
+    identity_checks = (
+        (event.host, host_event.host, "host does not match host event"),
+        (event.host_session_id, host_event.host_session_id, "host session does not match host event"),
+        (event.session_id, host_event.session_id, "session does not match host event"),
+        (event.topic_id, topic_id, "topic does not match session binding"),
+        (event.source_event_id, host_event.event_id, "source event does not match host event"),
+    )
+    for actual, expected, message in identity_checks:
+        if actual != expected:
+            raise ValueError(f"research event {message}")
+
+    from brain.v5.research_moments import (
+        apply_research_moment_decision,
+        decide_research_moment,
+    )
+
+    decision = decide_research_moment(ws, event)
+    receipt = apply_research_moment_decision(ws, decision, actor=actor)
+    return _dispatch(
+        host_event,
+        topic_id=topic_id,
+        status=f"moment_{receipt.status}",
+        operation="dispatch_validated_research_moment",
+        reason_codes=decision.reason_codes,
+        receipt_id=receipt.receipt_id,
+        receipt_status=receipt.status,
+        runtime_write=True,
+        canonical_write=decision.declared_effect == "kernel_write" and bool(receipt.record_refs),
+    )
 
 
 def _bound_session(ws: WorkspacePaths, event: HostLifecycleEvent):
@@ -342,6 +398,7 @@ def _dispatch(
     receipt_id: str = "",
     receipt_status: str = "",
     runtime_write: bool = False,
+    canonical_write: bool = False,
 ) -> HostLifecycleDispatch:
     basis = {
         "event_id": event.event_id,
@@ -366,6 +423,7 @@ def _dispatch(
         receipt_id=receipt_id,
         receipt_status=receipt_status,
         runtime_write=runtime_write,
+        canonical_write=canonical_write,
     )
 
 
@@ -429,7 +487,6 @@ def _optional_text(value: object, label: str) -> str:
 def _require_event(event: HostLifecycleEvent) -> None:
     if not isinstance(event, HostLifecycleEvent):
         raise TypeError("event must be a HostLifecycleEvent")
-
 
 __all__ = [
     "HostLifecycleDispatch",

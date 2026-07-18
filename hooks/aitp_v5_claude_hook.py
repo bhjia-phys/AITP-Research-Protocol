@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from brain.v5.brief import build_execution_brief
 from brain.v5.hook_adapters import hook_decision_payload, hook_trace_event_payload
+from brain.v5.hook_research_moment_bridge import process_explicit_hook_research_moment
 from brain.v5.hooks import decide_pre_tool_use, post_tool_use_trace_event
 from brain.v5.policy import PolicyDecision, PolicyReason
 from brain.v5.pretool_policy import context_policy_decision
@@ -104,6 +105,14 @@ def _dispatch(args: argparse.Namespace, claude_payload: dict) -> dict:
         )
         hook_payload = hook_trace_event_payload(event, hook_name="post_tool")
         record = persist_hook_trace_event(ws, hook_payload)
+        moment = process_explicit_hook_research_moment(
+            ws,
+            claude_payload,
+            host="claude_code",
+            session_id=args.session_id,
+        )
+        if moment is not None:
+            record = {**record, "research_moment": moment}
         return _claude_continue({"aitp": record})
     raise SystemExit(f"unsupported Claude hook command: {args.command}")
 

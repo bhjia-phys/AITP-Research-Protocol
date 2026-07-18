@@ -49,6 +49,7 @@ from brain.v5.mcp_harness_feedback import (
     aitp_v5_build_harness_feedback_review_view,
     aitp_v5_record_harness_feedback_case,
 )
+from brain.v5.mcp_research_moments import aitp_v5_process_research_moment
 from brain.v5.mcp_execution import (
     aitp_v5_execution_apply_bound_action,
     aitp_v5_execution_assess_baseline_readiness,
