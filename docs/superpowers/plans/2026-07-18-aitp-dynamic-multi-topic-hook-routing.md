@@ -50,8 +50,13 @@
 - `brain/v5/host_route_payloads.py`: decision payload encoding, decoding, and
   authority revalidation across runtime boundaries.
 - `brain/v5/dynamic_host_routing.py`: pure orchestration of intent assessment,
-  indexed discovery, exact verification, scoring, ambiguity, and supporting
-  scope proposals.
+  explicit route resolution, indexed candidate flow, and final decisions.
+- `brain/v5/host_route_discovery.py`: bounded indexed discovery, evidence-tier
+  scoring, and deterministic candidate plans.
+- `brain/v5/host_route_coverage.py`: coherent-snapshot coverage aggregation and
+  fail-closed extension across exact/scope reads.
+- `brain/v5/host_route_scope.py`: selected-session scope resolution and
+  supporting-only target-revalidation proposals.
 - `brain/v5/host_route_cache.py`: disposable, atomically written, content-bound
   host-session route continuity below `.aitp/runtime/host_routes`.
 - `brain/v5/hook_routing_mode.py`: one parser/normalizer for dynamic, pinned,
@@ -176,6 +181,9 @@ in 226.51 seconds using an explicit system-Temp basetemp.
 
 **Files:**
 - Create: `brain/v5/dynamic_host_routing.py`
+- Create: `brain/v5/host_route_discovery.py`
+- Create: `brain/v5/host_route_coverage.py`
+- Create: `brain/v5/host_route_scope.py`
 - Modify: `tests/test_v5_dynamic_host_routing.py`
 - Read/reuse: `brain/v5/research_retrieval.py`
 - Read/reuse: `brain/v5/research_scope.py`
@@ -188,47 +196,60 @@ in 226.51 seconds using an explicit system-Temp basetemp.
   repository reads, current `codex_autoroute` intent assessment, and
   `resolve_session_scope` after exact session selection.
 
-- [ ] **Step 1: Write failing explicit-ref and outside-AITP tests**
+- [x] **Step 1: Write failing explicit-ref and outside-AITP tests**
 
 An exact valid session/topic ref selects deterministically. Conflicting explicit
 refs return `conflict`. A generic non-research prompt returns `outside_aitp`
 without querying every family or creating runtime state.
 
-- [ ] **Step 2: Write failing indexed-discovery tests**
+- [x] **Step 2: Write failing indexed-discovery tests**
 
 Build two-topic fixtures with overlapping terms. Query a bounded family set
 covering topic/session/route/closeout/claim/code/artifact/source anchors through
 one `QuerySnapshotSession`; aggregate to topic/session candidates and exact-read
 all selected anchors.
 
-- [ ] **Step 3: Implement evidence tiers and deterministic scoring**
+- [x] **Step 3: Implement evidence tiers and deterministic scoring**
 
 Use this order: explicit refs/pin, exact repository/path/code/artifact anchors,
 valid runtime continuity, objective/route/closeout/claim/topic text, then
 recency tie-break only. Store component scores and reason codes; never hide the
 runner-up from an ambiguous decision.
 
-- [ ] **Step 4: Implement fail-closed coverage and ambiguity**
+- [x] **Step 4: Implement fail-closed coverage and ambiguity**
 
 Any stale scope, failed exact read, malformed in-scope family, truncation, or
 unresolved top-candidate tie returns `coverage_blocked` or `ambiguous`.
 `workspace_recovery` means AITP is relevant but no safe session exists; it does
 not create one.
 
-- [ ] **Step 5: Implement supporting-scope proposal**
+- [x] **Step 5: Implement supporting-scope proposal**
 
 Only after a clear primary selection, return bounded supporting candidates from
 program/bridge discovery with `requires_target_revalidation=True`. Do not write
 a focus set or treat supporting claims as evidence.
 
-- [ ] **Step 6: Run focused GREEN and query-count assertions**
+- [x] **Step 6: Run focused GREEN and query-count assertions**
 
 Assert one coherent snapshot, bounded result limit, exact reads for selected
 anchors, deterministic ordering, and zero repository writer calls.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 Commit message: `v5: resolve dynamic research routes read only`.
+
+Execution note: the resolver now normalizes explicit session/topic refs, skips
+the index for clearly outside-AITP requests, discovers candidates through one
+coherent bounded snapshot, exact-reads every selected anchor, preserves ties,
+and blocks stale, malformed, truncated, missing, or conflicting coverage.
+Reviewed program/focus/bridge scope is resolved only after primary selection;
+supporting sessions are marked supporting-only and require target-side
+revalidation. The resolver invokes no repository writer and leaves the
+canonical watermark unchanged. Focused routing tests passed 29 tests in 5.98
+seconds; retrieval/scope/public-surface/contract regressions passed 93 tests in
+226.68 seconds; architecture boundaries passed 6 tests in 0.42 seconds. Pure
+discovery, coverage, and scope finalization were split from orchestration to
+keep every new production module below the 500-line budget.
 
 ### Task 3: Add Disposable Host-Session Route Continuity
 

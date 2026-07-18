@@ -282,3 +282,660 @@ def test_route_decision_payload_round_trip_rejects_authority_tampering():
     assert any("canonical_write_allowed must be false" in issue for issue in issues)
     with pytest.raises(ValueError, match="canonical_write_allowed must be false"):
         host_route_decision_from_payload(payload)
+
+
+def _seed_two_topic_route_workspace(tmp_path):
+    from brain.v5.query_index import build_query_index
+    from brain.v5.workspace import bind_session, create_context, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_context(ws, "computational-materials", title="Computational Materials")
+    create_context(ws, "formal-theory", title="Formal Theory")
+    create_topic(
+        ws,
+        "librpa-screening",
+        context_id="computational-materials",
+        title="LibRPA dielectric screening and HPC convergence",
+    )
+    create_topic(
+        ws,
+        "quantum-gravity-notes",
+        context_id="formal-theory",
+        title="Quantum gravity von Neumann algebra notes",
+    )
+    bind_session(
+        ws,
+        "session-librpa",
+        topic_id="librpa-screening",
+        context_id="computational-materials",
+        runtime="codex",
+    )
+    bind_session(
+        ws,
+        "session-qg",
+        topic_id="quantum-gravity-notes",
+        context_id="formal-theory",
+        runtime="codex",
+    )
+    build_query_index(ws)
+    return ws
+
+
+def test_resolver_selects_an_explicit_session_after_exact_topic_verification(tmp_path):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_contracts import HostRouteRequest
+    from brain.v5.query_index import current_canonical_watermark
+    from brain.v5.research_retrieval import QuerySnapshotSession
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    watermark_before = current_canonical_watermark(ws)
+    query_session = QuerySnapshotSession()
+
+    decision = resolve_host_research_route(
+        ws,
+        HostRouteRequest(
+            request_summary="Continue the LibRPA screening convergence run",
+            host="codex",
+            host_session_id="host-session-1",
+            explicit_session_ids=("session-librpa",),
+            semantic_assessment={
+                "task_kind": "topic_continuation",
+                "should_use_aitp": "required",
+                "confidence": "high",
+            },
+        ),
+        query_session=query_session,
+    )
+
+    from brain.v5.host_route_contracts import route_decision_payload
+
+    assert decision.status == "selected", json.dumps(
+        route_decision_payload(decision), indent=2
+    )
+    assert decision.selected_topic_id == "librpa-screening"
+    assert decision.selected_session_id == "session-librpa"
+    assert decision.candidates[0].evidence_tier == "explicit"
+    assert decision.candidates[0].exact_refs == (
+        "session:session-librpa",
+        "topic:librpa-screening",
+    )
+    assert decision.coverage.strong_selection_eligible is True
+    assert query_session.snapshot is not None
+    assert current_canonical_watermark(ws) == watermark_before
+
+
+def test_resolver_skips_index_for_explicit_generic_textbook_request(tmp_path):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_contracts import HostRouteRequest
+    from brain.v5.research_retrieval import QuerySnapshotSession
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    query_session = QuerySnapshotSession()
+
+    decision = resolve_host_research_route(
+        ws,
+        HostRouteRequest(
+            request_summary="What is the Fourier transform of a Gaussian?",
+            semantic_assessment={
+                "task_kind": "generic_question",
+                "is_generic_textbook_question": True,
+                "should_use_aitp": "not_required",
+                "confidence": "high",
+            },
+        ),
+        query_session=query_session,
+    )
+
+    assert decision.status == "outside_aitp"
+    assert decision.candidates == ()
+    assert decision.recommended_next_operation == "none"
+    assert query_session.snapshot is None
+    assert decision.canonical_write_allowed is False
+
+
+@pytest.mark.parametrize(
+    ("summary", "expected_topic", "expected_session"),
+    (
+        (
+            "Continue the LibRPA dielectric screening HPC convergence",
+            "librpa-screening",
+            "session-librpa",
+        ),
+        (
+            "Continue the quantum gravity von Neumann algebra notes",
+            "quantum-gravity-notes",
+            "session-qg",
+        ),
+    ),
+)
+def test_resolver_selects_different_sessions_from_indexed_topic_intent(
+    tmp_path,
+    summary,
+    expected_topic,
+    expected_session,
+):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_contracts import HostRouteRequest
+    from brain.v5.host_route_payloads import route_decision_payload
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+
+    decision = resolve_host_research_route(
+        ws,
+        HostRouteRequest(
+            request_summary=summary,
+            host="codex",
+            host_session_id=f"host-{expected_session}",
+            semantic_assessment={
+                "task_kind": "topic_continuation",
+                "needs_prior_research_state": True,
+                "confidence": "high",
+            },
+        ),
+    )
+
+    assert decision.status == "selected", json.dumps(
+        route_decision_payload(decision), indent=2
+    )
+    assert decision.selected_topic_id == expected_topic
+    assert decision.selected_session_id == expected_session
+    assert decision.candidates[0].evidence_tier == "indexed_text"
+    assert decision.coverage.strong_selection_eligible is True
+
+
+def test_resolver_preserves_equal_indexed_topics_as_ambiguous(tmp_path):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_contracts import HostRouteRequest
+    from brain.v5.host_route_payloads import route_decision_payload
+    from brain.v5.query_index import build_query_index
+    from brain.v5.workspace import create_claim
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    for topic_id in ("librpa-screening", "quantum-gravity-notes"):
+        create_claim(
+            ws,
+            topic_id=topic_id,
+            statement="Shared frontier consistency question",
+            evidence_profile="formal_theory",
+            confidence_state="candidate",
+            active_uncertainty="The shared frontier comparison remains open.",
+        )
+    build_query_index(ws)
+
+    decision = resolve_host_research_route(
+        ws,
+        HostRouteRequest(
+            request_summary="Continue the shared frontier consistency question",
+            semantic_assessment={
+                "task_kind": "topic_continuation",
+                "needs_prior_research_state": True,
+                "confidence": "high",
+            },
+        ),
+    )
+
+    assert decision.status == "ambiguous", json.dumps(
+        route_decision_payload(decision), indent=2
+    )
+    assert decision.selected_topic_id == ""
+    assert decision.selected_session_id == ""
+    assert {
+        (candidate.topic_id, candidate.session_id) for candidate in decision.candidates
+    } == {
+        ("librpa-screening", "session-librpa"),
+        ("quantum-gravity-notes", "session-qg"),
+    }
+    assert decision.canonical_write_allowed is False
+
+
+def test_resolver_accepts_exact_session_and_topic_refs(tmp_path):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_contracts import HostRouteRequest
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    decision = resolve_host_research_route(
+        ws,
+        HostRouteRequest(
+            request_summary="Continue the exact bound research session",
+            exact_refs=(
+                "session:session-librpa",
+                "topic:librpa-screening",
+            ),
+            semantic_assessment={"should_use_aitp": "required"},
+        ),
+    )
+
+    assert decision.status == "selected"
+    assert decision.selected_topic_id == "librpa-screening"
+    assert decision.selected_session_id == "session-librpa"
+    assert decision.candidates[0].evidence_tier == "explicit"
+
+
+@pytest.mark.parametrize(
+    ("request_fields", "expected_reason"),
+    (
+        (
+            {"explicit_session_ids": ("session-librpa", "session-qg")},
+            "multiple_explicit_sessions_require_choice",
+        ),
+        (
+            {
+                "explicit_session_ids": ("session-librpa",),
+                "pinned_session_id": "session-qg",
+                "routing_mode": "pinned",
+            },
+            "pinned_session_conflicts_with_explicit_session",
+        ),
+        (
+            {
+                "exact_refs": (
+                    "session:session-librpa",
+                    "session:session-qg",
+                )
+            },
+            "multiple_explicit_sessions_require_choice",
+        ),
+    ),
+)
+def test_resolver_reports_explicit_route_conflicts_without_loading_index(
+    tmp_path,
+    request_fields,
+    expected_reason,
+):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_contracts import HostRouteRequest
+    from brain.v5.research_retrieval import QuerySnapshotSession
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    query_session = QuerySnapshotSession()
+    decision = resolve_host_research_route(
+        ws,
+        HostRouteRequest(
+            request_summary="Continue an explicitly bound research session",
+            semantic_assessment={"should_use_aitp": "required"},
+            **request_fields,
+        ),
+        query_session=query_session,
+    )
+
+    assert decision.status == "conflict"
+    assert expected_reason in decision.reason_codes
+    assert query_session.snapshot is None
+
+
+def test_resolver_rejects_explicit_topic_session_mismatch(tmp_path):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_contracts import HostRouteRequest
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    decision = resolve_host_research_route(
+        ws,
+        HostRouteRequest(
+            request_summary="Continue the requested formal theory topic",
+            explicit_session_ids=("session-librpa",),
+            explicit_topic_ids=("quantum-gravity-notes",),
+            semantic_assessment={"should_use_aitp": "required"},
+        ),
+    )
+
+    assert decision.status == "conflict"
+    assert "explicit_topic_conflicts_with_session_binding" in decision.reason_codes
+
+
+def test_resolver_blocks_a_missing_explicit_session(tmp_path):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_contracts import HostRouteRequest
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    decision = resolve_host_research_route(
+        ws,
+        HostRouteRequest(
+            request_summary="Continue the missing research session",
+            explicit_session_ids=("session-missing",),
+            semantic_assessment={"should_use_aitp": "required"},
+        ),
+    )
+
+    assert decision.status == "coverage_blocked"
+    assert decision.coverage.strong_selection_eligible is False
+    assert "explicit_session_not_found" in decision.reason_codes
+
+
+def test_resolver_blocks_indexed_selection_when_index_is_stale(tmp_path):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_contracts import HostRouteRequest
+    from brain.v5.workspace import create_claim
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    create_claim(
+        ws,
+        topic_id="librpa-screening",
+        statement="LibRPA dielectric screening convergence changed after indexing",
+        evidence_profile="numerical",
+        confidence_state="candidate",
+        active_uncertainty="The derived index has not been rebuilt.",
+    )
+
+    decision = resolve_host_research_route(
+        ws,
+        HostRouteRequest(
+            request_summary="Continue the LibRPA dielectric screening convergence",
+            semantic_assessment={"should_use_aitp": "required"},
+        ),
+    )
+
+    assert decision.status == "coverage_blocked"
+    assert decision.coverage.index_status == "stale"
+    assert decision.coverage.scope_fresh is False
+
+
+def test_resolver_blocks_malformed_in_scope_route_family(tmp_path):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_contracts import HostRouteRequest
+    from brain.v5.query_index import build_query_index
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    malformed = ws.registry_dir("routes") / "malformed-route.md"
+    malformed.write_text("---\n: invalid yaml\n---\n", encoding="utf-8")
+    build_query_index(ws)
+
+    decision = resolve_host_research_route(
+        ws,
+        HostRouteRequest(
+            request_summary="Continue the LibRPA dielectric screening convergence",
+            semantic_assessment={"should_use_aitp": "required"},
+        ),
+    )
+
+    assert decision.status == "coverage_blocked"
+    assert decision.coverage.malformed_count > 0
+
+
+def test_resolver_blocks_truncated_discovery(tmp_path):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_contracts import HostRouteRequest
+    from brain.v5.query_index import build_query_index
+    from brain.v5.workspace import create_claim
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    for index in range(50):
+        create_claim(
+            ws,
+            topic_id="librpa-screening",
+            statement=f"LibRPA dielectric screening convergence sample {index}",
+            evidence_profile="numerical",
+            confidence_state="candidate",
+            active_uncertainty="The route fixture intentionally exceeds its bound.",
+        )
+    build_query_index(ws)
+
+    decision = resolve_host_research_route(
+        ws,
+        HostRouteRequest(
+            request_summary="Continue the LibRPA dielectric screening convergence",
+            semantic_assessment={"should_use_aitp": "required"},
+        ),
+    )
+
+    assert decision.status == "coverage_blocked"
+    assert decision.coverage.truncated is True
+
+
+def test_resolver_uses_workspace_recovery_when_no_indexed_candidate_exists(tmp_path):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_contracts import HostRouteRequest
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    decision = resolve_host_research_route(
+        ws,
+        HostRouteRequest(
+            request_summary="Continue the xylophonic superspace investigation",
+            semantic_assessment={"should_use_aitp": "required"},
+        ),
+    )
+
+    assert decision.status == "workspace_recovery"
+    assert decision.candidates == ()
+    assert decision.coverage.strong_selection_eligible is True
+
+
+def test_resolver_exposes_reviewed_cross_topic_scope_as_supporting_only(tmp_path):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_contracts import HostRouteRequest
+    from brain.v5.lifecycle_models import (
+        CrossTopicRelationRecord,
+        ResearchProgramRecord,
+        SessionFocusSetRecord,
+    )
+    from brain.v5.query_index import build_query_index, current_canonical_watermark
+    from brain.v5.record_envelope import RecordActor
+    from brain.v5.research_scope import (
+        record_cross_topic_relation,
+        record_research_program,
+        record_session_focus_set,
+    )
+    from brain.v5.workspace import create_claim
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    actor = RecordActor(actor_type="model", actor_id="route-scope-test", host="pytest")
+    target = create_claim(
+        ws,
+        topic_id="librpa-screening",
+        statement="The LibRPA target requires independent convergence validation.",
+        evidence_profile="numerical",
+        confidence_state="candidate",
+        active_uncertainty="Cross-topic reasoning has not been revalidated.",
+    )
+    source = create_claim(
+        ws,
+        topic_id="quantum-gravity-notes",
+        statement="The formal source method is valid only in its original scope.",
+        evidence_profile="formal_theory",
+        confidence_state="validated",
+        active_uncertainty="Transfer to LibRPA is not evidence.",
+    )
+    record_research_program(
+        ws,
+        ResearchProgramRecord(
+            program_id="program-route-scope",
+            title="Reviewed cross-topic method comparison",
+            primary_topic_ids=["librpa-screening"],
+            supporting_topic_ids=["quantum-gravity-notes"],
+            scientific_boundary="No claim trust transfers between topics.",
+            inclusion_rules=["reviewed bridges only"],
+            review_status="reviewed",
+        ),
+        actor=actor,
+    )
+    record_cross_topic_relation(
+        ws,
+        CrossTopicRelationRecord(
+            relation_id="bridge-route-scope",
+            source_topic_id="quantum-gravity-notes",
+            target_topic_id="librpa-screening",
+            source_ref=f"claim:{source.claim_id}",
+            target_ref=f"claim:{target.claim_id}",
+            relation_kind="method_candidate",
+            transfer_rationale="Only the comparison pattern may be useful.",
+            applicability_boundary="The source conclusion is never target evidence.",
+            revalidation_requirements=["validate against the LibRPA target assumptions"],
+            status="reviewed",
+        ),
+        actor=actor,
+    )
+    record_session_focus_set(
+        ws,
+        SessionFocusSetRecord(
+            focus_set_id="focus-route-scope",
+            session_id="session-librpa",
+            primary_topic_id="librpa-screening",
+            focus_kind="claim",
+            focus_ref=f"claim:{target.claim_id}",
+            supporting_refs=["cross_topic_relation:bridge-route-scope"],
+            program_id="program-route-scope",
+        ),
+        actor=actor,
+    )
+    build_query_index(ws)
+    watermark_before = current_canonical_watermark(ws)
+
+    decision = resolve_host_research_route(
+        ws,
+        HostRouteRequest(
+            request_summary="Continue the exact LibRPA research session",
+            explicit_session_ids=("session-librpa",),
+            semantic_assessment={"should_use_aitp": "required"},
+        ),
+    )
+
+    assert decision.status == "selected"
+    assert decision.selected_topic_id == "librpa-screening"
+    assert decision.supporting_topic_ids == ("quantum-gravity-notes",)
+    assert decision.requires_target_revalidation is True
+    supporting = [candidate for candidate in decision.candidates if candidate.supporting_only]
+    assert len(supporting) == 1
+    assert supporting[0].topic_id == "quantum-gravity-notes"
+    assert supporting[0].session_id == "session-qg"
+    assert supporting[0].requires_target_revalidation is True
+    assert f"claim:{source.claim_id}" not in decision.candidates[0].exact_refs
+    assert current_canonical_watermark(ws) == watermark_before
+
+
+def test_resolver_routes_from_an_exact_non_session_record_anchor(tmp_path):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_contracts import HostRouteRequest
+    from brain.v5.query_index import build_query_index
+    from brain.v5.workspace import create_claim
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    claim = create_claim(
+        ws,
+        topic_id="quantum-gravity-notes",
+        statement="A precise algebraic anchor for the formal theory topic.",
+        evidence_profile="formal_theory",
+        confidence_state="candidate",
+        active_uncertainty="The next derivation remains open.",
+    )
+    build_query_index(ws)
+
+    decision = resolve_host_research_route(
+        ws,
+        HostRouteRequest(
+            request_summary="Continue from this exact canonical anchor",
+            exact_refs=(f"claim:{claim.claim_id}",),
+            semantic_assessment={"should_use_aitp": "required"},
+        ),
+    )
+
+    assert decision.status == "selected"
+    assert decision.selected_topic_id == "quantum-gravity-notes"
+    assert decision.selected_session_id == "session-qg"
+    assert decision.candidates[0].evidence_tier == "exact_anchor"
+    assert f"claim:{claim.claim_id}" in decision.candidates[0].exact_refs
+
+
+def test_exact_route_constraint_overrides_untrusted_generic_semantic_hint(tmp_path):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_contracts import HostRouteRequest
+    from brain.v5.query_index import build_query_index
+    from brain.v5.workspace import create_claim
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    claim = create_claim(
+        ws,
+        topic_id="quantum-gravity-notes",
+        statement="The exact formal-theory route anchor.",
+        evidence_profile="formal_theory",
+        confidence_state="candidate",
+        active_uncertainty="The semantic hint is intentionally contradictory.",
+    )
+    build_query_index(ws)
+
+    decision = resolve_host_research_route(
+        ws,
+        HostRouteRequest(
+            request_summary="What is the Fourier transform of a Gaussian?",
+            exact_refs=(f"claim:{claim.claim_id}",),
+            semantic_assessment={
+                "task_kind": "generic_question",
+                "is_generic_textbook_question": True,
+                "should_use_aitp": "not_required",
+            },
+        ),
+    )
+
+    assert decision.status == "selected"
+    assert decision.selected_topic_id == "quantum-gravity-notes"
+    assert decision.candidates[0].evidence_tier == "exact_anchor"
+
+
+def test_resolver_routes_from_one_explicit_topic_without_a_session_id(tmp_path):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_contracts import HostRouteRequest
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    decision = resolve_host_research_route(
+        ws,
+        HostRouteRequest(
+            request_summary="Continue the explicitly selected research topic",
+            explicit_topic_ids=("quantum-gravity-notes",),
+            semantic_assessment={"should_use_aitp": "required"},
+        ),
+    )
+
+    assert decision.status == "selected"
+    assert decision.selected_topic_id == "quantum-gravity-notes"
+    assert decision.selected_session_id == "session-qg"
+    assert decision.candidates[0].evidence_tier == "explicit"
+
+
+def test_resolver_uses_one_bounded_snapshot_and_never_calls_a_writer(
+    tmp_path,
+    monkeypatch,
+):
+    import brain.v5.dynamic_host_routing as routing
+    import brain.v5.host_route_scope as route_scope
+    import brain.v5.research_retrieval as retrieval
+    import brain.v5.research_scope as research_scope
+    from brain.v5.host_route_contracts import HostRouteRequest, route_decision_payload
+    from brain.v5.record_repository import RecordRepository
+    from brain.v5.research_retrieval import QuerySnapshotSession
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    query_session = QuerySnapshotSession()
+    calls = []
+    original_query = retrieval.query_records
+
+    def tracked_query(ws_arg, query, *, query_session=None):
+        calls.append((query, query_session))
+        return original_query(ws_arg, query, query_session=query_session)
+
+    def forbidden_write(*_args, **_kwargs):
+        pytest.fail("dynamic route resolution must never call a canonical writer")
+
+    monkeypatch.setattr(routing, "query_records", tracked_query)
+    monkeypatch.setattr(route_scope, "query_records", tracked_query)
+    monkeypatch.setattr(research_scope, "query_records", tracked_query)
+    monkeypatch.setattr(RecordRepository, "write", forbidden_write)
+    request = HostRouteRequest(
+        request_summary="Continue the quantum gravity von Neumann algebra notes",
+        semantic_assessment={"should_use_aitp": "required"},
+    )
+
+    first = routing.resolve_host_research_route(
+        ws,
+        request,
+        query_session=query_session,
+    )
+    second = routing.resolve_host_research_route(
+        ws,
+        request,
+        query_session=QuerySnapshotSession(),
+    )
+
+    assert first.status == "selected"
+    assert all(session is query_session for _query, session in calls[:4])
+    assert all(query.limit <= 200 for query, _session in calls)
+    assert any(query.limit == 48 for query, _session in calls)
+    assert query_session.snapshot is not None
+    assert route_decision_payload(first) == route_decision_payload(second)
