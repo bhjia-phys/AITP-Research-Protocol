@@ -92,9 +92,9 @@ def _aitp_required(request: HostRouteRequest) -> bool:
         or request.pinned_session_id
     ):
         return True
-    from brain.v5.codex_facade import codex_autoroute
+    from brain.v5.codex_facade import codex_route_intent
 
-    payload = codex_autoroute(
+    payload = codex_route_intent(
         None,
         request_summary=request.request_summary,
         session_id=(

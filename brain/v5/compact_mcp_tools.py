@@ -31,20 +31,54 @@ def aitp_v5_codex_autoroute(
     visible_files: list[str] | None = None,
     recent_tool_summary: str = "",
     semantic_assessment: dict | None = None,
+    route_context: dict | None = None,
 ) -> dict:
     """Route one request into AITP when needed."""
 
     from brain.v5.codex_facade import codex_autoroute
 
+    context = _normalized_route_context(route_context)
+
     return codex_autoroute(
-        None,
+        _ws(base),
         request_summary=request_summary,
         session_id=session_id,
         topics=topics,
         visible_files=visible_files,
         recent_tool_summary=recent_tool_summary,
         semantic_assessment=semantic_assessment,
+        host=context.get("host", ""),
+        host_session_id=context.get("host_session_id", ""),
+        project_root=context.get("project_root", ""),
+        current_path=context.get("current_path", ""),
+        repo_id=context.get("repo_id", ""),
+        branch=context.get("branch", ""),
+        exact_refs=context.get("exact_refs"),
+        pinned_session_id=context.get("pinned_session_id", ""),
+        routing_mode=context.get("routing_mode", "dynamic"),
     )
+
+
+def _normalized_route_context(value: dict | None) -> dict:
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise TypeError("route_context must be an object")
+    allowed = {
+        "host",
+        "host_session_id",
+        "project_root",
+        "current_path",
+        "repo_id",
+        "branch",
+        "exact_refs",
+        "pinned_session_id",
+        "routing_mode",
+    }
+    unknown = sorted(set(value) - allowed)
+    if unknown:
+        raise ValueError(f"unsupported route_context fields: {', '.join(unknown)}")
+    return dict(value)
 
 
 def aitp_v5_codex_enter(

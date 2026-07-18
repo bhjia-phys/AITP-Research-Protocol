@@ -1199,3 +1199,146 @@ def test_route_cache_expiry_and_missing_anchor_invalidate_mapping(tmp_path, monk
     )
     (ws.topic_dir("librpa-screening") / "topic.md").unlink()
     assert cache.read_host_route_mapping(ws, request) is None
+
+
+def _seed_single_topic_route_workspace(base, topic_id, session_id):
+    from brain.v5.query_index import build_query_index
+    from brain.v5.workspace import bind_session, create_context, create_topic, init_workspace
+
+    ws = init_workspace(base)
+    create_context(ws, "shared-context", title="Shared Research Context")
+    create_topic(
+        ws,
+        topic_id,
+        context_id="shared-context",
+        title="Shared observable continuation workflow",
+    )
+    bind_session(
+        ws,
+        session_id,
+        topic_id=topic_id,
+        context_id="shared-context",
+        runtime="codex",
+    )
+    build_query_index(ws)
+    return ws
+
+
+def test_compact_autoroute_uses_requested_workspace_and_persists_selected_route(
+    tmp_path,
+):
+    from brain.v5.capability_registry import compact_mcp_tools
+    from brain.v5.compact_mcp_tools import aitp_v5_codex_autoroute
+    from brain.v5.host_route_cache import read_host_route_mapping
+    from brain.v5.host_route_contracts import HostRouteRequest
+
+    left = _seed_single_topic_route_workspace(
+        tmp_path / "left",
+        "left-topic",
+        "left-session",
+    )
+    right = _seed_single_topic_route_workspace(
+        tmp_path / "right",
+        "right-topic",
+        "right-session",
+    )
+
+    def route(ws, host_session_id):
+        return aitp_v5_codex_autoroute(
+            str(ws.base),
+            request_summary="Continue the shared observable workflow",
+            route_context={
+                "host": "codex",
+                "host_session_id": host_session_id,
+                "project_root": str(ws.base),
+                "repo_id": "shared-repository",
+                "branch": "main",
+            },
+            semantic_assessment={"should_use_aitp": "required"},
+        )
+
+    left_route = route(left, "host-left")
+    right_route = route(right, "host-right")
+
+    assert left_route["host_route_decision"]["status"] == "selected"
+    assert left_route["host_route_decision"]["selected_topic_id"] == "left-topic"
+    assert left_route["host_route_decision"]["selected_session_id"] == "left-session"
+    assert right_route["host_route_decision"]["selected_topic_id"] == "right-topic"
+    assert right_route["host_route_decision"]["selected_session_id"] == "right-session"
+    assert left_route["recommended_next_tool"] == "aitp_v5_codex_enter"
+    assert left_route["recommended_args"]["session_id"] == "left-session"
+    assert left_route["runtime_continuity"]["status"] == "stored"
+    assert len(compact_mcp_tools()) == 10
+
+    cache_request = HostRouteRequest(
+        request_summary="A later summary is allowed in the same host session",
+        host="codex",
+        host_session_id="host-left",
+        project_root=str(left.base),
+        repo_id="shared-repository",
+        branch="main",
+        semantic_assessment={"should_use_aitp": "required"},
+    )
+    assert read_host_route_mapping(left, cache_request) is not None
+    assert len(json.dumps(left_route, ensure_ascii=False).encode("utf-8")) < 24_000
+    serialized = json.dumps(left_route, ensure_ascii=False).casefold()
+    for forbidden in ("skill_body", "raw_transcript", "context_pack", "full_memory"):
+        assert forbidden not in serialized
+
+
+def test_compact_autoroute_preserves_ambiguity_and_does_not_cache(tmp_path):
+    from brain.v5.compact_mcp_tools import aitp_v5_codex_autoroute
+    from brain.v5.query_index import build_query_index
+    from brain.v5.workspace import create_claim
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    for topic_id in ("librpa-screening", "quantum-gravity-notes"):
+        create_claim(
+            ws,
+            topic_id=topic_id,
+            statement="Shared compact ambiguity anchor",
+            evidence_profile="formal_theory",
+            confidence_state="candidate",
+            active_uncertainty="A primary topic has not been chosen.",
+        )
+    build_query_index(ws)
+
+    route = aitp_v5_codex_autoroute(
+        str(ws.base),
+        request_summary="Continue the shared compact ambiguity anchor",
+        route_context={
+            "host": "codex",
+            "host_session_id": "host-ambiguous",
+            "project_root": str(ws.base),
+            "repo_id": "multi-topic-repository",
+            "branch": "main",
+        },
+        semantic_assessment={"should_use_aitp": "required"},
+    )
+
+    assert route["host_route_decision"]["status"] == "ambiguous"
+    assert len(route["host_route_decision"]["candidates"]) == 2
+    assert route["recommended_next_tool"] == "none"
+    assert route["runtime_continuity"]["status"] == "not_stored"
+    route_root = ws.root / "runtime" / "host_routes"
+    assert not route_root.exists() or not list(route_root.rglob("*.json"))
+
+
+def test_compact_autoroute_rejects_unknown_route_context_fields(tmp_path):
+    from brain.v5.compact_mcp_tools import aitp_v5_codex_autoroute
+
+    ws = _seed_single_topic_route_workspace(
+        tmp_path,
+        "bounded-topic",
+        "bounded-session",
+    )
+    with pytest.raises(ValueError, match="unsupported route_context fields"):
+        aitp_v5_codex_autoroute(
+            str(ws.base),
+            request_summary="Continue the bounded route",
+            route_context={
+                "host": "codex",
+                "host_session_id": "host-bounded",
+                "raw_transcript": "must never enter the route contract",
+            },
+        )

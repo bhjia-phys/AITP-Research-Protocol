@@ -312,38 +312,56 @@ runtime-path regressions passed 91 tests with one existing environment skip in
   count.
 
 **Interfaces:**
-- Extends: `aitp_v5_codex_autoroute(base, *, request_summary, ...)` with optional
-  `host`, `host_session_id`, `project_root`, `current_path`, `repo_id`, `branch`,
-  and exact-ref inputs.
+- Extends: `aitp_v5_codex_autoroute(base, *, request_summary, ...)` with one
+  bounded `route_context` object carrying optional `host`, `host_session_id`,
+  `project_root`, `current_path`, `repo_id`, `branch`, exact-ref, pin, and mode
+  inputs. The internal facade keeps typed keyword arguments while the compact
+  MCP schema stays within its global byte budget.
 - Preserves: existing call shapes with no host identity and existing route-hint
   response keys where compatible.
 - Fixes: compact autoroute must use `_ws(base)` instead of discarding `base`.
 
-- [ ] **Step 1: Write failing workspace-aware compact tests**
+- [x] **Step 1: Write failing workspace-aware compact tests**
 
 Prove the same prompt routes differently in two fixture workspaces and that the
 wrapper passes the requested base into the resolver.
 
-- [ ] **Step 2: Add route decision composition**
+- [x] **Step 2: Add route decision composition**
 
 Keep the existing intent heuristic as an initial signal. When AITP is relevant
 and a workspace is available, attach the bounded route decision and recommend
 `aitp_v5_codex_enter` only for `selected`; recommend bounded recovery/choice for
 all other relevant statuses.
 
-- [ ] **Step 3: Persist continuity only after safe selection**
+- [x] **Step 3: Persist continuity only after safe selection**
 
 Write runtime mapping only when host and host-session ids are present and the
 decision is `selected`. Route-time canonical authority remains false.
 
-- [ ] **Step 4: Prove compact count and payload budget**
+- [x] **Step 4: Prove compact count and payload budget**
 
 Assert exact ten-tool registration, no Skill body/full memory/transcript in the
 route response, at most three cards, and existing route-hint byte/token budget.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Commit message: `v5: route compact entry across research topics`.
+
+Execution note: compact autoroute now passes the resolved workspace instead of
+discarding `base`, composes a trust-neutral typed host-route decision only for
+the host-aware call shape, rewrites entry arguments to the exact selected
+session, preserves ambiguity without an enter recommendation, and stores
+runtime continuity only after strong selection. Legacy calls without host
+routing context retain the prior heuristic behavior. Unknown `route_context`
+fields are rejected. The compact registry remains exactly ten tools; the
+native schema is 5,944 bytes against the 6,000-byte budget and the tested route
+hint remains below 24 KB without transcript, context pack, full memory, or
+Skill body content. Compact/capability/MCP/lifecycle regressions passed 81 tests
+with one environment skip in 60.14 seconds; public surfaces passed 24 tests in
+0.71 seconds; architecture boundaries passed 6 tests in 0.57 seconds; generic
+contracts passed 38 tests in 327.33 seconds. A prior combined contracts command
+timed out at 304 seconds without a summary and was superseded by these split
+lanes.
 
 ### Task 5: Make Lifecycle Dispatch Safe Before And After Selection
 

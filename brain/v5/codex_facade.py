@@ -38,7 +38,7 @@ _codex_record_apply_without_lifecycle = codex_record_apply
 _codex_closeout_without_lifecycle = codex_closeout
 
 
-def codex_autoroute(
+def codex_route_intent(
     ws,
     *,
     request_summary: str,
@@ -48,7 +48,9 @@ def codex_autoroute(
     recent_tool_summary: str = "",
     semantic_assessment: dict[str, _Any] | None = None,
 ) -> dict[str, _Any]:
-    payload = _codex_autoroute_without_lifecycle(
+    """Run the bounded heuristic/semantic intent guard without route resolution."""
+
+    return _codex_autoroute_without_lifecycle(
         ws,
         request_summary=request_summary,
         session_id=session_id,
@@ -57,14 +59,177 @@ def codex_autoroute(
         recent_tool_summary=recent_tool_summary,
         semantic_assessment=semantic_assessment,
     )
+
+
+def codex_autoroute(
+    ws,
+    *,
+    request_summary: str,
+    session_id: str = "",
+    topics: list[str] | None = None,
+    visible_files: list[str] | None = None,
+    recent_tool_summary: str = "",
+    semantic_assessment: dict[str, _Any] | None = None,
+    host: str = "",
+    host_session_id: str = "",
+    project_root: str = "",
+    current_path: str = "",
+    repo_id: str = "",
+    branch: str = "",
+    exact_refs: list[str] | tuple[str, ...] | None = None,
+    pinned_session_id: str = "",
+    routing_mode: str = "dynamic",
+) -> dict[str, _Any]:
+    payload = codex_route_intent(
+        ws,
+        request_summary=request_summary,
+        session_id=session_id,
+        topics=topics,
+        visible_files=visible_files,
+        recent_tool_summary=recent_tool_summary,
+        semantic_assessment=semantic_assessment,
+    )
+    dynamic_requested = bool(
+        host
+        or host_session_id
+        or project_root
+        or current_path
+        or repo_id
+        or branch
+        or exact_refs
+        or pinned_session_id
+        or routing_mode != "dynamic"
+    )
+    if ws is not None and dynamic_requested:
+        from brain.v5.dynamic_host_routing import resolve_host_research_route
+        from brain.v5.host_route_cache import write_host_route_mapping
+        from brain.v5.host_route_contracts import HostRouteRequest, route_decision_payload
+
+        route_request = HostRouteRequest(
+            request_summary=request_summary,
+            host=host,
+            host_session_id=host_session_id,
+            project_root=project_root or str(ws.base),
+            current_path=current_path,
+            repo_id=repo_id,
+            branch=branch,
+            visible_files=tuple(visible_files or ()),
+            explicit_topic_ids=tuple(topics or ()),
+            explicit_session_ids=((session_id,) if session_id else ()),
+            exact_refs=tuple(exact_refs or ()),
+            pinned_session_id=pinned_session_id,
+            routing_mode=routing_mode,
+            semantic_assessment=semantic_assessment or {},
+        )
+        route = resolve_host_research_route(ws, route_request)
+        payload["host_route_decision"] = route_decision_payload(route)
+        _compose_host_route(payload, route, request_summary=request_summary)
+        payload["runtime_continuity"] = {"status": "not_stored"}
+        if route.status == "selected" and host and host_session_id:
+            try:
+                mapping = write_host_route_mapping(ws, route_request, route)
+            except (OSError, TypeError, ValueError):
+                payload["runtime_continuity"] = {
+                    "status": "not_stored",
+                    "reason": "runtime_mapping_write_failed",
+                }
+            else:
+                payload["runtime_continuity"] = {
+                    "status": "stored",
+                    "namespace_sha256": mapping.namespace_sha256,
+                    "index_generation": mapping.index_generation,
+                    "expires_at": mapping.expires_at,
+                    "canonical_write_allowed": False,
+                    "can_update_claim_trust": False,
+                }
     payload["disclosure_level"] = "route_hint"
     payload["context_receipt"] = _context_transition_receipt(
-        session_id,
+        str(payload.get("session_id") or session_id),
         "request",
         "route_hint",
     )
     payload.pop("resume_card", None)
     return payload
+
+
+def _compose_host_route(payload, route, *, request_summary: str) -> None:
+    status = route.status
+    payload["canonical_write_allowed"] = False
+    payload["route_status"] = status
+    payload["truth_source"] = "typed_host_route_decision"
+    payload["reason_codes"] = list(
+        dict.fromkeys([*payload.get("reason_codes", []), *route.reason_codes])
+    )
+    if status == "outside_aitp":
+        payload["decision"] = "answer_without_aitp"
+        payload["aitp_required_before_answer"] = False
+        payload["safe_to_answer_without_aitp"] = True
+        payload["recommended_next_tool"] = "none"
+        payload["recommended_args"] = {}
+        payload["recommended_sequence"] = []
+        return
+
+    payload["aitp_required_before_answer"] = True
+    payload["safe_to_answer_without_aitp"] = False
+    if status == "selected":
+        session_id = route.selected_session_id
+        topic_id = route.selected_topic_id
+        enter_args = {
+            "base": "",
+            "session_id": session_id,
+            "topics": [topic_id],
+            "request_summary": request_summary,
+            "process_mode": payload.get("process_mode", "auto"),
+            "payload_profile": "minimal",
+        }
+        payload["decision"] = "enter_existing_session"
+        payload["session_id"] = session_id
+        payload["topics"] = [topic_id]
+        payload["recommended_next_tool"] = "aitp_v5_codex_enter"
+        payload["recommended_args"] = enter_args
+        payload["recommended_sequence"] = [
+            {
+                "tool": "aitp_v5_codex_enter",
+                "arguments": enter_args,
+                "state_effect": "read_only",
+            },
+            {
+                "tool": "aitp_v5_codex_expand",
+                "arguments": {
+                    "base": "",
+                    "session_id": session_id,
+                    "expansion": "timeline",
+                },
+                "state_effect": "read_only",
+                "condition": "after entering the exact selected session",
+            },
+        ]
+        return
+    if status == "workspace_recovery":
+        payload["decision"] = "recover_workspace"
+        payload["recommended_next_tool"] = "aitp_v5_codex_enter"
+        payload["recommended_args"] = {
+            "base": "",
+            "request_summary": request_summary,
+            "process_mode": payload.get("process_mode", "auto"),
+            "payload_profile": "minimal",
+        }
+        payload["recommended_sequence"] = [
+            {
+                "tool": "aitp_v5_codex_enter",
+                "arguments": payload["recommended_args"],
+                "state_effect": "read_only",
+            }
+        ]
+        return
+    payload["decision"] = {
+        "ambiguous": "choose_research_session",
+        "conflict": "resolve_route_conflict",
+        "coverage_blocked": "repair_route_coverage",
+    }[status]
+    payload["recommended_next_tool"] = "none"
+    payload["recommended_args"] = {}
+    payload["recommended_sequence"] = []
 
 
 def codex_enter_context(
