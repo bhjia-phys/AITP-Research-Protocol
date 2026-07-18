@@ -939,3 +939,263 @@ def test_resolver_uses_one_bounded_snapshot_and_never_calls_a_writer(
     assert any(query.limit == 48 for query, _session in calls)
     assert query_session.snapshot is not None
     assert route_decision_payload(first) == route_decision_payload(second)
+
+
+def _cache_request(host_session_id="host-cache-1", **changes):
+    from brain.v5.host_route_contracts import HostRouteRequest
+
+    fields = {
+        "request_summary": "Continue the exact LibRPA route",
+        "host": "codex",
+        "host_session_id": host_session_id,
+        "project_root": "F:/AI_Workspace/Theoretical-Physics",
+        "current_path": "research/librpa/run.py",
+        "repo_id": "theoretical-physics",
+        "branch": "main",
+        "explicit_session_ids": ("session-librpa",),
+        "semantic_assessment": {"should_use_aitp": "required"},
+    }
+    fields.update(changes)
+    return HostRouteRequest(**fields)
+
+
+def _selected_cache_decision(ws, request):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+
+    decision = resolve_host_research_route(ws, request)
+    assert decision.status == "selected"
+    return decision
+
+
+def _route_canonical_snapshot(ws):
+    import hashlib
+
+    patterns = (
+        (ws.root / "registry", "**/*.md"),
+        (ws.root / "contexts", "*/context.md"),
+        (ws.root / "topics", "*/topic.md"),
+        (ws.root / "runtime" / "sessions", "*.md"),
+        (ws.root / "memory" / "l2" / "entries", "*.md"),
+        (ws.root / "revisions", "**/*.md"),
+    )
+    return {
+        path.resolve(): hashlib.sha256(path.read_bytes()).hexdigest()
+        for root, pattern in patterns
+        if root.exists()
+        for path in root.glob(pattern)
+    }
+
+
+@pytest.mark.parametrize(
+    "host_session_id",
+    (
+        "CON",
+        "../../escape\\nested",
+        "e\u0301-route-session",
+        "x" * 500,
+    ),
+)
+def test_route_cache_uses_only_contained_sha256_namespaces(tmp_path, host_session_id):
+    from brain.v5.host_route_cache import write_host_route_mapping
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    request = _cache_request(host_session_id)
+    mapping = write_host_route_mapping(
+        ws,
+        request,
+        _selected_cache_decision(ws, request),
+    )
+    path = (ws.base / mapping.runtime_path).resolve(strict=False)
+    root = (ws.root / "runtime" / "host_routes").resolve(strict=False)
+
+    assert path.is_relative_to(root)
+    assert path.name == f"{mapping.namespace_sha256}.json"
+    assert path.parent.name == mapping.namespace_sha256[:2]
+    assert len(mapping.namespace_sha256) == 64
+    assert host_session_id not in path.as_posix()
+
+
+def test_route_cache_normalizes_unicode_identity_and_separates_namespaces(tmp_path):
+    import unicodedata
+
+    from brain.v5.host_route_cache import write_host_route_mapping
+
+    ws = _seed_two_topic_route_workspace(tmp_path / "workspace-a")
+    nfd = "e\u0301-host-session"
+    nfc = unicodedata.normalize("NFC", nfd)
+    first_request = _cache_request(nfd)
+    second_request = _cache_request(nfc)
+    first = write_host_route_mapping(
+        ws,
+        first_request,
+        _selected_cache_decision(ws, first_request),
+    )
+    second = write_host_route_mapping(
+        ws,
+        second_request,
+        _selected_cache_decision(ws, second_request),
+    )
+    other_request = _cache_request("other-host-session")
+    other_session = write_host_route_mapping(
+        ws,
+        other_request,
+        _selected_cache_decision(ws, other_request),
+    )
+    other_ws = _seed_two_topic_route_workspace(tmp_path / "workspace-b")
+    other_workspace = write_host_route_mapping(
+        other_ws,
+        second_request,
+        _selected_cache_decision(other_ws, second_request),
+    )
+
+    assert first.namespace_sha256 == second.namespace_sha256
+    assert first.namespace_sha256 != other_session.namespace_sha256
+    assert first.namespace_sha256 != other_workspace.namespace_sha256
+
+
+def test_route_cache_rejects_runtime_symlink_escape(tmp_path):
+    from brain.v5.host_route_cache import write_host_route_mapping
+
+    ws = _seed_two_topic_route_workspace(tmp_path / "workspace")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    route_root = ws.root / "runtime" / "host_routes"
+    try:
+        route_root.symlink_to(outside, target_is_directory=True)
+    except OSError as exc:
+        pytest.skip(f"symlink creation is unavailable: {exc}")
+    request = _cache_request()
+
+    with pytest.raises(ValueError, match="escapes AITP runtime"):
+        write_host_route_mapping(
+            ws,
+            request,
+            _selected_cache_decision(ws, request),
+        )
+
+
+def test_route_cache_write_read_clear_is_canonical_neutral(tmp_path):
+    from brain.v5.host_route_cache import (
+        clear_host_route_mapping,
+        read_host_route_mapping,
+        write_host_route_mapping,
+    )
+    from brain.v5.query_index import current_canonical_watermark
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    request = _cache_request()
+    decision = _selected_cache_decision(ws, request)
+    canonical_before = _route_canonical_snapshot(ws)
+    watermark_before = current_canonical_watermark(ws)
+
+    mapping = write_host_route_mapping(ws, request, decision)
+    runtime_text = (ws.base / mapping.runtime_path).read_text(encoding="utf-8")
+    assert request.request_summary not in runtime_text
+    assert request.current_path not in runtime_text
+    changed_summary = _cache_request(
+        request_summary="A later turn in the same exact host route"
+    )
+    assert read_host_route_mapping(ws, changed_summary) == mapping
+    assert clear_host_route_mapping(ws, changed_summary) is True
+    assert clear_host_route_mapping(ws, changed_summary) is False
+
+    assert _route_canonical_snapshot(ws) == canonical_before
+    assert current_canonical_watermark(ws) == watermark_before
+
+
+def test_route_cache_rejects_non_selected_decisions(tmp_path):
+    from brain.v5.dynamic_host_routing import resolve_host_research_route
+    from brain.v5.host_route_cache import write_host_route_mapping
+    from brain.v5.host_route_contracts import HostRouteRequest
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    outside = resolve_host_research_route(
+        ws,
+        HostRouteRequest(
+            request_summary="What is the Fourier transform of a Gaussian?",
+            semantic_assessment={
+                "is_generic_textbook_question": True,
+                "should_use_aitp": "not_required",
+            },
+        ),
+    )
+
+    with pytest.raises(ValueError, match="strongly verified selected route"):
+        write_host_route_mapping(ws, _cache_request(), outside)
+
+
+def test_route_cache_invalidates_after_index_generation_changes(tmp_path):
+    from brain.v5.host_route_cache import (
+        read_host_route_mapping,
+        write_host_route_mapping,
+    )
+    from brain.v5.query_index import build_query_index
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    request = _cache_request()
+    write_host_route_mapping(
+        ws,
+        request,
+        _selected_cache_decision(ws, request),
+    )
+    build_query_index(ws)
+
+    assert read_host_route_mapping(ws, request) is None
+
+
+def test_route_cache_tampering_and_continuity_changes_invalidate_mapping(tmp_path):
+    from brain.v5.host_route_cache import (
+        read_host_route_mapping,
+        write_host_route_mapping,
+    )
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    request = _cache_request()
+    mapping = write_host_route_mapping(
+        ws,
+        request,
+        _selected_cache_decision(ws, request),
+    )
+    path = ws.base / mapping.runtime_path
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["selected_topic_id"] = "quantum-gravity-notes"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    assert read_host_route_mapping(ws, request) is None
+
+    write_host_route_mapping(ws, request, _selected_cache_decision(ws, request))
+    assert read_host_route_mapping(
+        ws,
+        _cache_request(repo_id="another-repository"),
+    ) is None
+    assert read_host_route_mapping(
+        ws,
+        _cache_request(explicit_session_ids=("session-qg",)),
+    ) is None
+
+
+def test_route_cache_expiry_and_missing_anchor_invalidate_mapping(tmp_path, monkeypatch):
+    from datetime import datetime, timedelta, timezone
+
+    import brain.v5.host_route_cache as cache
+
+    ws = _seed_two_topic_route_workspace(tmp_path)
+    request = _cache_request()
+    now = datetime(2026, 7, 18, 12, 0, tzinfo=timezone.utc)
+    monkeypatch.setattr(cache, "_utc_now", lambda: now)
+    cache.write_host_route_mapping(
+        ws,
+        request,
+        _selected_cache_decision(ws, request),
+    )
+
+    monkeypatch.setattr(cache, "_utc_now", lambda: now + timedelta(days=2))
+    assert cache.read_host_route_mapping(ws, request) is None
+
+    monkeypatch.setattr(cache, "_utc_now", lambda: now)
+    cache.write_host_route_mapping(
+        ws,
+        request,
+        _selected_cache_decision(ws, request),
+    )
+    (ws.topic_dir("librpa-screening") / "topic.md").unlink()
+    assert cache.read_host_route_mapping(ws, request) is None

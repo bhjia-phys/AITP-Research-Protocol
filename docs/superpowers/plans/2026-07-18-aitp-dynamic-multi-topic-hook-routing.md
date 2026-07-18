@@ -264,31 +264,43 @@ keep every new production module below the 500-line budget.
 - Stores: `.aitp/runtime/host_routes/<sha256>.json` using existing atomic text
   helpers and no raw host-session/path component in filenames.
 
-- [ ] **Step 1: Write failing namespace and traversal tests**
+- [x] **Step 1: Write failing namespace and traversal tests**
 
 Cover Windows reserved names, Unicode normalization, long ids, symlink escape,
 different workspaces/hosts/host sessions, and deterministic SHA-256 paths.
 
-- [ ] **Step 2: Write failing integrity and invalidation tests**
+- [x] **Step 2: Write failing integrity and invalidation tests**
 
 Bind workspace identity, host/session identity, route-input continuity fields,
 selected exact refs, index generation, watermark, creation/verification time,
 and integrity hash. Tampering, changed explicit refs/repository identity, expiry,
 or missing canonical anchors invalidates the mapping.
 
-- [ ] **Step 3: Implement atomic runtime-only persistence**
+- [x] **Step 3: Implement atomic runtime-only persistence**
 
 Use the existing atomic write helper. Exact-read selected session/topic before
 reuse; a mapping is a continuity hint, never a selection truth source.
 
-- [ ] **Step 4: Prove canonical neutrality**
+- [x] **Step 4: Prove canonical neutrality**
 
 Snapshot all canonical registry bytes and the canonical watermark before and
 after write/read/clear. Assert exact equality while runtime files change.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Commit message: `v5: cache exact host routes outside canonical memory`.
+
+Execution note: host-session continuity is stored only below the hash-namespaced
+`.aitp/runtime/host_routes` tree with NFC-normalized identity, a sealed payload,
+a 24-hour TTL, request-continuity fingerprint, exact selected refs, and the
+verified index generation/watermark. Reads fail closed on tampering, expiry,
+repository or explicit-route drift, generation changes, stale coverage, or
+missing canonical anchors. Request summaries and current paths are not
+persisted. Write/read/clear preserved byte-identical canonical records and the
+canonical watermark. The full resolver/cache file passed 39 tests with one
+Windows symlink-creation skip in 18.33 seconds; query-index, repository, and
+runtime-path regressions passed 91 tests with one existing environment skip in
+17.17 seconds; architecture boundaries passed 6 tests in 0.43 seconds.
 
 ### Task 4: Compose Dynamic Routing Into The Ten-Tool Compact Entry
 
