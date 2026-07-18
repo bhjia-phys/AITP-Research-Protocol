@@ -3,8 +3,9 @@
 Date: 2026-07-18
 Scope: M5 Tasks 3-5 host lifecycle, explicit Research Moment, and generic
 Harness Feedback integration.
-Decision: repository code and generated-hook verticals accepted; current
-workspace host installation not ready; M5 overall remains open.
+Decision: repository code, generated-hook verticals, and the combined M0-M5
+release lanes are accepted; current workspace host installation and Kimi plugin
+package parity are not ready; M5 overall remains open.
 
 ## Implemented Boundary
 
@@ -45,6 +46,7 @@ workspace host installation not ready; M5 overall remains open.
 | `b64ff789` | truthful process, installation, lifecycle, and fixture readiness |
 | `e9ff8406` | generic typed Harness Feedback cases and fixture-only NiO example |
 | `3274abc7` | case-specific runtime retirement and generic CLI/full-MCP integration |
+| `292445dc` | validated Research Moments connected to four generated host owners |
 
 ## Test Evidence
 
@@ -82,14 +84,58 @@ workspace host installation not ready; M5 overall remains open.
   `0586993e67a0920ccab885d5f51da14d3d2037ba` passed `70 passed`, covering the
   exact objective host write, deep decision/receipt effect parity, four-host
   semantics, public surfaces, and architecture limits.
+- Combined release candidate
+  `4a8377b835dcc804506b93737fdb6c2c2b60f429` passed every blocking lane:
+  foundation `199 passed, 1 skipped`, compatibility `141 passed`, v5 verticals
+  `1369 passed, 3 skipped`, slow adapter `88 passed`, and legacy compatibility
+  `200 passed`. This is `1997 passed, 4 skipped` across the lane executions;
+  ten legacy-materialization tests intentionally occur in both foundation and
+  legacy compatibility. The slow-adapter lane took 645.63 seconds and remains a
+  test-infrastructure performance concern, not a bypassed lane.
+- The four skips were audited explicitly: one Windows directory-symlink
+  condition, one opt-in context performance probe, and the LibRPA plus QFT/QG
+  real-machine probes guarded by `AITP_RUN_REAL_VERTICAL_PROBES=1`. The latter
+  two remain M6 evidence gaps and are not counted as real-journey acceptance.
+- The final candidate exposes 268 classified capabilities, 74 record families,
+  and exactly ten compact MCP tools. Runtime registry, static layout, literal
+  use, and actual-store drift checks are empty after the audit fix.
 
 All test workspaces and runtime receipts above were isolated under system Temp.
-The host dispatch tests assert unchanged canonical watermarks, and this task did
-not write the real research store's canonical records or derived indexes.
+The host dispatch tests assert unchanged canonical watermarks. The only real
+store write in this closeout was the separately authorized rebuild of
+`.aitp/indexes`; no canonical record was written.
+
+## Real-Store Index And Drift Evidence
+
+Authorized target:
+
+`F:/AI_Workspace/Theoretical-Physics/research/aitp-topics/.aitp/indexes`
+
+Candidate `abc497791fb36c23c3bdc91cf1d2cb3969b65425` performed the authorized
+derived-index rebuild. Candidate `4a8377b835dcc804506b93737fdb6c2c2b60f429`
+then performed the final read-only registry/layout and freshness audit.
+
+| Measure | Result |
+|---|---:|
+| Query-index generation | 16 stale -> 17 fresh |
+| Index/schema version | 3 / 3 |
+| Indexed/checked paths | 9,947 / 9,947 |
+| Malformed/build issues | 0 / 0 |
+| Runtime-audit registry records | 7,440 |
+| Actual populated/storage families | 69 |
+| Runtime registry/static layout families | 74 / 74 |
+| Registry/layout/literal/actual drift | empty |
+| Canonical watermark | `ce44b9c34a6d39448c9a67624091dd786893eed8e24f508c2f4fad24739cdd4a` |
+| Canonical file snapshot hash | `a0d365ac6a54a540d10893cb99c7ec0b9803980fd436ef69a6781a4c1fbe413b` |
+| Index content hash | `7e1284f857f83c5345b4fc64136e24edf54f926cdfac7cf8c23d873a94ef55ac` |
+
+The before/after canonical path list, every canonical file digest, aggregate
+snapshot hash, and canonical watermark were identical. The published manifest
+matches the live watermark and reports zero malformed records.
 
 ## Live Host Evidence
 
-The 2026-07-17 read-only probe launched each documented `--version` command and
+The 2026-07-18 read-only probe launched each documented `--version` command and
 audited its repository-local preferred hook path:
 
 | Host | Process | Project hook audit | Readiness status |
@@ -105,10 +151,6 @@ its project hooks before a real interactive event can pass.
 
 ## Remaining M5 Work
 
-- Run the combined M0-M5 release lanes, architecture budgets, staged-tree audit,
-  capability/family drift report, and real canonical watermark proof required
-  by M5 Task 5. The focused staged-tree architecture audit is green; the broad
-  combined release evidence remains pending.
 - Install project hooks only when explicitly requested and then rerun
   installation plus real lifecycle smoke. A host command alone is insufficient.
 - Add test-backed parity checks for the separately committed Kimi Code plugin
@@ -116,5 +158,5 @@ its project hooks before a real interactive event can pass.
   MCP/Skill registration guidance). Plugin availability must remain distinct
   from project lifecycle-hook readiness.
 
-Until those items are closed, the roadmap must not mark M5 Acceptance or the
+Until both items are closed, the roadmap must not mark M5 Acceptance or the
 overall autonomous-host milestone complete.

@@ -395,16 +395,18 @@ preview/install/distillation action, or claim-trust change exists.
 The vertical writes one generic case and reads the recurring-case view. A single
 incident is counted but correctly does not fabricate a recurring group.
 
-- [ ] **Step 5: Run M0-M5, host smokes, architecture, and staged-tree audits**
+- [x] **Step 5: Run M0-M5, host smokes, architecture, and staged-tree audits**
 
 Record exact available/unavailable host status, test counts, budgets, canonical
 hash effects, and capability/family drift.
 
-- [ ] **Step 6: Update docs, release audit, and commit**
+- [x] **Step 6: Update docs, release audit, and commit**
 
-Commit message for the repository-level vertical: `v5: connect validated research moments to host lifecycle`.
-Do not call M5 complete until the combined release lanes and at least one
-installed project-hook lifecycle smoke pass.
+The repository-level vertical is commit `292445dc` (`v5: connect validated
+research moments to host lifecycle`). The release audit drift fix is a separate
+closeout commit so it cannot rewrite that implementation evidence.
+Do not call M5 complete until at least one installed project-hook lifecycle
+smoke and the separately packaged Kimi Code parity checks pass.
 
 ## M5 Completion Checklist
 
@@ -428,3 +430,6 @@ installed project-hook lifecycle smoke pass.
 - [ ] At least one repository-local project hook is installed and a real
   interactive lifecycle event is observed. Process availability or generated
   command smoke alone does not satisfy this item.
+- [ ] The separately packaged Kimi Code plugin has test-backed manifest,
+  launcher/config resolution, packaged-Skill, and duplicate-registration parity.
+  Plugin availability does not satisfy project lifecycle-hook readiness.

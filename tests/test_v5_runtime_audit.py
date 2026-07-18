@@ -47,22 +47,40 @@ def test_runtime_audit_finds_registry_drift_and_classifies_every_file(tmp_path):
     assert all(row["classification"] for row in payload["files"])
 
 
-def test_static_layout_audit_includes_focused_m3_family_rows(tmp_path):
+def test_static_layout_audit_includes_all_milestone_family_rows(tmp_path):
     root = tmp_path / "brain" / "v5"
     root.mkdir(parents=True)
     paths = root / "paths.py"
     registry = root / "record_family_registry.py"
     paths.write_text('_LAYOUT_DIRS = [*("registry/" + item for item in ())]\n', encoding="utf-8")
     registry.write_text(
-        '_REGISTRY_ROWS = (("claims", "claim", "ClaimRecord", "claim_id"),)\n',
+        '_REGISTRY_ROWS = (("claims", "claim", "ClaimRecord", "claim_id"),)\n'
+        '_SPECIAL_ROWS = (("contexts", "context", "ContextRecord", "context_id", '
+        '"contexts/<context_id>/context.md", "context"),)\n',
         encoding="utf-8",
     )
     (root / "record_family_m3.py").write_text(
         'M3_REGISTRY_ROWS = (("insights", "insight", "InsightRecord", "insight_id"),)\n',
         encoding="utf-8",
     )
+    (root / "record_family_m4.py").write_text(
+        'M4_REGISTRY_ROWS = (("skill_proposals", "skill_proposal", '
+        '"SkillProposalRecord", "proposal_id"),)\n',
+        encoding="utf-8",
+    )
+    (root / "record_family_m5.py").write_text(
+        'M5_REGISTRY_ROWS = (("harness_feedback_cases", "harness_feedback_case", '
+        '"HarnessFeedbackCaseRecord", "case_id"),)\n',
+        encoding="utf-8",
+    )
 
-    assert _layout_families(paths, registry_path=registry) == ["claims", "insights"]
+    assert _layout_families(paths, registry_path=registry) == [
+        "claims",
+        "contexts",
+        "harness_feedback_cases",
+        "insights",
+        "skill_proposals",
+    ]
 
 
 def test_static_layout_audit_does_not_treat_four_row_container_as_a_row(tmp_path):

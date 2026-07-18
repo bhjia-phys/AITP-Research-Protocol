@@ -147,7 +147,7 @@ def test_coalesce_reports_expired_rejected_and_corrupt_runtime_candidates(
 ):
     from brain.v5 import (
         evidence,
-        harness_feedback,
+        harness_feedback_cases,
         skill_candidates,
         strategy_memory,
         trust_updates,
@@ -194,7 +194,7 @@ def test_coalesce_reports_expired_rejected_and_corrupt_runtime_candidates(
         (evidence, "record_evidence"),
         (validation, "record_validation_result"),
         (strategy_memory, "record_strategy_memory"),
-        (harness_feedback, "record_skill_patch_proposal"),
+        (harness_feedback_cases, "record_harness_feedback_case"),
         (skill_candidates, "apply_project_skill"),
         (trust_updates, "apply_trust_update"),
     ):

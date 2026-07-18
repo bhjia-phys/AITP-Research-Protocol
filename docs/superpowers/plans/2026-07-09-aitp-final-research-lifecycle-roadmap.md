@@ -1336,7 +1336,13 @@ dispatch report `canonical_write=True` only when the validated controller
 actually returns new kernel record refs; semantic staging and ordinary hook
 paths remain false. Post-fix staged candidate
 `0586993e67a0920ccab885d5f51da14d3d2037ba` passed 70 host, public-contract,
-and architecture tests.
+and architecture tests. The combined release candidate
+`4a8377b835dcc804506b93737fdb6c2c2b60f429` passed all five blocking lanes:
+foundation `199 passed, 1 skipped`, compatibility `141 passed`, v5 verticals
+`1369 passed, 3 skipped`, slow adapter `88 passed`, and legacy compatibility
+`200 passed`. The authorized real-store index rebuild advanced generation 16 to
+17 while preserving the exact 9,947-file canonical snapshot and watermark;
+runtime registry and static layout both contain 74 families with zero drift.
 
 ### M5 Acceptance
 
@@ -1351,6 +1357,9 @@ and architecture tests.
 - [ ] At least one repository-local project hook is installed and a real
   interactive lifecycle event is observed; generated command tests and host
   process availability are insufficient. Until then M5 remains open.
+- [ ] The separately packaged Kimi Code plugin has test-backed manifest,
+  launcher/config, packaged-Skill, and duplicate-registration parity. This is
+  distinct from project lifecycle-hook installation and observation.
 
 ## 12. M6: Real Research End-To-End Acceptance
 

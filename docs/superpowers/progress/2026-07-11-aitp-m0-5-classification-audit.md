@@ -16,13 +16,17 @@ Skill-usage family plus evidence-backed patch planning through the existing
 deployment transaction; it adds no compact capability or direct mutation path.
 M4 Task 6 adds ten full-only facade capabilities for the reviewed lifecycle,
 keeps compact at ten tools, and adds no record family, named-helper writer, or
-direct mutation path.
+direct mutation path. M5 replaces the case-specific Harness Feedback seed and
+run-directory plan capabilities with generic case-write and review-view
+capabilities backed by one review-only problem-case family, then adds one
+full-only controlled Research Moment process capability; it adds no compact
+tool or claim-trust authority.
 
-Writer scan status: all 164 current named-helper rows (111 at the M0 baseline)
-and all 173 current direct
+Writer scan status: all 171 current named-helper rows (111 at the M0 baseline)
+and all 174 current direct
 mutation rows are classified; scan coverage remains explicitly incomplete.
 
-Source baseline: accepted M0 staged core plus reviewed M1-M4 vertical extensions.
+Source baseline: accepted M0 staged core plus reviewed M1-M5 vertical extensions.
 The protected Harness Feedback problem-dossier extension is listed separately
 and is not counted as core.
 
@@ -119,7 +123,7 @@ Review notes:
 - query index build is derived state and core infrastructure, not a scientific
   write.
 
-### 2.2 Vertical Extension (122)
+### 2.2 Vertical Extension (123)
 
 ```text
 acquire_arxiv_source_asset
@@ -148,7 +152,8 @@ execution_project_derivation_status
 execution_project_maturity
 execution_request_bound_checkpoint
 execution_resolve_effective_attempt
-harness_feedback_seed_bundle
+harness_feedback_case_write
+harness_feedback_review_view
 host_agnostic_moment_policy
 hpc_cockpit
 ingest_curated_rag_corpus
@@ -184,6 +189,7 @@ materialize_steering_redirect
 note_outline
 objective_graph
 process_graph_slice
+process_research_moment
 propose_detected_procedural_skill
 qsgw_cockpit
 qsgw_cockpit_compact
@@ -220,7 +226,6 @@ research_event_classifier
 research_timeline
 request_promotion_checkpoint
 request_skill_install_review
-run_dir_provenance_extractor_plan
 skill_apply_deployment
 skill_assess_readiness
 skill_build_package_preview
@@ -414,23 +419,25 @@ above but remain available.
 
 ### 2.6 Independent Protected Extension
 
-`harness_feedback_problem_dossier` is present only through protected user work
-in the primary worktree. It is excluded from the 267-capability staged core and from
-this staging scope. Its intended lifecycle is a vertical extension with human
-review, not a reason to retain `harness_feedback_seed_bundle` automatically.
+`harness_feedback_problem_dossier` may appear only through protected concurrent
+user work in the primary worktree. It is absent from and excluded from this
+268-capability staged core. Its intended lifecycle is a vertical extension with
+human review, not a reason to retain `harness_feedback_seed_bundle`
+automatically; the staged runtime uses generic case-write and review-view
+capabilities instead.
 
 Capability accounting:
 
 | Class | Count |
 |---|---:|
 | Core | 59 |
-| Vertical extension | 122 |
+| Vertical extension | 123 |
 | Maintenance | 43 |
 | Migration | 43 |
 | Soft deprecated classification | 0 |
 | Maintenance tools soft-deprecated from compact | 6 |
-| Current staged core | 267 |
-| Current classified core plus verticals | 267 |
+| Current staged core | 268 |
+| Current classified core plus verticals | 268 |
 
 ## 3. Record-Family Candidates
 
@@ -464,7 +471,7 @@ validation_contracts
 validation_results
 ```
 
-### 3.2 Vertical Extension (40)
+### 3.2 Vertical Extension (41)
 
 ```text
 authorities
@@ -480,6 +487,7 @@ derivation_steps
 execution_baselines
 execution_environments
 exploratory_records
+harness_feedback_cases
 insights
 knowledge_review_decisions
 lane_contracts
@@ -509,10 +517,11 @@ tool_recipes
 tool_runs
 ```
 
-M3/M4 additions stay vertical-owned: source/knowledge families require the
+M3-M5 additions stay vertical-owned: source/knowledge families require the
 QFT/QG source-memory journey, while procedural Skill families require repeated
-validated execution and the reviewed package lifecycle. Registration alone
-does not justify a new public tool or automatic write.
+validated execution and the reviewed package lifecycle. Harness Feedback cases
+remain review-only problem dossiers. Registration alone does not justify a new
+public tool or automatic write.
 
 ### 3.3 Migration (4)
 
@@ -541,18 +550,18 @@ Their concepts overlap existing exploratory records, research routes/intents,
 artifacts, validation, and closeout. They remain registered/readable during the
 review but may not receive new writes or be used to justify new APIs.
 
-Family accounting totals 73 with no unclassified family.
+Family accounting totals 74 with no unclassified family.
 
 ## 4. Writer Classification
 
-The current runtime audit reports 164 recognized semantic repository writes
+The current runtime audit reports 171 recognized semantic repository writes
 and low-level helper calls. Every reported call is classified below by its current storage role,
 not by the capability name or intended future architecture. A canonical row is
 a writer-convergence target even when it writes a non-registry canonical family
 or a topic-local mirror. A migration row may write a typed migration record but
 does not belong to the production research lifecycle.
 
-### 4.1 Canonical Record Or Repository (88)
+### 4.1 Canonical Record Or Repository (90)
 
 ~~~text
 brain/v5/_compat_shards/active_claim_focus/part_02.py:_write_rebind_audit:273:write_record | families=active_claim_rebind_audits | dynamic=false
@@ -583,7 +592,9 @@ brain/v5/execution_writers.py:record_tool_recipe_v2:91:repository_write | famili
 brain/v5/execution_writers.py:record_tool_run_v2:121:repository_write | families=tool_runs | dynamic=false
 brain/v5/formula_code_map.py:record_formula_code_relation:83:repository_write | families=object_relations | dynamic=false
 brain/v5/harness_feedback.py:record_monitor_snapshot:29:write_record | families=monitor_snapshots | dynamic=false
-brain/v5/harness_feedback.py:record_skill_patch_proposal:49:write_record | families=skill_patch_proposals | dynamic=false
+brain/v5/harness_feedback_cases.py:record_harness_feedback_case:131:repository_write | families=harness_feedback_cases | dynamic=false
+brain/v5/harness_feedback_cases.py:_write_new:339:repository_write | families=harness_feedback_cases | dynamic=false
+brain/v5/harness_feedback_cases.py:_write_existing:350:repository_write | families=harness_feedback_cases | dynamic=false
 brain/v5/lane_contracts.py:record_lane_contract:67:write_record | families=lane_contracts | dynamic=false
 brain/v5/memory.py:create_promotion_packet:118:repository_write | families=promotion_packets | dynamic=false
 brain/v5/memory.py:apply_promotion_packet:170:repository_write | families=memory_entries | dynamic=false
@@ -679,11 +690,15 @@ brain/v5/source_shelf_storage.py:_write_shelf_files:251:write_text_atomic | fami
 brain/v5/source_shelf_storage.py:_write_shelf_files:255:write_text_atomic | families=- | dynamic=false
 ~~~
 
-### 4.3 Host Or Runtime (17)
+### 4.3 Host Or Runtime (22)
 
 ~~~text
 brain/v5/_compat_shards/lane_exemplars/part_01.py:record_lane_exemplar:119:write_md | families=- | dynamic=false
 brain/v5/checkpoint_transactions.py:_write_journal:367:write_text_atomic | families=- | dynamic=false
+brain/v5/context_injection_storage.py:persist_or_reuse:140:write_text_atomic | families=- | dynamic=false
+brain/v5/context_injection_storage.py:persist_or_reuse:141:write_text_atomic | families=- | dynamic=false
+brain/v5/context_injection_storage.py:_persist_lifecycle_state:189:write_text_atomic | families=- | dynamic=false
+brain/v5/context_injection_storage.py:_persist_lifecycle_state:201:write_text_atomic | families=- | dynamic=false
 brain/v5/domain_packs.py:register_domain_pack:150:write_record | families=- | dynamic=false
 brain/v5/knowledge_connector_bindings.py:_write_bindings:158:write_text_atomic | families=- | dynamic=false
 brain/v5/operator_checkpoint.py:_write_active:174:write_md | families=- | dynamic=false
@@ -692,6 +707,7 @@ brain/v5/research_intent.py:record_research_intent_packet:78:write_md | families
 brain/v5/research_intent.py:materialize_steering_redirect:121:write_md | families=- | dynamic=false
 brain/v5/recording_batch_storage.py:write_candidate:70:write_text_atomic | families=- | dynamic=false
 brain/v5/recording_batch_storage.py:write_recording_batch_receipt:128:write_text_atomic | families=- | dynamic=false
+brain/v5/research_moment_application.py:_apply_research_moment_under_lock:124:write_text_atomic | families=- | dynamic=false
 brain/v5/run_iterations.py:_write_iteration_files:134:write_md | families=- | dynamic=false
 brain/v5/run_iterations.py:_write_iteration_files:136:write_md | families=- | dynamic=false
 brain/v5/run_iterations.py:_write_iteration_files:138:write_md | families=- | dynamic=false
@@ -782,16 +798,16 @@ A second conservative AST scanner is now represented separately by
 `direct_mutation_candidates`. It excludes tests and recognizes direct
 `write_text`/`write_bytes`, literal write-mode `open`, write-flag `os.open`,
 `shutil` copy/move, `os` rename/replace, and literal SQL mutations. On the
-current repository it finds 173 additional mutation candidates across 66
+current repository it finds 174 additional mutation candidates across 67
 production files:
 
-- 119 direct path writes, 24 write-mode opens, 15 copy/move calls, and 15
+- 120 direct path writes, 24 write-mode opens, 15 copy/move calls, and 15
   rename/replace calls;
 - 66 calls in 28 `brain/v5` files;
 - 40 calls in 20 legacy `brain` files;
 - 59 calls in 12 `scripts` files;
 - seven calls in five host-hook files;
-- one plugin-launcher write.
+- two plugin-launcher writes.
 
 Some are low-level primitive implementations, derived outputs, downloads, or
 host installation rather than canonical research writers. They must be
@@ -859,7 +875,7 @@ brain/v5/topic_status_startup.py:write_topic_status_startup_surfaces:76:write_te
 scripts/demo_example_output.py:main:100:write_text | mechanism=direct_path_write | target=tex_path
 ~~~
 
-### 4.6.3 Host Runtime Or Maintenance (61)
+### 4.6.3 Host Runtime Or Maintenance (62)
 
 ~~~text
 brain/v5/_compat_shards/lane_exemplars/part_03.py:_append_jsonl:54:open | mechanism=direct_open_write | target=path
@@ -899,6 +915,7 @@ hooks/hook_utils.py:_atomic_write_text:146:fdopen | mechanism=direct_open_write 
 hooks/hook_utils.py:_atomic_write_text:148:replace | mechanism=rename_or_replace | target=path
 hooks/session_start.py:_record_session_start:220:write_text | mechanism=direct_path_write | target=marker
 plugins/aitp-research-protocol/scripts/launch_aitp_mcp.py:_write_config:57:write_text | mechanism=direct_path_write | target=CONFIG_PATH
+plugins/aitp-research-protocol-kimi/scripts/launch_aitp_mcp_kimi.py:_write_config:57:write_text | mechanism=direct_path_write | target=CONFIG_PATH
 scripts/aitp-pm.py:_register_cli:123:write_text | mechanism=direct_path_write | target=wrapper
 scripts/aitp-pm.py:_register_cli:129:write_text | mechanism=direct_path_write | target=wrapper
 scripts/aitp-pm.py:_atomic_write:612:fdopen | mechanism=direct_open_write | target=fd
@@ -1026,7 +1043,7 @@ brain/v5/_compat_shards/source_assets/part_02.py:_fetch_pdf_to_temp:273:copyfile
 brain/v5/_compat_shards/source_assets/part_02.py:_download_pdf_to_temp:313:open | mechanism=direct_open_write | target=tmp_path
 ~~~
 
-Direct mutation accounting totals 173 with no unclassified row. The three
+Direct mutation accounting totals 174 with no unclassified row. The three
 transient rows may create only temporary acquisition files; the final blob move
 and its typed metadata/receipt have separate ownership. Host/maintenance and
 derived rows remain outside canonical trust, while migration or archived legacy
@@ -1039,9 +1056,9 @@ rows remain outside normal production research writes.
 - final M1 foundation lane: 186 passed, 1 skipped;
 - exact capability/family and writer/direct-mutation classification tests:
   2 passed;
-- current direct-mutation classification: 173 of 173 rows, no duplicate or
+- current direct-mutation classification: 174 of 174 rows, no duplicate or
   unclassified signature;
-- current named-helper classification: 164 of 164 rows; the preserved M0
+- current named-helper classification: 171 of 171 rows; the preserved M0
   lower-bound baseline was 111;
 - production-tree probe: no filesystem import aliases, dynamic open modes, or
   SQL execute calls were found;
@@ -1131,10 +1148,10 @@ record_toy_numeric_finite_size_exemplar
 research_cockpit_compact
 ```
 
-For record families, retain the 25 core, 37 vertical, and four migration
+For record families, retain the 25 core, 41 vertical, and four migration
 registrations under their existing write/read policies. New vertical families
-remain owned by their M3/M4 acceptance journeys; four zero-record
+remain owned by their M3-M5 acceptance journeys; four zero-record
 unimplemented-layout families remain soft-deprecation candidates.
-All 164 helper-writer and 173 direct-mutation rows retain the ownership classes
+All 171 helper-writer and 174 direct-mutation rows retain the ownership classes
 in section 4. Migration/archived rows do not re-enter production, and bounded
 scanner closure does not convert candidate counts into a no-bypass proof.

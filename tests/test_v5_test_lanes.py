@@ -347,13 +347,13 @@ def test_m0_5_classification_audit_covers_current_core_without_behavior_change()
 
     capability_classes = {
         "core": classified_items(r"2\.1 Core \(59\)"),
-        "vertical_extension": classified_items(r"2\.2 Vertical Extension \(122\)"),
+        "vertical_extension": classified_items(r"2\.2 Vertical Extension \(123\)"),
         "maintenance": classified_items(r"2\.3 Maintenance \(43\)"),
         "migration": classified_items(r"2\.4 Migration \(43\)"),
     }
     assert {name: len(items) for name, items in capability_classes.items()} == {
         "core": 59,
-        "vertical_extension": 122,
+        "vertical_extension": 123,
         "maintenance": 43,
         "migration": 43,
     }
@@ -362,12 +362,12 @@ def test_m0_5_classification_audit_covers_current_core_without_behavior_change()
 
     registered_capabilities = set(capability_specs())
     registered_capabilities.discard("harness_feedback_problem_dossier")
-    assert len(registered_capabilities) == 267
+    assert len(registered_capabilities) == 268
     assert classified_capabilities == registered_capabilities
 
     family_classes = {
         "core": classified_items(r"3\.1 Core \(25\)"),
-        "vertical_extension": classified_items(r"3\.2 Vertical Extension \(40\)"),
+        "vertical_extension": classified_items(r"3\.2 Vertical Extension \(41\)"),
         "migration": classified_items(r"3\.3 Migration \(4\)"),
         "soft_deprecation_candidate": classified_items(
             r"3\.4 Soft-Deprecation Candidates \(4\)"
@@ -375,7 +375,7 @@ def test_m0_5_classification_audit_covers_current_core_without_behavior_change()
     }
     assert {name: len(items) for name, items in family_classes.items()} == {
         "core": 25,
-        "vertical_extension": 40,
+        "vertical_extension": 41,
         "migration": 4,
         "soft_deprecation_candidate": 4,
     }
@@ -399,13 +399,17 @@ def test_m0_5_classification_audit_covers_current_core_without_behavior_change()
         "deployment transaction; it adds no compact capability or direct mutation path. "
         "M4 Task 6 adds ten full-only facade capabilities for the reviewed lifecycle, "
         "keeps compact at ten tools, and adds no record family, named-helper writer, or "
-        "direct mutation path."
+        "direct mutation path. M5 replaces the case-specific Harness Feedback seed and "
+        "run-directory plan capabilities with generic case-write and review-view "
+        "capabilities backed by one review-only problem-case family, then adds one "
+        "full-only controlled Research Moment process capability; it adds no compact "
+        "tool or claim-trust authority."
     ) in normalized
     assert "## 6. Resolved Review Decisions" in report
     assert "bounded scanner closure does not convert candidate counts into a no-bypass proof" in normalized
-    assert "all 164 current named-helper rows" in normalized
-    assert "all 173 current direct" in normalized
-    assert "267-capability staged core" in normalized
+    assert "all 171 current named-helper rows" in normalized
+    assert "all 174 current direct" in normalized
+    assert "268-capability staged core" in normalized
     assert "726/726 declared production Python files" in normalized
 
 
@@ -456,12 +460,12 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
 
     writer_rows_by_class = {
         "canonical_record_or_repository": writer_rows(
-            r"4\.1 Canonical Record Or Repository \(88\)"
+            r"4\.1 Canonical Record Or Repository \(90\)"
         ),
         "derived_index_or_surface": writer_rows(
             r"4\.2 Derived Index Or Surface \(29\)"
         ),
-        "host_or_runtime": writer_rows(r"4\.3 Host Or Runtime \(17\)"),
+        "host_or_runtime": writer_rows(r"4\.3 Host Or Runtime \(22\)"),
         "migration_or_legacy_compat": writer_rows(
             r"4\.4 Migration Or Legacy Compatibility \(28\)"
         ),
@@ -471,9 +475,9 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
     }
     writer_classes = stable_classes(writer_rows_by_class)
     assert {name: len(items) for name, items in writer_classes.items()} == {
-        "canonical_record_or_repository": 88,
+        "canonical_record_or_repository": 90,
         "derived_index_or_surface": 29,
-        "host_or_runtime": 17,
+        "host_or_runtime": 22,
         "migration_or_legacy_compat": 28,
         "shared_storage_primitive": 2,
     }
@@ -482,7 +486,7 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
 
     audit = build_runtime_capability_audit(repo_root)
     audited = {row["stable_signature"] for row in audit["writers"]}
-    assert audit["inventory"]["writer_count"] == 164
+    assert audit["inventory"]["writer_count"] == 171
     assert classified == audited
 
     direct_rows_by_class = {
@@ -493,7 +497,7 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
             r"4\.6\.2 Derived Index Or Surface \(24\)"
         ),
         "host_runtime_or_maintenance": writer_rows(
-            r"4\.6\.3 Host Runtime Or Maintenance \(61\)"
+            r"4\.6\.3 Host Runtime Or Maintenance \(62\)"
         ),
         "migration_or_archived_legacy": writer_rows(
             r"4\.6\.4 Migration Or Archived Legacy \(75\)"
@@ -509,7 +513,7 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
     assert {name: len(items) for name, items in direct_classes.items()} == {
         "canonical_blob_or_record": 7,
         "derived_index_or_surface": 24,
-        "host_runtime_or_maintenance": 61,
+        "host_runtime_or_maintenance": 62,
         "migration_or_archived_legacy": 75,
         "shared_storage_primitive": 3,
         "transient_external_io": 3,
@@ -519,7 +523,7 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
     audited_direct = {
         row["stable_signature"] for row in audit["direct_mutation_candidates"]
     }
-    assert audit["inventory"]["direct_mutation_candidate_count"] == 173
+    assert audit["inventory"]["direct_mutation_candidate_count"] == 174
     assert classified_direct == audited_direct
     assert all(
         signature in direct_classes["migration_or_archived_legacy"]

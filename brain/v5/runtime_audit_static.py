@@ -34,12 +34,16 @@ def layout_families(path: Path, *, registry_path: Path | None = None) -> list[st
         return []
     rows = [
         *literal_tuple_rows(registry_path, "_REGISTRY_ROWS", arity=4),
-        *literal_tuple_rows(
-            registry_path.with_name("record_family_m3.py"),
-            "M3_REGISTRY_ROWS",
-            arity=4,
-        ),
+        *literal_tuple_rows(registry_path, "_SPECIAL_ROWS", arity=6),
     ]
+    for milestone in ("M3", "M4", "M5"):
+        rows.extend(
+            literal_tuple_rows(
+                registry_path.with_name(f"record_family_{milestone.lower()}.py"),
+                f"{milestone}_REGISTRY_ROWS",
+                arity=4,
+            )
+        )
     return sorted(row[0] for row in rows)
 
 
