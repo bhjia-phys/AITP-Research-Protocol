@@ -36,6 +36,7 @@ can support trusted research memory.
 | Context model | Compile bounded context packs from the graph for each task |
 | Experience model | Domain experience packs and curated literature context sit above the memory kernel |
 | Skill linkage | Domain packs can expose external skill bundles such as `oh-my-LibRPA` as orientation-only execution guidance |
+| Harness Feedback boundary | Research sessions record review-only AITP/host friction; Skill distillation remains an independent validated-graph lifecycle |
 | Main agent entrypoint | MCP server at [`brain/v5/native_mcp.py`](brain/v5/native_mcp.py) |
 | Best default install | Project-scope install with [`scripts/aitp-pm.py`](scripts/aitp-pm.py) |
 | Codex path | Repository-backed plugin at [`plugins/aitp-research-protocol/`](plugins/aitp-research-protocol/) |
@@ -132,6 +133,26 @@ The target architecture has four layers:
    curated corpora provide source-backed orientation for quantum field theory,
    quantum gravity, topological order, computational physics, and other domains.
 
+Reusable workflow extraction is a focused path inside the domain experience
+layer and belongs to AITP-native Skill distillation. AITP identifies procedural
+candidates from validated typed graph slices, not from loose chat summaries or
+Harness Feedback. The same reviewed graph slice should support both a
+project-local Skill and a compact model context card, so installed workflow
+memory and active context do not drift apart.
+
+Harness Feedback is separate. It records one review-only problem dossier when
+real research exposes AITP or host friction. Use
+`aitp-v5 harness-feedback record --request-json-file <path>` or the full-MCP
+`aitp_v5_record_harness_feedback_case`; recurring cases are available through a
+read-only review view. This path cannot produce an optimization plan, Skill
+candidate, patch, preview, distillation request, install action, or trust
+update.
+
+This is separate from a broader theory-discussion knowledge base. Long physics
+discussions can produce insight that is not a reusable workflow skill. That
+knowledge layer remains an explicit deferred gap while the workflow-candidate
+distillation path is stabilized.
+
 The basic research loop remains:
 
 1. A human or agent works on a theoretical-physics problem.
@@ -219,6 +240,8 @@ AITP v5 currently supports:
 - progressive recording navigation for deciding where a durable moment belongs
 - domain-conditioned tool and validation recommendations
 - curated RAG manifests for heuristic literature and note orientation
+- review-only Harness Feedback cases for AITP/host friction, with idempotent
+  revision/relations and no optimization, Skill, or trust authority
 - project-scope adapter installs for Codex, Claude Code, and Kimi Code
 - a repository-backed Codex plugin with first-run configuration tools
 - migration and recovery audits for older AITP topic stores
@@ -851,9 +874,19 @@ when modifying v5 runtime, MCP, graph, or adapter code.
 - Roadmap path: read [`docs/AITP_RESEARCH_BRAIN_ROADMAP.md`](docs/AITP_RESEARCH_BRAIN_ROADMAP.md)
   for the implementation plan that moves AITP from safe research records toward
   a callable research memory and experience layer.
+- Final lifecycle path: read
+  [`docs/superpowers/plans/2026-07-09-aitp-final-research-lifecycle-roadmap.md`](docs/superpowers/plans/2026-07-09-aitp-final-research-lifecycle-roadmap.md)
+  for the end-state plan that connects session start recall, progressive MCP
+  expansion, durable recording, recall audits, skill distillation, reviewed
+  project-local skill installs, harness feedback, and the deferred theory
+  knowledge layer.
 - Skill-linkage path: read [`docs/AITP_SKILL_LINKAGE.md`](docs/AITP_SKILL_LINKAGE.md)
   to understand how external domain skills such as `oh-my-LibRPA` connect to
   AITP without becoming a second truth layer.
+- Harness-feedback problem-capture path: read
+  [`docs/superpowers/specs/2026-07-09-aitp-harness-feedback-problem-capture-design.md`](docs/superpowers/specs/2026-07-09-aitp-harness-feedback-problem-capture-design.md)
+  to understand how real research reports AITP/host problems without emitting
+  engineering plans or entering the independent Skill lifecycle.
 - Protocol path: read [`docs/AITP_SPEC.md`](docs/AITP_SPEC.md) before changing
   typed-record behavior, trust rules, or human-facing output contracts.
 - Cleanup path: use [`docs/UNINSTALL.md`](docs/UNINSTALL.md) before manually
@@ -861,7 +894,9 @@ when modifying v5 runtime, MCP, graph, or adapter code.
 
 - [`docs/AITP_POSITIONING.md`](docs/AITP_POSITIONING.md) - product and architecture positioning
 - [`docs/AITP_RESEARCH_BRAIN_ROADMAP.md`](docs/AITP_RESEARCH_BRAIN_ROADMAP.md) - research-brain implementation roadmap
+- [`docs/superpowers/plans/2026-07-09-aitp-final-research-lifecycle-roadmap.md`](docs/superpowers/plans/2026-07-09-aitp-final-research-lifecycle-roadmap.md) - final research lifecycle roadmap
 - [`docs/AITP_SKILL_LINKAGE.md`](docs/AITP_SKILL_LINKAGE.md) - external skill and domain-pack linkage architecture
+- [`docs/superpowers/specs/2026-07-09-aitp-harness-feedback-problem-capture-design.md`](docs/superpowers/specs/2026-07-09-aitp-harness-feedback-problem-capture-design.md) - generic Harness Feedback problem capture and authority boundary
 - [`docs/AITP_SPEC.md`](docs/AITP_SPEC.md) - protocol specification
 - [`docs/CODEX_APP_1_0_PLAN.md`](docs/CODEX_APP_1_0_PLAN.md) - Codex App 1.0 architecture and implementation plan
 - [`docs/INSTALL.md`](docs/INSTALL.md) - install guide

@@ -1300,16 +1300,26 @@ repository-local AITP hook installation; see
 - Produces: `HarnessFeedbackCaseRecord`
 - Produces one formatted Markdown file per problem.
 
-- [ ] Store problem type, observed friction, expected/actual behavior, impact,
+- [x] Store problem type, observed friction, expected/actual behavior, impact,
   source refs, proposed direction, status, and reviewer.
-- [ ] Keep `produces_harness_optimization_plan=false` and
+- [x] Keep `produces_harness_optimization_plan=false` and
   `can_install_skill=false`.
-- [ ] Remove legacy Skill-candidate/patch/preview/install/distillation emission
+- [x] Remove legacy Skill-candidate/patch/preview/install/distillation emission
   from Harness Feedback and test every prohibited path.
-- [ ] Move NiO-specific content into fixtures/examples.
-- [ ] Do not create separate friction/workflow/schema/automation/proposal
+- [x] Move NiO-specific content into fixtures/examples.
+- [x] Do not create separate friction/workflow/schema/automation/proposal
   registry families.
-- [ ] Aggregate repeated cases in a derived review view.
+- [x] Aggregate repeated cases in a derived review view.
+
+Implementation status: complete in `e9ff8406` and `3274abc7`. One typed family
+now records deterministic, review-only problem dossiers with explicit
+idempotent/revision/related-case semantics and false engineering, Skill, and
+claim-trust authority. Generic CLI/full-MCP writers and a read-only recurring
+case view replace the NiO-specific runtime builders; historical bundle and
+dossier contracts remain compatibility readers only. The exact staged tree
+`aec978dacd02c0d9ae139e135bf22e26a4ea459d` passed 121 focused registry,
+surface, CLI/MCP, deployment, and architecture tests. This completes Task 5.3,
+not M5 overall acceptance.
 
 ### M5 Acceptance
 
@@ -1319,8 +1329,8 @@ repository-local AITP hook installation; see
 - [ ] Semantic candidates remain review gated.
 - [ ] Search snippets and unacquired literature results remain process-only.
 - [ ] Host context stays within budget and is traceable to exact refs.
-- [ ] Harness feedback produces only a reviewable problem dossier.
-- [ ] Harness feedback cannot create any Skill or automatic optimization action.
+- [x] Harness feedback produces only a reviewable problem dossier.
+- [x] Harness feedback cannot create any Skill or automatic optimization action.
 
 ## 12. M6: Real Research End-To-End Acceptance
 

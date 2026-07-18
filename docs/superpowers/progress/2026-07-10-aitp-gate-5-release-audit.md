@@ -1,9 +1,9 @@
 # AITP M5 Host Lifecycle Release Audit
 
-Date: 2026-07-17
-Scope: M5 Task 3 host lifecycle integration and its M5 release boundary.
-Decision: host integration implementation accepted; current workspace host
-installation not ready; M5 overall remains open.
+Date: 2026-07-18
+Scope: M5 Tasks 3-4 host lifecycle and generic Harness Feedback integration.
+Decision: host and Harness Feedback implementation accepted; current workspace
+host installation not ready; M5 overall remains open.
 
 ## Implemented Boundary
 
@@ -19,6 +19,10 @@ installation not ready; M5 overall remains open.
   conflicting installation, and lifecycle-not-observed states.
 - The compact MCP surface remains ten tools; host installation and readiness
   stay on full MCP/CLI maintenance surfaces.
+- Harness Feedback writes one generic review-only case family. It cannot author
+  an optimization plan, emit Skill lifecycle artifacts, or update claim trust.
+- Topic-specific NiO content is fixture-only; historical bundle/dossier
+  validators remain read-only compatibility surfaces without runtime builders.
 
 ## Commit Evidence
 
@@ -29,6 +33,8 @@ installation not ready; M5 overall remains open.
 | `e387ae6a` | central host writer allowlist and high-authority sentinels |
 | `63e8c8ee` | stale legacy context-injection quarantine |
 | `b64ff789` | truthful process, installation, lifecycle, and fixture readiness |
+| `e9ff8406` | generic typed Harness Feedback cases and fixture-only NiO example |
+| `3274abc7` | case-specific runtime retirement and generic CLI/full-MCP integration |
 
 ## Test Evidence
 
@@ -49,6 +55,12 @@ installation not ready; M5 overall remains open.
   This is not a substitute for the test-backed parity work listed below.
 - The complete `tests/test_v5_adapters.py` file timed out twice at 244 seconds
   during the quarantine checkpoint and is not claimed as passed by this audit.
+- Generic Harness Feedback: the first exact staged tree passed `72 passed`; the
+  integrated exact staged tree
+  `aec978dacd02c0d9ae139e135bf22e26a4ea459d` passed `121 passed`, covering
+  typed writes, idempotency/revision/related cases, repeated review, every
+  false-authority flag, prohibited Skill paths, registry/capability parity,
+  CLI/full MCP, deployment, and architecture budgets.
 
 All test workspaces and runtime receipts above were isolated under system Temp.
 The host dispatch tests assert unchanged canonical watermarks, and this task did
@@ -72,8 +84,6 @@ its project hooks before a real interactive event can pass.
 
 ## Remaining M5 Work
 
-- Finish the generic Harness Feedback problem dossier and repeated-case derived
-  review without optimization-plan or Skill emission.
 - Run the normal-session, noise/recursion/failure, and friction-to-dossier M5
   vertical acceptances.
 - Run the combined M0-M5 release lanes, architecture budgets, staged-tree audit,

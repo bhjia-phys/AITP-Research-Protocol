@@ -265,7 +265,7 @@ host hooks.
 - Produces: `render_harness_feedback_case(record) -> str`
 - Produces: `build_harness_feedback_review_view(ws) -> dict`
 
-- [ ] **Step 1: Write failing generic-schema tests**
+- [x] **Step 1: Write failing generic-schema tests**
 
 Record fields: case id, problem type, observed friction, expected behavior,
 actual behavior, research impact, reproducibility steps, host/runtime, source
@@ -274,13 +274,13 @@ status, reviewer, duplicate/supersession refs, created/updated time,
 `produces_harness_optimization_plan=False`, `can_install_skill=False`, and
 `can_update_claim_trust=False`.
 
-- [ ] **Step 2: Implement one Markdown-backed family**
+- [x] **Step 2: Implement one Markdown-backed family**
 
 Do not create friction/workflow/schema/automation/proposal sub-families. Same
 problem/source fingerprint is idempotent; new information creates an explicit
 revision or related case.
 
-- [ ] **Step 3: Preserve research-side boundary**
+- [x] **Step 3: Preserve research-side boundary**
 
 The renderer may include observed facts and a proposed direction, but not an
 implementation roadmap, code patch, Skill package, install action, or trust
@@ -292,19 +292,32 @@ may recognize old dossier bundles, but new or revised cases cannot create Skill
 candidates, patch proposals, package previews, install actions, or distillation
 requests. Add monkeypatch/negative tests for every prohibited Skill path.
 
-- [ ] **Step 4: Move NiO constants/content to fixtures**
+- [x] **Step 4: Move NiO constants/content to fixtures**
 
 Current NiO dossier becomes `tests/fixtures/v5_harness_feedback/nio_case.json`
 plus expected Markdown. Production runtime contains no fixed case id/topic/path.
 
-- [ ] **Step 5: Build a derived repeated-case review view**
+- [x] **Step 5: Build a derived repeated-case review view**
 
 Group by problem type/capability/fingerprint and show counts, recency, impact,
 source refs, status, and unresolved cases. The view writes no optimization plan.
 
-- [ ] **Step 6: Run Harness Feedback and registry tests; commit**
+- [x] **Step 6: Run Harness Feedback and registry tests; commit**
 
 Commit message: `v5: record generic harness feedback cases`.
+
+Implementation status: complete in `e9ff8406` and `3274abc7`. The runtime now
+stores one `harness_feedback_cases` typed family with deterministic source and
+content fingerprints, idempotent replay, compare-and-swap revision, explicit
+related-case links, a Markdown renderer, and a read-only repeated-case view.
+CLI and full MCP expose only generic case recording and review; compact MCP
+remains ten tools. NiO content exists only under test fixtures. Historical
+bundle/dossier validators remain read-only compatibility surfaces, while their
+runtime builders, run-directory optimization plan, Skill candidate, patch,
+preview, install, and distillation paths are absent. The exact staged tree
+`aec978dacd02c0d9ae139e135bf22e26a4ea459d` passed 121 Harness Feedback,
+registry, public-surface, CLI, MCP, deployment, and architecture tests in
+system Temp.
 
 ## Task 5: Host/Moment Facade And M5 Acceptance
 
@@ -376,8 +389,8 @@ Commit message: `v5: complete M5 autonomous host lifecycle`.
 - [ ] Hosts without SessionStart use first relevant prompt safely.
 - [ ] Prompt-submit/stop events are wired only where supported; every missing
   event has an audited begin-turn/closeout facade fallback.
-- [ ] One generic Harness Feedback family replaces case-specific runtime logic.
-- [ ] Feedback creates a problem dossier, never an optimization plan.
-- [ ] Feedback cannot emit any Skill candidate, patch, preview, install, or
+- [x] One generic Harness Feedback family replaces case-specific runtime logic.
+- [x] Feedback creates a problem dossier, never an optimization plan.
+- [x] Feedback cannot emit any Skill candidate, patch, preview, install, or
   distillation action.
 - [ ] A normal research lifecycle requires no manual AITP file editing.
