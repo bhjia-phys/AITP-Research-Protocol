@@ -1,11 +1,15 @@
 ---
 title: AITP Final Research Operating Memory Architecture
 date: 2026-07-10
-status: approved-for-roadmap
+status: superseded-by-aitp-2.0
 scope: AITP v5 kernel, context, lifecycle, execution, knowledge, insight, skills, and host integration
 ---
 
 # AITP Final Research Operating Memory Architecture
+
+> **Superseded on 2026-07-19.** This document describes the historical v5-based
+> architecture. The clean AITP 2.0 rewrite is defined by
+> `docs/superpowers/specs/2026-07-19-aitp-2-0-rewrite-design.md`.
 
 ## 1. Executive Decision
 

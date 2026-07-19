@@ -1,5 +1,13 @@
 # AITP Final Research Operating Memory Implementation Plan
 
+> **Superseded on 2026-07-19.** This is a historical v5 implementation plan and
+> is no longer implementation authority. AITP 2.0 is a clean parallel rewrite
+> defined by
+> `docs/superpowers/specs/2026-07-19-aitp-2-0-rewrite-design.md`. Do not execute
+> this plan, its v5 milestones, MCP work, or blocking v5 acceptance lanes for the
+> 2.0 rewrite. A new task-level implementation roadmap will be written only
+> after the 2.0 design spec is reviewed and approved.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Turn the existing AITP v5 protocol into a fast, trustworthy research operating memory for real theoretical-physics work, with quiet autonomous capture, reproducible execution memory, grounded knowledge and speculative insight, reviewed skill compilation, and bounded host context.
