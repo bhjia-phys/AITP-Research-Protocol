@@ -54,6 +54,116 @@ It incorporates and re-baselines useful work from:
 The previous lifecycle tasks are not discarded. They are moved behind the
 foundation required to make them correct and fast on the real store.
 
+### 1.1 2026-07-18 Goal Re-Baseline: Minimal Trusted Kernel First
+
+This section is a binding execution overlay for the current Goal. Earlier
+checked tasks remain historical implementation evidence; they do not by
+themselves prove that the current candidate still satisfies M0, M0.5, or the
+final research outcomes after later lifecycle, Knowledge, Skill, or Hook work.
+
+AITP now converges on the smallest trustworthy theoretical-physics research
+operating-memory kernel. It is not scored by capability, family, tool, or module
+count. A retained abstraction must be necessary to one accepted research
+effect, have one authority path, and remain cheaper to understand than the
+duplication it removes.
+
+The current release order is mandatory:
+
+1. **M0-R: revalidate the current candidate.** Run all blocking v5 lanes from
+   the exact reviewed staged candidate in system Temp; prove legacy
+   read/migration/write-guard isolation; rebuild only the real derived index;
+   prove canonical before/manifest/after watermark equality; and preserve all
+   real canonical records byte-for-byte.
+2. **M0.5-R: repeat complexity reduction on the post-M0 candidate.** Regenerate
+   exact inventories for record families, capabilities, MCP/CLI/public
+   surfaces, canonical and non-canonical writers, compatibility shards,
+   legacy dependencies, imports, and logical module size. Every item added or
+   changed since the previous M0.5 audit must receive an owner and a retain,
+   merge, postpone, soft-deprecate, or remove decision.
+3. **V1-V4: use real research verticals as retention evidence.** LibRPA/HPC,
+   QFT/quantum gravity, new-software onboarding, and multi-topic isolation
+   determine which candidate M1-M5 contracts remain necessary.
+4. **Implement only the missing minimum.** Existing M1-M5 classes, families,
+   tools, and modules are candidates, not mandatory work. Reuse, merge, or
+   delete them when the same user effect can be achieved with a smaller trusted
+   path.
+5. **M6: accept the whole research loop.** Documentation, installation,
+   performance, context budgets, absence semantics, canonical-read closure,
+   and trust boundaries must agree with executable evidence.
+
+Until M0-R and M0.5-R pass, new Knowledge, Skill, and host-Hook expansion is
+frozen. The dynamic multi-topic routing commits through Task 6 are retained as
+provisional vertical evidence because they address a real multi-topic user
+effect, but Tasks 7-9 in
+`docs/superpowers/plans/2026-07-18-aitp-dynamic-multi-topic-hook-routing.md`
+remain paused. M0.5-R may retain, simplify, merge, or remove that implementation.
+
+Any new record family, capability, public tool, or production module must prove
+all of the following before implementation:
+
+- one concrete research event or user-visible need requires it;
+- the current model cannot express that need clearly;
+- one canonical writer and one bounded read/expansion path own it;
+- exact refs, coverage semantics, and trust authority are explicit;
+- at least one accepted vertical and one automated test exercise it; and
+- its complexity is offset by consolidation or justified against the active
+  complexity budget.
+
+The minimum user-effect closure is:
+
+| Effect | Minimum trusted behavior | Required proof |
+|---|---|---|
+| Session recovery | `route hint -> startup orientation -> normal research context -> exact expansion`, with `not_found`, `not_checked`, `not_shown`, `stale`, and partial coverage kept distinct. | Real-store LibRPA and QFT/QG probes plus latency and context-budget tests. |
+| Quiet research recording | Persist only durable research moments through the safe repository; ordinary tool noise remains runtime-only. | Canonical byte snapshots and successful repository receipts in each writing vertical. |
+| Research Graph and reproducible execution | Exact relations connect claims, sources, formulas, code state, scripts, parameters, environments, commits, HPC jobs, artifacts, validation, and next actions. | LibRPA/HPC code-modification journey. |
+| Knowledge and Insight | Grounded Knowledge has exact source/derivation/validation refs; interpretations, analogies, and speculative Insight stay non-evidence; RAG is derived and trust-neutral. | QFT/quantum-gravity literature and open-derivation journey. |
+| Workflow reuse and Skill | Only repeated, validated, bounded procedures become reviewable Skill candidates; install, update, and application remain human-gated. | LibRPA and new-software journeys with success/failure/applicability evidence. |
+| Multi-topic isolation | Reviewed workflow and grounded-knowledge reuse is allowed; topic-local claims, Insight, and trust never propagate without an explicit bridge and target-side validation. | Multi-topic isolation journey with unchanged unrelated canonical bytes. |
+| Host integration and feedback | Codex is the default reasoning/execution host; hooks are bounded triggers; AITP emits a reviewable problem dossier and never edits its harness automatically. | Manual entry remains correct; installed-host evidence is required only for the final host acceptance slice. |
+
+AITP does not implement a general Agent runtime or an autonomous scientific
+trust authority. Future unattended work may use host-neutral Research Program,
+Work Package, event, recovery, budget, stop-condition, and result-packet
+contracts plus an optional Runtime Supervisor. That supervisor must not
+duplicate Codex execution or own scientific trust decisions.
+
+### 1.2 Active Revalidation Checklist
+
+These unchecked items describe the current candidate, not the historical M0
+and M0.5 release slices below.
+
+- [ ] Run the current blocking `foundation`, `compatibility`, `legacy-compat`,
+  `slow-adapter`, `v5-verticals`, and `full` lanes in isolated system Temp.
+- [ ] Prove the blocking lanes do not enable or repair archived L0-L4 write
+  workflows; keep `legacy-write-archive` non-blocking and opt-in.
+- [ ] Rebuild only the authorized real `.aitp/indexes` projection and record
+  canonical snapshot, watermark, state token, manifest, malformed count, and
+  freshness before/after evidence.
+- [ ] Assemble and verify an exact staged candidate allowlist with no real
+  canonical record, protected user change, generated runtime state, or
+  unrelated artifact.
+- [ ] Regenerate the M0.5 capability, family, writer, public-surface, compact,
+  import, shard, legacy-dependency, and logical-size inventories from that
+  candidate.
+- [ ] Give every changed inventory item exactly one owner and one reviewed
+  retain/merge/postpone/soft-deprecate/remove decision; reject count-only or
+  lower-bound closure claims.
+- [ ] Re-prove compact ten-tool/schema/import budgets, absence and coverage
+  semantics, repository-writer boundaries, and legacy write isolation.
+- [ ] Review the provisional dynamic multi-topic Hook implementation against
+  the four verticals and complexity budget before resuming its Task 7-9 work.
+- [ ] Publish current M0-R and M0.5-R evidence; only then unfreeze the minimum
+  vertical-driven implementation needed for the final Goal.
+
+Current re-baseline progress (not release acceptance): the exact static audit
+now classifies 172 named-helper writers, including one disposable
+`host_route_cache` runtime writer, while two Claude settings writes retain their
+host-maintenance ownership after moving to `hook_claude_install.py`. The M0/M0.5
+drift suite passes `15 passed`; runtime audit, capability registry,
+architecture, and M0 release-focused tests pass `36 passed`. Blocking lanes,
+real-index closure, staged-candidate verification, and the reviewed reduction
+decision remain open.
+
 ## 2. Verified Baseline
 
 The 2026-07-10 read-only audit established this baseline:

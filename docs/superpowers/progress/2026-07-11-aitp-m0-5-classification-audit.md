@@ -22,7 +22,7 @@ capabilities backed by one review-only problem-case family, then adds one
 full-only controlled Research Moment process capability; it adds no compact
 tool or claim-trust authority.
 
-Writer scan status: all 171 current named-helper rows (111 at the M0 baseline)
+Writer scan status: all 172 current named-helper rows (111 at the M0 baseline)
 and all 174 current direct
 mutation rows are classified; scan coverage remains explicitly incomplete.
 
@@ -554,7 +554,7 @@ Family accounting totals 74 with no unclassified family.
 
 ## 4. Writer Classification
 
-The current runtime audit reports 171 recognized semantic repository writes
+The current runtime audit reports 172 recognized semantic repository writes
 and low-level helper calls. Every reported call is classified below by its current storage role,
 not by the capability name or intended future architecture. A canonical row is
 a writer-convergence target even when it writes a non-registry canonical family
@@ -690,7 +690,7 @@ brain/v5/source_shelf_storage.py:_write_shelf_files:251:write_text_atomic | fami
 brain/v5/source_shelf_storage.py:_write_shelf_files:255:write_text_atomic | families=- | dynamic=false
 ~~~
 
-### 4.3 Host Or Runtime (22)
+### 4.3 Host Or Runtime (23)
 
 ~~~text
 brain/v5/_compat_shards/lane_exemplars/part_01.py:record_lane_exemplar:119:write_md | families=- | dynamic=false
@@ -700,6 +700,7 @@ brain/v5/context_injection_storage.py:persist_or_reuse:141:write_text_atomic | f
 brain/v5/context_injection_storage.py:_persist_lifecycle_state:189:write_text_atomic | families=- | dynamic=false
 brain/v5/context_injection_storage.py:_persist_lifecycle_state:201:write_text_atomic | families=- | dynamic=false
 brain/v5/domain_packs.py:register_domain_pack:150:write_record | families=- | dynamic=false
+brain/v5/host_route_cache.py:write_host_route_mapping:155:write_text_atomic | families=- | dynamic=false
 brain/v5/knowledge_connector_bindings.py:_write_bindings:158:write_text_atomic | families=- | dynamic=false
 brain/v5/operator_checkpoint.py:_write_active:174:write_md | families=- | dynamic=false
 brain/v5/output_stability.py:record_final_output_profile:61:write_md | families=- | dynamic=false
@@ -887,8 +888,8 @@ brain/v5/hook_codex_install.py:install_codex_hooks_json:59:write_text | mechanis
 brain/v5/hook_fixture_templates.py:_write_fixture:208:write_text | mechanism=direct_path_write | target=fixture_path
 brain/v5/hook_install_templates.py:write_codex_hook_bridge:108:write_text | mechanism=direct_path_write | target=bridge_path
 brain/v5/hook_install_templates.py:write_opencode_plugin_bridge:163:write_text | mechanism=direct_path_write | target=bridge_path
-brain/v5/hook_install_templates.py:write_claude_code_hook_settings:180:write_text | mechanism=direct_path_write | target=settings_path
-brain/v5/hook_install_templates.py:install_claude_code_hook_settings:225:write_text | mechanism=direct_path_write | target=settings_path
+brain/v5/hook_claude_install.py:write_claude_code_hook_settings:43:write_text | mechanism=direct_path_write | target=settings_path
+brain/v5/hook_claude_install.py:install_claude_code_hook_settings:94:write_text | mechanism=direct_path_write | target=settings_path
 brain/v5/hook_install_templates.py:_write_payload_sidecar:374:write_text | mechanism=direct_path_write | target=sidecar_path
 brain/v5/hook_kimi_install.py:write_kimi_code_hook_config:33:write_text | mechanism=direct_path_write | target=config_path
 brain/v5/hook_kimi_install.py:install_kimi_code_hook_config:57:write_text | mechanism=direct_path_write | target=config_path
@@ -1058,7 +1059,7 @@ rows remain outside normal production research writes.
   2 passed;
 - current direct-mutation classification: 174 of 174 rows, no duplicate or
   unclassified signature;
-- current named-helper classification: 171 of 171 rows; the preserved M0
+- current named-helper classification: 172 of 172 rows; the preserved M0
   lower-bound baseline was 111;
 - production-tree probe: no filesystem import aliases, dynamic open modes, or
   SQL execute calls were found;
@@ -1152,6 +1153,6 @@ For record families, retain the 25 core, 41 vertical, and four migration
 registrations under their existing write/read policies. New vertical families
 remain owned by their M3-M5 acceptance journeys; four zero-record
 unimplemented-layout families remain soft-deprecation candidates.
-All 171 helper-writer and 174 direct-mutation rows retain the ownership classes
+All 172 helper-writer and 174 direct-mutation rows retain the ownership classes
 in section 4. Migration/archived rows do not re-enter production, and bounded
 scanner closure does not convert candidate counts into a no-bypass proof.

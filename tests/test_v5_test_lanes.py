@@ -407,7 +407,7 @@ def test_m0_5_classification_audit_covers_current_core_without_behavior_change()
     ) in normalized
     assert "## 6. Resolved Review Decisions" in report
     assert "bounded scanner closure does not convert candidate counts into a no-bypass proof" in normalized
-    assert "all 171 current named-helper rows" in normalized
+    assert "all 172 current named-helper rows" in normalized
     assert "all 174 current direct" in normalized
     assert "268-capability staged core" in normalized
     assert "726/726 declared production Python files" in normalized
@@ -465,7 +465,7 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
         "derived_index_or_surface": writer_rows(
             r"4\.2 Derived Index Or Surface \(29\)"
         ),
-        "host_or_runtime": writer_rows(r"4\.3 Host Or Runtime \(22\)"),
+        "host_or_runtime": writer_rows(r"4\.3 Host Or Runtime \(23\)"),
         "migration_or_legacy_compat": writer_rows(
             r"4\.4 Migration Or Legacy Compatibility \(28\)"
         ),
@@ -477,7 +477,7 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
     assert {name: len(items) for name, items in writer_classes.items()} == {
         "canonical_record_or_repository": 90,
         "derived_index_or_surface": 29,
-        "host_or_runtime": 22,
+        "host_or_runtime": 23,
         "migration_or_legacy_compat": 28,
         "shared_storage_primitive": 2,
     }
@@ -486,7 +486,7 @@ def test_m0_5_writer_classification_covers_static_audit_without_overclaiming():
 
     audit = build_runtime_capability_audit(repo_root)
     audited = {row["stable_signature"] for row in audit["writers"]}
-    assert audit["inventory"]["writer_count"] == 171
+    assert audit["inventory"]["writer_count"] == 172
     assert classified == audited
 
     direct_rows_by_class = {
