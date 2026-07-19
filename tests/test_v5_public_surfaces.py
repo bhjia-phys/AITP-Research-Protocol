@@ -540,8 +540,18 @@ def test_public_surface_validator_accepts_opencode_plugin_bridge():
         pre_tool_event_platform_schema,
         pre_tool_policy_input_schema,
     )
+    from brain.v5.hook_routing_mode import normalize_hook_routing_mode
+    from brain.v5.hook_runner_payloads import build_pre_tool_event_runner
     from brain.v5.public_surfaces import require_valid_public_surface
 
+    routing_metadata = _dynamic_hook_route_metadata()
+    runner = build_pre_tool_event_runner(
+        "opencode",
+        ".opencode/AITP_V5_PLUGIN_BRIDGE.json",
+        routing=normalize_hook_routing_mode("dynamic", ""),
+        topics_root=routing_metadata["topics_root"],
+        project_root=routing_metadata["project_root"],
+    )
     payload = {
         "ok": True,
         "kind": "opencode_plugin_bridge",
@@ -553,8 +563,11 @@ def test_public_surface_validator_accepts_opencode_plugin_bridge():
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
         "path": ".opencode/AITP_V5_PLUGIN_BRIDGE.md",
+        **routing_metadata,
         "plugin_bridge": {
             "persistence_entrypoint": "aitp_v5_persist_hook_trace_event",
+            "pre_tool_event_runner": runner,
+            **routing_metadata,
             "pre_tool_policy_entrypoint": {
                 "cli": "aitp-v5 policy pre-tool <args>",
                 "mcp": "aitp_v5_evaluate_pre_tool_policy",
