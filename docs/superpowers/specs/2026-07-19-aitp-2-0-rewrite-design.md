@@ -2,7 +2,9 @@
 title: AITP 2.0 Local Research Memory Rewrite
 date: 2026-07-19
 revised: 2026-07-20
-status: revised-for-user-review
+status: superseded
+superseded_by:
+  - docs/superpowers/specs/2026-07-20-aitp-2-0-command-skill-protocol-design.md
 reviewed_against:
   - docs/superpowers/audits/2026-07-19-aitp-2-0-rewrite-design-architecture-audit.md
 supersedes:
