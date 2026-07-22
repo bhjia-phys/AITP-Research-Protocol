@@ -630,8 +630,8 @@ Checks:
 
 8. **Strong authority-marker guard**: Repo-root-anchored scan of all tracked
    Markdown files. Exclude: `archive/`, `docs/archive/`, `docs/legacy/`,
-   `docs/superpowers/`, `docs/session_reports/`, `tests/`, `output/`, `tmp/`,
-   `build/`, `generated/`, `.git/`, and all KEEP-HISTORICAL paths in
+   `docs/superpowers/`, `docs/session_reports/`, `.planning/`, `tests/`,
+   `output/`, `tmp/`, `build/`, `generated/`, `.git/`, and all KEEP-HISTORICAL paths in
    §4.4/§5.2.
    Among the remaining non-retirement Markdown surfaces, FAIL if any file
    contains an old authority marker pattern:
