@@ -173,11 +173,19 @@ paths preserved:
    - `docs/AITP_V5_THEORY_RESEARCH_STATE.md`
    - `docs/v5-quiet-research-workflow-architecture.md`
    - `docs/v5-source-asset-pdf-acquisition.md`
+   - `docs/architecture.md`
+   - `docs/AITP_TOPIC_FOLDER_ARCHITECTURE.md`
+   - `docs/MULTI_TOPIC_RUNTIME.md`
+   - `docs/AITP_GSD_WORKFLOW_CONTRACT.md`
+   - `docs/MIGRATE_MULTI_TOPIC.md`
+   - `docs/EXECUTION_PLAN.md`
+   - `docs/SESSION_COORDINATION_10WAY.md`
 
 5. Protocol/CI entry points:
    - `brain/PROTOCOL.md`
    - `docs/AUDIT_REPORT_ALIGNMENT.md` (references v5 L0-L4)
    - `.github/workflows/v5-test-lanes.yml`
+   - `docs/protocols/TOPIC_NOTEBOOK_OBLIGATION_PROTOCOL.md`
 
 6. Adapter entry points:
    - `adapters/README.md`
@@ -189,6 +197,7 @@ paths preserved:
 7. Knowledge-hub and OpenClaw entry points:
    - `research/knowledge-hub/README.md`
    - `research/knowledge-hub/LAYER_MAP.md`
+   - `research/knowledge-hub/runtime/TOPIC_TRUTH_ROOT_CONTRACT.md`
    - `research/adapters/openclaw/PLUGIN_PROFILE_INSTALL.md`
    - `research/adapters/openclaw/BOOTSTRAP.md`
    - `research/adapters/openclaw/AITP_AGENT_ENTRYPOINT.md`
@@ -222,7 +231,9 @@ deactivated (DELETE/REPLACE/MODIFY):
 - `contracts/**` — zero-diff protected
 - `schemas/**` — zero-diff protected
 - `research/knowledge-hub/canonical/**` — zero-diff protected
-- `research/knowledge-hub/` non-README/LAYER_MAP payload — historical records
+- `research/knowledge-hub/` non-entry payload (excludes REPLACEd entry-point files and `runtime/TOPIC_TRUTH_ROOT_CONTRACT.md`) — internal historical records; local source-of-truth terminology within these files is not repo authority
+- `docs/CHARTER.md` — historical; has no active/canonical status; any conflicting authority claim was in the now-retired `docs/architecture.md`
+- `docs/protocols/**` except `TOPIC_NOTEBOOK_OBLIGATION_PROTOCOL.md` (which is REPLACEd) — historical subordinate material; inactive because the parent `docs/AITP_SPEC.md` is REPLACEd
 - Timestamped design history (`docs/superpowers/plans/`, `docs/superpowers/progress/`) — historical
 
 Guard MUST NOT require zero v5 tokens in KEEP-HISTORICAL files. It MUST verify
@@ -302,6 +313,15 @@ distinguishes three actions:
 | `research/adapters/openclaw/PLUGIN_PROFILE_INSTALL.md` | REPLACE: retirement notice |
 | `research/adapters/openclaw/BOOTSTRAP.md` | REPLACE: retirement notice |
 | `research/adapters/openclaw/AITP_AGENT_ENTRYPOINT.md` | REPLACE: retirement notice |
+| `docs/architecture.md` | REPLACE: retirement notice |
+| `docs/AITP_TOPIC_FOLDER_ARCHITECTURE.md` | REPLACE: retirement notice |
+| `docs/MULTI_TOPIC_RUNTIME.md` | REPLACE: retirement notice |
+| `docs/AITP_GSD_WORKFLOW_CONTRACT.md` | REPLACE: retirement notice |
+| `docs/MIGRATE_MULTI_TOPIC.md` | REPLACE: retirement notice |
+| `docs/EXECUTION_PLAN.md` | REPLACE: retirement notice |
+| `docs/SESSION_COORDINATION_10WAY.md` | REPLACE: retirement notice |
+| `docs/protocols/TOPIC_NOTEBOOK_OBLIGATION_PROTOCOL.md` | REPLACE: retirement notice |
+| `research/knowledge-hub/runtime/TOPIC_TRUTH_ROOT_CONTRACT.md` | REPLACE: retirement notice |
 
 #### CI workflow (**MODIFY** to manual-only)
 
@@ -332,7 +352,15 @@ Exception for `docs/UNINSTALL.md`: append a fifth line:
 ```text
 Local uninstall is a separate operation and requires explicit human approval.
 ```
-Total: exactly 5 lines for UNINSTALL.md, exactly 4 lines for all other REPLACE files.
+Total: exactly 5 logical lines for UNINSTALL.md, exactly 4 logical lines for all
+other REPLACE files.
+
+**Byte-level freeze**: All retirement notices MUST be encoded as UTF-8, LF-only
+line endings (`\n`, no `\r\n`), no BOM. The last line MUST be followed by
+exactly one `\n` (the file ends with a newline). The guard constructs the
+expected bytes for each REPLACE file (exact template + archive path substitution)
+and performs byte-for-byte comparison — no newline normalization, no whitespace
+trimming, no encoding tolerance.
 
 The authority guard MUST verify every REPLACE file byte-for-byte against its
 expected template (exact heading, exact sentence, exact archive path, line
@@ -360,6 +388,9 @@ no longer reference them. They are NOT in DELETE/REPLACE/MODIFY:
 - `research/adapters/openclaw/plugin/**` — OpenClaw plugin source (except DELETEd manifest JSONs)
 - `scripts/run_v5_test_lanes.py` — historical test runner (not in DELETE/REPLACE)
 - `tests/**` — v5 test suites
+- `docs/CHARTER.md` — historical; no active status (conflicting claim was in now-retired `docs/architecture.md`)
+- `docs/protocols/**` except `TOPIC_NOTEBOOK_OBLIGATION_PROTOCOL.md` (which is REPLACEd) — historical subordinate material to REPLACEd `docs/AITP_SPEC.md`
+- `research/knowledge-hub/**` non-entry payload (excludes REPLACEd `README.md`, `LAYER_MAP.md`, `runtime/TOPIC_TRUTH_ROOT_CONTRACT.md`, and zero-diff `canonical/`) — internal historical; local source-of-truth terms are not repo authority
 - Timestamped design history — `docs/superpowers/plans/`, `docs/superpowers/progress/`
 
 Zero-diff protected (also KEEP-HISTORICAL but with active verification):
@@ -531,7 +562,7 @@ Checks:
    §5.1 with the correct archive path substituted. Verification: exact heading
    `# AITP v5 entrypoint retired`, exact body sentence, exact archive path line,
    total line count exactly 4 (exactly 5 for `docs/UNINSTALL.md`), no fenced code blocks, no
-   URLs, no pip/npm/mcp/shell command patterns. The 34 REPLACE paths are:
+   URLs, no pip/npm/mcp/shell command patterns. The 43 REPLACE paths are:
 
    `.codex/INSTALL.md`, `docs/INSTALL.md`, `docs/INSTALL_CLAUDE_CODE.md`,
    `docs/INSTALL_CODEX.md`, `docs/INSTALL_KIMI_CODE.md`,
@@ -552,10 +583,26 @@ Checks:
    `research/knowledge-hub/LAYER_MAP.md`,
    `research/adapters/openclaw/PLUGIN_PROFILE_INSTALL.md`,
    `research/adapters/openclaw/BOOTSTRAP.md`,
-   `research/adapters/openclaw/AITP_AGENT_ENTRYPOINT.md`.
+   `research/adapters/openclaw/AITP_AGENT_ENTRYPOINT.md`,
+   `docs/architecture.md`,
+   `docs/AITP_TOPIC_FOLDER_ARCHITECTURE.md`,
+   `docs/MULTI_TOPIC_RUNTIME.md`,
+   `docs/AITP_GSD_WORKFLOW_CONTRACT.md`,
+   `docs/MIGRATE_MULTI_TOPIC.md`, `docs/EXECUTION_PLAN.md`,
+   `docs/SESSION_COORDINATION_10WAY.md`,
+   `docs/protocols/TOPIC_NOTEBOOK_OBLIGATION_PROTOCOL.md`,
+   `research/knowledge-hub/runtime/TOPIC_TRUTH_ROOT_CONTRACT.md`.
 
-3. **MODIFY path**: `.github/workflows/v5-test-lanes.yml` — fail if it contains
-   `pull_request`, `push`, or `schedule` triggers outside `workflow_dispatch`.
+3. **MODIFY path — v5 CI trigger contract**: `.github/workflows/v5-test-lanes.yml`
+   must ONLY have `workflow_dispatch` trigger. The guard parses the file
+   line-by-line with standard-library Python (no PyYAML). It locates the
+   column-0 `on:` key, then collects all exactly-two-space-indented event keys
+   until the next column-0 key. The resulting event-key set MUST be exactly
+   `{workflow_dispatch}`. Whole-file grep for `schedule` is forbidden — it
+   would falsely match the `scheduled-full-suite` job name. Additionally,
+   verify every job-level `if:` condition references
+   `github.event_name == 'workflow_dispatch'` (no `schedule`, no bare push/PR
+   conditions). Job names and job body may remain as-is.
 
 4. **Root authority**: Fail if:
    - `PROJECT_MEMORY.md` references v5 as active or contains v5 install/run
@@ -568,18 +615,40 @@ Checks:
 6. **Legacy imports**: Fail if any `.py` file under `src/aitp/` imports from
    `brain/`, `brain.v5`, or `brain/` subpackages.
 
-7. **Archive ledger hashes**: If `docs/legacy/aitp-v5-authority-cutover/archive-manifest.json`
-   exists, verify every `original_sha256` by computing SHA-256 on
-   `git show <source_commit>:<source_path>` (NOT the worktree file). Verify
+7. **Archive ledger — unconditional**: The file
+   `docs/legacy/aitp-v5-authority-cutover/archive-manifest.json` MUST exist
+   (missing ledger is FAIL). Verify every `original_sha256` by computing SHA-256
+   on `git show <source_commit>:<source_path>` (NOT the worktree file). Verify
    every `archive_sha256` matches the archived file on disk. For
    `PROJECT_MEMORY.md` and `README.md` entries, verify
-   `original_sha256 == archive_sha256`.
+   `original_sha256 == archive_sha256`. Verify the ledger's `source_path` set
+   is set-equal to the closed archive inventory in §4.3. Verify every archive
+   path exists on disk. Verify `git_mode`, `byte_count`, `line_count`,
+   `byte_interval`, and `line_interval` match the actual file. Verify every
+   retirement notice's archive path mapping is consistent with the ledger.
+   Missing any archivable entry, extra entry, or hash/boundary mismatch is FAIL.
 
-8. **Canonical zero-diff and changed-path protection**: Fail if
+8. **Strong authority-marker guard**: Repo-root-anchored scan of all tracked
+   Markdown files. Exclude: `archive/`, `docs/archive/`, `docs/legacy/`,
+   `docs/superpowers/`, `docs/session_reports/`, `tests/`, `output/`, `tmp/`,
+   `build/`, `generated/`, `.git/`, and all KEEP-HISTORICAL paths in
+   §4.4/§5.2.
+   Among the remaining non-retirement Markdown surfaces, FAIL if any file
+   contains an old authority marker pattern:
+   - `Status:` or `status:` followed by `active` or `canonical`
+   - `highest public authority`
+   - `active local workflow rule`
+   - `active runtime contract`
+   - `single source of truth` (with or without hyphens)
+   - `authoritative active-topic`
+   This check does NOT require zero v5 tokens in KEEP-HISTORICAL files. It does
+   NOT scan external `.aitp`.
+
+9. **Canonical zero-diff and changed-path protection**: Fail if
    `git diff --name-only eec20f6faeb089ec2fcdc982ad65adce242a21a9 HEAD -- research/knowledge-hub/canonical/ contracts/ schemas/`
    produces any output.
 
-9. **`.aitp/` boundary**: Only check repo-root `.aitp/` (the directory
+10. **`.aitp/` boundary**: Only check repo-root `.aitp/` (the directory
    `<repo-root>/.aitp/`). Fail if the current diff modifies any file under repo-root
    `.aitp/`. Do NOT `rglob('.aitp')`, traverse parent directories, or scan
    outside the repository root. External `<topics-root>/.aitp` directories are
@@ -762,7 +831,7 @@ archive tree, no ledger, no rewrites, no guard script exists yet):
 | G1-1 | Seven Phase 1 documents committed | Exact 7 paths committed to cutover branch; no extra files |
 | G1-2 | Worktree clean | `git status --short` shows only Phase 1 untracked paths or nothing (after commit) |
 | G1-3 | Frontmatter and review links resolve | All `authority:`, `scope:`, `evidence_checkpoint:`, `live_main_baseline:` in frontmatter point to existing files/commits |
-| G1-4 | Machine paths normalized | Zero absolute machine paths in the 7 documents (Windows drive paths, `/home/bhjia`, etc.) |
+| G1-4 | Machine paths normalized | Zero absolute machine paths in the 7 documents (Unix user-home absolute paths, Windows drive-qualified paths, or any other machine-specific absolute paths) |
 | G1-5 | Live `origin/main` equals baseline | `git fetch origin && git rev-parse origin/main` strictly equals `eec20f6faeb089ec2fcdc982ad65adce242a21a9`. If not: STOP; do not rebase/continue. Re-inventory, update baseline/archive hashes/action matrix/design, and re-pass Gate 1. |
 | G1-6 | Cutover design self-review complete | All reviewer findings addressed; no unresolved P0 |
 | G1-7 | Oracle Gate 1 pass | Independent Oracle review (Gate 1) confirms no blocking findings |
@@ -860,8 +929,8 @@ Phase 2 start.
 | P0-4 | `README.md` archive SHA equals original | Ditto for README.md | Same as P0-3 for README.md |
 | P0-5 | New `README.md` first viewport | First 40 lines contain no v5 install/run content | Manual read + `grep -i 'pip install\|npm install\|mcp install\|hook install' README.md` returns nothing |
 | P0-6 | DELETE paths do not exist | Every path in §5.1 DELETE list absent from worktree | `ls <path>` fails for each DELETE entry |
-| P0-7 | REPLACE paths match template | Every REPLACE file content equals parametrized template | Byte-for-byte comparison against expected template for all 34 REPLACE paths |
-| P0-8 | v5 CI trigger restricted | Only `workflow_dispatch` triggers in `v5-test-lanes.yml` | `grep -E 'pull_request\|push:\|schedule' .github/workflows/v5-test-lanes.yml` returns nothing |
+| P0-7 | REPLACE paths match template | Every REPLACE file content equals parametrized template | Byte-for-byte comparison against expected template for all 43 REPLACE paths |
+| P0-8 | v5 CI trigger restricted | Only `workflow_dispatch` in v5-test-lanes.yml `on:` block; all job `if:` use manual dispatch | Guard check 3 (line-by-line column-0 `on:` parse, not whole-file grep) |
 | P0-9 | Shim no-drift | `AGENTS.md` and `CLAUDE.md` unchanged | `git diff eec20f6faeb089ec2fcdc982ad65adce242a21a9 -- AGENTS.md CLAUDE.md` exits 0 |
 | P0-10 | `src/aitp/` no legacy imports | No `import brain` or `from brain` in `src/aitp/` | `grep -r 'import brain\|from brain' src/aitp/` returns nothing |
 | P0-11 | Canonical zero diff | `canonical/`, `contracts/`, `schemas/` unchanged | `git diff --name-only eec20f6faeb089ec2fcdc982ad65adce242a21a9 HEAD -- research/knowledge-hub/canonical/ contracts/ schemas/` produces no output |
@@ -874,12 +943,14 @@ Phase 2 start.
 
 | # | Check | Acceptance |
 |---|-------|------------|
-| P1-1 | Archive ledger complete | `archive-manifest.json` has one entry per path in §4.3 (all DELETE + REPLACE + MODIFY + root files) |
-| P1-2 | Ledger hashes validate | Every `original_sha256` equals `sha256sum(git show <source_commit>:<source_path>)`. Every `archive_sha256` equals `sha256sum <archive-file-on-disk>`. |
-| P1-3 | All retirement notices exact match | Every REPLACE file byte-for-byte matches template (exactly 4 lines, exactly 5 for UNINSTALL.md) |
+| P1-1 | Archive ledger exists and complete | `archive-manifest.json` must exist (missing=FAIL); `source_path` set is set-equal to closed archive inventory in §4.3 (all DELETE + REPLACE + MODIFY + root files); every archive path exists on disk |
+| P1-2 | Ledger hashes and boundaries validate | Every `original_sha256` equals `sha256sum(git show <source_commit>:<source_path>)`. Every `archive_sha256` equals `sha256sum <archive-file-on-disk>`. `git_mode`, `byte_count`, `line_count`, `byte_interval`, `line_interval` match actual file. |
+| P1-3 | All retirement notices exact match (bytes) | Every REPLACE file byte-for-byte matches template (UTF-8, LF-only, no BOM, trailing `\n`; exactly 4 logical lines, exactly 5 for UNINSTALL.md). Retirement notice archive mapping consistent with ledger. |
 | P1-4 | New `PROJECT_MEMORY.md` links resolve | All markdown links in the new PM point to existing files |
 | P1-5 | Authority guard script is standard-library only | `grep -E '^import \|^from ' scripts/check_repository_authority.py` shows only stdlib modules |
 | P1-6 | KEEP-HISTORICAL files not in changed set | No file from §4.4/§5.2 KEEP-HISTORICAL list appears in `git diff --name-only` against baseline |
+| P1-7 | Strong authority-marker scan clean | Guard strong-marker check (§7.2 item 8) finds zero old authority markers in non-retirement, non-historical Markdown surfaces |
+| P1-8 | v5 CI trigger verified by guard check 3 | Guard parses `on:` block line-by-line (no whole-file grep); event-key set exactly `{workflow_dispatch}`; all job `if:` use manual dispatch |
 
 ## 12. What This Design Does Not Do
 
