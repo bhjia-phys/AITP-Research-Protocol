@@ -1,21 +1,4 @@
----
-name: aitp-runtime
-description: Compatibility pointer for the Claude Code AITP v5 adapter; active templates live under deploy/templates/claude-code.
----
+# AITP v5 entrypoint retired
 
-# AITP V5 For Claude Code
-
-The supported Claude Code path is installed by
-`python scripts/aitp-pm.py install --agent claude-code` and uses:
-
-- MCP entrypoint: `brain/v5/native_mcp.py`
-- typed tools: `mcp__aitp__aitp_v5_*`
-- gateway skill: `deploy/templates/claude-code/using-aitp.md`
-- runtime skill: `deploy/templates/claude-code/aitp-runtime.md`
-
-Restore an existing topic through the v5 recovery audit, execution brief, and
-claim relation map before expanding or recording. Use explicit typed writes at
-durable research moments and preserve every human, validation, and trust gate.
-
-Legacy stage files and aliases are migration/read-only compatibility surfaces;
-they are not the active research lifecycle.
+AITP v5 is retired. `PROJECT_MEMORY.md` is the sole active authority.
+Historical content: `docs/legacy/aitp-v5-authority-cutover/repository/adapters/claude-code/SKILL.md`.

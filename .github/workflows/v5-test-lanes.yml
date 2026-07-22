@@ -1,23 +1,18 @@
-name: AITP v5 test lanes
+name: AITP v5 test lanes (historical — manual trigger only)
 
 on:
-  pull_request:
-  push:
-    branches: [main]
   workflow_dispatch:
-  schedule:
-    - cron: "17 18 * * 0"
 
 permissions:
   contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name != 'schedule' }}
+  cancel-in-progress: true
 
 jobs:
   m0-fast:
-    if: github.event_name != 'schedule'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     timeout-minutes: 35
     strategy:
@@ -49,7 +44,7 @@ jobs:
         run: python scripts/run_v5_test_lanes.py slow-adapter --basetemp "${{ runner.temp }}\aitp-slow-adapter"
 
   scheduled-full-suite:
-    if: github.event_name == 'schedule'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     timeout-minutes: 120
     env:
