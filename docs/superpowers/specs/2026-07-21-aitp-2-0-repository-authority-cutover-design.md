@@ -120,7 +120,8 @@ Key constraints:
 
 ### 4.3 Files To Archive
 
-At minimum, the following live-main files must be archived byte-identically
+The following live-main files constitute the complete closed inventory for
+archival. They must be archived byte-identically
 under `docs/legacy/aitp-v5-authority-cutover/repository/` with their source-relative
 paths preserved:
 
@@ -152,7 +153,7 @@ paths preserved:
    - `scripts/aitp-local.cmd`
    - `scripts/aitp-pm.py`
 
-4. Installation documents:
+4. Installation documents and active authority prose:
    - `docs/INSTALL.md`
    - `docs/INSTALL_CLAUDE_CODE.md`
    - `docs/INSTALL_CODEX.md`
@@ -162,36 +163,78 @@ paths preserved:
    - `docs/PUBLISH_PYPI.md`
    - `docs/MIGRATE_LOCAL_INSTALL.md`
    - `docs/UNINSTALL.md`
+   - `docs/README.codex.md`
+   - `docs/PROJECT_INDEX.md`
+   - `docs/AITP_SPEC.md`
+   - `docs/AITP_POSITIONING.md`
+   - `docs/AITP_RESEARCH_BRAIN_ROADMAP.md`
+   - `docs/AITP_SKILL_LINKAGE.md`
+   - `docs/CODEX_APP_1_0_PLAN.md`
+   - `docs/AITP_V5_THEORY_RESEARCH_STATE.md`
+   - `docs/v5-quiet-research-workflow-architecture.md`
+   - `docs/v5-source-asset-pdf-acquisition.md`
 
 5. Protocol/CI entry points:
    - `brain/PROTOCOL.md`
    - `docs/AUDIT_REPORT_ALIGNMENT.md` (references v5 L0-L4)
    - `.github/workflows/v5-test-lanes.yml`
 
-### 4.4 Posts Not Archived (remain in place as historical source)
+6. Adapter entry points:
+   - `adapters/README.md`
+   - `adapters/claude-code/SKILL.md`
+   - `adapters/codex/SKILL.md`
+   - `adapters/openclaw/SKILL.md`
+   - `adapters/opencode/SKILL.md`
 
-These files are historical source code and payload, not active entry points.
-They remain in place but MUST NOT be referenced by any active manifest, default
-documentation, or CI workflow after cutover:
+7. Knowledge-hub and OpenClaw entry points:
+   - `research/knowledge-hub/README.md`
+   - `research/knowledge-hub/LAYER_MAP.md`
+   - `research/adapters/openclaw/PLUGIN_PROFILE_INSTALL.md`
+   - `research/adapters/openclaw/BOOTSTRAP.md`
+   - `research/adapters/openclaw/AITP_AGENT_ENTRYPOINT.md`
+
+This inventory is closed — no paths may be added during Phase 2 execution.
+Adding a new archival path requires amending this design document, revising the
+action matrix (§5.1) and allowlist derivation (§9.4) accordingly, and re-passing
+Oracle Gate 1 (§10.1). This preserves the allowlist set equality contract in §9.4.
+
+### 4.4 Posts Not Archived — KEEP-HISTORICAL
+
+These files are historical source code and inert payload. They remain in place
+byte-identical to the baseline and MUST NOT be modified, deleted, or replaced.
+They may retain v5 content because all discovery manifests, installer documents,
+and default entry-point docs that reference them have been archived and
+deactivated (DELETE/REPLACE/MODIFY):
 
 - `brain/v5/**` — all v5 source code
-- `hooks/**` — hook implementations
-- `adapters/**` — host adapter code
-- `deploy/**` — deployment configs
-- `plugins/aitp-research-protocol/scripts/**` — plugin payload
-- `plugins/aitp-research-protocol-kimi/scripts/**` — plugin payload
+- `hooks/**` — hook implementations (source, not manifests)
+- `deploy/**` — deployment configs/templates
+- `plugins/aitp-research-protocol/scripts/**` — plugin launcher payload
+- `plugins/aitp-research-protocol/skills/**` — plugin Skill payload
+- `plugins/aitp-research-protocol-kimi/scripts/**` — plugin launcher payload
+- `plugins/aitp-research-protocol-kimi/skills/**` — plugin Skill payload
 - `research/adapters/openclaw/scripts/**` — OpenClaw runtime payload
-- `research/adapters/openclaw/plugin/**` — OpenClaw plugin source
+- `research/adapters/openclaw/plugin/**` — OpenClaw plugin source (except manifest JSON and package.json files which are DELETEd)
 - `scripts/split_*.py` — v5 split utilities
 - `scripts/run_v5_test_lanes.py` — v5 test runner
+- `tests/**` — v5 test suites
 - `bin/convert_legacy_to_v2.py`, `bin/migrate_legacy_topics.py`, etc. — historical utilities
+- `contracts/**` — zero-diff protected
+- `schemas/**` — zero-diff protected
+- `research/knowledge-hub/canonical/**` — zero-diff protected
+- `research/knowledge-hub/` non-README/LAYER_MAP payload — historical records
+- Timestamped design history (`docs/superpowers/plans/`, `docs/superpowers/progress/`) — historical
+
+Guard MUST NOT require zero v5 tokens in KEEP-HISTORICAL files. It MUST verify
+that no active manifest, default doc, or CI workflow references them as current
+operational targets. The guard checks references, not historical file content.
 
 ## 5. Deactivation — Active Entry Points
 
 ### 5.1 Action Matrix
 
 The cutover commit must deactivate every active entry point. The matrix
-distinguishes two actions:
+distinguishes three actions:
 
 | Action | Meaning |
 |--------|---------|
@@ -225,7 +268,7 @@ distinguishes two actions:
 
 | Source Path | Action |
 |-------------|--------|
-| `.codex/INSTALL.md` | REPLACE: "AITP v5 Codex installation is retired. AITP 2.0 is the active authority. See PROJECT_MEMORY.md and docs/superpowers/specs/2026-07-20-aitp-2-0-command-skill-protocol-design.md." |
+| `.codex/INSTALL.md` | REPLACE: retirement notice |
 | `docs/INSTALL.md` | REPLACE: retirement notice |
 | `docs/INSTALL_CLAUDE_CODE.md` | REPLACE: retirement notice |
 | `docs/INSTALL_CODEX.md` | REPLACE: retirement notice |
@@ -239,6 +282,26 @@ distinguishes two actions:
 | `plugins/aitp-research-protocol-kimi/README.md` | REPLACE: retirement notice |
 | `brain/PROTOCOL.md` | REPLACE: retirement notice |
 | `docs/AUDIT_REPORT_ALIGNMENT.md` | REPLACE: retirement notice |
+| `docs/README.codex.md` | REPLACE: retirement notice |
+| `docs/PROJECT_INDEX.md` | REPLACE: retirement notice |
+| `docs/AITP_SPEC.md` | REPLACE: retirement notice |
+| `docs/AITP_POSITIONING.md` | REPLACE: retirement notice |
+| `docs/AITP_RESEARCH_BRAIN_ROADMAP.md` | REPLACE: retirement notice |
+| `docs/AITP_SKILL_LINKAGE.md` | REPLACE: retirement notice |
+| `docs/CODEX_APP_1_0_PLAN.md` | REPLACE: retirement notice |
+| `docs/AITP_V5_THEORY_RESEARCH_STATE.md` | REPLACE: retirement notice |
+| `docs/v5-quiet-research-workflow-architecture.md` | REPLACE: retirement notice |
+| `docs/v5-source-asset-pdf-acquisition.md` | REPLACE: retirement notice |
+| `adapters/README.md` | REPLACE: retirement notice |
+| `adapters/claude-code/SKILL.md` | REPLACE: retirement notice |
+| `adapters/codex/SKILL.md` | REPLACE: retirement notice |
+| `adapters/openclaw/SKILL.md` | REPLACE: retirement notice |
+| `adapters/opencode/SKILL.md` | REPLACE: retirement notice |
+| `research/knowledge-hub/README.md` | REPLACE: retirement notice |
+| `research/knowledge-hub/LAYER_MAP.md` | REPLACE: retirement notice |
+| `research/adapters/openclaw/PLUGIN_PROFILE_INSTALL.md` | REPLACE: retirement notice |
+| `research/adapters/openclaw/BOOTSTRAP.md` | REPLACE: retirement notice |
+| `research/adapters/openclaw/AITP_AGENT_ENTRYPOINT.md` | REPLACE: retirement notice |
 
 #### CI workflow (**MODIFY** to manual-only)
 
@@ -246,13 +309,34 @@ distinguishes two actions:
 |-------------|--------|
 | `.github/workflows/v5-test-lanes.yml` | MODIFY: remove all automatic triggers; keep `workflow_dispatch` only. Archive byte-identical copy first. |
 
-Every retirement notice must:
-- State "AITP v5 is retired."
-- Point to `PROJECT_MEMORY.md` as the sole active authority.
-- Point to the archival copy at `docs/legacy/aitp-v5-authority-cutover/repository/<path>`.
-- Contain no install commands, no executable shell commands, no pip/npm/mcp
-  directives, no hook registration steps.
-- Be no longer than 8 lines.
+#### Retirement Notice Template (fail-closed)
+
+Every REPLACE file MUST use exactly this content (parameterized by archive path):
+
+```text
+# AITP v5 entrypoint retired
+
+AITP v5 is retired. `PROJECT_MEMORY.md` is the sole active authority.
+Historical content: `docs/legacy/aitp-v5-authority-cutover/repository/<source-relative-path>`.
+```
+
+The template is exactly 4 lines (heading + blank line + body line + archive path
+line). The heading MUST be `# AITP v5 entrypoint retired` (exact string). The
+body line MUST be exactly `AITP v5 is retired. \`PROJECT_MEMORY.md\` is the sole active authority.`
+The archive path line MUST be exactly `Historical content: \`<archive path>\`.`
+where `<archive path>` is the full source-relative path under
+`docs/legacy/aitp-v5-authority-cutover/repository/`. No other text, no fenced
+code blocks, no URLs, no pip/npm/mcp/install commands, no shell commands.
+
+Exception for `docs/UNINSTALL.md`: append a fifth line:
+```text
+Local uninstall is a separate operation and requires explicit human approval.
+```
+Total: exactly 5 lines for UNINSTALL.md, exactly 4 lines for all other REPLACE files.
+
+The authority guard MUST verify every REPLACE file byte-for-byte against its
+expected template (exact heading, exact sentence, exact archive path, line
+count, no extra content). Broad token search is insufficient.
 
 ### 5.2 Files NOT Deleted or Modified
 
@@ -260,10 +344,32 @@ These files remain byte-identical to the live-main baseline:
 
 - `AGENTS.md` — thin shim; unchanged.
 - `CLAUDE.md` — thin shim; unchanged.
-- `brain/v5/**` — historical source; preserved in place.
-- `hooks/**`, `adapters/**`, `deploy/**` — historical source; preserved in place.
-- All historical research records in `research/knowledge-hub/**` — preserved.
-- `contracts/**`, `schemas/**` — canonical definition files; zero-diff protected (see §8.2).
+
+These trees are **KEEP-HISTORICAL** — source/payload preserved in place; may
+retain v5 content; not deactivated because manifests/installers/default docs
+no longer reference them. They are NOT in DELETE/REPLACE/MODIFY:
+
+- `brain/v5/**` — v5 source code
+- `hooks/**` — hook implementations (source, not manifests)
+- `deploy/**` — deployment configs/templates
+- `plugins/aitp-research-protocol/scripts/**` — plugin launcher payload
+- `plugins/aitp-research-protocol/skills/**` — plugin Skill payload
+- `plugins/aitp-research-protocol-kimi/scripts/**` — plugin launcher payload
+- `plugins/aitp-research-protocol-kimi/skills/**` — plugin Skill payload
+- `research/adapters/openclaw/scripts/**` — OpenClaw runtime payload
+- `research/adapters/openclaw/plugin/**` — OpenClaw plugin source (except DELETEd manifest JSONs)
+- `scripts/run_v5_test_lanes.py` — historical test runner (not in DELETE/REPLACE)
+- `tests/**` — v5 test suites
+- Timestamped design history — `docs/superpowers/plans/`, `docs/superpowers/progress/`
+
+Zero-diff protected (also KEEP-HISTORICAL but with active verification):
+- `research/knowledge-hub/canonical/**`
+- `contracts/**`
+- `schemas/**`
+
+Guards MUST NOT require zero v5 tokens in KEEP-HISTORICAL files. Guards check
+that active manifests/installer/default docs do not reference them as current
+operational targets.
 
 ## 6. Root Rewrites
 
@@ -407,61 +513,82 @@ jobs:
 
 The guard script (`scripts/check_repository_authority.py`) is a standalone
 standard-library Python script. It MUST NOT import `brain/`, `src/aitp/` (which
-does not exist yet), or any v5 module. It runs on PR and push to main and checks:
+does not exist yet), or any v5 module. It runs on PR and push to main.
 
-1. **Forbidden active manifests**: Fail if any of these files exist and contain
-   non-retirement content:
-   - `.agents/plugins/marketplace.json`
-   - `.claude-plugin/plugin.json`
-   - `plugins/marketplace.kimi.json`
-   - `plugins/aitp-research-protocol/.codex-plugin/plugin.json`
-   - `plugins/aitp-research-protocol/.mcp.json`
-   - `plugins/aitp-research-protocol-kimi/kimi.plugin.json`
-   - `package.json`
-   - `aitp-manifest.json`
-   - OpenClaw manifest/plugin/package JSON files
-2. **Forbidden active bins/commands**: Fail if any executable entrypoint from the
-   DELETE list in §5.1 exists at its original path — `bin/aitp-v5.mjs`,
-   `scripts/aitp`, `scripts/aitp.cmd`, `scripts/aitp-local.py`,
-   `scripts/aitp-local.cmd`, or `scripts/aitp-pm.py`.
-3. **Forbidden install docs and retired entry points**: Fail if any file from the
-   REPLACE list in §5.1 contains non-retirement content (pip install, npm
-   install, MCP registration, hook commands, or v5 operational prose):
-   `.codex/INSTALL.md`, all `docs/INSTALL*.md`, `docs/QUICKSTART.md`,
-   `docs/PUBLISH_PYPI.md`, `docs/MIGRATE_LOCAL_INSTALL.md`,
-   `docs/UNINSTALL.md`, `plugins/aitp-research-protocol/README.md`,
-   `plugins/aitp-research-protocol-kimi/README.md`, `brain/PROTOCOL.md`,
-   `docs/AUDIT_REPORT_ALIGNMENT.md`.
+The guard anchors to the repository root via `git rev-parse --show-toplevel`.
+All changed-path checks use `git diff --name-only eec20f6faeb089ec2fcdc982ad65adce242a21a9 HEAD -- <repo-relative pathspec>`.
+The guard does NOT rely on unstaged `git diff` for PR/push contexts.
+
+Checks:
+
+1. **DELETE paths — fail on existence**: For every path in the DELETE list in
+   §5.1, fail if the file exists at the original path. Content is irrelevant;
+   mere existence at the source path after cutover is a violation.
+
+2. **REPLACE paths — exact template match**: For every path in the REPLACE list
+   in §5.1, verify the file content byte-for-byte matches the expected template.
+   The expected content is the parametrized retirement notice template defined in
+   §5.1 with the correct archive path substituted. Verification: exact heading
+   `# AITP v5 entrypoint retired`, exact body sentence, exact archive path line,
+   total line count exactly 4 (exactly 5 for `docs/UNINSTALL.md`), no fenced code blocks, no
+   URLs, no pip/npm/mcp/shell command patterns. The 34 REPLACE paths are:
+
+   `.codex/INSTALL.md`, `docs/INSTALL.md`, `docs/INSTALL_CLAUDE_CODE.md`,
+   `docs/INSTALL_CODEX.md`, `docs/INSTALL_KIMI_CODE.md`,
+   `docs/INSTALL_OPENCLAW.md`, `docs/QUICKSTART.md`, `docs/PUBLISH_PYPI.md`,
+   `docs/MIGRATE_LOCAL_INSTALL.md`, `docs/UNINSTALL.md`,
+   `docs/README.codex.md`, `docs/PROJECT_INDEX.md`, `docs/AITP_SPEC.md`,
+   `docs/AITP_POSITIONING.md`, `docs/AITP_RESEARCH_BRAIN_ROADMAP.md`,
+   `docs/AITP_SKILL_LINKAGE.md`, `docs/CODEX_APP_1_0_PLAN.md`,
+   `docs/AITP_V5_THEORY_RESEARCH_STATE.md`,
+   `docs/v5-quiet-research-workflow-architecture.md`,
+   `docs/v5-source-asset-pdf-acquisition.md`, `docs/AUDIT_REPORT_ALIGNMENT.md`,
+   `plugins/aitp-research-protocol/README.md`,
+   `plugins/aitp-research-protocol-kimi/README.md`,
+   `brain/PROTOCOL.md`, `adapters/README.md`,
+   `adapters/claude-code/SKILL.md`, `adapters/codex/SKILL.md`,
+   `adapters/openclaw/SKILL.md`, `adapters/opencode/SKILL.md`,
+   `research/knowledge-hub/README.md`,
+   `research/knowledge-hub/LAYER_MAP.md`,
+   `research/adapters/openclaw/PLUGIN_PROFILE_INSTALL.md`,
+   `research/adapters/openclaw/BOOTSTRAP.md`,
+   `research/adapters/openclaw/AITP_AGENT_ENTRYPOINT.md`.
+
+3. **MODIFY path**: `.github/workflows/v5-test-lanes.yml` — fail if it contains
+   `pull_request`, `push`, or `schedule` triggers outside `workflow_dispatch`.
+
 4. **Root authority**: Fail if:
    - `PROJECT_MEMORY.md` references v5 as active or contains v5 install/run
      instructions.
    - `README.md` first 40 lines contain v5 operational content.
-5. **v5 workflow trigger**: Fail if `.github/workflows/v5-test-lanes.yml`
-   contains `pull_request`, `push`, or `schedule` triggers outside
-   `workflow_dispatch`.
-6. **Shim no-drift**: Fail if `AGENTS.md` or `CLAUDE.md` differ from their
-   live-main baseline bytes.
-7. **Legacy imports**: Fail if any `.py` file under `src/aitp/` imports from
+
+5. **Shim no-drift**: Fail if `AGENTS.md` or `CLAUDE.md` differ from their
+   baseline bytes at `eec20f6faeb089ec2fcdc982ad65adce242a21a9`.
+
+6. **Legacy imports**: Fail if any `.py` file under `src/aitp/` imports from
    `brain/`, `brain.v5`, or `brain/` subpackages.
-8. **Archive ledger hashes**: If `docs/legacy/aitp-v5-authority-cutover/archive-manifest.json`
-   exists, verify every `original_sha256` by computing SHA-256 on the output of
+
+7. **Archive ledger hashes**: If `docs/legacy/aitp-v5-authority-cutover/archive-manifest.json`
+   exists, verify every `original_sha256` by computing SHA-256 on
    `git show <source_commit>:<source_path>` (NOT the worktree file). Verify
    every `archive_sha256` matches the archived file on disk. For
    `PROJECT_MEMORY.md` and `README.md` entries, verify
    `original_sha256 == archive_sha256`.
-9. **Canonical zero-diff**: Fail if any file under
-   `research/knowledge-hub/canonical/` differs from its live-main baseline
-   (`eec20f6faeb089ec2fcdc982ad65adce242a21a9`). Similarly fail for
-   `contracts/` and `schemas/`.
-10. **Changed-path protection**: Fail if the current diff modifies any file
-    under `research/knowledge-hub/canonical/`, `contracts/`, `schemas/`, or
-    `.aitp/` (if it exists in-repo).
+
+8. **Canonical zero-diff and changed-path protection**: Fail if
+   `git diff --name-only eec20f6faeb089ec2fcdc982ad65adce242a21a9 HEAD -- research/knowledge-hub/canonical/ contracts/ schemas/`
+   produces any output.
+
+9. **`.aitp/` boundary**: Only check repo-root `.aitp/` (the directory
+   `<repo-root>/.aitp/`). Fail if the current diff modifies any file under repo-root
+   `.aitp/`. Do NOT `rglob('.aitp')`, traverse parent directories, or scan
+   outside the repository root. External `<topics-root>/.aitp` directories are
+   never read, written, or scanned.
 
 These three trees — `research/knowledge-hub/canonical/`, `contracts/`,
 `schemas/` — are v5 historical and canonical-contract surfaces. Under 2.0
-authority they are frozen; the guard uses `git show` and `git diff` against the
-baseline `eec20f6faeb089ec2fcdc982ad65adce242a21a9` to verify no modification.
-External `.aitp` directories are still never read or written by the guard.
+authority they are frozen; the guard uses `git diff` against the baseline
+`eec20f6faeb089ec2fcdc982ad65adce242a21a9` to verify no modification.
 
 The CI checkout requires `fetch-depth: 0` because the source baseline
 `eec20f6faeb089ec2fcdc982ad65adce242a21a9` must be reachable for `git show` and
@@ -477,6 +604,9 @@ violation.
 ### 8.1 External `.aitp`
 
 The cutover design and guard:
+- Only consider repo-root `.aitp/` (the directory at `<repo-root>/.aitp/`).
+- Do NOT `rglob('.aitp')`, traverse parent directories, or scan outside the
+  repository root.
 - Do NOT read, write, or validate any external `<topics-root>/.aitp`.
 - Do NOT use `repo diff` to assert anything about external `.aitp` stores.
 - Explicitly state that external `.aitp` directories are outside the
@@ -528,12 +658,12 @@ docs: cut over repository authority from AITP v5 to 2.0
   points under docs/legacy/aitp-v5-authority-cutover/repository/
 - Add archive-manifest.json with exact SHA-256, byte/line intervals
 - Deactivate v5 discovery manifests, bin/scripts, install docs
-- Replace PROJECT_MEMORY.md with 2.0 sole-active-authority content
-- Replace README.md with concise 2.0 status block
+- Replace PROJECT_MEMORY.md and README.md with 2.0 authority content
 - Keep AGENTS.md/CLAUDE.md byte-identical (shims)
 - Restrict v5 CI to workflow_dispatch only
 - Add authority-guard CI workflow and check script
 - Zero-diff protect canonical/, contracts/, schemas/
+- Commit touches exactly the Phase 2 allowlist (see §9.4)
 
 Authority: docs/superpowers/specs/2026-07-21-aitp-2-0-repository-authority-cutover-design.md
 Evidence checkpoint: 869d8e65f19e69404405e4da976876be8fc7f9a0
@@ -545,7 +675,8 @@ Live-main baseline: eec20f6faeb089ec2fcdc982ad65adce242a21a9
 1. **Phase 1 (this design)** — commit the 7 transplanted documents (including
    this design) to the cutover branch. This is the specification commit.
 2. **Phase 2 (implementation)** — commit the archive, deactivation, rewrites,
-   guard, and CI changes. This is the cutover execution commit.
+   guard, and CI changes. This is the cutover execution commit. The commit
+   must touch exactly the allowlist derived in §9.4 — no more, no fewer paths.
 3. **Phase 3 (S0 implementation plan)** — write and commit an S0 implementation
    plan. The plan must describe: desensitized source-derived fixture structures,
    the 12 command contracts, record profiles, the command Skill package
@@ -555,14 +686,16 @@ Live-main baseline: eec20f6faeb089ec2fcdc982ad65adce242a21a9
 
 ### 9.3 Rollback
 
-Rollback is the exact `git revert` of the cutover execution commit (Phase 2),
-applied on the development branch or after merge to main. Because this is a
+Rollback is the exact `git revert <phase2-sha>` of the Phase 2 cutover commit,
+applied on the development branch or after merge to main. The `<phase2-sha>` is
+the full 40-character SHA recorded in the acceptance record (not in the ledger).
+Because this is a
 single atomic revert, the new archive tree (`docs/legacy/`) and ledger created
 by the cutover commit will also be removed from the current working tree. This
 is expected: `git revert` exactly inverts the commit's diff.
 
 The archival evidence is preserved in the reverted commit's Git history and can
-be recovered at any time via `git show <cutover-commit>:<path>`. If a user needs
+be recovered at any time via `git show <phase2-sha>:<path>`. If a user needs
 the archive to remain in the working tree after rollback, that requires extra
 non-atomic operations (e.g., cherry-picking only part of the revert, or
 restoring the archive from the reverted commit after revert). These non-atomic
@@ -584,34 +717,86 @@ Post-rollback verification:
   against live-main baseline.
 - `git diff --check` passes.
 
+### 9.4 Phase 2 Exact Allowlist Contract
+
+The Phase 2 commit must touch exactly the following paths — no more, no fewer.
+The staged set and final commit tree diff against baseline must be set-equal to
+this list.
+
+**Derivation rules:**
+
+1. **Archive tree paths**: For every path in the DELETE, REPLACE, and MODIFY
+   lists, derive one archive path:
+   `docs/legacy/aitp-v5-authority-cutover/repository/<source-path>`. Plus root
+   entries for `PROJECT_MEMORY.md` and `README.md`. Plus the ledger itself:
+   `docs/legacy/aitp-v5-authority-cutover/archive-manifest.json`.
+
+2. **Active changed paths**:
+   - `PROJECT_MEMORY.md` (rewritten)
+   - `README.md` (rewritten)
+   - Every DELETE path (removed from worktree)
+   - Every REPLACE path (overwritten with retirement template)
+   - `.github/workflows/v5-test-lanes.yml` (MODIFY)
+   - `.github/workflows/authority-guard.yml` (new)
+   - `scripts/check_repository_authority.py` (new)
+
+3. **Explicitly excluded from changed set**:
+   - `AGENTS.md` and `CLAUDE.md` — byte-identical shims
+   - `research/knowledge-hub/canonical/`, `contracts/`, `schemas/` — zero-diff frozen
+   - All KEEP-HISTORICAL paths listed in §4.4 and §5.2
+
+The exact allowlist (all paths, machine-comparable) is generated from this
+design matrix before Phase 2 implementation. The staged paths and commit diff
+names must be set-equal to the generated allowlist.
+
 ## 10. Default Branch Landing Conditions
 
-### 10.1 Prerequisites Before Cutover Implementation
+### 10.1 Phase 1 / Gate 1 Start Checklist
 
-The cutover implementation (Phase 2) must NOT begin until:
+Before Phase 2 implementation can begin, the following items must be verified.
+These are the only items that can be checked with only Phase 1 artifacts (no
+archive tree, no ledger, no rewrites, no guard script exists yet):
 
-1. **Phase 1 design committed**: This design, plus all other Phase 1 documents,
-   are committed to the cutover branch.
-2. **P0/P1 self-review complete**: All items in the §11 checklist below are
-   verified and documented. All P0 items must pass; all P1 items must pass
-   before S0.
-3. **Oracle Gate 1 unblocked**: The Phase 1 design and self-review pass
-   independent Oracle review (Gate 1, the CTL gate defined in the project's
-   governance model) with no blocking findings.
+| # | Check | Acceptance |
+|---|-------|------------|
+| G1-1 | Seven Phase 1 documents committed | Exact 7 paths committed to cutover branch; no extra files |
+| G1-2 | Worktree clean | `git status --short` shows only Phase 1 untracked paths or nothing (after commit) |
+| G1-3 | Frontmatter and review links resolve | All `authority:`, `scope:`, `evidence_checkpoint:`, `live_main_baseline:` in frontmatter point to existing files/commits |
+| G1-4 | Machine paths normalized | Zero absolute machine paths in the 7 documents (Windows drive paths, `/home/bhjia`, etc.) |
+| G1-5 | Live `origin/main` equals baseline | `git fetch origin && git rev-parse origin/main` strictly equals `eec20f6faeb089ec2fcdc982ad65adce242a21a9`. If not: STOP; do not rebase/continue. Re-inventory, update baseline/archive hashes/action matrix/design, and re-pass Gate 1. |
+| G1-6 | Cutover design self-review complete | All reviewer findings addressed; no unresolved P0 |
+| G1-7 | Oracle Gate 1 pass | Independent Oracle review (Gate 1) confirms no blocking findings |
 
-### 10.2 Landing Requirements
+Only after G1-1 through G1-7 all pass may Phase 2 implementation begin. The
+Phase 2 completion checklist (§11) runs only after Phase 2 artifacts are
+produced — it must NOT appear as a Phase 2 start prerequisite.
+
+### 10.2 Baseline Freshness and Merge Identity
+
+Before Phase 2 begins AND before landing/merge:
+
+1. Run `git fetch origin`.
+2. Verify `git rev-parse origin/main` strictly equals
+   `eec20f6faeb089ec2fcdc982ad65adce242a21a9`.
+3. If different: STOP immediately. Do NOT rebase onto or merge a different
+   `origin/main`. The cutover design, archive hashes, action matrix, and
+   checklist are anchored to this exact baseline. Changing the baseline requires
+   a full re-inventory, updated design, and re-pass of Oracle Gate 1.
+
+### 10.3 Landing Requirements
 
 The cutover must NOT be pushed directly to `main`. Landing requires:
 
 1. **P0 review**: At least two independent reviewers confirm:
-   - All architectural archive entries conform to the ledger schema.
-   - No active manifest, bin, or install doc retains v5 operational content.
-   - Root `PROJECT_MEMORY.md` and `README.md` meet the exact requirements in §6.
+   - All archive entries conform to the ledger schema (§4.2).
+   - No DELETE path exists at its original location.
+   - Every REPLACE file matches the exact retirement template.
+   - `PROJECT_MEMORY.md` and `README.md` meet §6 requirements.
    - `AGENTS.md` and `CLAUDE.md` are byte-identical to baseline.
    - v5 CI has only `workflow_dispatch` triggers.
    - Authority guard script uses only standard-library Python and checks all
-     10 categories in §7.2.
-   - `canonical/`, `contracts/`, `schemas/` have zero diff.
+     categories in §7.2.
+   - `canonical/`, `contracts/`, `schemas/` have zero diff against baseline.
 2. **Oracle Gate 2**: Cutover commit passes independent Oracle review (Gate 2,
    post-cutover).
 3. **Authority guard CI green**: The guard workflow passes on the PR branch.
@@ -619,46 +804,82 @@ The cutover must NOT be pushed directly to `main`. Landing requires:
    proposed for merge.
 5. **Human approval**: A merge of the PR must be explicitly approved by the
    repository owner or a designated maintainer.
-6. **Clean tree**: `git status --short` on the PR branch shows only intended
-   changes.
-7. **`git diff --check`** passes on the entire branch diff against
-   `origin/main`.
+6. **Clean tree**: `git status --short` on the PR branch is empty.
+7. **`git diff --check`** passes on the entire branch diff against `origin/main`.
 
-No `push --force` or direct-to-main commit is permitted.
+### 10.4 Merge Constraints
 
-## 11. P0/P1 Self-Audit Checklist
+- Allowed merge methods: **fast-forward** or **merge commit** (preserves the
+  Phase 2 commit object).
+- **Forbidden**: squash merge, rebase-and-merge. These destroy the Phase 2
+  commit SHA, breaking rollback identity and acceptance records.
+- Post-merge verification: confirm `git merge-base --is-ancestor <phase2-sha> origin/main`
+  exits 0 after merge.
+- The actual Phase 2 full SHA must be recorded in the acceptance record (not in
+  the ledger). Rollback is `git revert <phase2-sha>` — this requires the exact
+  SHA to be preserved.
+- No `push --force` or direct-to-main commit is permitted.
 
-Before the cutover commit is proposed for merge, the implementer must run the
-following checks and record the output as evidence:
+### 10.5 Post-merge Acceptance Verification
 
-### P0 (Blocking — must all pass)
+After the cutover PR is merged to `origin/main`, the following must be verified
+before the cutover is considered complete. These checks can only run post-merge
+because they require the merged state on `origin/main`.
+
+1. **Ancestor check**: Run `git fetch origin`, then:
+   ```
+   git merge-base --is-ancestor <phase2-sha> origin/main
+   ```
+   Must exit 0. This confirms the Phase 2 commit object was preserved (not
+   squashed or rebased away) and is reachable from main.
+
+2. **Record landed main SHA**: Record the full 40-character SHA of
+   `origin/main` after the merge. This is the **landed main SHA** and must be
+   recorded alongside the `<phase2-sha>` in the acceptance record. The pair
+   `(phase2-sha, landed-main-sha)` is the canonical identity of the cutover
+   landing.
+
+3. **Rollback dry-run**: From a clean checkout at the landed main SHA, run
+   `git diff <phase2-sha>^ <phase2-sha> | git apply --reverse --check`. It must
+   report no conflict and must not modify the worktree. An actual
+   `git revert <phase2-sha>` remains a separate human-approved operation.
+
+## 11. Phase 2 Completion Checklist
+
+These checks can ONLY run after Phase 2 artifacts exist (archive tree, ledger,
+rewrites, guard script, retirement notices). They are NOT prerequisites for
+Phase 2 start.
+
+### P0 (Blocking — must all pass before merge)
 
 | # | Check | Acceptance | Command / Evidence |
 |---|-------|------------|--------------------|
-| P0-1 | Commit scope exact and tree clean | Before commit: staged paths exactly equal the cutover allowlist; no extra unstaged/untracked files diverge from baseline. After commit: `git status --short` is empty. | `git diff --cached --name-only` lists only allowed paths; `git status --short` shows only expected untracked scope; commit; `git status --short` shows nothing |
-| P0-2 | Changed paths exact allowlist | Only files in the cutover scope appear | `git diff --cached --name-only` or `git diff --name-only origin/main...HEAD` |
-| P0-3 | `PROJECT_MEMORY.md` archive SHA equals original | `original_sha256` in ledger equals `sha256sum(git show eec20f6faeb089ec2fcdc982ad65adce242a21a9:PROJECT_MEMORY.md)`. `archive_sha256` equals `sha256sum docs/legacy/aitp-v5-authority-cutover/repository/PROJECT_MEMORY.md`. Both hashes must be equal. | `git show eec20f6faeb089ec2fcdc982ad65adce242a21a9:PROJECT_MEMORY.md \| sha256sum` vs `sha256sum docs/legacy/aitp-v5-authority-cutover/repository/PROJECT_MEMORY.md` |
-| P0-4 | `README.md` archive SHA equals original | Ditto for README.md | `git show eec20f6faeb089ec2fcdc982ad65adce242a21a9:README.md \| sha256sum` vs `sha256sum docs/legacy/aitp-v5-authority-cutover/repository/README.md` |
+| P0-1 | Commit scope exact and tree clean | Before commit: staged paths exactly equal the Phase 2 allowlist derived per §9.4; no extra unstaged/untracked files diverge from baseline. After commit: `git status --short` empty. | `git diff --cached --name-only` list equals allowlist; commit; `git status --short` shows nothing |
+| P0-2 | Changed paths exact allowlist | Only files in the Phase 2 allowlist appear | Compare `git diff --cached --name-only` against allowlist derived from §9.4 |
+| P0-3 | `PROJECT_MEMORY.md` archive SHA equals original | `original_sha256` in ledger equals `sha256sum(git show eec20f6faeb089ec2fcdc982ad65adce242a21a9:PROJECT_MEMORY.md)`. `archive_sha256` equals `sha256sum docs/legacy/aitp-v5-authority-cutover/repository/PROJECT_MEMORY.md`. Both equal. | `git show <baseline>:PROJECT_MEMORY.md \| sha256sum` vs `sha256sum archive-path` |
+| P0-4 | `README.md` archive SHA equals original | Ditto for README.md | Same as P0-3 for README.md |
 | P0-5 | New `README.md` first viewport | First 40 lines contain no v5 install/run content | Manual read + `grep -i 'pip install\|npm install\|mcp install\|hook install' README.md` returns nothing |
-| P0-6 | No active manifest exposes v5 | All deleted/replaced manifests verified | `find . -name '*.json' -path '*plugin*' -o -name 'marketplace*' -o -name 'aitp-manifest*' -o -name 'package.json'` and verify each is either deleted or retirement |
-| P0-7 | v5 CI trigger restricted | Only `workflow_dispatch` triggers exist in `v5-test-lanes.yml` | `grep -E 'pull_request|push:|schedule' .github/workflows/v5-test-lanes.yml` returns nothing |
-| P0-8 | Shim no-drift | `AGENTS.md` and `CLAUDE.md` unchanged | `git diff eec20f6faeb089ec2fcdc982ad65adce242a21a9 -- AGENTS.md CLAUDE.md` exits 0 with no output |
-| P0-9 | `src/aitp/` no legacy imports | No `import brain` or `from brain` in `src/aitp/` | `grep -r 'import brain\|from brain' src/aitp/` returns nothing (or dir doesn't exist yet) |
-| P0-10 | Canonical zero diff | `canonical/`, `contracts/`, `schemas/` unchanged | `git diff eec20f6faeb089ec2fcdc982ad65adce242a21a9 -- research/knowledge-hub/canonical/ contracts/ schemas/` exits 0 with no output |
-| P0-11 | `git diff --check` passes | No whitespace warnings on the complete cutover diff. Phase 1 untracked files are checked via `git diff --no-index --check /dev/null <file>` or staged via `git add --intent-to-add` before `git diff --cached --check`. Phase 2 tracked changes use `git diff origin/main...HEAD --check`. | `git diff --check` for tracked changes; `git diff --no-index --check /dev/null <untracked-file>` for each Phase 1 file (accepts diff exit 1 but must produce zero whitespace-error output) |
-| P0-12 | Remote branch SHA match | `git rev-parse codex/aitp-2-authority-cutover` equals local HEAD | `git rev-parse HEAD` and `git ls-remote origin refs/heads/codex/aitp-2-authority-cutover` |
-| P0-13 | Authority guard passes | Guard script exits 0 | `python scripts/check_repository_authority.py; echo $?` |
+| P0-6 | DELETE paths do not exist | Every path in §5.1 DELETE list absent from worktree | `ls <path>` fails for each DELETE entry |
+| P0-7 | REPLACE paths match template | Every REPLACE file content equals parametrized template | Byte-for-byte comparison against expected template for all 34 REPLACE paths |
+| P0-8 | v5 CI trigger restricted | Only `workflow_dispatch` triggers in `v5-test-lanes.yml` | `grep -E 'pull_request\|push:\|schedule' .github/workflows/v5-test-lanes.yml` returns nothing |
+| P0-9 | Shim no-drift | `AGENTS.md` and `CLAUDE.md` unchanged | `git diff eec20f6faeb089ec2fcdc982ad65adce242a21a9 -- AGENTS.md CLAUDE.md` exits 0 |
+| P0-10 | `src/aitp/` no legacy imports | No `import brain` or `from brain` in `src/aitp/` | `grep -r 'import brain\|from brain' src/aitp/` returns nothing |
+| P0-11 | Canonical zero diff | `canonical/`, `contracts/`, `schemas/` unchanged | `git diff --name-only eec20f6faeb089ec2fcdc982ad65adce242a21a9 HEAD -- research/knowledge-hub/canonical/ contracts/ schemas/` produces no output |
+| P0-12 | `git diff --check` passes | No whitespace warnings | `git diff --check` on tracked changes passes |
+| P0-13 | Remote branch SHA match | `git rev-parse codex/aitp-2-authority-cutover` equals local HEAD | `git rev-parse HEAD` vs `git ls-remote origin refs/heads/codex/aitp-2-authority-cutover` |
+| P0-14 | Authority guard passes | Guard script exits 0 | `python scripts/check_repository_authority.py; echo $?` |
+| P0-15 | Baseline freshness | `origin/main` still equals `eec20f6faeb089ec2fcdc982ad65adce242a21a9` | `git fetch origin && git rev-parse origin/main` |
 
-### P1 (Must pass before S0 implementation)
+### P1 (Must pass before merge)
 
 | # | Check | Acceptance |
 |---|-------|------------|
-| P1-1 | Archive ledger complete | `archive-manifest.json` has an entry for every file listed in §4.3 |
-| P1-2 | Ledger hashes validate | Every `original_sha256` in the ledger equals `sha256sum` of `git show <source_commit>:<source_path>` output. Every `archive_sha256` equals `sha256sum` of the archived file on disk. |
-| P1-3 | All retirement notices ≤ 8 lines | `wc -l` on every REPLACE target |
-| P1-4 | No retirement notice contains shell commands | `grep -E 'pip|npm|mcp|aitp install|aitp run|python -m'` on all REPLACE targets returns nothing |
-| P1-5 | New `PROJECT_MEMORY.md` links resolve | All markdown links in the new PM point to existing files |
-| P1-6 | Authority guard script is standard-library only | `grep -E '^import |^from ' scripts/check_repository_authority.py` shows only stdlib modules |
+| P1-1 | Archive ledger complete | `archive-manifest.json` has one entry per path in §4.3 (all DELETE + REPLACE + MODIFY + root files) |
+| P1-2 | Ledger hashes validate | Every `original_sha256` equals `sha256sum(git show <source_commit>:<source_path>)`. Every `archive_sha256` equals `sha256sum <archive-file-on-disk>`. |
+| P1-3 | All retirement notices exact match | Every REPLACE file byte-for-byte matches template (exactly 4 lines, exactly 5 for UNINSTALL.md) |
+| P1-4 | New `PROJECT_MEMORY.md` links resolve | All markdown links in the new PM point to existing files |
+| P1-5 | Authority guard script is standard-library only | `grep -E '^import \|^from ' scripts/check_repository_authority.py` shows only stdlib modules |
+| P1-6 | KEEP-HISTORICAL files not in changed set | No file from §4.4/§5.2 KEEP-HISTORICAL list appears in `git diff --name-only` against baseline |
 
 ## 12. What This Design Does Not Do
 
@@ -669,9 +890,15 @@ following checks and record the output as evidence:
 4. Does NOT define the local uninstall procedure for v5 plugins/MCP/hooks.
 5. Does NOT add any code to `src/aitp/` — S0 begins after cutover.
 6. Does NOT change the default branch or merge strategy.
-7. Does NOT require deleting `brain/v5` or any historical source code.
-8. Does NOT install, upgrade, or remove any pip/npm/MCP package on the user's
+7. Does NOT delete `brain/v5`, `hooks/**`, `deploy/**`, plugin payload, test
+   suites, or any KEEP-HISTORICAL file. These remain byte-identical.
+8. Does NOT require zero v5 tokens in KEEP-HISTORICAL files.
+9. Does NOT install, upgrade, or remove any pip/npm/MCP package on the user's
    machine.
+10. Does NOT add `plugins/*/scripts/**`, `plugins/*/skills/**`, adapter payload
+    (non-entry-point), deploy templates, or `scripts/run_v5_test_lanes.py`
+    to DELETE/REPLACE lists. These are inert historical payload — deactivated
+    because manifests/installer/default docs no longer reference them.
 
 ## A. Appendix — Machine Path Normalization (Phase 1)
 
