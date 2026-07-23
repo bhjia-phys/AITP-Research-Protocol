@@ -67,3 +67,6 @@ _recovery_*.json
 
 # isolated implementation worktrees
 .worktrees/
+
+# Local OpenCode deepwork state
+.slim/deepwork/
