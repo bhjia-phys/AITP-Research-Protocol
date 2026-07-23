@@ -648,82 +648,255 @@ before Gate B passes.
   if stdlib-only constraint violated; if existing authority files modified.
 - **Commit**: `test: establish S0 validator core`
 
-### T2 — Reviewed FREEZE.json + Validator Integration + Synthetic Negatives
+### T2 — Reviewed FREEZE.json Oracle + Validator Integration + Synthetic Negatives
+
+> **Modularity amendment (2026-07-23)**: Two implementation attempts triggered the
+> pre-existing Council STOP condition: the validator reached 490 NBNC while
+> required closed schema validation, executable D3/D4 vectors, full 19/171
+> error-priority evidence, and an independent full-mode family guard remained
+> absent or presented as descriptive notes rather than executed machine checks. A
+> third monolithic dense patch is prohibited. This amendment authorizes a bounded
+> modular split — exactly six T2 implementation files — with frozen ownership
+> and module rules below. No new gate or stage is created; T2 acceptance criteria
+> unchanged.
 
 - **Depends on**: T1b (`--decisions-only` pass confirmed; no `user-decision-required`
   entries remain).
-- **Files (create/modify)**:
-  - Create: `tests/fixtures/aitp2/FREEZE.json` — reviewed, authority-annotated.
-  - Create: `tests/aitp2/test_s0_negative_contracts.py` — synthetic negative
-    tests using `tempfile.TemporaryDirectory`.
-  - Modify: `tests/aitp2/check_s0_freeze.py` — implement two explicit modes
-    (see below).
+- **Files (create/modify)** — exact six-file set, no other paths:
+  1. Create: `tests/fixtures/aitp2/FREEZE.json` — human-reviewed typed oracle
+     only; no duplicated prose, no implementation code. Every atomic claim and
+     synthetic vector carries `authority_document` + `authority_path`
+     (`<full-object-id>:§section`) where the commit component MUST equal
+     FREEZE's top-level `authority_commit` exactly (full resolved object ID,
+     no abbreviations, no older/different commits); and applicable
+     `decision_refs`. Exact Asset kind registry count is 17 (excludes retired
+     `patch` per active spec §5 lines 610–628; spec wins, no spec amendment).
+     Closed top-level schema; unknown keys rejected.
+  2. Modify: `tests/aitp2/check_s0_freeze.py` — CLI entry point only. Frozen
+     ownership: CLI argument parsing, mode dispatch (`--decisions-only` /
+     `--oracle-only` / default full), unchanged T1b decisions validation, file
+     I/O, deterministic JSON error envelope assembly, primary-error selection
+     via frozen priority ordering, orchestration of oracle/full phases, and
+     default/full entry that runs decisions + oracle then fails closed with
+     `not_available_in_stage` (exact T3 fixture evidence absent). May normally
+     import exactly `s0_oracle_schema` and `s0_oracle_vectors` (no dynamic
+     import, subprocess, or eval tricks). Under 500 NBNC.
+  3. Create: `tests/aitp2/s0_oracle_schema.py` — closed typed FREEZE schema
+     validation and registry/claim resolution. Frozen ownership: safe POSIX
+     path validation, full local Git object-id validation (no fixed hex length,
+     no network), committed document loading via local Git object commands
+     followed by deterministic section-heading resolution, decision-register
+     resolution against the loaded D1–D9/U1 set, exact typed registries (12
+     commands, 7+1 roles, 16 predicates, 19 ordered errors, 7 workspace
+     states, 10 decision IDs, 12 T3 fixture families, 17 Asset kinds with
+     profile→canonical-path mappings), machine-valued typed claims with
+     authority-document + anchor validation (commit equality enforced, section
+     heading verified), required synthetic vector key presence, and full-mode
+     completed local provenance checks. Under 500 NBNC.
+  4. Create: `tests/aitp2/s0_oracle_vectors.py` — executable synthetic vector
+     evaluators. Frozen ownership: bounded stdlib-only D3/D4 frontmatter
+     scalar parser per frozen two-form grammar (plain positional restrictions,
+     JSON double-quoted with post-decode newline/control rejection, exact
+     `[]`/`{}` sentinels, forbidden YAML forms); 19 singleton + 171 pairwise
+     error-priority execution with independent expected-primary verification;
+     candidate digest/check-id/integrity/all-pass/one-fail execution; legal
+     gate-ID validation; failure-recall oracle execution; read budget/
+     truncation/item-local exactness/mandatory overflow vectors; D8 reorder
+     invariance; frontmatter-only boundary; and authority-backed workspace-
+     state validation. Under 500 NBNC.
+  5. Create: `tests/aitp2/test_s0_negative_contracts.py` — real-subprocess /
+     `tempfile.TemporaryDirectory` adversarial evidence only.
+  6. Modify: `tests/aitp2/test_s0_contract_freeze.py` — modify ONLY its static
+     import ratchet: the existing test that verifies `check_s0_freeze.py`
+     imports no `aitp`/third-party modules must additionally permit exactly
+     `s0_oracle_schema` and `s0_oracle_vectors` as allowed local module
+     imports. Preserve all 40 behavioral tests, no-mode assertion, path helper
+     checks, existing stdlib/no-network/no-aitp/external-.aitp/line-count
+     ratchets, and all other bytes unchanged. No dynamic import, subprocess,
+     or eval tricks to bypass the ratchet.
+  7. **No other file created or modified.** Existing decisions JSON, provenance
+     stubs, spec, plan (except this T2 section), and authority guard unchanged.
+
+- **Module rules (frozen)**:
+  - Stdlib-only imports among these local test modules are allowed; no `aitp`,
+    third-party, PyYAML, network, external `.aitp`, remote Git, or cyclic
+    imports between modules. `check_s0_freeze.py` may import exactly
+    `s0_oracle_schema` and `s0_oracle_vectors` normally; no dynamic import,
+    subprocess, or eval tricks to bypass the ratchet.
+  - Every Python file in this T2 module set (all five Python paths among the
+    exact six-path implementation set) must be under 500
+    nonblank / noncomment lines; no dense formatting or generated-code
+    evasion. T2 `TestLineCount` coverage in `test_s0_negative_contracts.py`
+    enforces this across the complete module set.
+  - **Concrete closed typed payloads**: `contract_present`, description-only /
+    note-only placeholders, opaque unchecked blobs, and key-presence-only
+    validation are prohibited. Every declared contract surface must carry
+    machine-valued, closed typed payloads with explicit evaluator IDs for at
+    least: common header fields + kind applicability; per-profile required/
+    optional fields, enums, conditionals, body sections; all 17 Asset
+    kind→profile→canonical-path mappings; Route navigation fields; ref
+    grammar/selectors/error mapping; JSON envelope/read/search/budget schemas;
+    complete gate-matrix rows/legal gates; CANDIDATE/writer fields, framing,
+    integrity, approval binding; failure-recall/unblocks rules; and
+    noncanonical INDEX required fields + forbidden canonical path. Every
+    declared surface must have an adversarial mutation test that causes
+    structured rejection (not traceback or silent pass).
+  - **Authority commit equality**: Every atomic claim and synthetic vector
+    `authority_path` commit component MUST equal FREEZE's top-level
+    `authority_commit` exactly (full resolved object ID, no abbreviations, no
+    older/different commits). The validator loads the corresponding committed
+    document path via local Git (`git cat-file`) and deterministically
+    verifies the section heading exists. Abbreviated commits, older/different
+    full commits, missing/fake sections, unknown authority documents, and
+    traversal decision-register paths all fail closed with structured errors.
+  - No-argument invocation of `check_s0_freeze.py` is default/full mode: it
+    runs decisions validation, loads and validates FREEZE.json, executes all
+    oracle schema + vector checks, then requires all 12 hard-coded T3 fixture
+    family directories present/nonempty with completed local provenance. At T2
+    this fails closed with primary error `not_available_in_stage` and lists
+    every missing/empty family. The existing T1b `test_no_mode` test in
+    `test_s0_contract_freeze.py` remains unchanged and compatible.
+  - Full mode uses an implementation-held exact 12-family set (independent of
+    mutable FREEZE.json) and verifies that FREEZE declares the identical set;
+    mutation/removal of FREEZE `required_families` fails oracle validation.
+    No missing, empty, or partial skip-as-pass.
+  - T2 no-source boundary remains absolute: no source reads, no snapshot
+    hashes, no fixture byte selection or copying. T3 remains blocked until T2
+    passes and is committed.
+
 - **Observable claim**:
   - FREEZE.json encodes the complete frozen contract surface with
-    `authority_path` annotations referencing the active spec and decision
-    register. The frozen surface now includes: 12 command groups, 7+1
-    node/edge roles, 16 predicates, common header + kind, Asset path
-    profiles, ref grammar, Relation contract, store/Git ownership,
-    content envelope boundaries (§6.0.1), minimum profile fields (§6.0.2),
-    Route navigation fields (§5.1), JSON envelope (§4.1.1), error codes
-    (§7.3), workspace states (§7.4), read coverage semantics (§7.5),
-    enter behavior (§7.6), gate matrix (§14.0.1), writer behavioral
-    contract (§14.0.2), and noncanonical INDEX contract (§5).
-  - `check_s0_freeze.py --oracle-only` validates FREEZE.json schema correctness,
-    12 command groups, 7+1 node/edge roles, 16 predicates, authority anchor
-    presence, decision refs, and synthetic temp-directory negatives. It does
-    NOT claim real fixture coverage or skip/pass on empty fixture directories.
-  - Negative suite exercises distinct error codes via synthetic
-    `TemporaryDirectory` fixtures.
-- **Main failure modes**: FREEZE.json field lacks authority anchor; validator
-  passes on a violation; empty fixture directories incorrectly report PASS
-  (must NOT — `--oracle-only` reports "no real fixture coverage claimed" but
-  synthetic negatives must still pass); D3/D4 frontmatter parser contract
-  is now `frozen` (T1a authority amendment 2026-07-23 — see active spec
-  §6 D3/D4); resolution is complete and not deferrable.
-- **`check_s0_freeze.py` Modes**:
-  1. **`--oracle-only`** (T2): Validates FREEZE.json JSON schema, 12/7+1/16
-     counts, every field carries `authority_path`, decision register refs
-     resolve, and synthetic temp-directory negatives produce distinct error
-     codes. Does NOT require real fixture families to exist — explicitly
-     reports "oracle-only: no real fixture coverage claimed." Empty fixture
-     directories do NOT cause PASS for real fixture checks; they are
-     acknowledged as absent with a diagnostic note. This mode is sufficient
-     for T2 completion.
-  2. **Default / full mode** (T3+): In addition to all `--oracle-only` checks,
-     requires every expected fixture family from §5.1 to be present with
-     FIXTURE_PROVENANCE.md entries. Missing families → FAIL. No skip-as-pass.
-     Synthetic-only coverage is insufficient; real structural fixtures must
-     exist.
-- **Steps**:
-   1. Author FREEZE.json by hand from active spec and decision register.
-      Every field includes `authority_path` (e.g.,
-      `"authority_path": "<spec-commit-sha>:§6.1"`; line numbers may be
-      appended as auxiliary data but are not authoritative).
-   2. Implement `check_s0_freeze.py` with both `--oracle-only` and default/full
-      modes per the contract above.
-   3. Write negative tests: each creates a tempdir, writes a deliberately
-      invalid fixture, and asserts the exact expected error code.
-   4. D3/D4 (frontmatter YAML lexical policy) are already `frozen` per
-      the T1a authority amendment 2026-07-23 (active spec §6 D3/D4).
-      The bounded two-form scalar grammar — two scalar forms, first-
-      character restrictions, internal-sequence rules, JSON double-quote
-      post-decode constraints, forbidden YAML syntax forms, empty `[]`/`{}`
-      sentinels only — is the sole normative rule. The FREEZE.json and
-      validator MUST encode these frozen D3/D4 rules directly. Any
-      future change to D3/D4 requires a new reviewed authority amendment;
-      deferral to S1 is prohibited.
-- **Verification**:
-  - `python3 tests/aitp2/check_s0_freeze.py --oracle-only` exits 0; reports
-    12/7+1/16 counts confirmed; all authority anchors present; synthetic
-    negatives produce distinct errors.
-  - `python3 -m unittest tests/aitp2/test_s0_negative_contracts.py` exits 0.
-- **Commit**: `test: reviewed FREEZE.json oracle with authority anchors and synthetic negative suite`
+    `authority_document` + `authority_path` (`<full-object-id>:§section`)
+    annotations referencing the active spec and decision register. The commit
+    component of every `authority_path` equals FREEZE's top-level
+    `authority_commit` exactly; no abbreviated, older, or different commits.
+    Every atomic claim resolves its authority anchor by loading the committed
+    document via local Git and verifying the section heading exists. The
+    frozen surface includes: 12 command groups, 7+1 node/edge roles, 16
+    predicates, common header + kind, 17 Asset kind→profile→canonical-path
+    mappings (patch retired), ref grammar, Relation contract, store/Git
+    ownership, content envelope boundaries (§6.0.1), minimum profile fields
+    (§6.0.2), Route navigation fields (§5.1), JSON envelope (§4.1.1), error
+    codes (§7.3), workspace states (§7.4), read coverage semantics (§7.5),
+    enter behavior (§7.6), gate matrix (§14.0.1), writer behavioral contract
+    (§14.0.2), and noncanonical INDEX contract (§5). Every declared contract
+    surface carries machine-valued typed payloads with explicit evaluator
+    IDs — no `contract_present` or description-only placeholders.
+  - `check_s0_freeze.py --oracle-only` validates FREEZE.json closed schema
+    correctness, all exact registries, typed claims with resolved authority
+    anchors (commit equality enforced, section headings verified) and decision
+    refs, executes all synthetic vectors (D3/D4 scalars, 19+171 error
+    priorities, candidate digest, gates, failure recall, budget/truncation,
+    D8 reorder, frontmatter-only, workspace states), and reports
+    `real_fixture_coverage: not_claimed`. It does NOT require real fixture
+    families to exist — explicitly reports diagnostic text `oracle-only: no
+    real fixture coverage claimed.` Empty fixture directories do NOT cause
+    PASS; they are acknowledged as absent.
+  - Negative suite (`test_s0_negative_contracts.py`) exercises distinct error
+    codes via synthetic `TemporaryDirectory` fixtures. Adversarial coverage
+    includes: unknown top/nested keys, deadbeef/abbreviated/older authority
+    commit, missing/fake section headings, unknown authority documents,
+    traversal decision-register paths, duplicate/omitted/wrong-priority error
+    codes, corrupted D3/D4 vector expectations, mutated candidate/gate/
+    failure/read/state vectors, empty `required_families`, malformed shapes
+    without traceback, default/full bypass attempts, and at least one
+    adversarial mutation test per declared contract surface causing structured
+    rejection.
 
-#### T2 Future Negative Evidence (Council Required — No Files Created Before Gate B)
+- **Main failure modes**: FREEZE.json field lacks authority anchor; authority
+  commit does not equal FREEZE top-level `authority_commit` (abbreviated, older,
+  or different); committed document:path not in local repository; section heading
+  not found in committed document; unknown authority document; traversal
+  decision-register path; decision ref unresolved; unknown top-level key; wrong
+  registry count or member set; D3/D4 vector execution mismatch; error
+  singleton/priority mismatch; missing pairwise pair; candidate digest logic
+  mismatch; illegal gate ID; empty/missing `required_families` bypasses full mode;
+  `contract_present` or description-only placeholder where machine-valued typed
+  payload required; declared surface lacks adversarial mutation test; validator
+  passes on a violation. D3/D4 frontmatter parser contract is now `frozen` (T1a
+  authority amendment 2026-07-23 — see active spec §6 D3/D4); resolution is
+  complete and not deferrable. T2 STOP if any Python file exceeds 500 NBNC,
+  existing T1b test behavior changes, or required closed-schema/vector behavior
+  is implemented as a descriptive note rather than executed machine logic.
+
+- **`check_s0_freeze.py` Modes**:
+  1. **`--oracle-only`** (T2): Validates decisions, loads FREEZE.json, validates
+     closed schema + all registries + typed claims (authority-document identity,
+     full commit:path section anchor resolution, decision refs), and executes all
+     synthetic vectors. Reports `real_fixture_coverage: not_claimed` and
+     diagnostic text. Does NOT require real fixture families. This mode is
+     sufficient for T2 completion.
+  2. **Default / full mode** (T2 partial, T3+ complete): In addition to all
+     `--oracle-only` checks, requires all 12 hard-coded T3 fixture family
+     directories present/nonempty and completed local `FIXTURE_PROVENANCE.md`.
+     At T2 this fails closed with primary `not_available_in_stage`; at T3 with
+     real fixtures it must pass. No skip-as-pass.
+  3. **`--decisions-only`** (T1b, unchanged): Validates committed
+     `S0_DECISIONS.json` per frozen T1b rules. Does not require FREEZE or
+     oracle modules.
+
+- **Steps**:
+  1. Author FREEZE.json by hand from active spec and decision register. Every
+     claim and vector includes `authority_document` + `authority_path`
+     (`<full-object-id>:§section`) where the commit component equals FREEZE's
+     top-level `authority_commit` exactly. Exact Asset kind count is 17. No
+     `contract_present` or description-only placeholders — every surface
+     carries machine-valued typed payloads with explicit evaluator IDs.
+  2. Implement modular file set per frozen ownership above: `check_s0_freeze.py`
+     (CLI + orchestration, imports `s0_oracle_schema` + `s0_oracle_vectors`
+     normally), `s0_oracle_schema.py` (closed schemas with authority commit
+     equality and section-heading verification), and `s0_oracle_vectors.py`
+     (executable vectors). All under 500 NBNC, stdlib only.
+  3. Modify `test_s0_contract_freeze.py` static import ratchet only: permit
+     exactly `s0_oracle_schema` and `s0_oracle_vectors` as allowed local module
+     imports. Preserve all 40 behavioral tests and all other bytes.
+  4. Write adversarial negative tests (`test_s0_negative_contracts.py`): each
+     creates a tempdir, writes a deliberately invalid fixture, runs the
+     validator as a real subprocess, and asserts expected primary error code
+     and structured JSON output — never a traceback. Cover abbreviated/
+     older/wrong authority commit, fake/missing section headings, unknown
+     authority documents, traversal decision-register paths, unknown nested
+     keys, malformed shapes, duplicate/omitted errors, unexecuted vector
+     mutations, default/full bypass attempts, and at least one adversarial
+     mutation test per declared contract surface.
+  5. D3/D4 (frontmatter YAML lexical policy) are already `frozen` per the T1a
+     authority amendment 2026-07-23 (active spec §6 D3/D4). The bounded
+     two-form scalar grammar is the sole normative rule. `s0_oracle_vectors.py`
+     encodes these frozen D3/D4 rules as executed machine checks — not as
+     descriptive notes. Any future change to D3/D4 requires a new reviewed
+     authority amendment; deferral to S1 is prohibited.
+
+- **Verification**:
+  - `python3 tests/aitp2/check_s0_freeze.py --decisions-only` exits 0
+    (unchanged T1b).
+  - `python3 -m unittest tests/aitp2/test_s0_contract_freeze.py` exits 0
+    (all 40 behavioral T1b tests preserved; only static import ratchet
+    modified to permit `s0_oracle_schema` and `s0_oracle_vectors`).
+  - `python3 tests/aitp2/check_s0_freeze.py --oracle-only` exits 0; reports
+    all registries confirmed; all authority anchors resolve with commit
+    equality enforced and section headings verified; all synthetic vectors
+    executed; `real_fixture_coverage: not_claimed` with exact diagnostic text.
+  - `python3 -m unittest tests/aitp2/test_s0_negative_contracts.py` exits 0.
+  - `python3 -m unittest discover -s tests/aitp2 -p 'test_*.py'` exits 0
+    (all T1b + T2 tests).
+  - No-argument default/full invocation exits nonzero with primary error
+    `not_available_in_stage` and structured JSON listing all missing/empty
+    families.
+  - Every Python file under `tests/aitp2/` in the T2 set (all five Python
+    paths among the exact six-path implementation set) is under 500 NBNC; no
+    `aitp`, third-party, network, or external `.aitp` access.
+  - Adversarial mutation test exists for every declared contract surface;
+    abbreviated/older commits, fake sections, unknown documents, and traversal
+    paths all produce structured rejection.
+
+- **Commit**: `test: reviewed FREEZE.json oracle with authority anchors, modular six-file validators, and synthetic negative suite`
+
+#### T2 Future Negative Evidence (Council Required — Executable at T2)
 
 The following contract surfaces require negative fixture evidence at T2/T3.
-They are specified here as planning requirements; no files are created now.
+They are specified here as planning requirements and are now executable
+via the modular T2 vector evaluators (`s0_oracle_vectors.py`); no new
+files beyond the authorized six-file set are created now.
 
 - Assessment `kind: assessment` valid/invalid — common kind literal presence.
 - `budget.truncated: true` with fully-read unrelated items still `exact` —
