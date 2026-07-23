@@ -885,7 +885,7 @@ does not overwrite an existing `.aitp` directory.
 ```yaml
 protocol: aitp/2.0
 store_id: <stable-id>
-created_at: <timestamp>
+created_at: <timestamp per D1>
 git_mode: enclosing | standalone
 git_root: <store-relative or research-root-relative locator>
 ```
@@ -930,8 +930,8 @@ id: <stable-id>
 type: topic | entity | route | statement | episode | assessment | relation | asset
 topic: <topic-id> | _shared
 title: <human-readable title>
-created_at: <timestamp>
-created_by: <human-or-agent identity>
+created_at: <timestamp per D1>
+created_by: <identity per D2>
 kind: <required only when the type profile has multiple kinds>
 ```
 
@@ -945,6 +945,269 @@ not aliases for the common `kind` discriminant. Validators must enforce the
 frozen value sets for each such field independently. Only fields needed by
 a real command profile are added. A file must remain useful when read directly
 without the CLI.
+
+### T1a Human Decision Frozen Lexical Rules (2026-07-23)
+
+This subsection is the sole normative authority for the T1a human decisions
+recorded on 2026-07-23. D7 (Git object-id) and U1 (S0/S1 stage boundary)
+are already frozen and unchanged; D1–D6, D8, D9 are resolved here. Every
+rule is static-validator-implementable without prescribing production
+Python shape.
+
+#### D1 Timestamp Lexical Form
+
+Canonical frontmatter timestamps use exactly `YYYY-MM-DDTHH:MM:SSZ` in
+UTC. The zero offset is represented only by uppercase `Z`. No offset form
+(`+00:00`, `+0000`), space separator, timezone omission, or fractional
+seconds are permitted in canonical frontmatter.
+
+Applies to: common `created_at` (all record types), `decided_at`
+(Statement/Episode decision overlays), and review/approval timestamps
+stored in canonical frontmatter fields. Runtime commit metadata and
+non-frontmatter timestamps may follow their own separately frozen shapes.
+
+#### D2 Identity Form
+
+The canonical identity form is exactly `human:<slug>` or `agent:<slug>`.
+
+Slug grammar (static-validator-implementable): `[a-z0-9]+(?:[._-][a-z0-9]+)*`,
+length 1–64 code points. No whitespace, uppercase, consecutive delimiters,
+leading/trailing delimiters, empty segments, private machine paths,
+hostnames, or credentials.
+
+Fields that profile rules explicitly designate as requiring a human
+identity (`decided_by`, `reviewer`) MUST use `human:`. `created_by` and
+`assessor.identity` may use either `human:` or `agent:` as their
+respective profiles permit.
+
+#### D3 Bounded YAML / Frontmatter Subset + Parser Policy
+
+Frontmatter is bounded block-style YAML. In S0 it is parsed by a
+stdlib-only **test-only** parser producing validation evidence — this is
+not production CLI implementation. The engineering principle is that the
+grammar must be small, standard, and implementable without ambiguity —
+no optional/dialect branches, no parser choice, no MAY. Every rule below
+has exactly one interpretation.
+
+**Comments**: Comments are completely forbidden. The `#` character is
+ordinary scalar data (needed for anchor refs). There is no comment
+syntax in this subset.
+
+**Empty collections**: The exact tokens `[]` and `{}` are permitted only
+to represent empty sequence and empty map respectively. These are the
+sole exception to the flow-collection ban: every non-empty `[...]` or
+`{...}` flow collection is forbidden. An empty `key:` value line with no
+subsequent indented child node is illegal — it is never implicitly
+interpreted as an empty collection. Required-but-empty list fields (such
+as `topic/shared route_refs`) naturally use the `[]` sentinel.
+
+**Line grammar (frozen, one interpretation)**:
+
+- Map scalar entry: `<indent><key>: <scalar>` — colon followed by exactly
+  one ASCII space (U+0020), then scalar value to end of line.
+- Map container entry: `<indent><key>:` — key-only line, followed by a
+  child node exactly one indent level deeper on the next line(s).
+- Sequence scalar entry: `<indent>- <scalar>` — dash followed by exactly
+  one ASCII space, then scalar value to end of line.
+- Sequence container entry: `<indent>-` — dash-only line, followed by a
+  child node exactly one level deeper on the next line(s).
+- Indent: exactly 2 ASCII spaces per level. No tabs.
+- Blank lines inside frontmatter are forbidden.
+- Map entries and sequence entries must not be mixed at the same node.
+- Recursive map/sequence nodes are permitted.
+
+**Scalar forms (frozen, exactly two)**:
+
+Every scalar value uses exactly one of the two forms below. There is no
+third form, no parser choice, and no MAY.
+
+Scalar dispatch order is frozen: if the token begins with `"`, parse the
+entire token as the JSON double-quoted form; otherwise, recognize exact
+`[]` and `{}` as the empty collection sentinels before applying plain-scalar
+first-character restrictions; every remaining token is validated as a
+plain scalar. Therefore the sentinel exception does not conflict with the
+plain-scalar prohibition on leading `[` or `{`.
+
+**1. Plain scalar**: Nonempty printable Unicode, no CR (U+000D), LF
+(U+000A), or ASCII control characters (U+0000–U+001F, U+007F). No
+leading or trailing whitespace. The parser splits only the first
+structural `: ` (colon-space) of a map entry; the remainder of the line
+beyond that split is the scalar data.
+
+Plain scalar character restrictions (positional — small, standard,
+AI-friendly, deterministic):
+
+- **First character**: must not be one of `!`, `&`, `*`, `%`, `@`,
+  `` ` ``, `|`, `>`, `"`, `'`, `{`, `[`, `#`. The characters `-`, `?`,
+  `:` are forbidden as the first character only when immediately
+  followed by a space (U+0020) or end-of-line; `- word`, `? word`,
+  `: ` at start are rejected, while `-alpha`, `?beta`, `:gamma`
+  are valid plain scalars. The `#` character as leading character is
+  forbidden unconditionally — it conflicts with the standard YAML
+  comment indicator. Internal `#` (not preceded by a space, as in
+  `path.md#anchor=...`) remains valid; bare leading `#anchor=...`
+  must use the JSON double-quoted string form.
+- **Within a plain scalar**: the structural sequences `: ` (colon
+  followed by space) and ` #` (space followed by `#`) are forbidden
+  anywhere. All other internal punctuation is literal: `RPA & GW` is
+  valid; internal `#` not preceded by a space is valid data (e.g.
+  `path.md#anchor=...`, `topic#12`); colons without following space
+  (e.g. `v1.2.3`) are valid; hyphens, question marks, and other
+  symbols are literal data unless they form the forbidden structural
+  sequences above. However, `#` as the **first** character of a plain
+  scalar is forbidden (see first-character rule above); bare
+  `#anchor=...` must use the JSON double-quoted string form.
+
+Plain scalar typed interpretation (unquoted only):
+
+- Exact lowercase `true` or `false` (whole scalar) → boolean.
+- Exact non-negative decimal integer matching `0|[1-9][0-9]*` (whole
+  scalar) → integer.
+- Exact `[]` or `{}` (whole scalar) → empty collection (sequence or
+  map respectively).
+- Every other plain scalar → string. Nonempty flow-looking content such
+  as `[H,Q] check` is NOT parsed as a flow collection — it must use the
+  JSON double-quoted form (see below) to avoid ambiguity:
+  `"[H,Q] check"`.
+
+**2. JSON double-quoted string**: Exact JSON string syntax as parsed by
+stdlib `json.loads` (one JSON string token per scalar line). Always
+yields the decoded string value. Use this form when:
+
+- The scalar content starts with a forbidden indicator character
+  (from the first-character list above, including `#`, `-`, `?`, `:`
+  when followed by space/end).
+- The scalar content contains `: ` or ` #` anywhere.
+- The scalar content equals a reserved typed token (`true`, `false`,
+  an integer, `[]`, `{}`) but is intended as a string.
+- The scalar content needs escaping for legitimate printable content,
+  backslash, double-quote, or Unicode escapes.
+
+**Post-decode constraint**: After `json.loads`, the decoded string MUST
+be nonempty, single-line, printable Unicode. It MUST NOT contain CR
+(U+000D), LF (U+000A), or any ASCII control characters (U+0000–U+001F,
+U+007F). No leading or trailing whitespace is permitted (unless a
+future protocol amendment explicitly requires it — none do). The
+single-line scalar contract cannot be bypassed via escapes:
+`"line1\nline2"` decodes to a multi-line string and MUST be rejected.
+JSON escapes (`\n`, `\t`, `\\`, `\"`, `\uXXXX`) are permitted only
+when they produce allowable content within these constraints — i.e.
+escapes that decode to printable Unicode characters, backslash, or
+double quote. Escapes that decode to control characters or newlines
+are forbidden.
+
+Single-quoted strings, YAML-specific quoted forms, and any other quoted
+scalar syntax are forbidden. Only JSON double-quoted strings are
+permitted as the second scalar form.
+
+No implicit date coercion. Timestamps, IDs, and refs remain strings and
+are validated by profile lexical rules (see D1, D2, D5).
+
+**Forbidden YAML features (syntax forms, not positional characters)**:
+The following YAML **syntax forms** are forbidden everywhere in
+frontmatter: tags (`!` syntax), anchors (`&` syntax), aliases (`*`
+syntax), merge keys (`<<`), directives (`%YAML`, `%TAG`), tabs, block
+scalars (`|`, `>`), multi-document content (`---` or `...` outside the
+opening/closing delimiter lines). Flow collections other than the empty
+sentinels `[]` and `{}` are forbidden as value scalars — nonempty
+`[...]` or `{...}` content must use the JSON double-quoted string form.
+A **character** from the YAML indicator set (`!`, `&`, `*`, etc.) is
+not globally banned — it is forbidden only when it forms the prohibited
+**syntax** in a leading/structural position per the plain scalar
+first-character and internal-sequence rules above. In non-leading,
+non-structural internal positions, these characters are ordinary data:
+e.g. `RPA & GW` is a valid plain scalar (internal `&` surrounded by
+spaces, no YAML anchor syntax), while `&anchor` is invalid as a plain
+scalar (leading `&` triggers the YAML anchor syntax). The same
+principle applies to all YAML indicator characters: they are innocuous
+as internal literal data; they are rejected only when they participate
+in a prohibited YAML syntax form.
+
+**Error mapping (deterministic, not a choice)**: Malformed frontmatter
+(syntax errors, wrong indent, forbidden features) produces primary error
+code `profile_mismatch`. Duplicate mapping keys at any nesting level
+produce primary `profile_mismatch` (see D4). Unknown frontmatter fields
+produce primary `profile_mismatch` (see D9). When the enclosing candidate
+`validation` check encounters any of the above, the `validation` list
+entry for the frozen check ID `frontmatter_profile` has `status: fail`.
+The `validation` list frozen shape is `{check_id, status}` only — the
+error code `validation_failed` is not a validation list entry. Optional
+secondary `validation_failed` may appear only in the common envelope
+`errors[]`; it cannot override the primary `profile_mismatch` due to the
+frozen error total order (Prio 6 < Prio 8). This rule applies consistently
+to D3, D4, and D9 — there is never an ambiguous choice between
+`profile_mismatch` and `validation_failed` for these violations.
+
+No import of PyYAML or any third-party YAML library. The S0 test-only
+parser is bounded to the subset above and uses stdlib only. Production
+parser internal shape is nonnormative and belongs to S1 per U1 resolution.
+
+#### D4 Duplicate Keys Rejected
+
+Duplicate mapping keys are rejected at every nesting level before any
+last-key-wins or silent-overwrite behavior. Fail closed with
+`profile_mismatch` (per D3 error mapping).
+
+#### D5 ULID Canonical Form
+
+Canonical ULID components match exactly `[0-9A-HJKMNP-TV-Z]{26}` — 26
+uppercase Crockford Base32 characters. Canonical validators reject
+lowercase characters (a–z) and the forbidden letters I, L, O, U rather
+than silently normalizing committed bytes. Candidate authoring and
+pre-review normalizing workflows may accept lowercase and normalize to
+uppercase before review, but the reviewed/committed record carries
+uppercase only.
+
+Applies to all `id` fields using the ULID role prefix convention
+per the exhaustive role-prefix list later in §6 (`ent-<ULID>`, `stmt-<ULID>`, `ep-<ULID>`,
+`assess-<ULID>`, `route-<ULID>`, `rel-<ULID>`, `asset-<ULID>`). Topic
+IDs use stable slugs (not prefix+ULID). Asset owner records use
+`asset-<ULID>` only. The `run-<ULID>` prefix is retired and is excluded
+from that exhaustive list.
+
+#### D6 File Encoding and Newline
+
+Every canonical Markdown file is UTF-8 without BOM, contains no CR
+(U+000D) bytes, uses LF (U+000A) exclusively for line endings, and ends
+with exactly one trailing LF — no additional blank line bytes after it.
+Payload/binary sidecar files follow their own content-hash and media-type
+rules defined in their respective record profiles.
+
+#### D7 Git Object-Id
+
+Already frozen (see §6.1). Full Git object-id as resolved by the owning
+repository. No fixed hex length. Interactive `show` may accept
+unambiguous abbreviations but emits the full id. Unchanged.
+
+#### D8 Field Order Non-Normative
+
+Frontmatter mapping key order is non-normative. Equality and validation
+are by parsed key/value pairs (and by sequence element order where a field
+is semantically a list). Validators MUST NOT require byte-order or
+key-order identity between two records with the same parsed content. A
+writer MAY produce a stable display order for human readability, but that
+order is not authority and a reader/validator MUST NOT reject a record
+solely for key reordering.
+
+#### D9 Closed Field Set
+
+The exact set of frontmatter fields for any record is: 7 common fields
+(see above) + the required and optional additional fields for the selected
+`type`/`kind`/overlay profile. Unknown frontmatter keys at any level
+(record root, nested objects such as `assessor`) are
+rejected — fail closed with `profile_mismatch` (per D3 error mapping).
+Nested object field sets use their own frozen exact shapes per their
+profile definitions; unknown nested keys are also rejected.
+
+Adding a new frontmatter field requires a reviewed protocol amendment or
+version change. Silent acceptance of unrecognized keys is not permitted.
+
+#### D9a — U1 Stage Boundary
+
+Already frozen (see S0 PLAN §3.1 and §17 S0/S1). S0 = pure
+contract/oracle/fixture/static test-only validation; S1 = production
+CLI/wheel/resources/legacy reader/runtime acceptance. Not re-opened.
+`decided_by: user`, `decided_at: 2026-07-23`.
 
 **Frontmatter vs body authority**: Frontmatter fields (YAML between `---`
 delimiters) are the **sole machine authority** — validators, auditors, and
@@ -1062,7 +1325,7 @@ Each record type must expose at least the fields and body sections below.
 |-------|----------|-------------|
 | `protocol` | yes | `aitp/2.0` |
 | `store_id` | yes | stable store identity |
-| `created_at` | yes | ISO-8601 UTC |
+| `created_at` | yes | per D1 |
 | `git_mode` | yes | `enclosing` or `standalone` |
 | `git_root` | yes | store-relative or root-relative locator |
 
@@ -1165,7 +1428,7 @@ When `kind: decision`, a decision overlay is required (frozen):
 | `rationale` | yes | why this choice over alternatives |
 | `basis_refs` | yes | refs supporting the decision |
 | `decision_scope` | yes | scope of the decision |
-| `decided_at` | yes | ISO-8601 UTC timestamp |
+| `decided_at` | yes | per D1 |
 | `supersedes` | no | ref to a prior committed canonical decision (not a CANDIDATE or runtime object) being superseded; must be acyclic |
 
 `created_by` records the file author; `decided_by` records the deciding
@@ -1304,7 +1567,8 @@ Required human-readable sections: Purpose, Inputs And Parameters, Code And
 Environment, Execution, Outputs, Validation, Failure Or Anomaly,
 Reproducibility Boundary.
 
-All Asset owner records (including Run) use the `asset-<ULID>` ID prefix.
+All Asset owner records (including Run) use the `asset-<ULID>` ID prefix
+(ULID canonical form per D5).
 The `run-<ULID>` prefix is retired and must not appear in 2.0 canonical
 records.
 

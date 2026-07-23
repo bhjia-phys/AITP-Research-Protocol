@@ -16,18 +16,24 @@
 > `b470bd809a8f31bf794c8e8a01721c7b9e8ed195`. This SHA is recorded
 > statically; the amended plan must not self-embed a future amendment SHA.
 >
-> **Gating**:
-> - This amendment requires Council review of the planning approach + Oracle
->   Gate A (renewed plan-only Gate 3). Only after both reviews pass may the
->   exact four-path commit (active spec, S0 plan, `.gitignore`, `.ignore`)
->   proceed. The `.gitignore` and `.ignore` changes are audited
->   orchestration-support changes (`.gitignore` adds `.slim/deepwork/` ignore;
->   `.ignore` adds deepwork read allowlist) — they are not product authority.
-> - After this amendment is committed, S0 execution still requires T1a
->   decisions (D1–D9 decisions; U1 frozen traceability entry only), Oracle Gate B review, and then T1b validator
->   core before any custom validator, fixture corpus, or production
->   package/CLI is created. T1a decision register and pre-read provenance
->   stubs are the only S0 artifacts allowed before Gate B.
+> **Historical Phase 1 gating (completed)**:
+> - The Phase 1 amendment required Council review of the planning approach +
+>   Oracle Gate A (renewed plan-only Gate 3) before its exact four-path commit
+>   (active spec, S0 plan, `.gitignore`, `.ignore`). Both reviews passed and
+>   commit `7de57f34ae3b77f133cee83ac8ee44084bb42c81` completed that amendment.
+>   The `.gitignore` and `.ignore` changes were audited orchestration-support
+>   changes, not product authority; they are not part of the current amendment.
+>
+> **Current execution gating**:
+> - After this amendment is committed, S0 execution follows a strict sequence:
+>   1. T1a creates `S0_DECISIONS.json` (populated decision register) and
+>      pre-read `FIXTURE_PROVENANCE.md` (authorization stubs). These are the
+>      only S0 artifacts allowed before Oracle Gate B.
+>   2. Oracle Gate B reviews those T1a artifacts only — it does not review
+>      the spec amendment.
+>   3. Only after Gate B passes may T1b (validator skeleton) begin. No custom
+>      validator, fixture corpus, or production package/CLI may exist before
+>      Gate B pass.
 > - U1 is `frozen`: S0 = pure contract/oracle/
 >   fixture/static test-only validation; production CLI, wheel/resources,
 >   legacy reader, and CLI subprocess/runtime acceptance belong to S1.
@@ -35,6 +41,26 @@
 > - Once reviewed, this document is the sole normative S0 execution plan.
 >   Previous v5/pre-cutover implementation sequences are historical and
 >   non-normative.
+
+> **Current amendment status (2026-07-23)**: Phase 1 four-path commit
+> `7de57f34ae3b77f133cee83ac8ee44084bb42c81` (active spec, S0 plan,
+> `.gitignore`, `.ignore`) is already committed and pushed; Oracle Gate A
+> passed; T0 passed. This edit is a later **two tracked-path authority
+> amendment** (active spec + S0 plan only) caused by T1a human decisions.
+> The `.gitignore` and `.ignore` are not touched and remain as committed
+> in the Phase 1 four-path commit. This amendment requires focused Council +
+> independent Oracle review, then exact two-path commit and push before T1a
+> artifacts. Suggested commit message: `docs: freeze S0 lexical decisions`.
+>
+> After this amendment commit, rerun T0 clean-tree/remote/guard check, then
+> create exactly `S0_DECISIONS.json` and pre-read `FIXTURE_PROVENANCE.md`,
+> then Oracle Gate B (reviews artifacts only), then T1b.
+>
+> **Review strategy**: Council reviews the decision coherence and spec
+> consistency of this two-path amendment. Independent Oracle reviews the
+> exact same two tracked paths. Both must pass before commit. The Phase 1
+> four-path commit (`7de57f34`) is historical and remains accurate — it
+> does not describe the current commit allowlist.
 
 ## Authoritative References
 
@@ -55,9 +81,10 @@ amendment — never a silent rewrite.
 
 ## 1. Scope and Non-Goals
 
-### 1.1 This Plan Commit
+### 1.1 Historical Phase 1 Plan Commit (Completed)
 
-The current Phase 1 amendment modifies exactly four paths:
+The Phase 1 plan commit (`7de57f34ae3b77f133cee83ac8ee44084bb42c81`)
+modified exactly four paths and is complete:
 
 1. `docs/superpowers/specs/2026-07-20-aitp-2-0-command-skill-protocol-design.md`
    (active spec amendment)
@@ -66,25 +93,29 @@ The current Phase 1 amendment modifies exactly four paths:
 3. `.gitignore`
 4. `.ignore`
 
-Paths 3–4 are audited orchestration-support changes — they are not product
-authority: `.gitignore` adds `.slim/deepwork/` ignore; `.ignore` adds
-deepwork read allowlist. Deepwork content is ignored and not committed.
-No other files, directories, scaffolding, code, fixtures, or CI changes.
+Paths 3–4 were audited orchestration-support changes (`.gitignore` adds
+`.slim/deepwork/` ignore; `.ignore` adds deepwork read allowlist). They
+are not product authority and are not part of the current two-path
+authority amendment. Deepwork content is ignored and not committed.
 
 Commit message: `docs: freeze AITP 2.0 store and CLI behavior contracts`
 
-### 1.2 Non-Goals (Plan Commit)
+**Current amendment** (see status block at top): exactly two tracked paths
+(active spec + S0 plan only). The `.gitignore` and `.ignore` remain as
+committed in the Phase 1 four-path commit and are not touched. Suggested
+commit message: `docs: freeze S0 lexical decisions`.
+
+### 1.2 Non-Goals (Current Amendment)
 
 - No `tests/fixtures/aitp2/`, `FREEZE.json`, or fixture content.
 - No `src/aitp/`, `pyproject.toml`, `__init__.py`, or Python package.
 - No wheel, package resources, or `importlib.resources` metadata.
 - No validators (`check_s0_freeze.py`, `test_s0_*.py`, `check_aitp2_simplicity.py`).
-- No modification to `.github/workflows/authority-guard.yml` or any CI workflow.
+- No modification to `.gitignore`, `.ignore`, `.github/workflows/authority-guard.yml`, or any CI workflow.
 - No real `.aitp`, store records, legacy adapter, CLI, writer, or dispatcher.
 - No access to external `.aitp` or private research directories.
-- No implementation commit, merge, or PR. After Council + Oracle Gate A pass,
-  only the exact four-path commit and development-branch push described in
-  §10.1 are permitted.
+- No implementation commit, merge, or PR. After Council + independent Oracle
+  review pass, only the exact two-path commit and push are permitted.
 
 ### 1.3 Non-Goals (Future S0 Execution)
 
@@ -257,24 +288,25 @@ remain the sole normative truth.
 
 ### 3.1 Decision Table
 
-This amendment does not change the meaning or status of D1–D9.
-U1 is now `frozen` per the Gate A checklist
-(see §10.2). D7 remains `frozen`. D1–D6 and D8–D9 remain
-`user-decision-required`. The decision register is reproduced below for
-reference; resolution of D1–D9 occurs at future S0 T1a.
+T0 passed and the user explicitly resolved D1–D6 and D8–D9 on 2026-07-23;
+D7 and U1 were previously frozen. This later authority amendment updates the
+plan's current decision status to reflect those completed T1a human decisions.
+All decisions are now `frozen` — zero `user-decision-required` entries remain
+once reviewed and committed. The decision register is reproduced below with
+exact resolutions:
 
 | # | Decision | Status | Spec ref | Notes |
 |---|----------|--------|----------|-------|
-| D1 | Timestamp lexical form | `user-decision-required` | active spec §6 | Proposed default: strict ISO-8601 UTC `Z`. Must be explicitly resolved. |
-| D2 | `created_by` identity format | `user-decision-required` | active spec §6 | Proposed: `human:<slug>` or `agent:<slug>`. Must be explicitly resolved. |
-| D3 | YAML subset for frontmatter | `user-decision-required` | active spec §6 | Proposed: plain scalars, sequences, maps; no tags, anchors, aliases, flow collections at top-level values. YAML parsing policy is non-trivial — stdlib has no YAML parser; a bounded test-only parser vs. defer-to-S1 must be decided. |
-| D4 | Duplicate YAML keys | `user-decision-required` | active spec §6 | Proposed: rejected. Cannot be validated with grep; requires YAML parser policy resolution (D3). |
-| D5 | ULID case normalization | `user-decision-required` | active spec §6 | Proposed: uppercase Crockford Base32. Must be explicitly resolved. |
-| D6 | Encoding and newline | `user-decision-required` | active spec §6 | Proposed: UTF-8 without BOM, LF-only, exactly one trailing newline. Must be explicitly resolved. |
+| D1 | Timestamp lexical form | `frozen` | active spec §6 (T1a D1) | `YYYY-MM-DDTHH:MM:SSZ` UTC, uppercase `Z`, no offset/space/fractional. `decided_by: user`, `decided_at: 2026-07-23`. |
+| D2 | `created_by` identity format | `frozen` | active spec §6 (T1a D2) | `human:<slug>` or `agent:<slug>`; slug grammar `[a-z0-9]+(?:[._-][a-z0-9]+)*`, 1–64 code points. `decided_by` and `reviewer` must use `human:`. `decided_by: user`, `decided_at: 2026-07-23`. |
+| D3 | YAML subset for frontmatter | `frozen` | active spec §6 (T1a D3) | **User engineering decision (2026-07-23)**: simplest standard approach — comments completely forbidden (no MAY), `#` as first character forbidden (conflicts with YAML comment indicator), internal `#` not preceded by space is ordinary scalar data. Two scalar forms frozen: (1) plain scalar with positional character restrictions (first-char indicator list including `#`, `: ` and ` #` forbidden internally, `RPA & GW` and `path.md#anchor=...` valid; bare leading `#anchor=...` requires JSON double-quote), and (2) JSON double-quoted string via stdlib `json.loads` with post-decode constraint (nonempty single-line printable Unicode, no CR/LF/ASCII controls, no escape-bypassed newlines) for ambiguous content. Exact tokens `[]` and `{}` are the only flow-collection exception (empty sequence/map only). Exact line grammar frozen. Quoted scalars other than JSON double-quoted forbidden. Bounded typed interpretation. Deterministic error mapping: malformed/duplicate keys/unknown fields → primary `profile_mismatch`; candidate `validation` list entry `{check_id: frontmatter_profile, status: fail}`; optional secondary `validation_failed` appears only in common envelope `errors[]` per frozen error total order. No PyYAML import; S0 test-only parser uses stdlib only. `decided_by: user`, `decided_at: 2026-07-23`. |
+| D4 | Duplicate YAML keys | `frozen` | active spec §6 (T1a D4) | Rejected at every nesting level. Fail closed with `profile_mismatch` (per D3 deterministic error mapping). `decided_by: user`, `decided_at: 2026-07-23`. |
+| D5 | ULID case normalization | `frozen` | active spec §6 (T1a D5) | Uppercase Crockford Base32 `[0-9A-HJKMNP-TV-Z]{26}`. Reject lowercase and I/L/O/U. `decided_by: user`, `decided_at: 2026-07-23`. |
+| D6 | Encoding and newline | `frozen` | active spec §6 (T1a D6) | UTF-8 without BOM, LF-only, exactly one trailing LF, no CR bytes. `decided_by: user`, `decided_at: 2026-07-23`. |
 | D7 | Full Git object-id in refs | `frozen` | active spec §6.1 | Use whatever full object-id the owning Git resolves and emits. No fixed hex length. Interactive `show` may accept unambiguous abbreviations but emits the full id. |
-| D8 | Field order normative? | `user-decision-required` | active spec §6 | Proposed: no — equality is semantic, not byte-order. Must be explicitly resolved. |
-| D9 | Unknown frontmatter fields | `user-decision-required` | active spec §6 | Proposed: rejected. Must be explicitly resolved. |
-| **U1** | **S0 wheel/resource and legacy-read stage interpretation** | **`frozen`** | active spec §17 S0/S1 (amended) | **Resolved**: S0 = pure contract/oracle/fixture/static test-only validation. Production CLI, wheel/resources, legacy reader, and CLI subprocess/runtime acceptance belong to S1. Package/import/wheel expectations in S0 are future contract + absence ratchet only; actual build, resource loading, legacy reader, and real black-box CLI acceptance enter S1. `decided_by: user`, `decided_at: 2026-07-23`. Resolution recorded in this plan amendment; the active spec §17 S0/S1 reflects this boundary. |
+| D8 | Field order normative? | `frozen` | active spec §6 (T1a D8) | No — equality is semantic, not byte-order. Validators MUST NOT reject solely for key reordering. `decided_by: user`, `decided_at: 2026-07-23`. |
+| D9 | Unknown frontmatter fields | `frozen` | active spec §6 (T1a D9) | Rejected at every level including nested objects (e.g. `assessor`). Fail closed with `profile_mismatch` (per D3 deterministic error mapping). `approval_binding` is NOT a nested frontmatter example — it is runtime CANDIDATE JSON/commit metadata. `decided_by: user`, `decided_at: 2026-07-23`. |
+| **U1** | **S0 wheel/resource and legacy-read stage interpretation** | **`frozen`** | active spec §17 S0/S1 | **Resolved**: S0 = pure contract/oracle/fixture/static test-only validation. Production CLI, wheel/resources, legacy reader, and CLI subprocess/runtime acceptance belong to S1. `decided_by: user`, `decided_at: 2026-07-23`. Resolution recorded in this plan amendment; the active spec §17 S0/S1 reflects this boundary. |
 
 ### 3.2 Statuses
 
@@ -285,24 +317,21 @@ reference; resolution of D1–D9 occurs at future S0 T1a.
 No `TBD`, `pending`, `discuss`, or blank. Any decision not `frozen` or
 `explicitly-deferred` at S0 PASS time blocks S0 PASS.
 
-### 3.3 Resolution Process
+### 3.3 Decision Status
 
-1. Resolution is a future S0 T1a activity, not a plan-review activity. At T1a the
-   user (or a designated human authority) explicitly decides each
-   `user-decision-required` entry or approves the proposed default with
-   explicit authority. Oracle Gate A does NOT resolve these decisions; it
-   only confirms that this plan correctly exposes them as open.
-2. If resolution requires amending the active spec or disposition, a separate
-   reviewed authority amendment commit is required before the decision can
-   be marked `frozen`; the plan must not silently modify the spec.
-3. If the active spec is genuinely ambiguous or contradictory on a point not
-   covered by an existing decision entry, S0 is BLOCKED at T1. A separate
-   reviewed authority amendment must precede any decision freeze.
-4. Oracle Gate A reviews this plan only. It does NOT resolve D1–D9,
-   fixture authorization, implementation choices, or S0 acceptance. D1–D9
-   belong to explicit T1a human decisions and subsequent S0 execution. U1
-   is already `frozen` (user decision 2026-07-23); it remains present in the
-   decision register for traceability, and Gate A/T1a do not re-open it.
+All D1–D9 and U1 decisions are now `frozen`. The user resolved D1–D6 and
+D8–D9 on 2026-07-23; D7 and U1 were previously frozen. The active spec
+§6 T1a subsection is the sole normative authority for the resolved lexical
+rules. Gate A did not make these decisions — the user did at T1a-time via
+this authority amendment.
+
+**Generic rule for any future amendment**: If a future review or execution
+phase reveals a genuine ambiguity or contradiction not covered by an
+existing decision entry, S0 (or the affected stage) is BLOCKED. A separate
+reviewed authority amendment — never a silent plan edit — must precede any
+decision freeze. The decision register gate (`valid statuses only`,
+`no TBD/pending/discuss/blank`) remains active for all future S0 execution
+phases.
 
 ## 4. Fixture Authorization, Provenance, and Redaction
 
@@ -506,14 +535,22 @@ be actually runnable at the time the task is executed.
 
 ### T1a — Authority Interpretation + Blocking Decisions + Authorization Record
 
-- **Depends on**: T0.
+- **Sequence constraint**: The T1a spec amendment (D1–D9 decisions recorded in the
+  active spec, plus this plan) must be reviewed and committed first
+  before T1a creates any S0 artifacts. T1a then creates
+  `S0_DECISIONS.json` and pre-read `FIXTURE_PROVENANCE.md`. Oracle Gate B
+  reviews those artifacts; only after Gate B passes may T1b begin.
+- **Depends on**: T0 (spec amendment committed, tree clean, authority guard passes).
 - **Files (create)**:
-    - `tests/fixtures/aitp2/S0_DECISIONS.json` — populated decision
-      register with all D1–D9 plus U1 entries. D1–D9 receive explicit new
-      T1a human decisions. U1 copies the existing user decision (`decided_by:
-      user`, `decided_at: 2026-07-23`) with authority ref to this plan §3.1
-      and active spec §17 S0/S1; U1 is not re-opened and requires no new
-      gate or decision at T1a.
+    - `tests/fixtures/aitp2/S0_DECISIONS.json` — copies all now-frozen
+      D1–D9 plus U1 decisions and authority refs from §3.1. No new
+      decision is needed at T1a artifact time — all decisions were
+      already resolved by the user on 2026-07-23 and recorded in the
+      active spec §6 T1a subsection and this plan §3.1. The register
+      is a machine-readable copy for traceability and validator use;
+      if review finds any inconsistency between the register and the
+      active spec, that is a blocking finding. U1 remains traceability-only
+      (copied from §3.1, not re-opened).
    - `tests/fixtures/aitp2/FIXTURE_PROVENANCE.md` — authorization stubs
      with pre-read fields per §4.1 (symbolic source ID/class, owner/approver,
      authorized scope, restrictions, approval evidence); NO snapshot hashes
@@ -559,8 +596,9 @@ be actually runnable at the time the task is executed.
 
 ### Oracle Gate B
 
-Oracle Gate B reviews T1a artifacts only. It does NOT resolve fixture
-authorization, implementation choices, or S0 acceptance. Gate B confirms:
+Oracle Gate B reviews T1a artifacts only — it does NOT review the spec
+amendment, resolve fixture authorization, implementation choices, or
+S0 acceptance. Gate B confirms that T1a correctly produced:
 - All D1–D9 decisions explicitly resolved (U1 already frozen).
 - Decision register entries are authority-traceable.
 - FIXTURE_PROVENANCE.md authorization stubs are present and follow §4.1.
@@ -641,7 +679,8 @@ before Gate B passes.
   passes on a violation; empty fixture directories incorrectly report PASS
   (must NOT — `--oracle-only` reports "no real fixture coverage claimed" but
   synthetic negatives must still pass); D3/D4 frontmatter parser contract
-  unresolved → T2 STOP unless authority amendment (see §7.1).
+  is now `frozen` (T1a authority amendment 2026-07-23 — see active spec
+  §6 D3/D4); resolution is complete and not deferrable.
 - **`check_s0_freeze.py` Modes**:
   1. **`--oracle-only`** (T2): Validates FREEZE.json JSON schema, 12/7+1/16
      counts, every field carries `authority_path`, decision register refs
@@ -665,11 +704,15 @@ before Gate B passes.
       modes per the contract above.
    3. Write negative tests: each creates a tempdir, writes a deliberately
       invalid fixture, and asserts the exact expected error code.
-   4. If D3/D4 (frontmatter YAML lexical policy) is not yet frozen by an
-      approved T1 authority amendment defining the bounded test-only parser
-      contract, then S0 claim must be narrowed by a separate reviewed
-      authority acceptance amendment — otherwise T2 STOP. Silent deferral to
-      S1 without amendment is prohibited (see §7.1).
+   4. D3/D4 (frontmatter YAML lexical policy) are already `frozen` per
+      the T1a authority amendment 2026-07-23 (active spec §6 D3/D4).
+      The bounded two-form scalar grammar — two scalar forms, first-
+      character restrictions, internal-sequence rules, JSON double-quote
+      post-decode constraints, forbidden YAML syntax forms, empty `[]`/`{}`
+      sentinels only — is the sole normative rule. The FREEZE.json and
+      validator MUST encode these frozen D3/D4 rules directly. Any
+      future change to D3/D4 requires a new reviewed authority amendment;
+      deferral to S1 is prohibited.
 - **Verification**:
   - `python3 tests/aitp2/check_s0_freeze.py --oracle-only` exits 0; reports
     12/7+1/16 counts confirmed; all authority anchors present; synthetic
@@ -855,14 +898,14 @@ S1 MUST NOT begin until T0–T5 all pass S0 Acceptance Gate.
 - Tests must NOT judge scientific truth, semantic relevance, or command intent.
 - Negative tests use `tempfile.TemporaryDirectory`; never touch external `.aitp`.
 - No network, external Git remote, or external filesystem access in any test.
-- Frontmatter YAML lexical validation (duplicate keys, anchors, aliases, tags,
-  flow collections at top-level values) requires a bounded test-only parser
-  contract. If S0 PASS must claim machine-checkable Markdown frontmatter
-  (§9.1), then D3/D4 MUST be frozen at T1 as an approved bounded test-only
-  parser contract, and implemented by T2. If the user/designated authority
-  defers this to S1, the S0 claim MUST first be narrowed by a separate
-  reviewed authority/S0 acceptance amendment — without it, T2 STOP. Silent
-  deferral and skip without amendment is prohibited.
+- Frontmatter YAML lexical validation (duplicate keys, forbidden YAML
+  syntax forms per D3/D4) uses a bounded stdlib-only test-only parser
+  contract per the now-frozen D3/D4 rules (active spec §6 T1a D3/D4).
+  The exact empty `[]` and `{}` sentinels are permitted; all nonempty
+  flow structures (`[...]`, `{...}`) are forbidden as scalar values —
+  flow-looking content must use the JSON double-quoted string form.
+  D3 and D4 were resolved by the user on 2026-07-23 and are not deferrable;
+  S0 validators implement the frozen rules directly.
 
 ## 8. Phase S0 Ratchet
 
@@ -1059,7 +1102,7 @@ belongs to S1).
 
 ## 10. Review and Commit Strategy
 
-### 10.1 This Plan Commit
+### 10.1 Historical Phase 1 Plan Commit
 
 - **Exact change**: four paths — the active spec (amended), this plan (amended),
   `.gitignore`, and `.ignore`. The `.gitignore` adds `.slim/deepwork/`
@@ -1075,7 +1118,7 @@ belongs to S1).
   commits, no merge, no S0 execution until Council + Oracle Gate A pass and
   future T0.
 
-### 10.2 Council + Oracle Gate A
+### 10.2 Historical Council + Oracle Gate A
 
 This amendment requires:
 
@@ -1094,22 +1137,25 @@ This amendment requires:
     human decision overlay, Entity profile, route_refs, asset-ULID IDs,
     CANDIDATE universal model, reads JSON object) are correctly specified
     in both the active spec and this plan.
-  - U1 is `frozen`. D1–D6, D8–D9 are correctly
-    exposed with status `user-decision-required`; D7 is already `frozen`.
-    All `user-decision-required` decisions remain open; they are resolved
-    by the user/designated human authority at S0 T1a.
+  - Historical Gate A confirmed U1 and D7 were `frozen` while D1–D6 and
+    D8–D9 were exposed as `user-decision-required`. This later T1a authority
+    amendment has resolved every D1–D9 entry; §3.1 reflects the current
+    `frozen` status. Resolving them was the user's T1a authority, not Gate A's.
   - Plan does not silently modify the active spec or audit disposition.
   - Python file/module inventory is not normatively asserted. S0 expected-
     output fixtures are structural oracles (FREEZE.json), not actual CLI
     output — real CLI subprocess/filesystem/Git/stdout acceptance belongs
     to S1 per U1 resolution.
 
-Only after both Council and Oracle Gate A pass may the exact four-path commit
-and push proceed. After commit, S0 execution still requires T1a (resolves
-D1–D9; U1 frozen traceability-only) and
-Oracle Gate B before any custom validator, fixture corpus, or production
-package/CLI is created (T1a decision register and pre-read provenance
-stubs are the only S0 artifacts allowed before Gate B).
+For the historical Phase 1 amendment, only after both Council and Oracle Gate A
+passed could the exact four-path commit and push proceed. After the current
+two-path authority amendment is separately reviewed and committed, S0 follows:
+1. T1a creates `S0_DECISIONS.json` (copying frozen D1–D9 decisions; U1 frozen traceability-only)
+   and pre-read `FIXTURE_PROVENANCE.md` — these are the only S0 artifacts
+   allowed before Gate B.
+2. Oracle Gate B reviews those T1a artifacts (not the spec amendment).
+3. Only after Gate B passes may T1b (validator skeleton), custom validators,
+   fixture corpus, or production package/CLI be created.
 
 ### 10.3 Future S0 Execution Commits
 
@@ -1124,17 +1170,25 @@ S0 execution (when authorized) follows T0–T5:
 
 ### 10.4 Gate Naming
 
-- Council review: reviews the planning approach (behavior-not-code-shape
-  coherence) before Oracle Gate A.
-- Oracle Gate A: reviews this amended plan (plan-only, before any commit).
-  Renewed from the original Oracle Gate 3 (now renamed Gate A) to reflect
-  the amended scope.
-- Oracle Gate B: reviews T1a artifacts (decisions, authorization stubs)
+- **Council review (Phase 1)**: reviews the planning approach (behavior-not-
+  code-shape coherence) before Oracle Gate A. Completed and passed for the
+  Phase 1 four-path commit.
+- **Council review (current)**: reviews the decision coherence and spec
+  consistency of the two-path T1a authority amendment. Pending.
+- **Oracle Gate A (completed, historical)**: reviewed the Phase 1 amended
+  plan only (plan-only, before the four-path commit). Renewed from the
+  original Oracle Gate 3 (renamed Gate A) to reflect the Phase 1 scope.
+  Gate A passed; commit `7de57f34` reflects the reviewed state.
+- **Independent Oracle review (current)**: reviews the exact two tracked
+  paths (active spec + S0 plan) of the T1a authority amendment. This is a
+  focused review distinct from historical Gate A — it does not re-open
+  Gate A's scope and is not a new named gate. Pending.
+- **Oracle Gate B**: reviews T1a artifacts (decisions, authorization stubs)
   before any custom validator or fixture corpus is created; the T1a decision
   register and pre-read provenance stubs are the only allowed exceptions.
-  Must pass before T1b begins.
-  Gate B does NOT say validator exists before gates.
-- S0 Acceptance Gate: final S0 execution gate (independent review of
+  Must pass before T1b begins. Gate B reviews artifacts only, not the spec
+  amendment. Gate B does NOT say validator exists before gates.
+- **S0 Acceptance Gate**: final S0 execution gate (independent review of
   T1a + Gate B + T1b + T2 + T3 + T4 + T5).
 
 ## 11. Risks, Stop Conditions, and Explicit Stop Before S1
@@ -1148,8 +1202,9 @@ S0 execution (when authorized) follows T0–T5:
 | Active spec genuinely ambiguous on unregistered point | S0 BLOCKED | Separate spec amendment + disposition update before resuming |
 | Production artifact accidentally scaffolded in S0 | Ratchet FAIL | Local verification before commit + required S0 CI blocks |
 | Plan confused with execution | Premature S0 PASS | Frontmatter states "proposed plan-only amendment"; no fixture/validator created |
-| YAML lexical policy unresolved (D3/D4) | Cannot validate duplicate keys/anchors; S0 claim overbroad if frontmatter machine-checkability asserted | Freeze D3/D4 as bounded test-only parser contract at T1 and implement in T2, OR narrow S0 claim via separate authority/S0 acceptance amendment before T2; T2 STOP otherwise |
-| Council or Oracle Gate A not obtained before Phase 1 commit | Amendment not authorized; may need rollback | This amendment requires explicit Council planning review + Oracle Gate A pass before four-path commit and push |
+| YAML lexical policy (D3/D4) — resolved | D3/D4 are `frozen` per T1a authority amendment 2026-07-23 (active spec §6 T1a D3/D4); the bounded two-form scalar grammar is the sole normative rule | No further risk — resolution is complete; any future change requires a new reviewed amendment |
+| Council + Oracle Gate A before historical Phase 1 commit — satisfied | Historical Phase 1 four-path commit `7de57f34` passed both Council and Oracle Gate A review; no pending risk | No longer a risk — historical Gate A is complete and recorded in §10.2 |
+| Two-path authority amendment requires focused Council + independent Oracle before commit | Amendment lacks authorization; may need rollback | The current two-path amendment (active spec + S0 plan only) requires focused Council review (decision coherence/spec consistency) + independent Oracle review (exact two tracked paths) before commit. Neither may be skipped or deferred. |
 | Python code shape confused with behavior contract | Tests assert internal module names/class signatures instead of observable CLI/filesystem/Git behavior | Contract tests prioritize black-box; Python file/module inventory is implementation evidence only |
 
 ### 11.2 Stop Conditions
