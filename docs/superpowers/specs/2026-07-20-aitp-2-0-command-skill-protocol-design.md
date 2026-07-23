@@ -1,8 +1,8 @@
 ---
 title: AITP 2.0 Command And Skill Research Protocol
 date: 2026-07-20
-revised: 2026-07-23
-status: revised-for-user-review
+revised: 2026-07-24
+status: revised-user-approved
 reviewed_against:
   - docs/superpowers/audits/2026-07-20-aitp-2-0-command-skill-protocol-architecture-audit.md
 review_disposition:
@@ -18,14 +18,32 @@ scope: AITP 2.0 product boundary, command-guided research lifecycle, local file 
 > `2026-07-19-aitp-2-0-rewrite-design.md`. The earlier document remains only as
 > design history and must not drive implementation.
 
-> **Revision note (2026-07-23)**: This amendment freezes observable
-> behavior contracts (disk, file, navigation, read/write, CLI/Agent contract,
-> runtime inventory, content envelopes, route navigation, read coverage,
-> failure recall, gate matrix) without freezing Python code shape. Internal
-> module layout, class/function boundaries, parser library, dispatch, and
-> helper layering are implementation choices, not normative protocol. This
-> amendment awaits Council + Oracle Gate A review. No normative authority
-> changes that would reopen closed audit patches.
+> **Historical revision note (2026-07-23, completed)**: This historical
+> amendment froze observable behavior contracts (disk, file, navigation,
+> read/write, CLI/Agent contract, runtime inventory, content envelopes, route
+> navigation, read coverage, failure recall, gate matrix) without freezing
+> Python code shape. Internal module layout, class/function boundaries, parser
+> library, dispatch, and helper layering are implementation choices, not
+> normative protocol. Council + Oracle Gate A reviewed and passed this
+> amendment; authority commit `7de57f34ae3b77f133cee83ac8ee44084bb42c81`
+> completed it. No normative authority changes that would reopen closed audit
+> patches.
+
+> **Reviewed UX amendment (2026-07-24, user-approved)**: This amendment
+> normatively encodes the user-reviewed interaction behavior and supersedes
+> the affected earlier text in place: `aitp checkpoint "<summary>"` is the
+> default compact canonical Episode capture (§9.1); Episode author/attention
+> gating distinguishes human-authored from Agent-authored and topic/shared
+> from route-scoped failure records (§14.0.1); Route failure, prior-attempt,
+> and blocking-Assessment sets are a derived canonical-scan view at a fixed
+> Git commit rather than synchronized Route frontmatter fields (§6.0.3), so
+> the Route profile carries 9 additional fields and the Episode profile drops
+> `resolution_refs`; the action→gate matrix is rebuilt accordingly (§14.0.1);
+> and an explicit anti-complexity guard (§15.1) forbids implementing this
+> behavior through any new command group, record type, inbox, watermark,
+> canonical unreviewed flag, automatic semantic classifier, index authority,
+> or extra lifecycle state machine. Where earlier revision text or historical
+> discussion conflicts with these rules, the 2026-07-24 amendment wins.
 
 ## 1. Executive Decision
 
@@ -87,7 +105,8 @@ It must:
 - run `aitp enter --cwd <cwd>` on the first relevant turn;
 - ask the human when more than one topic is plausible;
 - select a phase command from its documented trigger table;
-- run `aitp checkpoint` at durable moments and `aitp closeout` near the end of a
+- run `aitp checkpoint "<summary>"` at durable moments (compact capture by
+  default per §9.1) and `aitp closeout` near the end of a
   meaningful research session;
 - report a missed entry and recover by entering late rather than fabricating
   prior memory;
@@ -315,7 +334,7 @@ AITP 2.0 has the following normal command groups.
 | `aitp show` | Read one exact ref or path, optionally at a Git revision. |
 | `aitp research` | Prepare and finish a discussion, derivation, deep-research, code, numerical, or HPC phase. |
 | `aitp literature` | Add, extract, study, link, and audit one-copy literature. |
-| `aitp checkpoint` | Record one durable research event. |
+| `aitp checkpoint` | Record one durable research event as a compact canonical Episode (rich full-record flow via `--full`). |
 | `aitp closeout` | Check the declared session work for durable omissions and next actions. |
 | `aitp knowledge` | Perform Scientific Dreaming and produce or refresh Knowledge Cards and linked insight records. |
 | `aitp skill` | Distill, package, review, install, update, or roll back a reusable research Skill. |
@@ -430,8 +449,9 @@ Semantics:
 - An absence claim (asserting a ref does not exist) is valid only when all
   relevant `search_coverage` entries report `complete`.
 - `unexpanded_failures.count` and `unexpanded_failures.refs` report
-  `known_failure_refs` and `prior_attempt_refs` that enter did not expand due
-  to budget. These fields are not truncated by the body budget — they must
+  derived `known_failure_refs` and `prior_attempt_refs` (§6.0.3) that enter
+  did not expand due to budget. These fields are not truncated by the body
+  budget — they must
   always be present when nonzero.
 - `omitted_refs`: each entry is `{ref, reason, scope}`. `ref` is the
   store-relative ref that was omitted; `reason` is a human-readable explanation;
@@ -669,9 +689,10 @@ TOPIC.md
        ├─ source_note           — topic-local interpretation of a shared SOURCE
        ├─ shared SOURCE.md      — one-copy source identity, extractions, anchors
        ├─ PDF anchor            — exact extraction anchor within a source
-       ├─ prior_attempt_refs    — previous attempts at this route's goal
-       ├─ known_failure_refs    — Episodes/Assessments recording failures
-       ├─ blocking_assessment_refs — Assessments that block progress
+       ├─ derived failure view  — prior attempts, known/resolved failures, and
+       │                          blocking Assessments derived by exact canonical
+       │                          Episode/Assessment frontmatter scan at a fixed
+       │                          Git commit (§6.0.3) — never stored Route fields
        └─ next_action           — the next concrete step, with expected_output
                                   and stop_conditions
 ```
@@ -681,8 +702,10 @@ Navigation rules:
 - `TOPIC.md` records stable background, goals, related topics, workspace roles,
   Must Read refs, conventions, and durable constraints.
 - `aitp enter` enumerates active Routes in explicit human-set priority order and
-  for each active Route shows its `context_refs`, `prior_attempt_refs`,
-  `known_failure_refs`, `blocking_assessment_refs`, and `next_action`.
+  for each active Route shows its `context_refs`, `next_action`, and the
+  §6.0.3 derived failure view (`prior_attempt_refs`, `known_failure_refs`,
+  `resolved_failure_refs`, `blocking_assessment_refs`) with its provenance
+  (derived, complete/incomplete, commit).
 - A Route may reference a topic-local `source_note` for interpretation of a
   shared `SOURCE.md`. `SOURCE.md` lives under `shared/library/papers/` and is
   referenced, not copied.
@@ -690,9 +713,16 @@ Navigation rules:
 - The navigation spine is stable across human and Agent reads — both see the
   same files in the same order. No Agent-only or human-only navigation path
   exists.
+- Navigation is exactly TOPIC → Route → exact canonical Episode/Assessment
+  frontmatter scan. There is no hidden graph, index, or cache authority: the
+  runtime INDEX (§5) is a rebuildable cache only, and a commit or coverage
+  mismatch falls back to the canonical scan (§6.0.3).
 - Newly discovered context does not alter the file layout; it creates new
-  records (Statements, Episodes, Relations, etc.) linked into the Route's ref
-  lists through explicit human or Agent edits.
+  records (Statements, Episodes, Relations, etc.). Records enter navigation
+  either through explicit human or Agent edits to a Route's `context_refs`, or
+  automatically through the §6.0.3 derived scan of route-scoped Episodes and
+  Assessments — never through a manually synchronized failure/ref list on the
+  Route.
 
 ### 5.2 Noncanonical Workspace State
 
@@ -743,43 +773,56 @@ Frozen external fields:
 | `state` | `draft \| review_ready \| approved \| committed \| rejected \| superseded` |
 | `base_commit` | Git commit against which the candidate was prepared |
 | `tree_object_id` | proposed Git tree object ID |
-| `operations` | list of `{path, operation, sha256}` for each proposed file. `operation` is one of `create`, `update`, `delete`. For `delete`, `sha256` is the expected SHA-256 of the blob being deleted (the prior content must match; `delete` without a matching prior blob SHA fails). For `create` and `update`, `sha256` is the SHA-256 of the proposed new blob content. Every `path` in the list MUST be unique (duplicate paths within a single candidate are a `validation_failed` error and must be rejected before sorting or hashing). |
+| `operations` | list of `{path, operation, sha256, actor, actor_assurance}` per proposed file. `operation` is one of `create`, `update`, `delete`. For `delete`, `sha256` is the expected SHA-256 of the blob being deleted (the prior content must match; `delete` without a matching prior blob SHA fails). For `create` and `update`, `sha256` is the SHA-256 of the proposed new blob content. `actor` is a D2-format identity (`human:<slug>` or `agent:<slug>`). `actor_assurance` is `trusted_human \| trusted_agent \| fail_closed_agent`. Both are populated per-operation from the trusted CLI/host boundary; caller-provided values are ignored/rejected. Every `path` in the list MUST be unique (duplicate paths within a single candidate are a `validation_failed` error and must be rejected before sorting or hashing). |
 | `content_sha256` | SHA-256 of the concatenated operation payloads (deterministic canonical order) |
 | `validation` | deterministic check results. Frozen shape: a sorted unique list of `{check_id, status}` objects. `check_id` is an ASCII identifier (pattern `[a-z][a-z0-9_]*`); `status` is `pass` or `fail`. Duplicate `check_id` entries are a `validation_failed` error. The universal `candidate_integrity` check (covering at minimum duplicate paths, operation/blob hash correctness, gate classification, and canonical byte-frame `content_sha256`) MUST always be present. An empty or missing `validation` list at `review_ready` is a `validation_failed` error. The `validation` digest is the SHA-256 hash of the concatenated per-`check_id` byte frames `<check_id> + NUL + <status> + LF` (sorted by `check_id` lexicographically, no separator between frames). For a deterministic-only commit, every entry must have `status: pass`. |
 | `validation_sha256` | SHA-256 digest of the `validation` list computed by the canonical byte framing defined above (`validation` digest). This field is a frozen content identity field — it binds the validation result and must be included in `approval_binding` and commit metadata. |
 | `required_gates` | human gate IDs required for this candidate. The frozen legal human gate ID set is `exact_diff_human_review | human_review`. Empty list (`[]`) means the candidate uses the deterministic-only path — every operation must pass deterministic validation and no human approval is required. A non-empty list must contain at least one legal gate ID, must be sorted lexicographically and de-duplicated, and each ID must map to at least one operation per the §14.0.1 matrix. Deterministic audit gates (add-only, assessor declaration) are NOT listed as gate IDs — they are always run and, if they pass, their corresponding matrix rows contribute no entries to `required_gates`. |
-| `review` | review binding state |
-| `approval_binding` | `{base_commit, tree_object_id, paths, content_sha256, validation_sha256, reviewer, timestamp, signature}` |
+| `approval_binding` | `{protocol, workspace_id, candidate_revision, base_commit, tree_object_id, paths, operation_actor_bindings, content_sha256, validation_sha256, required_gates, reviewer, timestamp, signature}`. `protocol` is `aitp/2.0`; `workspace_id` is the originating workspace ULID (cross-workspace copied approval must fail even when revision/tree/paths/hashes/gates match); `operation_actor_bindings` is a sorted-by-path projection `[{path, actor, actor_assurance}]` matching operations exactly. |
 | `commit_oid` | Git commit OID after successful commit (absent until `state: committed`) |
 
 Rules:
 
 - After `state` transitions to `review_ready`, the **candidate content
-  identity fields** (`base_commit`, `tree_object_id`, `operations`,
-  `content_sha256`, `validation_sha256`, `required_gates`) are immutable. Lifecycle fields
-  (`state`, `review`, `approval_binding`, `commit_oid`) may still
-  transition through the lawful state machine (e.g. `review_ready` →
-  `approved` → `committed`). Any content or path change creates a new
-  revision with a new `candidate_revision`, `tree_object_id`, and
-  `content_sha256`, and the prior `approval_binding` is invalidated.
+   identity fields** (`base_commit`, `tree_object_id`, `operations`,
+   `content_sha256`, `validation_sha256`, `required_gates`) are immutable.
+   Lifecycle fields (`state`, `approval_binding`, `commit_oid`) may still
+   transition through the lawful state machine (e.g. `review_ready` →
+   `approved` → `committed`). Any content or path change — including
+   editing/replacing an operation's bytes or its actor/actor_assurance
+   binding — creates a new revision with a new `candidate_revision`,
+   `tree_object_id`, and `content_sha256`, and the prior `approval_binding`
+   is invalidated.
 - A candidate transitioning to `review_ready` MUST have a non-empty
   `validation` list. An empty or missing `validation` at `review_ready` is a
   `validation_failed` error. The `validation` list MUST include the universal
-  `candidate_integrity` check covering at minimum: duplicate `path` entries
-  in `operations`, operation→blob hash correctness, gate classification
-  compliance per §14.0.1, and the canonical byte-frame `content_sha256`. Each
+   `candidate_integrity` check covering at minimum: duplicate `path` entries
+   in `operations`, operation→blob hash correctness, actor grammar/assurance
+   enum per D2, trusted-boundary population (caller-provided values rejected),
+   create-operation `created_by` ≡ operation.actor equality, update/delete
+   `created_by` preservation, per-operation gate classification compliance
+   per §14.0.1, candidate `required_gates` as the sorted unique union of all
+   applicable operation gate floors, and the canonical byte-frame
+   `content_sha256`. Each
   `operation` and each declared `required_gates` entry MUST have at least one
   applicable deterministic check listed in `validation`. The `validation`
   byte digest shape (concatenated `<check_id> + NUL + <status> + LF` frames,
   sorted by `check_id`) is unchanged. A deterministic commit still requires
   every entry to have `status: pass`.
-- `approval_binding` binds `base_commit`, `tree_object_id`, `paths`,
-  `content_sha256`, and `validation_sha256`. If any of these change after
-  approval, the binding is broken and a new review is required. Human
-  approval must only be generated when all of: `validation` is non-empty,
-  `candidate_integrity` has `status: pass`, and every `validation` entry
-  has `status: pass`. An `approval_binding` generated against a failing or
-  empty `validation` is invalid.
+- `approval_binding` binds `protocol` (`aitp/2.0`), `workspace_id`,
+  `candidate_revision`, `base_commit`, `tree_object_id`, `paths`,
+  `operation_actor_bindings`, `content_sha256`, `validation_sha256`, and
+  `required_gates`. `operation_actor_bindings` is a sorted-by-path projection
+  `[{path, actor, actor_assurance}]` exactly matching operations. If any of
+  these change after approval — including a different `workspace_id` even when
+  all other fields match identically — the binding is broken and a new review
+  is required. Candidate revision, actor binding,
+  required_gates, and operations/tree/content/validation identity changes
+  each independently invalidate prior approval and require review of the
+  new final revision. Human approval must only be generated when all of:
+  `validation` is non-empty, `candidate_integrity` has `status: pass`, and
+  every `validation` entry has `status: pass`. An `approval_binding`
+  generated against a failing or empty `validation` is invalid.
 - After `review_ready`, the `validation` list and `validation_sha256` must
   not drift. If a deterministic check is re-executed and produces a different
   result or the computed `validation_sha256` changes, the current revision
@@ -804,18 +847,24 @@ Rules:
   produce a deterministic byte frame:
 
   ```
-  <operation> + NUL + <path> + NUL + <sha256hex> + LF
+  <operation> + NUL + <path> + NUL + <sha256hex> + NUL + <actor> + NUL + <actor_assurance> + LF
   ```
 
   where `operation` is one of `create`, `update`, `delete`; `path` is
   the canonical store-relative POSIX path (UTF-8, must not contain NUL
   or ASCII control characters 0x00–0x1F, 0x7F); `sha256hex` is the
   lowercase hexadecimal SHA-256 digest of the blob content (for `create`
-  and `update`) or the expected prior blob (for `delete`); `NUL` is the
-  single byte 0x00; `LF` is the single byte 0x0A. The concatenation of
-  these per-operation byte frames (no additional separator between
-  operations) forms the byte sequence. The SHA-256 hash of this
-  concatenated byte sequence is `content_sha256`.
+  and `update`) or the expected prior blob (for `delete`); `actor` is
+  the D2-format identity string; `actor_assurance` is the assurance enum
+  value; `NUL` is the single byte 0x00; `LF` is the single byte 0x0A.
+  The concatenation of these per-operation byte frames (no additional
+  separator between operations) forms the byte sequence. The SHA-256
+  hash of this concatenated byte sequence is `content_sha256`.
+
+  Editing/replacing an operation's bytes or its actor/actor_assurance
+  binding changes the identity of that operation, producing a different
+  `content_sha256` and invalidating the candidate revision and any prior
+  approval.
 
   This byte-framed format eliminates the ambiguity of JSON object
   concatenation (field order variations, escaping differences,
@@ -828,13 +877,15 @@ Rules:
   machine-parseable trailer) must be recoverable from the commit object
   alone without requiring the runtime CANDIDATE copy.
   * **Human-gated commits**: metadata must include the complete approval
-    identity: `candidate_revision`, `reviewer`, `timestamp`, `signature`,
-    `paths`, `base_commit`, `tree_object_id`, `content_sha256`, and
-    `validation_sha256`.
+    identity: `protocol` (`aitp/2.0`), `workspace_id`, `candidate_revision`,
+    `base_commit`, `tree_object_id`, `paths`, `operation_actor_bindings`,
+    `content_sha256`, `validation_sha256`, `required_gates`
+    (sorted/deduplicated), `reviewer`, `timestamp`, and `signature`.
   * **Deterministic-only commits**: metadata must include `gate_mode:
-    deterministic`, `candidate_revision`, `validation_sha256`, `paths`,
-    `base_commit`, `tree_object_id`, and `content_sha256`. No `reviewer`
-    or `signature` is required.
+    deterministic`, `protocol` (`aitp/2.0`), `workspace_id`,
+    `candidate_revision`, `base_commit`, `tree_object_id`, `paths`,
+    `operation_actor_bindings`, `content_sha256`, `validation_sha256`, and
+    `required_gates` (empty `[]`). No `reviewer` or `signature` is required.
   A commit whose metadata lacks the fields required for its path, or
   where the metadata fields do not match the committed tree, is not a
   valid canonical commit — it must be treated as an unreviewed mutation.
@@ -852,20 +903,22 @@ Rules:
    applies: all deterministic checks must be re-executed (including
    `candidate_integrity`), `validation_sha256` recomputed and confirmed to
    match the stored value and the `approval_binding.validation_sha256`.
-   Commit metadata must preserve the complete approval identity:
-   `candidate_revision`, `reviewer`, `timestamp`, `signature`, `paths`,
-   `base_commit`, `tree_object_id`, `content_sha256`, and
-   `validation_sha256`.
+    Commit metadata must preserve the complete approval identity:
+    `protocol` (`aitp/2.0`), `workspace_id`, `candidate_revision`,
+    `base_commit`, `tree_object_id`, `paths`, `operation_actor_bindings`,
+    `content_sha256`, `validation_sha256`, `required_gates`
+    (sorted/deduplicated), `reviewer`, `timestamp`, and `signature`.
 
 2. **Deterministic-only path**: `draft → review_ready → committed`.
    Permitted only when `required_gates` is empty (`[]`), every
    deterministic validation entry has `status: pass`, and the pre-commit
    integrity re-execution rule is satisfied. `approval_binding` MUST remain
-   absent — no `reviewer` or `signature` is required. Commit metadata must
-   record: `gate_mode: deterministic`, `candidate_revision`,
-   `validation_sha256`, `paths`, `base_commit`, `tree_object_id`, and
-   `content_sha256`. The metadata must be recoverable from the commit
-   object alone.
+    absent — no `reviewer` or `signature` is required. Commit metadata must
+    record: `gate_mode: deterministic`, `protocol` (`aitp/2.0`),
+    `workspace_id`, `candidate_revision`, `base_commit`, `tree_object_id`,
+    `paths`, `operation_actor_bindings`, `content_sha256`, `validation_sha256`,
+    and `required_gates` (empty `[]`). The metadata must be recoverable from
+    the commit object alone.
 
 If `required_gates` is non-empty, the human-gated path MUST
 be used — a deterministic skip to `committed` is not permitted. Terminal
@@ -979,6 +1032,56 @@ Fields that profile rules explicitly designate as requiring a human
 identity (`decided_by`, `reviewer`) MUST use `human:`. `created_by` and
 `assessor.identity` may use either `human:` or `agent:` as their
 respective profiles permit.
+
+##### D2a — Per-Operation Actor Binding
+
+The writer populates `actor` and `actor_assurance` for EACH operation in
+CANDIDATE.json (§5.2.2) from the trusted CLI/host invocation boundary.
+Caller-provided values are ignored/rejected.
+
+| Term | Description |
+|------|-------------|
+| `actor` | A D2-format identity (`human:<slug>` or `agent:<slug>`) for the actor performing this specific operation. |
+| `actor_assurance` | Exact enum: `trusted_human \| trusted_agent \| fail_closed_agent`. |
+
+Rules:
+- **Boundary-established**: the CLI/host invocation boundary determines
+  `actor` and `actor_assurance` per operation. An Agent cannot choose a
+  `human:` identity or `trusted_human` assurance.
+- **Raw/unknown boundary**: if the boundary cannot prove a human actor,
+  `actor` MUST carry `agent:<configured-fail-closed-id>` and
+  `actor_assurance` MUST be `fail_closed_agent`. No TTY detection, argument
+  value, or environment variable may upgrade the assurance.
+- **trusted_agent / fail_closed_agent** both classify as Agent for gate
+  purposes. Only `trusted_human` permits human-authored deterministic
+  classification but does NOT by itself satisfy a human-review gate.
+- **Create**: the proposed record's `created_by` MUST equal the operation's
+  `actor`. Mismatch → `validation_failed` (`check_id: actor_mismatch`).
+  `created_by` is the immutable origin author attribution; it is set at
+  record creation and never rewritten.
+- **Update**: preserve the target record's original `created_by`. The
+  operation's `actor` is the mutation origin for gate classification only.
+- **Delete**: the operation's `actor` is the deletion origin; the original
+  creator is irrelevant to the current gate.
+- **Reviewer-only approval** does not make the reviewer the operation actor.
+  `reviewer` in `approval_binding` is distinct from operation actors.
+- **Editing/replacing** an operation's bytes or its actor/actor_assurance
+  binding changes the operation's identity, producing a different
+  `content_sha256` and invalidating the candidate revision and any prior
+  approval.
+- **Mixed-actor batching**: operations within a single candidate may have
+  different actors (e.g. Agent-create, Human-update). This is lawful; each
+  operation is classified independently per the §14.0.1 matrix.
+  `candidate.required_gates` = sorted unique union of all applicable
+  operation gate floors. If one operation matches multiple actions, all
+  applicable floors apply; the implementation must not choose the lower.
+  Deterministic-only path is permitted iff the exact union is `[]`.
+- **Actor change between staging and commit**: if any operation's `actor`
+  or `actor_assurance` changes between staging and pre-commit re-execution,
+  the candidate revision is invalidated.
+
+Implementation of the trusted host boundary belongs to S1, but the protocol
+behavior and fail-closed semantics are frozen.
 
 #### D3 Bounded YAML / Frontmatter Subset + Parser Policy
 
@@ -1348,9 +1451,6 @@ Workspace Roles, Must Read, Conventions, Durable Constraints.
 | `state` | yes | `proposed\|active\|paused\|completed\|abandoned` |
 | `scope` | yes | scope boundary |
 | `context_refs` | yes | Must Read refs, conventions, related topics for this Route |
-| `prior_attempt_refs` | yes | refs to prior Episodes/attempts at this Route's goal |
-| `known_failure_refs` | yes | refs to Episodes/Assessments recording known failures |
-| `blocking_assessment_refs` | no | Assessments that block further progress |
 | `next_action` | yes | next concrete step description |
 | `expected_output` | yes | what completing the next action should produce |
 | `stop_conditions` | yes | conditions under which the Route is paused or abandoned |
@@ -1358,13 +1458,25 @@ Workspace Roles, Must Read, Conventions, Durable Constraints.
 | `required_human_decision` | no | explicit human decision needed before next action |
 | `priority` | no | explicit human-set priority |
 
-Route `context_refs`, `prior_attempt_refs`, `known_failure_refs`, and
-`blocking_assessment_refs` are frozen; `aitp enter` must report them
-deterministically per §7.6.
+The Route profile has exactly these 9 additional fields. Prior-attempt,
+known-failure, resolved-failure, and blocking-Assessment sets are **not**
+Route frontmatter fields; they are derived by the exact canonical scan in
+§6.0.3. `aitp enter` must report the derived view deterministically per §7.6.
+The earlier stored `prior_attempt_refs`, `known_failure_refs`, and
+`blocking_assessment_refs` Route fields are removed; any record carrying them
+is a `profile_mismatch` under the D9 closed field set.
 
 Required human-readable sections: Goal, Scope Boundary, Current State,
 Next Action, Expected Output, Stop Conditions, Required Context,
-Prior Attempts And Known Failures, Human Decisions, Open Gaps.
+Human Decisions, Open Gaps.
+
+Optional body section **Attempt Context**: a dated historical narrative only.
+It may describe prior investigative context, why certain approaches were
+tried, or external constraints in natural prose. It must not assert current
+membership, count, absence, or resolution of any derived set — those are
+exclusively the §6.0.3 canonical scan domain, reported by `aitp enter` and
+`aitp show` at a fixed commit. Validators never treat Attempt Context prose
+as a ref store.
 
 **Entity** (uses common header; `type: entity`)
 
@@ -1432,7 +1544,10 @@ When `kind: decision`, a decision overlay is required (frozen):
 | `supersedes` | no | ref to a prior committed canonical decision (not a CANDIDATE or runtime object) being superseded; must be acyclic |
 
 `created_by` records the file author; `decided_by` records the deciding
-human. A canonical human decision requires a human gate; an Agent may
+human. A canonical human decision requires a human gate — concretely the
+§14.0.1 decision-overlay matrix row, minimum Human review with Gate ID
+`human_review`, regardless of author, scope, or outcome; it is never
+eligible for deterministic add-only. An Agent may
 draft but must not self-approve as `decided_by`. `decided_by` and
 `decided_at` are science/governance decision content (who decided what and
 when), not a transaction approval binding. Transaction approval exists
@@ -1448,38 +1563,58 @@ it must never be embedded in the candidate content that it approves.
 | `time_boundary` | yes | start/end timestamps |
 | `outcome` | yes | `result\|failure\|inconclusive\|decision\|progress` |
 | `route_refs` | yes | list of Route refs this Episode belongs to; must be non-empty when `scope_kind: route`; may be empty only for `scope_kind: topic` or `scope_kind: shared` |
-| `resolution_refs` | cond | when this Episode records a resolved failure, refs to the resolving Assessment(s); may be absent for unresolved failures and non-failure Episodes |
 
-When `kind: research_decision`, the decision overlay (see Statement above)
-requires at most 12 total additional frontmatter fields including the
-decision-specific fields.
+The Episode profile has exactly 4 additional fields plus the `kind` discriminant (5 profile fields including `kind`). The earlier
+`resolution_refs` field is removed: resolution of a failure is derived from
+reviewed `route_effect: resolves_failure` Assessments (§6.0.3), never stored
+on the Episode, and any record carrying `resolution_refs` is a
+`profile_mismatch` under the D9 closed field set.
 
-Required human-readable sections: What Happened, Durable Summary, Durable
-Result, Evidence And Artifacts, Failure Or Inconclusive Boundary, Decisions,
-Next Actions, Declared Gaps.
+**Decision biconditional (frozen)**: `outcome: decision` is valid on an
+Episode **iff** `kind: research_decision`. Conversely, every Episode with
+`kind: research_decision` must carry `outcome: decision`, the exact
+§6.0.2 decision overlay (`decided_by`, `alternatives`, `rationale`,
+`basis_refs`, `decision_scope`, `decided_at`), and the §14.0.1
+decision-overlay human gate (Gate ID `human_review`) — never deterministic
+add-only — regardless of author, scope, or other outcome. No other
+kind may use `outcome: decision`.
 
-**Failure recall rules**: A route-scoped (`scope_kind: route`) Episode with
-`outcome: failure` or `outcome: inconclusive` must appear in the referenced
-Route's `known_failure_refs`. Audit must verify bidirectional refs — the
-Episode's `route_refs` and the Route's `known_failure_refs` must agree.
-An Episode with `scope_kind: topic` or `scope_kind: shared` may have empty
-`route_refs` and is not subject to route-level failure-recall consistency.
-When a failure Episode is resolved by a subsequent Assessment with
-`route_effect: resolves_failure` (see Assessment rule below), the Episode
-gains `resolution_refs` pointing to the resolving Assessment; the Route
-removes the Episode from `known_failure_refs` and adds it to
-`prior_attempt_refs`. The Assessment's `route_refs` and the Episode's
-`route_refs` must agree (same Route). There is no conditional "if
-criteria" branch — these actions are mandatory when `route_effect:
-resolves_failure` is set. The Episode itself is never deleted. A new
-successful Episode on the same Route does not automatically overwrite or
-hide the old failure. The Route↔blocking Assessment bidirectional
-consistency requires: an Assessment with `scope_kind: route` and
-`route_effect: blocks` must appear in the Route's
-`blocking_assessment_refs`; the Assessment's `route_refs` must include
-that Route. An Assessment with `route_effect: unblocks` removes its
-`target_ref` (the prior blocking Assessment), never itself, from every
-Route named by the matching Route set, as frozen below.
+**Canonical Episode minimum (frozen)**: the minimum defines a complete
+canonical-format Episode payload — the common header, the profile fields
+above, and exactly one required body section, **Durable Summary**. When
+`outcome` is `failure` or `inconclusive`, the body section **Failure Or
+Inconclusive Boundary** is conditionally required. All other natural Markdown
+sections (What Happened, Durable Result, Evidence And Artifacts, Decisions,
+Next Actions, Declared Gaps, and any domain sections) are optional.
+Satisfying this minimum means the record is a well-formed canonical-format
+Episode; it does **not** confer immediate canonical durable-memory status.
+The record becomes canonical durable memory only via a lawful writer commit
+(§5.2.2 state machine). Before commit, the record may reside in a pending
+CANDIDATE candidate but is never a schema stub, awaiting-enrichment, or
+second-form record — no `record_form`, status field, or hidden lifecycle
+state may be introduced to mark it. The richer finish expectations of the
+`--full` checkpoint workflow (§9.1) are workspace guide expectations,
+separate from this canonical minimum; they do not create a second Episode
+schema.
+
+Every durable prior research attempt must be represented by an Episode. Run,
+code, and source Assets are evidence and artifact refs cited by Episodes; they
+are not independent prior-attempt truth. A historical attempt reconstructed
+late may be captured as a compact retrospective Episode under the ordinary
+late-entry rules (§3.1).
+
+**Failure recall rules**: Failure, prior-attempt, and blocking-Assessment
+recall is a derived view computed by exact canonical scan per §6.0.3. There is
+no bidirectional Route↔Episode ref synchronization and no Route or Episode
+mutation on resolution: a route-scoped Episode with `outcome: failure` or
+`outcome: inconclusive` enters the derived `known_failure_refs` of every Route
+in its `route_refs` until a valid reviewed Assessment with `route_effect:
+resolves_failure` targets it; blocking derives from valid reviewed
+`blocks`/`unblocks` Assessments. An Episode with `scope_kind: topic` or
+`scope_kind: shared` may have empty `route_refs` and does not participate in
+route-level derived failure recall. The Episode itself is never deleted, and a
+new successful Episode on the same Route does not overwrite or hide the old
+failure.
 
 **Assessment** (uses common header; `type: assessment`; `kind: assessment`)
 
@@ -1521,31 +1656,102 @@ Performed, Findings, Applicability, Limitations, Outcome Rationale.
 
 - `route_effect: blocks` — permitted only when `review_state: reviewed`,
   `scope_kind: route`, and a human reviewer identity is present in the
-  `reviewer` field. When set, the referenced Route's
-  `blocking_assessment_refs` MUST include this Assessment's ref.
+  `reviewer` field. When set, this Assessment's ref appears in the derived
+  `blocking_assessment_refs` (§6.0.3) of every Route in its `route_refs`. No
+  Route field is mutated.
 
 - `route_effect: unblocks` — permitted only when `review_state: reviewed`,
   `scope_kind: route`, a human reviewer identity is present, and `target_ref`
-  points to a human-reviewed route-scoped Assessment currently listed in
-  every referenced Route's `blocking_assessment_refs`. The new Assessment's
-  `route_refs` must equal the target Assessment's Route set. When set, each
-  Route removes `target_ref` (the prior blocking Assessment), not the new
-  unblocking Assessment, from `blocking_assessment_refs`. Both Assessments
-  remain canonical and Git history preserves the transition.
+  points to a human-reviewed route-scoped Assessment that currently blocks
+  every Route named by the new Assessment's `route_refs` in the §6.0.3
+  derived view. The new Assessment's `route_refs` must equal the target
+  Assessment's Route set. When set, the target (the prior blocking
+  Assessment), never the new unblocking Assessment, is excluded from the
+  derived `blocking_assessment_refs` of those Routes. Both Assessments
+  remain canonical and Git history preserves the transition; no Route field
+  is mutated.
 
 - `route_effect: resolves_failure` — permitted only when `review_state:
   reviewed`, `scope_kind: route`, a human reviewer identity is present,
-  and `target_ref` points to a route-scoped failure Episode. When set:
-  the Episode gains `resolution_refs` containing this Assessment's ref;
-  the Route moves the Episode from `known_failure_refs` to
-  `prior_attempt_refs`; the Assessment's `route_refs` and the Episode's
-  `route_refs` must match (same Route); no "if criteria" branch — these
-  actions are mandatory when `resolves_failure` is set.
+  and `target_ref` points to a route-scoped failure Episode. When set,
+  the target Episode appears in the derived `resolved_failure_refs` and is
+  excluded from the derived `known_failure_refs` of the affected Routes
+  (§6.0.3); the Assessment's `route_refs` and the Episode's `route_refs`
+  must match (same Route). No Episode or Route field is mutated — there is
+  no `resolution_refs` write and no known-to-prior list move.
 
 Only an Assessment with `review_state: reviewed`, a human `reviewer`, and
 `scope_kind: route` may have a `route_effect` other than `none`. The
 Assessment author (`created_by`) may be an agent or human — the critical
-gate is the independent human `reviewer`, not the author.
+gate is the independent human `reviewer`, not the author. A reviewed
+Assessment remains the sole authority that can block, unblock, or resolve a
+failure or create any scientific trust effect; Episodes, runs, commands, and
+retrieval never do.
+
+#### 6.0.3 Derived Failure / Attempt / Blocking View (Frozen)
+
+At a fixed full Git commit and a Route R, a complete canonical scan within
+the topic derives the following sets deterministically. The scan reads exact
+canonical Episode and Assessment frontmatter only — no index, cache, graph,
+or semantic inference is authority.
+
+- `route_episode_refs`: all route-scoped Episodes whose `route_refs`
+  reference R.
+- `prior_attempt_refs`: all such durable Episodes, sorted by
+  `(created_at, id)`; the ref sorts ties deterministically.
+- `known_failure_refs`: members of `route_episode_refs` with `outcome:
+  failure` or `outcome: inconclusive` that are not resolved by a valid
+  reviewed `route_effect: resolves_failure` Assessment targeting them.
+- `resolved_failure_refs`: members with `outcome: failure` or
+  `outcome: inconclusive` that are resolved by a valid reviewed
+  `route_effect: resolves_failure` Assessment.
+- `blocking_assessment_refs`: valid reviewed `route_effect: blocks`
+  Assessments naming R, minus the targets of valid reviewed
+  `route_effect: unblocks` Assessments per the §6.0.2 unblocks rules.
+
+A "valid reviewed" Assessment means `review_state: reviewed` with a human
+`reviewer` and a route set consistent with the derivation target. Every
+contributing effectful Assessment (one with `route_effect` of `blocks`,
+`unblocks`, or `resolves_failure`) must have been created or last modified by
+a lawful HUMAN-GATED canonical commit whose candidate and commit metadata
+match, whose `required_gates` contains `human_review`, and whose
+`approval_binding.reviewer` equals the Assessment's `reviewer`. The operation
+actor may be Human or Agent and does not determine scientific trust — only the
+human-gated commit nature and matching reviewer do. A candidate containing
+effectful Assessments with incompatible `reviewer` values (where not every
+record's reviewer equals the commit metadata reviewer) must split the
+operations across separate candidates or use a lawful review where every
+record's reviewer equals the approval reviewer. Draft Assessments and pending
+(uncommitted) candidates never contribute to the derived view (§14.0.3). A
+direct Git mutation, an invalid commit, a missing metadata field, or an
+unverifiable chain makes the derived result `incomplete` — no trust effect
+from such an Assessment contributes and no absence assertion may be grounded
+on it.
+
+**Incompleteness is explicit**: bad or malformed records, inconsistent Route
+refs, budget or truncation limits, or incomplete scan coverage make the
+derived result `incomplete`. An incomplete derived result must be reported as
+such and must never ground an absence assertion (for example "no known
+failures"). A `complete` result at a stated commit is the only basis for an
+absence claim.
+
+**INDEX is cache only**: `runtime/indexes/topics/<topic-id>/INDEX.md` (§5)
+may cache derived sets or locate candidates for display convenience, but only
+the canonical scan at a fixed full Git commit establishes completeness or
+absence. The INDEX may locate candidates for presentation or cache display
+data; its contents **cannot** establish completeness or absence even when
+the INDEX and the canonical scan reference the same commit — the scan is the
+sole authority. Presentation truncation in `aitp enter` output
+(e.g., body budget limits) does not alter scan completeness: a `complete`
+scan result remains `complete` regardless of how many items the presentation
+layer chose to display. A commit or coverage mismatch between the INDEX and
+the requested derivation falls back to the canonical scan. The INDEX never
+overrides the scan.
+
+**Presentation contract**: `aitp enter` and `aitp show <route-ref>` must
+expose the derivation provenance semantically — that the sets are derived,
+whether the derivation is complete or incomplete, and at which commit. Exact
+display formatting is an S1 presentation decision and is not frozen here.
 
 **Run Asset** (uses common header; `type: asset; kind: run`)
 
@@ -1598,10 +1804,17 @@ Body is optional. If present: Rationale, Applicability Notes.
 Required human-readable sections: Purpose, Provenance, Payload Or Locator,
 Validation, Known Limits.
 
-Statement trust is derived from applicable Assessments and human decisions. It
-is not a mutable confidence field written by a Statement author. Route state,
-Episode outcome, command success, retrieval rank, and Knowledge Card approval
-cannot update Statement trust.
+Scientific trust effects derive ONLY from applicable, lawfully committed,
+human-reviewed Assessments introduced or last modified by a lawful human-gated
+canonical commit whose commit metadata contains `human_review` in
+`required_gates` and whose `approval_binding.reviewer` matches the
+Assessment's `reviewer`. Human decisions govern workflow and selection but are
+scientific-trust-neutral by themselves. Cards, runs, Episodes, command success,
+approval binding existence, and retrieval rank are also trust-neutral. An
+ordinary Episode cannot carry `outcome: decision` — that value is reserved for
+`kind: research_decision` which requires the exact decision overlay (§6.0.2)
+and is governed by the decision-overlay matrix row (Human review, Gate ID
+`human_review`), not by trust effects.
 
 Topic IDs use Section 5's stable slug. Other IDs use a role prefix plus a ULID:
 `ent-`, `route-`, `stmt-`, `ep-`, `assess-`, `asset-`, or `rel-`. File names
@@ -1885,32 +2098,47 @@ in every `enter` response regardless of budget. They are not truncated by the
 body budget — only the descriptive body text for each item is subject to
 the character limit.
 
-- For each active Route: `id`, `state`, `title` (the Route's body Goal
-  heading), `next_action`, `stop_conditions`. These identify the Route and
-  its current actionable state.
-- `unexpanded_failures.count` and `unexpanded_failures.refs`: summary of
-  `known_failure_refs` and `prior_attempt_refs` that were not expanded in
-  the body due to budget. Always present when nonzero.
+- For each active Route: `id`, `state`, `title` (the Route's frontmatter
+  `title` field, never a body heading), `next_action`, `stop_conditions`.
+  These identify the Route and its current actionable state.
+- `unexpanded_failures.count` and `unexpanded_failures.refs`: `refs` is the
+  deduplicated union of omitted `known_failure_refs` and `prior_attempt_refs`
+  from the §6.0.3 derived view that were not expanded due to budget, with
+  stable derived ordering `(created_at, ref/id)`. `count` is the number of
+  unique omitted refs. Always present when nonzero.
 - `search_coverage`: for each declared search scope, `status`
   (`complete|partial|not_searched|stale`) and the exact `next_command` to
   run to search that scope.
+- **Active Route ordering**: Routes are sorted by `priority` ascending
+  (lower numeric value first), with Routes that have no priority value placed
+  last. Ties are broken by Route ID lexicographically.
 
 **Body subject to budget**: For each active Route, `enter` must show
-`context_refs`, `prior_attempt_refs`, `known_failure_refs`, and
-`blocking_assessment_refs` from the Route's frozen fields. These may be
+`context_refs` from the Route's frozen fields and the §6.0.3 derived failure
+view (`prior_attempt_refs`, `known_failure_refs`, `resolved_failure_refs`,
+`blocking_assessment_refs`) together with its provenance (derived,
+complete/incomplete, commit). These may be
 truncated at the body budget; the unexpanded count is reported in the
 nondiscardable section.
 
 - A new successful Episode must not overwrite or hide a prior failure Episode.
-  Both remain in the Route's `known_failure_refs` or `prior_attempt_refs` until
-  explicitly resolved by a human-reviewed Assessment.
+  Both remain in the derived `known_failure_refs` or `prior_attempt_refs`
+  until the failure is resolved by a human-reviewed Assessment.
 - A Run with `status: succeeded` is a technical execution success — it does not
   constitute scientific validation. Scientific validity requires a separate
   Assessment.
 - `enter` reports the existence of unexpanded refs but does not perform semantic
   inference over them. The Agent must expand them explicitly.
 - `enter` does not depend on any semantic retrieval, embedding, or model-based
-  ranking. Its output is deterministic given the same store state.
+  ranking. Its output is deterministic given the same fixed canonical Git
+  commit, topic/cwd resolution, configuration, budget, and same on-disk
+  pending workspace/CANDIDATE bytes and states. Cache contents (INDEX,
+  generated views) never alter the result.
+- `enter` and `closeout` must surface pending draft/`review_ready` candidates —
+  including an Agent-authored route-scoped failure or inconclusive Episode
+  awaiting its batched human review (§14.0.1) — through the existing
+  workspace/recovery surfaces. Pending candidates are reported separately and
+  are never presented as canonical derived failure truth (§14.0.3).
 
 ## 8. Research Phase Commands
 
@@ -1962,6 +2190,63 @@ transition, reusable procedure, or new physical insight.
 
 It is not appropriate after every command or transient thought.
 
+### 9.1 Compact Checkpoint Contract (Frozen)
+
+`aitp checkpoint "<summary>"` is the default compact canonical Episode
+capture. It creates exactly one COMPLETE canonical-format Episode
+candidate/payload satisfying the canonical Episode minimum of §6.0.2
+(common header, the 4 additional profile fields plus `kind`, required
+Durable Summary, and the conditional Failure Or Inconclusive Boundary).
+The resulting compact Episode candidate becomes canonical durable memory
+only after a lawful writer commit (§5.2.2). Before commit it is a pending
+candidate in lawful CANDIDATE state `draft` or `review_ready`;
+deterministic add-only may commit before command return; an Agent
+route-failure Episode awaiting human review persists to CANDIDATE state
+`draft` and returns the standard JSON envelope with `status: blocked`,
+`errors` containing the frozen `approval_required` code, and `result`
+reporting `candidate_state: draft`, the candidate/workspace ref/path, and
+`required_gates` — not `pending_review` or any new state.
+
+- **Bare invocation**: `aitp checkpoint` with no summary and no flags prints
+  usage and exits. It must not silently launch the rich full-record flow.
+- **`--full`**: the rich workspace/full-record path. It creates a command
+  workspace whose guide carries the full finish expectations (expanded
+  sections, evidence inventory, declared gaps). Those expectations are
+  workspace guide requirements, not a second Episode schema — the canonical
+  minimum in §6.0.2 is unchanged.
+- **`--enrich <episode-ref>`**: optionally revises or enriches an existing
+  Episode through the ordinary writer/candidate rules (§14). Enrichment is
+  an optional follow-up write, not a lifecycle state or obligation; nothing
+  about a compact Episode implies a pending enrichment, and no enrich queue
+  may be inferred.
+- **Modifiers**: `--failed` sets `outcome: failure`; `--inconclusive` sets
+  `outcome: inconclusive`; `--kind <kind>` sets the Episode kind;
+  `--route <route-ref>` scopes the Episode to a Route. `--failed` and
+  `--inconclusive` are mutually exclusive. Without modifiers the defaults are
+  `kind: discussion` and `outcome: progress`.
+- **Deterministic scope fallback**: the Episode is route-scoped only when
+  `--route` is explicit or when the originating workspace identifies exactly
+  one active Route. When the Episode draws a `failure` or `inconclusive`
+  outcome and multiple Routes are plausible with no unique workspace Route,
+  the CLI MUST NOT fall back to topic scope and requires explicit
+  `--route <ref>`. `--topic` is lawful only when NO Route context exists. If
+  the originating workspace has one or more Route refs, supplying `--topic`
+  is rejected: exactly one Route remains route-scoped automatically, while
+  multiple plausible Routes require explicit `--route`. With zero Route
+  context, explicit or default topic scope is lawful. Ambiguity fails with
+  exact recovery commands.
+- **Route-origin gate consequence**: because `--topic` is rejected whenever
+  Route context exists, an Agent-authored failure/inconclusive Episode with a
+  Route origin always has `scope_kind: route`, retains the resolved origin
+  `route_refs`, and requires `exact_diff_human_review`. Human later review does
+  not retroactively reclassify the original Agent operation as human-authored.
+- **Gating**: which gate applies to the checkpoint write is determined
+  solely by the author/scope/outcome rules in the §14.0.1 matrix (human vs
+  Agent author; topic/shared vs route scope; failure/inconclusive vs other
+  outcome), except that a decision-overlay record (`--kind research_decision`)
+  always takes the explicit decision-overlay row — Human review,
+  Gate ID `human_review` — regardless of author/scope/outcome.
+
 `aitp checkpoint` prepares the smallest set of records that preserves the
 event. The Agent sees and edits the Markdown before finish. The applicable
 gate for each record is determined by the action→gate matrix in §14.0.1,
@@ -1975,7 +2260,9 @@ human review per §14.0.1.
 staging, route files, and the Agent's explicit summary. It checks for omitted
 durable work and route-specific next actions. It cannot infer facts from an
 unavailable hidden transcript, and it writes no empty Episode when nothing
-durable occurred.
+durable occurred. Pending draft/`review_ready` candidates — including an
+Agent-authored route failure awaiting batched review — remain visible through
+the existing enter/closeout/recovery surfaces (§14.0.3).
 
 ## 10. Scientific Dreaming And Knowledge
 
@@ -2364,9 +2651,12 @@ All commands use one visible finish path:
 3. the Agent may correct files or explicitly preserve a declared gap;
 4. the CLI stages the exact bytes and shows the target paths and diff;
 5. human review gates the complete approval binding per §5.2.2:
-   `{base_commit, tree_object_id, paths, content_sha256, validation_sha256,
-   reviewer, timestamp, signature}` — commit-time revalidation includes both
-   `content_sha256` and `validation_sha256` per the pre-commit integrity rule;
+   `{protocol, workspace_id, candidate_revision, base_commit,
+   tree_object_id, paths, operation_actor_bindings, content_sha256,
+   validation_sha256, required_gates, reviewer, timestamp, signature}` —
+   commit-time
+   revalidation includes both `content_sha256` and `validation_sha256` per
+   the pre-commit integrity rule;
 6. one writer checks the base Git commit, re-executes all deterministic
    checks, confirms `validation_sha256` match, writes the exact bytes,
    commits, and reads them back;
@@ -2381,9 +2671,15 @@ drift cannot enter the transaction silently.
 
 Human review is required for:
 
+- canonical human decision — a Statement `kind: decision` or an Episode
+  `kind: research_decision` carrying the §6.0.2 decision overlay (the
+  §14.0.1 decision-overlay row, Gate ID `human_review`);
 - validated or proved-within-assumptions scientific promotion;
 - replacement of an accepted scientific conclusion;
 - contested conclusion resolution;
+- canonical commit of an Agent-authored route-scoped failure or inconclusive
+  Episode (batched exact-diff human review of the final candidate revision
+  per §14.0.1);
 - Knowledge Card publication or refresh;
 - shared promotion across topics;
 - Workflow publication;
@@ -2407,13 +2703,16 @@ audit only — they produce no entry in `required_gates`.
 
 | Action | Minimum Gate | Gate ID |
 |--------|-------------|---------|
-| Low-authority failure Episode (topic/shared-scoped only; see escalation below) | Deterministic audit only (add-only) | — |
+| Human-authored low-authority Episode (any scope, including route-scoped failure/inconclusive; excluding `kind: research_decision` decision-overlay records) | Deterministic audit only (add-only) | — |
+| Agent-authored low-authority Episode, topic/shared scope (any outcome; excluding `kind: research_decision` decision-overlay records) | Deterministic audit only (add-only) | — |
+| Agent-authored route-scoped Episode with non-failure outcome (machine-checkably, `outcome not in {failure, inconclusive}`; excluding `kind: research_decision` decision-overlay records) | Deterministic audit only (add-only) | — |
+| Statement `kind: decision` or Episode `kind: research_decision` (decision overlay) | Human review | `human_review` |
+| Agent-authored route-scoped Episode with `outcome: failure` or `outcome: inconclusive` | On-disk draft candidate before command return + batched exact-diff human review of the final candidate revision before canonical commit | `exact_diff_human_review` |
 | Question or hypothesis draft Statement | Deterministic audit only (add-only) | — |
 | Assessment draft (`review_state: draft`) | Deterministic audit + explicit assessor declaration | — |
-| Failed Route creation or transition to `abandoned` / route priority change / route scope change / route failure-ref mutation | Exact diff + human review | `exact_diff_human_review` |
-| Route canonical mutation (any of the 12 Route profile fields: `state`, `scope`, `context_refs`, `prior_attempt_refs`, `known_failure_refs`, `blocking_assessment_refs`, `next_action`, `expected_output`, `stop_conditions`, `execution_mode`, `required_human_decision`, `priority`) | Exact diff + human review | `exact_diff_human_review` |
-| Route transition to `completed` or `abandoned` | Exact diff + human review | `exact_diff_human_review` |
-| Validated/proved-within-assumptions scientific promotion | Human review | `human_review` |
+| Route canonical mutation (any of the 9 Route profile fields: `state`, `scope`, `context_refs`, `next_action`, `expected_output`, `stop_conditions`, `execution_mode`, `required_human_decision`, `priority`); state transitions to `completed`/`abandoned` are Route mutations and are explicitly human-gated | Exact diff + human review | `exact_diff_human_review` |
+| Reviewed Assessment with non-`none` trust effect (`blocks \| unblocks \| resolves_failure`) | Human review + lawful commit provenance | `human_review` |
+| Validated/proved-within-assumptions scientific promotion (requires an applicable lawfully committed reviewed Assessment AND human review) | Human review + reviewed Assessment | `human_review` |
 | Knowledge Card publication or refresh | Human review | `human_review` |
 | Shared promotion (topic-local → shared) | Human review | `human_review` |
 | Workflow publication | Human review | `human_review` |
@@ -2421,8 +2720,14 @@ audit only — they produce no entry in `required_gates`.
 | Significant HPC cost, cancellation, or shared remote mutation | Human review | `human_review` |
 | Unclassified mutation | Human review (fail-closed default) | `human_review` |
 
-The frozen legal human Gate ID set is exactly `{exact_diff_human_review,
-human_review}`.
+The frozen legal human Gate ID set is
+exactly `{exact_diff_human_review, human_review}`.
+Action classes may overlap; each operation is classified against every
+applicable row. `candidate.required_gates` is the sorted unique union of
+all applicable operation gate floors. An unclassified mutation defaults to
+`human_review` (fail-closed). Tests verify effective action→minimum-gate
+behavior and legal Gate ID use (including mixed `{human_review,
+exact_diff_human_review}` union), not matrix row count.
 
 **Add-only semantics**: "Deterministic audit only (add-only)" means the
 CLI runs structural checks and, if all pass, stages and commits the new
@@ -2432,22 +2737,65 @@ or modify ref lists in other records — it is a pure addition. The Agent
 declares the action; the CLI never infers scientific meaning to escalate
 or de-escalate.
 
-**Route-scoped failure Episode escalation**: A route-scoped
-(`scope_kind: route`) failure Episode that would require updating the
-referenced Route's `known_failure_refs` or `prior_attempt_refs` to
-satisfy bidirectional failure recall (§6.0.2) **cannot** use the
-deterministic add-only gate — the entire candidate must escalate to
-Route exact diff + human review. Only topic-scoped or shared-scoped
-(`scope_kind: topic` or `scope_kind: shared`) failure Episodes that do
-not modify any Route's refs may use the deterministic add-only gate.
+**Episode author/attention gating (frozen)**: the gate for an Episode write
+is determined by machine-checkable attributes: per-operation actor and
+actor_assurance from the trusted CLI/host invocation boundary per D2a (never
+from candidate bytes), scope (`scope_kind`), and outcome. Human-authored
+deterministic classification requires the operation's `actor_assurance` to be
+`trusted_human`; `trusted_agent` and `fail_closed_agent` classify as Agent.
+Non-failure outcome is machine-checkable exactly as `outcome not in {failure,
+inconclusive}`; an `outcome: decision` value on an ordinary Episode does NOT
+by itself create a trusted canonical decision — only the record kind/overlay
+does. An ordinary Episode cannot carry `outcome: decision` — that value is
+reserved for `kind: research_decision` which requires the exact §6.0.2
+decision overlay. Decision-overlay records are excluded from every
+low-authority add-only rule in this paragraph and in the matrix above: an
+Episode with `kind: research_decision`, like a Statement with `kind: decision`,
+is governed only by the explicit decision-overlay matrix row — minimum Human
+review, Gate ID `human_review` — regardless of actor, scope, or outcome
+(§6.0.2). Subject to that exclusion, a human-trusted (actor_assurance:
+trusted_human) low-authority Episode — including a route-scoped failure or
+inconclusive Episode — is deterministic add-only, as are Agent-authored
+topic/shared Episodes of any outcome (only when no Route context exists —
+see below) and Agent-authored route-scoped Episodes with a non-failure
+outcome. An **Agent-authored route-scoped failure or inconclusive Episode**
+is the single attention-escalated (exact-diff batched) case: the CLI must
+synchronously persist the proposed Episode to disk as operations in the
+standard workspace `CANDIDATE.json` (state `draft`, per
+§5.2.2) **before the command returns**, and the final candidate revision
+requires batched exact-diff human review before canonical commit. This reuses
+the existing CANDIDATE/recovery machinery — no inbox, watermark, canonical
+unreviewed state, or new lifecycle is created. Until approved and committed,
+the Episode is absent from the §6.0.3 derived view (§14.0.3).
+**Topic/Route scope integrity**: `--topic` is lawful only when NO Route context
+exists and is rejected whenever the originating workspace has one or more
+Route refs. Exactly one Route is resolved as `scope_kind: route`; multiple
+plausible Routes require explicit `--route`. Consequently an Agent-authored
+failure/inconclusive Episode with Route origin always remains route-scoped,
+retains the resolved origin `route_refs`, and requires
+`exact_diff_human_review`. Human later review does not retroactively reclassify
+the original Agent operation as human-authored.
 
-**Route mutations**: Any mutation to a Route's 12 canonical frontmatter
-fields (`state`, `scope`, `context_refs`, `prior_attempt_refs`,
-`known_failure_refs`, `blocking_assessment_refs`, `next_action`,
+**Review batching**: pending draft/`review_ready` candidates remain visible
+through the existing enter/closeout/recovery surfaces. Multiple unchanged
+operations may be satisfied by one batched review — same-workspace changes,
+including several pending Agent route-failure Episodes and same-workspace
+Route field changes, may be grouped into one existing CANDIDATE review at
+closeout: the human accepts, edits, or omits operations while the candidate
+is `draft`; the final candidate revision then transitions to `review_ready`;
+any edit, superseding/new revision, changed bytes, validation drift,
+stale-base reconstruction, or changed operation set invalidates prior
+approval and requires review of the new final revision per §5.2.2. There is
+no skip queue. UI button wording for these surfaces is not frozen.
+
+**Route mutations**: Any mutation to a Route's 9 canonical frontmatter
+fields (`state`, `scope`, `context_refs`, `next_action`,
 `expected_output`, `stop_conditions`, `execution_mode`,
 `required_human_decision`, `priority`) requires exact diff display and
 human review. Transitions to `completed` or `abandoned` always require
-human review regardless of how they are triggered.
+human review regardless of how they are triggered. Failure, prior-attempt,
+and blocking sets are derived (§6.0.3) and never appear as Route mutations —
+there is no failure-ref mutation or synchronization action class.
 
 **Assessment draft**: An Assessment with `review_state: draft` may be
 created through deterministic audit + assessor declaration. However,
@@ -2468,11 +2816,26 @@ and Git:
   functions, or a module split is not normative.
 - **Candidate approval**: the writer produces a `CANDIDATE.json` at
   `runtime/workspaces/<command>/<workspace-id>/CANDIDATE.json` per §5.2.2.
-  Human review binds the complete §5.2.2 `approval_binding`:
-  `{base_commit, tree_object_id, paths, content_sha256, validation_sha256,
-  reviewer, timestamp, signature}`. Pre-commit re-execution of all
-  deterministic checks and `validation_sha256` digest match is required
-  per §5.2.2; any mismatch blocks the commit.
+   Human review binds the complete §5.2.2 `approval_binding`:
+   `{protocol, workspace_id, candidate_revision, base_commit,
+   tree_object_id, paths, operation_actor_bindings, content_sha256,
+   validation_sha256, required_gates, reviewer, timestamp, signature}`.
+   Pre-commit re-execution
+  of all deterministic checks and `validation_sha256` digest match is
+  required per §5.2.2; any mismatch blocks the commit.
+- **Per-operation actor verification**: the writer MUST populate each
+  operation's `actor` and `actor_assurance` from the trusted CLI/host
+  boundary. Caller-provided values are ignored/rejected (`validation_failed`).
+  For `create` operations, `created_by` MUST equal the operation's `actor`;
+  mismatch → `validation_failed` (`check_id: actor_mismatch`), independent
+  of and prior to the gate matrix classification. Update/delete operations
+  preserve original `created_by`. Each operation is classified independently
+  per the §14.0.1 matrix; `candidate.required_gates` = sorted unique union
+  of all applicable operation gate floors. Actor or assurance change between
+  staging and pre-commit re-execution invalidates the candidate revision.
+   `operation_actor_bindings` (sorted-by-path projection of operation
+   actor/assurance), `protocol`, and `workspace_id` are bound into
+   `approval_binding` and commit metadata.
 - **Unrelated dirty exclusion**: staging uses a temporary Git index based on
   the recorded base commit. Unrelated working-tree changes (files not in the
   candidate path list) must not enter the transaction.
@@ -2490,6 +2853,31 @@ and Git:
 An index failure cannot undo a successful canonical commit. A stale base commit
 blocks the write. Interrupted work leaves a visible recovery record. There is no
 last-writer-wins behavior.
+
+#### 14.0.3 Persistence And Presentation Boundary (Frozen)
+
+**Persistence before return**: an Agent-authored route-scoped failure or
+inconclusive Episode that is pending review exists on disk — as operations in
+the standard workspace `CANDIDATE.json` — before the originating command
+returns. It is recoverable through the existing workspace and
+`aitp admin recover` surfaces like any other interrupted or pending
+transaction. Nothing about it is held only in conversation or memory.
+
+**Canonical visibility**: a pending candidate is not canonical. It does not
+appear in the §6.0.3 derived failure view, in canonical failure recall, or in
+any absence assertion until it is approved and committed. `aitp enter` and
+`aitp closeout` may report pending candidates separately (count, workspace,
+exact candidate path) but must label them as pending and must never present
+them as canonical failure truth.
+
+**Human presentation**: routine human-facing presentation hides candidate
+hashes, gate IDs, and approval-binding internals behind ordinary language
+(for example "2 pending failure records awaiting your review"). The exact
+diff, exact target paths, and the validation summary remain visible at review
+time — human approval always sees the exact bytes and paths it approves, and
+hashes/approval binding remain machine enforcement per §5.2.2. `--json` and
+`aitp audit` output retains the full machine details. Exact presentation
+formatting is an S1 decision and is not frozen here.
 
 ## 15. What Is Deliberately Absent
 
@@ -2526,6 +2914,23 @@ The implementation must preserve these hard limits:
   indexes, dispatchers, schedulers, or background supervisors;
 - no scientific conclusion or command selection implemented as hidden CLI
   heuristics.
+
+**Anti-complexity guard for the 2026-07-24 UX behavior (frozen)**: the
+compact checkpoint, Episode author/attention gating, derived failure view,
+and persistence/presentation boundary in §6.0.3, §9.1, §14.0.1, and §14.0.3
+must be implemented with the existing primitives only. They MUST NOT be
+implemented through any of:
+
+- a new public command group or subcommand family beyond Section 4;
+- a new canonical record type, node role, or Asset kind;
+- an inbox, queue, or watermark structure for pending records;
+- a canonical unreviewed flag, `record_form` field, or any new frontmatter
+  field marking provisional canonical state;
+- an automatic semantic classifier deciding author intent, scope, outcome,
+  or escalation;
+- an index, graph, or cache with authority over the canonical scan;
+- an extra lifecycle state machine beyond the §5.2.2 candidate states and
+  §7.4 workspace states.
 
 S0 freezes these future ceilings and executes **production-absence + static
 oracle checks only**:
@@ -2630,8 +3035,11 @@ legacy reader, or CLI subprocess/runtime acceptance tests.
 - freeze command names, normative `using-aitp` content, command Skill/profile
   format, Asset path mapping, all eight record-role profiles, common header,
   exact-ref syntax, content envelope boundaries (§6.0.1), profile fields
-  (§6.0.2), Route navigation fields (§5.1), read coverage semantics (§7.5),
-  failure recall / gate matrix (§14.0.1), static expected-output
+  (§6.0.2), Route navigation fields (§5.1), derived failure/attempt/blocking
+  view (§6.0.3), compact checkpoint contract (§9.1), read coverage semantics
+  (§7.5),
+  Episode author/attention gating and gate matrix (§14.0.1),
+  persistence and presentation boundary (§14.0.3), static expected-output
   contract fixtures (§3.2.1,
   §4.1.1, §7.3, §7.4), human decision overlay (§6.0.2), and runtime inventory
   expectations against those fixtures;
@@ -2671,6 +3079,22 @@ legacy reader, and real CLI subprocess/runtime acceptance.
   `knowledge`, `skill`, `write`, `checkpoint`, `closeout`, `audit`) must
   return the error code `not_available_in_stage` with the expected release
   stage — never a silent no-op or fabricated result.
+
+**S1 physics-friendly UX (template/CLI work — not S0 canonical schema)**:
+the following are S1 command-Skill template and CLI presentation tasks.
+They create no new S0 frontmatter fields, record types, or gates:
+
+- optional derivation-oriented body sections — Conventions, Units, Regime,
+  Assumptions — offered by the checkpoint/research templates as natural
+  Markdown sections (optional per the §6.0.2 Episode body minimum);
+- local equation-label guidance in derivation/note templates (labels are
+  body prose, not frontmatter);
+- compact human projection of review and enter output with machine
+  internals (candidate hashes, gate IDs, approval binding) folded per
+  §14.0.3;
+- batched review presentation for pending candidates at closeout (exact
+  wording and layout chosen in S1; UI button wording is never frozen);
+- parameter-sweep and run-capture guidance in the research/run templates.
 
 ### S2. Workspaces, Audit, And Recording
 
@@ -2751,8 +3175,10 @@ AITP 2.0 is complete only when:
     required Skill-to-Knowledge dependency is auditable through Relations;
 18. the built 2.0 wheel passes the simplicity ratchet and imports no legacy
     production surface;
-19. `enter` deterministically shows Route `context_refs`, `prior_attempt_refs`,
-    `known_failure_refs`, and `blocking_assessment_refs`; a new succeeded Run
+19. `enter` deterministically shows Route `context_refs` and the §6.0.3
+    derived failure view (`prior_attempt_refs`, `known_failure_refs`,
+    `resolved_failure_refs`, `blocking_assessment_refs`) with its
+    provenance (derived, complete/incomplete, commit); a new succeeded Run
     does not hide a prior failure;
 20. the content envelope boundaries in §6.0.1 are respected: Episodes are not
     transcripts, Relations are not containment/mention, and natural Markdown
@@ -2768,7 +3194,18 @@ AITP 2.0 is complete only when:
     visible write path, readback, and recovery;
 25. contract tests verify behavior through CLI subprocess, filesystem, Git,
     and stdout JSON — not through import of internal Python modules or
-    assertion of module count/names.
+    assertion of module count/names;
+26. the 2026-07-24 UX behavior holds: `aitp checkpoint "<summary>"` produces
+    a complete compact canonical-format Episode candidate/payload that becomes
+    canonical durable memory only after lawful writer commit; a bare invocation shows usage
+    (§9.1); Episode gating follows the per-operation actor/assurance
+    classification (§14.0.1) — create requires `created_by` == operation.actor,
+    update preserves original `created_by`, delete uses operation actor only,
+    mixed-actor candidates union gate floors — with the Agent route-failure
+    case persisted to disk before return and the final candidate revision
+    resolved by batched exact-diff human review (§14.0.1); pending candidates
+    are never presented as canonical failure truth (§14.0.3); and none of the
+    prohibited mechanisms in §15.1 are introduced.
 
 ## 19. Design Closure
 

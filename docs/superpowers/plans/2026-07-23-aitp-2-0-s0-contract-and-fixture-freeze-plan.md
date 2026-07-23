@@ -1,13 +1,16 @@
 # AITP 2.0 S0 Contract and Fixture Freeze Implementation Plan
 
-> **Status**: proposed plan-only amendment. This document is a Phase 1 deliverable
-> that amends the original S0 plan to freeze observable behavior contracts
-> (disk, file, navigation, read/write, CLI/Agent contract, runtime inventory,
-> content envelopes, route navigation, read coverage, failure recall, gate
-> matrix) without freezing Python code shape. It is NOT an S0 execution
-> artifact.
+> **Current amendment status (2026-07-24)**: exact two-tracked-path authority
+> amendment consisting only of active spec + S0 plan; records user-approved
+> compact-checkpoint/derived-failure UX contract and natural T2 module
+> organization. T1a, Oracle Gate B, and T1b are historical completed
+> prerequisites and are not repeated. Current uncommitted FREEZE/validator
+> work is superseded and must be regenerated after this amendment is reviewed,
+> committed, and pushed. Focused Council + independent Oracle review of exact
+> two docs required before commit. After push, rerun clean-tree/authority
+> preflight and resume T2 regeneration.
 >
-> **Amendment scope**: this plan-only amendment updates the active spec
+> **Amendment scope**: this amendment updates the active spec
 > (`2026-07-20-aitp-2-0-command-skill-protocol-design.md`) and this plan
 > document. It does not create production code, packages, fixtures, CLI
 > scaffolding, `.aitp` directories, CI workflows, or runtime objects.
@@ -24,16 +27,28 @@
 >   The `.gitignore` and `.ignore` changes were audited orchestration-support
 >   changes, not product authority; they are not part of the current amendment.
 >
+> **AUTHORITY_COMMIT**: The exact pushed commit of this two-doc authority
+> amendment, obtained after push via `git rev-parse HEAD`. This SHA is the
+> sole baseline for T2 regeneration, authority_path anchors, protected-path
+> diff, simplicity ratchet, and S0 Acceptance. Historical SHAs
+> (`389b...`, `7de57f34`, the cutover baseline `eec20f6`) are lineage and
+> history references only — they are not the current S0 change baseline.
+>
 > **Current execution gating**:
-> - After this amendment is committed, S0 execution follows a strict sequence:
->   1. T1a creates `S0_DECISIONS.json` (populated decision register) and
->      pre-read `FIXTURE_PROVENANCE.md` (authorization stubs). These are the
->      only S0 artifacts allowed before Oracle Gate B.
->   2. Oracle Gate B reviews those T1a artifacts only — it does not review
->      the spec amendment.
->   3. Only after Gate B passes may T1b (validator skeleton) begin. No custom
->      validator, fixture corpus, or production package/CLI may exist before
->      Gate B pass.
+> - After this amendment is reviewed, committed, and pushed, S0 execution
+>   follows a strict sequence:
+>   1. Verify local HEAD == remote branch HEAD; record AUTHORITY_COMMIT.
+>   2. Verify that the authority commit changes exactly these two tracked docs.
+>   3. Rerun T0 clean-tree/remote/guard preflight against AUTHORITY_COMMIT.
+>   4. Regenerate FREEZE.json and T2 validator modules from the amended active
+>      spec (authority_path anchors use AUTHORITY_COMMIT), execute the required
+>      oracle/schema/vector/negative evidence, and achieve reviewed T2 PASS.
+>      All stale prior digests are superseded.
+>   5. Only after T2 PASS, continue with T3+ (fixture authorization/provenance,
+>      structural fixtures, simplicity ratchet, CI workflow, acceptance).
+> - T1a (decision register, provenance stubs), Oracle Gate B, and T1b
+>   (validator skeleton) are historical completed prerequisites and are NOT
+>   repeated.
 > - U1 is `frozen`: S0 = pure contract/oracle/
 >   fixture/static test-only validation; production CLI, wheel/resources,
 >   legacy reader, and CLI subprocess/runtime acceptance belong to S1.
@@ -41,26 +56,31 @@
 > - Once reviewed, this document is the sole normative S0 execution plan.
 >   Previous v5/pre-cutover implementation sequences are historical and
 >   non-normative.
-
-> **Current amendment status (2026-07-23)**: Phase 1 four-path commit
-> `7de57f34ae3b77f133cee83ac8ee44084bb42c81` (active spec, S0 plan,
-> `.gitignore`, `.ignore`) is already committed and pushed; Oracle Gate A
-> passed; T0 passed. This edit is a later **two tracked-path authority
-> amendment** (active spec + S0 plan only) caused by T1a human decisions.
-> The `.gitignore` and `.ignore` are not touched and remain as committed
-> in the Phase 1 four-path commit. This amendment requires focused Council +
-> independent Oracle review, then exact two-path commit and push before T1a
-> artifacts. Suggested commit message: `docs: freeze S0 lexical decisions`.
->
-> After this amendment commit, rerun T0 clean-tree/remote/guard check, then
-> create exactly `S0_DECISIONS.json` and pre-read `FIXTURE_PROVENANCE.md`,
-> then Oracle Gate B (reviews artifacts only), then T1b.
 >
 > **Review strategy**: Council reviews the decision coherence and spec
 > consistency of this two-path amendment. Independent Oracle reviews the
 > exact same two tracked paths. Both must pass before commit. The Phase 1
 > four-path commit (`7de57f34`) is historical and remains accurate — it
 > does not describe the current commit allowlist.
+
+> **UX behavior authority amendment (2026-07-24, user-approved)**: The user
+> reviewed and approved the interaction-behavior rules now encoded in the
+> active spec: compact default `aitp checkpoint "<summary>"` (spec §9.1),
+> Episode author/attention gating (spec §14.0.1), derived failure/attempt/
+> blocking view replacing synchronized Route failure-ref fields (spec §6.0.3;
+> Route has 9 additional profile fields; Episode drops `resolution_refs`),
+> rebuilt gate matrix with author/actor/scope/outcome rows and explicit
+> decision-overlay and reviewed-Assessment trust-effect rows (spec §14.0.1),
+> persistence/presentation boundary (spec §14.0.3), and the anti-complexity
+> guard (spec §15.1). Every affected surface of this plan is updated in place
+> below. The **current uncommitted `FREEZE.json` and the in-progress T2
+> validators are superseded by this amendment** and must be regenerated
+> against the amended active spec before T2 acceptance; no stale fixed FREEZE
+> digest or `authority_commit` may be committed in docs or oracle files. The
+> natural implementation amendment (2026-07-24) in T2 — its functional
+> responsibilities, stdlib/no-cycle and behavioral acceptance constraints are
+> frozen; concrete helper names, file count, and import edges are
+> implementation evidence.
 
 ## Authoritative References
 
@@ -103,14 +123,16 @@ Commit message: `docs: freeze AITP 2.0 store and CLI behavior contracts`
 **Current amendment** (see status block at top): exactly two tracked paths
 (active spec + S0 plan only). The `.gitignore` and `.ignore` remain as
 committed in the Phase 1 four-path commit and are not touched. Suggested
-commit message: `docs: freeze S0 lexical decisions`.
+commit message: `docs: amend S0 checkpoint and derived failure contracts`.
 
 ### 1.2 Non-Goals (Current Amendment)
 
-- No `tests/fixtures/aitp2/`, `FREEZE.json`, or fixture content.
+- This authority commit stages only the two tracked docs (active spec + S0
+  plan). Existing uncommitted FREEZE.json, T2 validators, and fixture work
+  are superseded by this amendment; they remain unstaged and are regenerated
+  afterward.
 - No `src/aitp/`, `pyproject.toml`, `__init__.py`, or Python package.
 - No wheel, package resources, or `importlib.resources` metadata.
-- No validators (`check_s0_freeze.py`, `test_s0_*.py`, `check_aitp2_simplicity.py`).
 - No modification to `.gitignore`, `.ignore`, `.github/workflows/authority-guard.yml`, or any CI workflow.
 - No real `.aitp`, store records, legacy adapter, CLI, writer, or dispatcher.
 - No access to external `.aitp` or private research directories.
@@ -158,26 +180,56 @@ This amendment extends the S0 product boundary with:
   behavior. Production CLI acceptance belongs to S1 per U1 resolution.
 - **content envelopes**: natural Markdown note/derivation boundaries;
   Statement/Assessment/Relation/Episode extraction triggers (§6.0.1).
-- **TOPIC/Route navigation**: homomorphic human/Agent spine with frozen
-  Route fields (§5.1).
+- **TOPIC/Route navigation**: homomorphic human/Agent spine with 9 frozen
+  Route fields and the derived failure view (§5.1, §6.0.3).
 - **read coverage**: exact/deferred/skipped/not_checked vocabulary with
   budget and completeness reporting (§7.5).
-- **failure recall — three machine oracles** (per active spec Assessment
-  `route_effect` rules):
-  1. Route-scoped unresolved failure Episode ↔ Route.known_failure_refs;
-     resolved Episode ↔ Route.prior_attempt_refs + Episode.resolution_refs.
-  2. Human-reviewed route_effect:blocks Assessment ↔ Route.blocking_assessment_refs.
-  3. Human-reviewed route_effect:resolves_failure Assessment: target_ref must
-     be a failure Episode, route sets equal, Episode.resolution_refs includes
-     the Assessment, Route moves from known to prior.
-   Plus: route_effect:unblocks Assessment: target_ref must point to a prior
-   blocking Assessment currently on the Route; from each matching Route's
-   `blocking_assessment_refs`, remove the prior blocking Assessment identified
-   by `target_ref` (not the new unblocking Assessment). Both the prior blocking
-   Assessment and the new unblocking Assessment must carry the same Route set
-   and both remain in canonical/Git audit history. `enter` shows all; new
-   success does not overwrite old failure.
-- **gate matrix**: action→minimum gate table frozen (§14.0.1).
+- **derived failure/attempt/blocking view — machine oracles** (per active
+  spec §6.0.3, superseding the former stored-field bidirectional rules):
+  1. `route_episode_refs` = all route-scoped Episodes referencing Route R;
+     `prior_attempt_refs` = those Episodes sorted `(created_at, id)`.
+  2. `known_failure_refs` = failure/inconclusive members not resolved by a
+     valid reviewed `route_effect: resolves_failure` Assessment;
+     `resolved_failure_refs` = those so resolved. No Route or Episode
+     mutation occurs on resolution.
+  3. `blocking_assessment_refs` = valid reviewed `route_effect: blocks`
+     Assessments minus targets of valid reviewed `route_effect: unblocks`
+     Assessments (route sets equal; both Assessments remain in canonical/Git
+     audit history).
+   Plus: bad/malformed records, inconsistent Route refs, budget/truncation,
+   or incomplete coverage yield an `incomplete` derived result and no
+   absence assertion; the runtime INDEX is cache only and falls back to the
+   canonical scan on commit/coverage mismatch; `enter` shows the derived
+   view with provenance; new success does not overwrite old failure.
+- **compact checkpoint contract** (active spec §9.1): `aitp checkpoint
+  "<summary>"` default compact canonical Episode; bare invocation shows
+  usage; `--full` rich path; `--enrich` optional; deterministic scope
+  fallback with `--topic` lawful only when no Route context exists; compact
+  Episode is complete canonical-format payload, becomes
+  canonical durable memory only after lawful writer commit — before commit
+  it is a pending CANDIDATE candidate, never a stub/awaiting-enrich - and
+  the Agent route-failure return uses envelope `status: blocked` + frozen
+  `approval_required` + `result.candidate_state: draft`, not `pending_review`.
+- **Episode author/attention gating** (active spec §14.0.1): human-authored
+  low-authority Episodes (any scope) and Agent-authored topic/shared or
+  route non-failure Episodes are deterministic add-only — with
+  decision-overlay records (Episode `kind: research_decision`, Statement
+  `kind: decision`) explicitly excluded from every add-only row and governed
+  only by the explicit decision-overlay row (Human review, Gate ID
+  `human_review`) regardless of author/scope/outcome; Agent-authored
+  route-scoped failure/inconclusive Episodes persist to an on-disk draft
+  CANDIDATE before command return and require batched exact-diff human
+  review of the final candidate revision before canonical commit.
+- **persistence and presentation boundary** (active spec §14.0.3): pending
+  candidates are on-disk, recoverable through existing workspace/admin
+  recovery, reported separately by enter/closeout, and never canonical
+  failure truth until approved/committed; routine human presentation folds
+  candidate hashes/gate IDs/approval-binding internals while exact diff,
+  exact paths, and the validation summary remain visible.
+- **gate matrix**: action→minimum gate table frozen (§14.0.1; action classes
+  may overlap, and each operation contributes the sorted unique union of all
+  applicable gate floors, with a fail-closed default; tests verify effective
+  action→gate behavior and legal Gate IDs, not row count).
 - **static expected-output contract fixtures**: JSON envelope (§4.1.1), error codes (§7.3),
   workspace states (§7.4), `not_available_in_stage` for unimplemented
   commands.
@@ -196,7 +248,7 @@ deterministic-checks/human-gates/finish contract only:
 | `show` | store-relative path, `@<commit>`, selectors |
 | `research` | 6 modes, workspace scaffold, RECORD_PLAN gap reporting |
 | `literature` | one-copy source, extraction immutability, anchor selectors |
-| `checkpoint` | durable-moment triggers, minimal record set |
+| `checkpoint` | durable-moment triggers, compact default Episode (`<summary>`), bare-invocation usage, `--full`/`--enrich`, deterministic scope fallback, author/scope/outcome gating |
 | `closeout` | declared-session-only sweep, no empty Episode |
 | `knowledge` | dream/refresh/link/finish; card assertion binding; input budget |
 | `skill` | distill/package/install/update/rollback; receipt; card deps |
@@ -220,6 +272,9 @@ Seven common header fields: `schema`, `id`, `type`, `topic`, `title`, `created_a
 `created_by`. `kind` is required only when the type profile has multiple kinds
 (Entity, Statement, Episode, Assessment, Asset); omitted for Topic, Route, Relation.
 Each kind-specific profile may require at most 12 additional frontmatter fields.
+Exact additional-field counts per the amended active spec §6.0.2: Route 9
+(`prior_attempt_refs`, `known_failure_refs`, `blocking_assessment_refs` removed —
+derived per §6.0.3), Episode 4 additional fields plus kind (5 profile fields including kind, `resolution_refs` removed), Assessment 12.
 
 ### 2.4 Canonical Asset-Kind Path Mapping
 
@@ -427,8 +482,8 @@ Extended fixture families for behavior contracts added by this amendment:
 tests/fixtures/aitp2/
   ...
   navigation/                   — TOPIC.md → Route → context/source_note/
-                                    SOURCE/prior_attempt/known_failure/
-                                    blocking_assessment/next_action spine
+                                    SOURCE/derived failure view/next_action
+                                    spine (§5.1, §6.0.3)
   content-envelope/             — natural Markdown note with formulas +
                                     sidecars NOT decomposed into per-sentence
                                     nodes; Episode distinct from transcript
@@ -446,17 +501,29 @@ Additional negative fixture cases required (at minimum):
 | Negative case | What it proves |
 |---------------|---------------|
 | Canonical `topics/<id>/INDEX.md` exists | Rejected as forbidden canonical path |
-| Missing `known_failure_refs` on Route with unresolved route-scoped failure Episode | Failure recall oracle 1: unresolved failure must appear in known_failure_refs |
+| Route record carrying removed `prior_attempt_refs` / `known_failure_refs` / `blocking_assessment_refs` fields | Rejected as `profile_mismatch` under D9 closed field set; failure sets are derived (§6.0.3), never stored |
+| Episode record carrying removed `resolution_refs` | Rejected as `profile_mismatch`; resolution is derived from reviewed `resolves_failure` Assessments |
+| Derived scan with malformed record, inconsistent Route ref, or truncated coverage | Derived result reported `incomplete`; no absence assertion permitted |
+| Runtime INDEX commit/coverage mismatch treated as authority | INDEX is cache only; canonical scan fallback required (§6.0.3) |
+| Pending Agent route-failure candidate treated as canonical failure truth | Pending candidates are excluded from the derived view until approved/committed (§14.0.3) |
+| Agent route-failure checkpoint returning without on-disk draft candidate | Persistence-before-return violation (§14.0.1/§14.0.3) |
+| Bare `aitp checkpoint` silently launching the rich full-record flow | Must print usage and exit (§9.1) |
+| Compact Episode frontmatter carries `record_form`, draft/status, or awaiting-enrich lifecycle fields | The Episode payload is complete canonical-format content; lawful CANDIDATE state `draft`/`review_ready` exists only in CANDIDATE.json, never Episode frontmatter (§9.1, §15.1) |
 | Truncated file marked `exact` when itself truncated | Truncated individual item ≠ exact per §7.5; global truncation does not affect unrelated fully-read items |
 | Partial search reported as absence | Absence claim requires complete search |
 | Profile/Skill version bump lowers gate | Gate matrix floor cannot be downgraded |
 | Unknown stage returns silent no-op | Must return `not_available_in_stage` |
 | Noncanonical INDEX treated as canonical truth | INDEX is generated, canonical is authoritative |
 | `forbidden_canonical_path` not raised for path profile violation | Must reject record at wrong kind path |
-| Bidirectional ref mismatch per oracle 1/2/3 | Route refs must agree with Episode/Assessment per three machine oracles; blocks Assessment in blocking_assessment_refs |
+| Derived-view oracle violation per §6.0.3 | Resolved failure must leave `known_failure_refs` only via a valid reviewed `resolves_failure` Assessment; `blocks`/`unblocks` derivations follow spec §6.0.2/§6.0.3 |
 | Draft Assessment mutates trust/unblocks/resolves | `review_state:draft` must not affect derived states |
 | `run-ULID` Asset ID prefix used | All Asset IDs must use `asset-ULID` |
 | Decision overlay missing `decided_by` or self-approved by Agent | Canonical decisions require human gate |
+| Statement `kind: decision` or Episode `kind: research_decision` staged through deterministic add-only | Decision-overlay records are excluded from every low-authority Episode add-only row; they must carry the exact §6.0.2 decision overlay and pass the explicit decision-overlay matrix row (Human review, Gate ID `human_review`) regardless of author/scope/outcome (§14.0.1) |
+| Agent create operation with `created_by: human:*` | Per-operation actor binding rejects `created_by` ≠ operation.actor — `validation_failed` (`check_id: actor_mismatch`) (§D2a) |
+| Update operation rewrites original `created_by` to the current operation actor | Writer rejects the mutation; update/delete preserve original `created_by` while the current operation actor determines the gate (§D2a) |
+| Operation actor unavailable at the trusted boundary | The operation is classified `fail_closed_agent`; create still requires `created_by` == operation.actor, while update/delete preserve original `created_by` (§D2a) |
+| Approval copied from another workspace with otherwise identical revision/tree/paths/hashes/gates | Reject: `approval_binding.protocol` and `approval_binding.workspace_id` are independently bound identity fields (§5.2.2) |
 
 ### 5.2 Validators and Tests
 
@@ -501,39 +568,42 @@ Tasks are ordered: validator exists before fixtures depend on it. No task define
 success by "a CLI could implement this." Every task's verification command must
 be actually runnable at the time the task is executed.
 
-### T0 — Preflight (No Commit)
+### T0 — Post-Amendment Preflight (No Commit)
 
-- **Depends on**: reviewed plan commit.
+- **Depends on**: pushed AUTHORITY_COMMIT (the exact SHA of this two-doc
+  authority amendment, obtained after push via `git rev-parse HEAD`).
 - **Files**: none created.
-- **Observable claim**: S0 execution base is a descendant of the reviewed plan
-  commit that includes `389b...` in its ancestry; local == remote; tree clean;
-  `check_repository_authority.py` passes.
-- **Main baseline (`origin/main`)**: `eec20f6faeb089ec2fcdc982ad65adce242a21a9`
-  is the recorded cutover baseline. If at T0 time `origin/main` differs from
-  this SHA, do NOT automatically merge, rebase, or silently treat the
-  difference as passing. STOP and perform an authority impact review: the
-  advanced `origin/main` may contain spec/authority changes that affect S0
-  scope. S0 is never required to roll back its branch to match the baseline;
-  divergence must be explicitly acknowledged and assessed. Snapshot evidence
-  (the checked `origin/main` SHA) is recorded as metadata in the first tracked
-  S0 artifact commit (T1a), not in a separate empty commit.
-- **Main failure modes**: wrong base; remote diverged; dirty tree; baseline
-  drifted without impact review.
+- **Observable claim**: S0 execution HEAD == AUTHORITY_COMMIT; local == remote;
+  tree clean; `check_repository_authority.py` passes. Historical SHAs
+  (`389b...`, `7de57f34`, `eec20f6`) are lineage/history checks only — they
+  are not the current S0 change baseline. `origin/main` drift from the
+  recorded cutover baseline `eec20f6f...` is recorded as metadata in the
+  current T2 regeneration/acceptance evidence, not in historical T1a.
+- **Main failure modes**: wrong base (HEAD ≠ AUTHORITY_COMMIT); remote
+  diverged; dirty tree; authority commit changes more or fewer than the exact
+  two tracked docs; baseline drifted without impact review.
 - **Steps**:
    1. `git fetch origin`
-   2. Verify current HEAD is a descendant of `389b3149ef9f6dd054ed82e0e7821c2868a4972e`:
-      `git merge-base --is-ancestor 389b3149ef9f6dd054ed82e0e7821c2868a4972e HEAD`
-   3. Verify local HEAD == remote HEAD for this branch.
+   2. Verify local HEAD == remote branch HEAD == recorded AUTHORITY_COMMIT:
+      `git rev-parse HEAD` equals the authority SHA recorded at push.
+   3. Verify the authority commit changes exactly the two tracked docs
+      (active spec + S0 plan); no other path is modified.
    4. `git status --porcelain` must be empty.
    5. `python3 scripts/check_repository_authority.py` exits 0.
-   6. Compare `origin/main` SHA against cutover baseline
-      `eec20f6faeb089ec2fcdc982ad65adce242a21a9`. If different:
-      STOP — record the discrepancy and perform an authority impact review
-      before proceeding. Do not auto-merge, rebase, or silently accept.
-- **Verification**: all `git` commands pass; guard exits 0; baseline impact
-  acknowledged.
+   6. Verify current HEAD is a descendant of
+      `389b3149ef9f6dd054ed82e0e7821c2868a4972e` (historical lineage check):
+      `git merge-base --is-ancestor 389b3149ef9f6dd054ed82e0e7821c2868a4972e HEAD`.
+   7. Compare `origin/main` SHA against cutover baseline
+      `eec20f6faeb089ec2fcdc982ad65adce242a21a9`. If different,
+      record the discrepancy as evidence in T2 regeneration/acceptance
+      (not in T1a). Perform an authority impact review before proceeding;
+      do not auto-merge, rebase, or silently accept.
+- **Verification**: all `git` commands pass; guard exits 0; AUTHORITY_COMMIT
+  confirmed as exactly two-tracked-doc SHA; baseline impact acknowledged.
 
-### T1a — Authority Interpretation + Blocking Decisions + Authorization Record
+### T1a — Authority Interpretation + Blocking Decisions + Authorization Record (Historical Completed)
+
+Retained as historical evidence only, not re-executed; current execution resumes T2 regeneration after AUTHORITY_COMMIT/T0.
 
 - **Sequence constraint**: The T1a spec amendment (D1–D9 decisions recorded in the
   active spec, plus this plan) must be reviewed and committed first
@@ -609,7 +679,9 @@ S0 acceptance. Gate B confirms that T1a correctly produced:
 Gate B STOP if any failure. T1b (validator skeleton) MUST NOT begin
 before Gate B passes.
 
-### T1b — Validator Core And Synthetic Self-Tests
+### T1b — Validator Core And Synthetic Self-Tests (Historical Completed)
+
+Retained as historical evidence only, not re-executed; current execution resumes T2 regeneration after AUTHORITY_COMMIT/T0.
 
 - **Depends on**: Oracle Gate B pass.
 - **Inputs**: `S0_DECISIONS.json` (all decisions frozen/explicitly-deferred,
@@ -656,13 +728,49 @@ before Gate B passes.
 > error-priority evidence, and an independent full-mode family guard remained
 > absent or presented as descriptive notes rather than executed machine checks. A
 > third monolithic dense patch is prohibited. This amendment authorizes a bounded
-> modular split — exactly six T2 implementation files — with frozen ownership
-> and module rules below. No new gate or stage is created; T2 acceptance criteria
-> unchanged.
+> modular split by functional responsibility and observable security constraints.
+> No new gate or stage is created; T2 acceptance criteria are unchanged.
+>
+> **Natural implementation amendment (2026-07-24)**: This later amendment applies
+> focused T2 plan-only authority changes to remove artificial hard requirements on
+> exact module/file count and per-file line caps, while keeping every substantive
+> functional requirement unchanged:
+> - Behavior/acceptance gates and T2/T3/source boundaries are unchanged.
+> - Python module inventory and line counts are implementation evidence, not
+>   normative behavior.
+> - Implementation may split cohesive stdlib-only test-support modules by
+>   responsibility under `tests/aitp2/`.
+> - No dense/generated/eval/dynamic-import tricks and no cyclic local imports.
+> - Avoid both monolithic piling and gratuitous fragmentation.
+>
+> **UX behavior supersession (2026-07-24, user-approved)**: The uncommitted
+> `tests/fixtures/aitp2/FREEZE.json` and the in-progress T2 validator modules
+> encode the superseded stored failure-ref contract (12-field Route,
+> `resolution_refs`, bidirectional sync, old checkpoint flow, old gate rows).
+> They are superseded by the UX behavior authority amendment and MUST be
+> regenerated against the amended active spec before T2 acceptance: Route 9
+> profile fields, Episode 4 additional fields plus kind (5 profile fields including kind) with the compact canonical body
+> minimum, §6.0.3 derived-view oracles, the compact checkpoint contract, the
+> rebuilt gate matrix with author/actor/scope/outcome Episode rows and the
+> explicit decision-overlay row, and the
+> §14.0.3 persistence/presentation boundary. No stale fixed FREEZE digest,
+> reviewed contract digest, or `authority_commit` may be committed in docs or
+> oracle files; digests and authority anchors are regenerated from the amended
+> authority commit at T2 time. The T2 natural implementation (2026-07-24)
+> freezes functional responsibilities, stdlib/no-cycle constraints, and
+> security/behavioral acceptance; concrete helper names, file count, and
+> import edges are implementation evidence.
 
-- **Depends on**: T1b (`--decisions-only` pass confirmed; no `user-decision-required`
-  entries remain).
-- **Files (create/modify)** — exact six-file set, no other paths:
+- **Depends on**: T0 PASS + historical T1b PASS (T0 confirmed pushed
+  AUTHORITY_COMMIT and clean tree; T1b `--decisions-only` pass confirmed,
+  no `user-decision-required` entries remain). T2 uses the recorded
+  AUTHORITY_COMMIT as its authority anchor/baseline input.
+- **Files (create/modify)** — CURRENT INFORMATIVE implementation map.
+  Responsibilities and behaviors listed below are normative; helper module
+  split, module names, exact file count, and import edges are implementation
+  evidence and may change without authority amendment provided behavior,
+  scope, and security constraints are preserved. The list below describes
+  the current expected implementation:
   1. Create: `tests/fixtures/aitp2/FREEZE.json` — human-reviewed typed oracle
      only; no duplicated prose, no implementation code. Every atomic claim and
      synthetic vector carries `authority_document` + `authority_path`
@@ -672,72 +780,94 @@ before Gate B passes.
      `decision_refs`. Exact Asset kind registry count is 17 (excludes retired
      `patch` per active spec §5 lines 610–628; spec wins, no spec amendment).
      Closed top-level schema; unknown keys rejected.
-  2. Modify: `tests/aitp2/check_s0_freeze.py` — CLI entry point only. Frozen
-     ownership: CLI argument parsing, mode dispatch (`--decisions-only` /
+  2. Modify: `tests/aitp2/check_s0_freeze.py` — CLI entry point. Contains CLI
+     argument parsing, mode dispatch (`--decisions-only` /
      `--oracle-only` / default full), unchanged T1b decisions validation, file
      I/O, deterministic JSON error envelope assembly, primary-error selection
      via frozen priority ordering, orchestration of oracle/full phases, and
      default/full entry that runs decisions + oracle then fails closed with
-     `not_available_in_stage` (exact T3 fixture evidence absent). May normally
-     import exactly `s0_oracle_schema` and `s0_oracle_vectors` (no dynamic
-     import, subprocess, or eval tricks). Under 500 NBNC.
+     `not_available_in_stage` (exact T3 fixture evidence absent). Cohesive,
+     readable, stdlib-only, bounded by responsibility.
   3. Create: `tests/aitp2/s0_oracle_schema.py` — closed typed FREEZE schema
-     validation and registry/claim resolution. Frozen ownership: safe POSIX
-     path validation, full local Git object-id validation (no fixed hex length,
-     no network), committed document loading via local Git object commands
-     followed by deterministic section-heading resolution, decision-register
-     resolution against the loaded D1–D9/U1 set, exact typed registries (12
-     commands, 7+1 roles, 16 predicates, 19 ordered errors, 7 workspace
-     states, 10 decision IDs, 12 T3 fixture families, 17 Asset kinds with
-     profile→canonical-path mappings), machine-valued typed claims with
+     validation and registry/claim resolution. Contains POSIX path validation,
+     full local Git object-id validation (no fixed hex length, no network),
+     committed document loading via local Git object commands followed by
+     deterministic section-heading resolution, decision-register resolution
+     against the loaded D1–D9/U1 set, exact typed registries (12 commands,
+     7+1 roles, 16 predicates, 19 ordered errors, 7 workspace states, 10
+     decision IDs, 12 T3 fixture families, 17 Asset kinds with profile→
+     canonical-path mappings), machine-valued typed claims with
      authority-document + anchor validation (commit equality enforced, section
      heading verified), required synthetic vector key presence, and full-mode
-     completed local provenance checks. Under 500 NBNC.
-  4. Create: `tests/aitp2/s0_oracle_vectors.py` — executable synthetic vector
-     evaluators. Frozen ownership: bounded stdlib-only D3/D4 frontmatter
+     completed local provenance checks.
+  4. Create: `tests/aitp2/s0_oracle_contracts.py` — pure recursive closed-shape
+     engine, field-descriptor grammar, declarative contract/profile shapes,
+     reviewed contract digests, structural/cross-contract checks. No I/O, Git,
+     provenance parsing, decision loading, CLI, or vector execution.
+  5. Create: `tests/aitp2/s0_oracle_vectors.py` — executable synthetic vector
+     evaluators. Retains executable synthetic semantics. Contains bounded
+     stdlib-only D3/D4 frontmatter
      scalar parser per frozen two-form grammar (plain positional restrictions,
      JSON double-quoted with post-decode newline/control rejection, exact
-     `[]`/`{}` sentinels, forbidden YAML forms); 19 singleton + 171 pairwise
-     error-priority execution with independent expected-primary verification;
-     candidate digest/check-id/integrity/all-pass/one-fail execution; legal
-     gate-ID validation; failure-recall oracle execution; read budget/
-     truncation/item-local exactness/mandatory overflow vectors; D8 reorder
-     invariance; frontmatter-only boundary; and authority-backed workspace-
-     state validation. Under 500 NBNC.
-  5. Create: `tests/aitp2/test_s0_negative_contracts.py` — real-subprocess /
-     `tempfile.TemporaryDirectory` adversarial evidence only.
-  6. Modify: `tests/aitp2/test_s0_contract_freeze.py` — modify ONLY its static
-     import ratchet: the existing test that verifies `check_s0_freeze.py`
-     imports no `aitp`/third-party modules must additionally permit exactly
-     `s0_oracle_schema` and `s0_oracle_vectors` as allowed local module
-     imports. Preserve all 40 behavioral tests, no-mode assertion, path helper
-     checks, existing stdlib/no-network/no-aitp/external-.aitp/line-count
-     ratchets, and all other bytes unchanged. No dynamic import, subprocess,
-     or eval tricks to bypass the ratchet.
-  7. **No other file created or modified.** Existing decisions JSON, provenance
-     stubs, spec, plan (except this T2 section), and authority guard unchanged.
+      `[]`/`{}` sentinels, forbidden YAML forms); 19 singleton + 171 pairwise
+      error-priority execution with independent expected-primary verification;
+      candidate digest/check-id/integrity/all-pass/one-fail execution; legal
+      gate-ID validation; derived failure/attempt/blocking view oracle
+      execution (§6.0.3: route_episode/prior_attempt/known_failure/
+      resolved_failure/blocking_assessment derivation, incomplete-result
+      no-absence rule, INDEX cache-only fallback); compact checkpoint contract
+      vectors (§9.1: bare-invocation usage, defaults, mutual exclusion,
+      deterministic scope fallback, compact completeness); Episode
+        author/scope/outcome gate vectors (§14.0.1: per-operation actor/
+        assurance classification, create equality, update/delete preservation,
+        mixed-actor gate union) and
+        enter/closeout pending-candidate
+       + derived-coverage vectors (§14.0.1/§14.0.3); read budget/
+      truncation/item-local exactness/mandatory overflow vectors; D8 reorder
+      invariance; frontmatter-only boundary; and authority-backed workspace-
+      state validation.
+  6. Create: `tests/aitp2/test_s0_negative_contracts.py` — real-subprocess /
+     `tempfile.TemporaryDirectory` adversarial evidence only. Functional/
+     adversarial coverage remains mandatory for every declared contract
+     surface. Module inventory and line counts are reported as implementation
+     evidence, not pass/fail behavior.
+  7. Modify: `tests/aitp2/test_s0_contract_freeze.py` — preserve existing
+     behavioral tests and assertions from T1b. Only behavior-/security-relevant
+     expectations (stdlib-only, no network, no aitp, no external `.aitp`)
+     remain normative. Import topology and test count are implementation
+     evidence; tests must not inspect module names, import topology, or fixed
+     test count. No dynamic import, subprocess, or eval tricks.
+  8. **No other file outside this plan's scope is created or modified.**
+     Existing decisions JSON, provenance stubs, spec, plan (except this T2
+     section), and authority guard unchanged.
 
-- **Module rules (frozen)**:
-  - Stdlib-only imports among these local test modules are allowed; no `aitp`,
-    third-party, PyYAML, network, external `.aitp`, remote Git, or cyclic
-    imports between modules. `check_s0_freeze.py` may import exactly
-    `s0_oracle_schema` and `s0_oracle_vectors` normally; no dynamic import,
-    subprocess, or eval tricks to bypass the ratchet.
-  - Every Python file in this T2 module set (all five Python paths among the
-    exact six-path implementation set) must be under 500
-    nonblank / noncomment lines; no dense formatting or generated-code
-    evasion. T2 `TestLineCount` coverage in `test_s0_negative_contracts.py`
-    enforces this across the complete module set.
+- **Module rules (observable/security constraints only — not normative shape)**:
+  - Stdlib-only for test-support modules; no `aitp`, third-party, PyYAML,
+    network, external `.aitp`, remote Git, or cyclic imports between modules.
+  - No dynamic import, eval, or subprocess dispatch tricks to bypass
+    observability.
+  - Modules are cohesive, readable, bounded by responsibility, and reviewed
+    for unnecessary duplication or complexity. Module inventory, names,
+    import edges, and line counts are implementation evidence, not pass/fail
+    behavior.
+  - Path scope is confined to `tests/aitp2/**`, `tests/fixtures/aitp2/**`,
+    the named simplicity script path (`scripts/check_aitp2_simplicity.py`),
+    the S0 CI workflow path (`.github/workflows/aitp2-s0-contract.yml`),
+    and the S0 acceptance doc path. No production/`src/` changes are
+    authorized.
   - **Concrete closed typed payloads**: `contract_present`, description-only /
     note-only placeholders, opaque unchecked blobs, and key-presence-only
     validation are prohibited. Every declared contract surface must carry
     machine-valued, closed typed payloads with explicit evaluator IDs for at
     least: common header fields + kind applicability; per-profile required/
     optional fields, enums, conditionals, body sections; all 17 Asset
-    kind→profile→canonical-path mappings; Route navigation fields; ref
+    kind→profile→canonical-path mappings; Route navigation fields (9) and the
+    §6.0.3 derived view; ref
     grammar/selectors/error mapping; JSON envelope/read/search/budget schemas;
-    complete gate-matrix rows/legal gates; CANDIDATE/writer fields, framing,
-    integrity, approval binding; failure-recall/unblocks rules; and
+    complete action→gate behavior (classes may overlap, sorted unique union per operation)/legal gate IDs/fail-closed default; CANDIDATE/writer fields, framing,
+    integrity, approval binding; derived failure/attempt/blocking view and
+    unblocks rules; compact checkpoint contract; pending-candidate
+    persistence/presentation boundary; and
     noncanonical INDEX required fields + forbidden canonical path. Every
     declared surface must have an adversarial mutation test that causes
     structured rejection (not traceback or silent pass).
@@ -775,19 +905,24 @@ before Gate B passes.
     frozen surface includes: 12 command groups, 7+1 node/edge roles, 16
     predicates, common header + kind, 17 Asset kind→profile→canonical-path
     mappings (patch retired), ref grammar, Relation contract, store/Git
-    ownership, content envelope boundaries (§6.0.1), minimum profile fields
-    (§6.0.2), Route navigation fields (§5.1), JSON envelope (§4.1.1), error
-    codes (§7.3), workspace states (§7.4), read coverage semantics (§7.5),
-    enter behavior (§7.6), gate matrix (§14.0.1), writer behavioral contract
-    (§14.0.2), and noncanonical INDEX contract (§5). Every declared contract
-    surface carries machine-valued typed payloads with explicit evaluator
-    IDs — no `contract_present` or description-only placeholders.
-  - `check_s0_freeze.py --oracle-only` validates FREEZE.json closed schema
-    correctness, all exact registries, typed claims with resolved authority
-    anchors (commit equality enforced, section headings verified) and decision
-    refs, executes all synthetic vectors (D3/D4 scalars, 19+171 error
-    priorities, candidate digest, gates, failure recall, budget/truncation,
-    D8 reorder, frontmatter-only, workspace states), and reports
+     ownership, content envelope boundaries (§6.0.1), minimum profile fields
+     (§6.0.2), Route navigation fields (§5.1), derived failure/attempt/
+     blocking view (§6.0.3), compact checkpoint contract (§9.1), JSON envelope
+     (§4.1.1), error
+     codes (§7.3), workspace states (§7.4), read coverage semantics (§7.5),
+     enter behavior (§7.6), Episode author/attention gating and gate matrix
+     (§14.0.1), writer behavioral contract
+     (§14.0.2), persistence and presentation boundary (§14.0.3), and
+     noncanonical INDEX contract (§5). Every declared contract
+     surface carries machine-valued typed payloads with explicit evaluator
+     IDs — no `contract_present` or description-only placeholders.
+   - `check_s0_freeze.py --oracle-only` validates FREEZE.json closed schema
+     correctness, all exact registries, typed claims with resolved authority
+     anchors (commit equality enforced, section headings verified) and decision
+     refs, executes all synthetic vectors (D3/D4 scalars, 19+171 error
+     priorities, candidate digest, gates, derived failure view, compact
+     checkpoint, pending-candidate boundary, budget/truncation,
+     D8 reorder, frontmatter-only, workspace states), and reports
     `real_fixture_coverage: not_claimed`. It does NOT require real fixture
     families to exist — explicitly reports diagnostic text `oracle-only: no
     real fixture coverage claimed.` Empty fixture directories do NOT cause
@@ -797,8 +932,9 @@ before Gate B passes.
     includes: unknown top/nested keys, deadbeef/abbreviated/older authority
     commit, missing/fake section headings, unknown authority documents,
     traversal decision-register paths, duplicate/omitted/wrong-priority error
-    codes, corrupted D3/D4 vector expectations, mutated candidate/gate/
-    failure/read/state vectors, empty `required_families`, malformed shapes
+     codes, corrupted D3/D4 vector expectations, mutated candidate/gate/
+     derived-view/checkpoint/pending-candidate/read/state vectors, empty
+     `required_families`, malformed shapes
     without traceback, default/full bypass attempts, and at least one
     adversarial mutation test per declared contract surface causing structured
     rejection.
@@ -815,9 +951,9 @@ before Gate B passes.
   payload required; declared surface lacks adversarial mutation test; validator
   passes on a violation. D3/D4 frontmatter parser contract is now `frozen` (T1a
   authority amendment 2026-07-23 — see active spec §6 D3/D4); resolution is
-  complete and not deferrable. T2 STOP if any Python file exceeds 500 NBNC,
-  existing T1b test behavior changes, or required closed-schema/vector behavior
-  is implemented as a descriptive note rather than executed machine logic.
+  complete and not deferrable. T2 STOP if existing T1b test behavior changes,
+  or required closed-schema/vector behavior is implemented as a descriptive
+  note rather than executed machine logic.
 
 - **`check_s0_freeze.py` Modes**:
   1. **`--oracle-only`** (T2): Validates decisions, loads FREEZE.json, validates
@@ -842,14 +978,14 @@ before Gate B passes.
      top-level `authority_commit` exactly. Exact Asset kind count is 17. No
      `contract_present` or description-only placeholders — every surface
      carries machine-valued typed payloads with explicit evaluator IDs.
-  2. Implement modular file set per frozen ownership above: `check_s0_freeze.py`
-     (CLI + orchestration, imports `s0_oracle_schema` + `s0_oracle_vectors`
-     normally), `s0_oracle_schema.py` (closed schemas with authority commit
-     equality and section-heading verification), and `s0_oracle_vectors.py`
-     (executable vectors). All under 500 NBNC, stdlib only.
-  3. Modify `test_s0_contract_freeze.py` static import ratchet only: permit
-     exactly `s0_oracle_schema` and `s0_oracle_vectors` as allowed local module
-     imports. Preserve all 40 behavioral tests and all other bytes.
+   2. Implement schema/authority/vector/CLI orchestration responsibilities using
+      the informative implementation map above or any cohesive equivalent within
+      the allowed T2 paths. Stdlib-only; cohesive and bounded by responsibility.
+   3. Preserve existing T1b behavioral assertions in `test_s0_contract_freeze.py`.
+      Static/security checks enforce stdlib-only, no `aitp` import, no network,
+      no external `.aitp`, and no dynamic-import/eval/subprocess-dispatch tricks.
+      Tests MUST NOT assert module names, module count, import topology, or fixed
+      test count.
   4. Write adversarial negative tests (`test_s0_negative_contracts.py`): each
      creates a tempdir, writes a deliberately invalid fixture, runs the
      validator as a real subprocess, and asserts expected primary error code
@@ -870,8 +1006,8 @@ before Gate B passes.
   - `python3 tests/aitp2/check_s0_freeze.py --decisions-only` exits 0
     (unchanged T1b).
   - `python3 -m unittest tests/aitp2/test_s0_contract_freeze.py` exits 0
-    (all 40 behavioral T1b tests preserved; only static import ratchet
-    modified to permit `s0_oracle_schema` and `s0_oracle_vectors`).
+     (existing T1b behavioral tests preserved; test count is implementation
+     evidence, not normative).
   - `python3 tests/aitp2/check_s0_freeze.py --oracle-only` exits 0; reports
     all registries confirmed; all authority anchors resolve with commit
     equality enforced and section headings verified; all synthetic vectors
@@ -882,21 +1018,22 @@ before Gate B passes.
   - No-argument default/full invocation exits nonzero with primary error
     `not_available_in_stage` and structured JSON listing all missing/empty
     families.
-  - Every Python file under `tests/aitp2/` in the T2 set (all five Python
-    paths among the exact six-path implementation set) is under 500 NBNC; no
-    `aitp`, third-party, network, or external `.aitp` access.
+  - Implementation paths remain confined to the named fixture and
+    `tests/aitp2/` T2 support surface; modules are cohesive, readable,
+    stdlib-only, bounded by responsibility; no `aitp`, third-party, network,
+    or external `.aitp` access.
   - Adversarial mutation test exists for every declared contract surface;
     abbreviated/older commits, fake sections, unknown documents, and traversal
     paths all produce structured rejection.
 
-- **Commit**: `test: reviewed FREEZE.json oracle with authority anchors, modular six-file validators, and synthetic negative suite`
+- **Commit**: `test: reviewed FREEZE.json oracle with authority anchors, modular validators, and synthetic negative suite`
 
 #### T2 Future Negative Evidence (Council Required — Executable at T2)
 
 The following contract surfaces require negative fixture evidence at T2/T3.
 They are specified here as planning requirements and are now executable
-via the modular T2 vector evaluators (`s0_oracle_vectors.py`); no new
-files beyond the authorized six-file set are created now.
+via the modular T2 vector evaluators (`s0_oracle_vectors.py`); no new files
+outside the authorized implementation file set are created now.
 
 - Assessment `kind: assessment` valid/invalid — common kind literal presence.
 - `budget.truncated: true` with fully-read unrelated items still `exact` —
@@ -913,9 +1050,45 @@ files beyond the authorized six-file set are created now.
   operation and declared gate must have ≥1 applicable deterministic check.
 - Per-code error total order: each frozen error code produces its unique
   priority as primary; fixtures cover all 19 codes with golden vectors.
-- Three failure link oracles: (1) unresolved ↔ known_failure_refs,
-  (2) blocks ↔ blocking_assessment_refs, (3) resolves_failure machine
-  rules; plus unblocks removal.
+- Derived failure view oracles (§6.0.3): (1) route_episode/prior_attempt
+  derivation and `(created_at, id)` ordering, (2) known vs resolved failure
+  partition via valid reviewed `resolves_failure` Assessments, (3) blocking
+  derivation via reviewed `blocks` minus reviewed `unblocks` targets; plus
+  incomplete-scan no-absence and INDEX cache-only fallback.
+- Compact checkpoint contract vectors (§9.1): bare-invocation usage exit,
+  `--failed`/`--inconclusive` mutual exclusion, defaults
+  (`kind: discussion`, `outcome: progress`), deterministic scope fallback
+  (explicit `--route` or exactly one Route; multiple plausible Routes require
+  explicit `--route`; any `--topic` supplied with one or more Route refs is
+  rejected; only zero Route context permits explicit/default topic scope;
+  Agent failure/inconclusive with Route origin remains `scope_kind: route`,
+  retains resolved origin Route refs, and requires `exact_diff_human_review`),
+  compact Episode completeness without any stub/enrich state.
+- Episode author/scope/outcome gating vectors (§14.0.1: per-operation actor/
+  assurance classification, create equality, update/delete preservation,
+  mixed-actor gate union) and pending-candidate vectors (§14.0.3): Agent route
+  failure persisted to a draft CANDIDATE before return; return envelope uses
+  `status: blocked` + frozen `approval_required` error +
+  `result.candidate_state: draft` + required_gates — no `pending_review`;
+  pending candidates excluded from the
+  canonical derived view and reported separately by enter/closeout; a
+  Statement `kind: decision` or Episode `kind: research_decision` can never
+  pass deterministic add-only and must carry the exact §6.0.2 decision
+  overlay plus the explicit decision-overlay human gate (Gate ID
+  `human_review`), regardless of author/scope/outcome.
+- Actor-binding negative vectors (§D2a): (1) Agent create operation where
+  `created_by` ≠ operation.actor rejected with `validation_failed`
+  (`check_id: actor_mismatch`); (2) Agent create operation with
+  `created_by: human:*` rejected (`validation_failed`, `check_id: actor_mismatch`);
+  (3) actor-unavailable boundary classified fail-closed as Agent-authored,
+  `created_by` carries `agent:`; (4) unknown/raw boundary ⇒
+  `fail_closed_agent`; (5) update preserves original `created_by` while
+  current operation.actor classifies gate; (6) delete uses operation actor
+  only; (7) mixed-actor candidate unions all applicable gate floors.
+- Approval-binding negative vector (§5.2.2): copying an approval from another
+  workspace fails even when candidate revision, tree, paths, actor bindings,
+  content/validation hashes, and required gates match; `protocol` and
+  `workspace_id` are independently bound and must match commit metadata.
 - U1 traceability-only scan: T1a entry present with user decision copy and
   authority ref, not re-opened.
 
@@ -934,10 +1107,11 @@ files beyond the authorized six-file set are created now.
   redactions, and `seeding` declarations; no private path/credential/host/URL
   exists. Missing fixture families → FAIL (no skip-as-pass in full mode).
   Structural fixtures must cover TOPIC → Route → source_note / SOURCE /
-  prior_attempt / known_failure / blocking_assessment / next_action spine,
+  derived failure view (§6.0.3) / next_action spine,
   content envelope boundaries, read coverage reporting, gate matrix, CLI
   static expected-output contract fixtures, runtime inventory, human decision overlay, and
-  failure-recall bidirectional refs. Run and code fixture records are
+  derived-scan failure/attempt/blocking coverage (including an
+  incomplete-coverage case with no absence assertion). Run and code fixture records are
   record/profile schema fixtures only — not command integration/E2E; real
   command E2E belongs to S3. All Asset owner IDs use `asset-<ULID>`.
 - **Main failure modes**: unauthorized source access; private data leakage;
@@ -1041,7 +1215,9 @@ files beyond the authorized six-file set are created now.
 - **Steps**:
   1. Run all commands from §7.
   2. Fill acceptance checklist from §9.1 (now includes content envelope,
-      navigation, read coverage, failure recall, gate matrix, static expected-output contract fixtures,
+      navigation, read coverage, derived failure view, compact checkpoint,
+      Episode author gating, pending-candidate boundary, gate matrix,
+      static expected-output contract fixtures,
      runtime inventory contracts).
   3. Confirm: `git diff --check` clean; remote SHA == local HEAD;
      `check_repository_authority.py` exits 0.
@@ -1059,9 +1235,9 @@ S1 MUST NOT begin until T0–T5 all pass S0 Acceptance Gate.
 |-------|----------|---------|----------|
 | Decision register complete + authorization stubs valid | S0_DECISIONS.json + FIXTURE_PROVENANCE.md | Manual review + simple JSON validation (T1a) | exit 0, zero `user-decision-required`, U1 frozen, frozen entries authority-ref'd |
 | Validator core functional | check_s0_freeze.py + test_s0_contract_freeze.py | `python3 tests/aitp2/check_s0_freeze.py --decisions-only` (T1b) | exit 0 |
-| 12 command groups + 7+1 registry + 16 predicates + content envelopes + navigation + read coverage + gate matrix + CLI contracts + human decision overlay + failure recall | FREEZE.json + fixtures | `python3 tests/aitp2/check_s0_freeze.py --oracle-only` (T2) / `python3 tests/aitp2/check_s0_freeze.py` (T3+ full) | exit 0, reports all frozen contract surfaces |
+| 12 command groups + 7+1 registry + 16 predicates + content envelopes + navigation + read coverage + gate matrix + CLI contracts + human decision overlay + derived failure view + compact checkpoint + pending-candidate boundary | FREEZE.json + fixtures | `python3 tests/aitp2/check_s0_freeze.py --oracle-only` (T2) / `python3 tests/aitp2/check_s0_freeze.py` (T3+ full) | exit 0, reports all frozen contract surfaces |
 | All profiles compliant (common header + additional fields, Entity kinds, SOURCE fields, body sections, route_refs, decision overlay, asset-ULID IDs) | Fixtures | `python3 -m unittest discover -s tests/aitp2 -p 'test_*.py'` | exit 0 |
-| Negative structural errors distinct (canonical INDEX/forbidden_canonical_path, missing failure recall, truncated-as-exact, partial-search-as-absence, gate downgrade, unknown-stage silent no-op, inventory second-truth, bidirectional ref mismatch, draft Assessment trust mutation, run-ULID prefix) | Negative fixtures | same | exit 0, one distinct error per boundary |
+| Negative structural errors distinct (canonical INDEX/forbidden_canonical_path, removed Route failure-ref fields, Episode `resolution_refs`, incomplete derived scan as absence, INDEX-as-authority, pending candidate as canonical truth, missing on-disk draft before return, bare-checkpoint heavy-flow launch, compact-Episode stub marking, truncated-as-exact, partial-search-as-absence, gate downgrade, decision-overlay record staged via deterministic add-only, unknown-stage silent no-op, inventory second-truth, derived-view oracle violation, draft Assessment trust mutation, run-ULID prefix) | Negative fixtures | same | exit 0, one distinct error per boundary |
 | Simplicity — S0 production absence | `src/aitp/`, `pyproject.toml` | `python3 scripts/check_aitp2_simplicity.py --phase s0` | exit 0 |
 | Repository authority intact | All tracked files | `python3 scripts/check_repository_authority.py` | exit 0 |
 | Whitespace clean | Changed files | `git diff --check` | exit 0, no warnings |
@@ -1118,7 +1294,11 @@ present. These are NOT enforced in S0 CI.
 - [ ] FREEZE.json encodes 12 command groups, 7 node roles, 1 edge role, 16
   relation predicates, content envelope boundaries, minimum profile fields
   (including Entity kinds, SOURCE fields, body sections, route_refs, decision
-  overlay, asset-ULID IDs), Route navigation fields, JSON envelope with reads
+  overlay, asset-ULID IDs), Route navigation fields (9 additional fields),
+  Episode compact canonical body minimum, derived failure/attempt/blocking
+  view (§6.0.3), compact checkpoint contract (§9.1), Episode
+  author/attention gating (§14.0.1), persistence and presentation boundary
+  (§14.0.3), JSON envelope with reads
   object, error codes (including `forbidden_canonical_path`), workspace states,
   read coverage semantics, enter behavior with unexpanded failures, gate matrix
   with mutation taxonomy + draft Assessment, writer behavioral contract, and
@@ -1134,39 +1314,83 @@ present. These are NOT enforced in S0 CI.
   requires provenance + candidate + human approval.
 - [ ] Entity profile frozen with baseline kinds; new kind requires reviewed
   profile but not a new node.
-- [ ] `route_refs` present on Episode and Assessment; bidirectional refs with
-  Route fields verified by three machine oracles:
-  1. unresolved failure Episode ↔ `known_failure_refs`; resolved ↔
-     `prior_attempt_refs` + Episode `resolution_refs`.
-  2. `route_effect: blocks` Assessment ↔ `blocking_assessment_refs`.
-  3. `route_effect: resolves_failure` Assessment: target_ref is failure
-     Episode, route sets equal, Episode `resolution_refs` includes it,
-     Route moves from known to prior.
-   Plus `route_effect: unblocks` removes target_ref's prior blocker from
-   each Route.blocking_assessment_refs; route sets equal; both Assessments
-   remain in audit history.
-- [ ] Resolved failures move from `known_failure_refs` to `prior_attempt_refs`
-  only via `route_effect: resolves_failure` Assessment; failures are never
+- [ ] `route_refs` present on Episode and Assessment; derived
+  failure/attempt/blocking sets verified by machine oracles (active spec
+  §6.0.3):
+  1. `route_episode_refs` / `prior_attempt_refs` derive from route-scoped
+     Episodes, sorted `(created_at, id)`.
+  2. `route_effect: resolves_failure` (reviewed, human reviewer, route sets
+     equal) moves the target failure Episode from derived
+     `known_failure_refs` to derived `resolved_failure_refs` — with no Route
+     or Episode mutation and no `resolution_refs` field.
+  3. `route_effect: blocks` / `unblocks` derive `blocking_assessment_refs`;
+     unblocks excludes its `target_ref` blocker; route sets equal; both
+     Assessments remain in audit history.
+- [ ] Resolved failures leave the derived `known_failure_refs`
+  only via a valid reviewed `route_effect: resolves_failure` Assessment;
+  failures are never
   deleted; new success does not overwrite old failure.
 - [ ] Decision overlay frozen for Statement(kind=decision) and
-  Episode(kind=research_decision); canonical decisions require human gate;
-  Agent may draft but not self-approve.
+  Episode(kind=research_decision); canonical decisions require the explicit
+  §14.0.1 decision-overlay human gate (Gate ID `human_review`) and can never
+  pass deterministic add-only; Agent may draft but not self-approve.
 - [ ] Gate matrix floor enforced with mutation taxonomy + unclassified→human
   review default; add-only semantics for low-authority actions; draft
   Assessment must not change trust/unblock/resolve/promote.
+- [ ] Episode author/attention gating enforced per §14.0.1: human-authored
+  low-authority Episodes (any scope) and Agent topic/shared or route
+  non-failure Episodes are deterministic add-only — decision-overlay records
+  (Statement `kind: decision`, Episode `kind: research_decision`) excluded,
+  governed only by the explicit decision-overlay row (Human review, Gate ID
+  `human_review`) regardless of author/scope/outcome; an Agent-authored
+  route-scoped failure/inconclusive Episode is persisted to an on-disk draft
+  CANDIDATE before command return and requires batched exact-diff human
+  review of the final candidate revision before canonical commit.
+- [ ] Compact checkpoint contract enforced per §9.1: `aitp checkpoint
+  "<summary>"` default compact canonical Episode; bare invocation shows
+  usage; `--full` rich path; `--enrich` optional; deterministic scope
+  fallback with `--topic` rejected whenever Route context exists and lawful
+  only with zero Route context; a compact Episode is a complete canonical-format payload, becomes
+  canonical durable memory only after lawful writer commit — before commit
+  it is a pending CANDIDATE in lawful state `draft`/`review_ready` with no
+  `record_form` field, and the envelope uses `status: blocked` + frozen
+  `approval_required` error + `result.candidate_state: draft` for the
+  Agent route-failure case — no `pending_review` state or new lifecycle.
+- [ ] Persistence/presentation boundary enforced per §14.0.3: pending
+  candidates are on-disk and recoverable, excluded from the canonical
+  derived failure view until approved/committed, reported separately by
+  enter/closeout; routine presentation folds machine internals while exact
+  diff/path and validation summary remain visible.
 - [ ] U1 `frozen` per user decision 2026-07-23: S0 = pure contract/
   oracle/fixture/static validation; S1 = production CLI/wheel/resources/
   legacy reader/CLI runtime acceptance.
 - [ ] All Asset owner IDs use `asset-<ULID>`; `run-<ULID>` is retired.
-- [ ] Route `context_refs`, `prior_attempt_refs`, `known_failure_refs`,
-  `blocking_assessment_refs` are frozen and enter reports them deterministically.
+- [ ] Route profile carries exactly 9 additional fields; `context_refs` is
+  frozen and enter reports it plus the §6.0.3 derived failure view
+  (`prior_attempt_refs`, `known_failure_refs`, `resolved_failure_refs`,
+  `blocking_assessment_refs`) deterministically, with derivation provenance
+  (derived, complete/incomplete, commit).
 - [ ] Read coverage vocabulary (exact/deferred/skipped/not_checked) enforced;
   an item whose content was actually truncated or omitted must not be marked
   `exact`; global `budget.truncated: true` can coexist with unaffected,
   fully-read items retaining `status: exact`. Absence claims require complete
   search.
 - [ ] Gate matrix floor enforced; no profile/Skill version bump lowers the
-  global gate.
+  global gate; the explicit decision-overlay row (Statement `kind: decision`
+  / Episode `kind: research_decision` → Human review, Gate ID
+  `human_review`) is enforced and such records never pass deterministic
+  add-only.
+- [ ] Actor-binding rule enforced (§D2a): create requires `created_by` ==
+  operation.actor; update preserves original `created_by` while classifying
+  gate by current operation.actor; delete uses operation actor only; Agent
+  create operation with `created_by: human:*` rejected (`validation_failed`,
+  `actor_mismatch`); actor-unavailable / unknown boundary classified
+  fail-closed as Agent-authored (`fail_closed_agent`); mixed-actor candidates
+  union all applicable gate floors.
+- [ ] Approval and commit identity bind `protocol` (`aitp/2.0`) and originating
+  `workspace_id` in addition to revision/tree/paths/operation actor bindings/
+  hashes/gates; cross-workspace copied approval fails even when other fields
+  match.
 - [ ] static expected-output contract fixtures: JSON envelope, error codes (including
   `not_available_in_stage`), workspace states.
 - [ ] Ref grammar constraints verified: store-relative POSIX, no traversal,
@@ -1174,8 +1398,13 @@ present. These are NOT enforced in S0 CI.
 - [ ] Each S0 frozen structural invariant has at least one positive or negative
   evidence fixture; safety boundaries (traversal, legacy-write, credential
   rejection) have negative evidence; extended negative cases (canonical INDEX,
-  missing failure recall, truncated-as-exact, partial-search-as-absence, gate
-  downgrade, unknown-stage silent no-op, inventory second-truth) are covered.
+  removed Route failure-ref fields, Episode `resolution_refs`, incomplete
+  derived scan asserted as absence, INDEX treated as authority, pending
+  candidate treated as canonical truth, truncated-as-exact,
+  partial-search-as-absence, gate
+  downgrade, decision-overlay record (Statement `kind: decision` / Episode
+  `kind: research_decision`) staged via deterministic add-only,
+  unknown-stage silent no-op, inventory second-truth) are covered.
 - [ ] No legacy import, write, dual-write, or fallback in 2.0 contract surface.
 - [ ] One canonical writer finish-path invariant frozen and testable per §14.0.2.
 - [ ] Simplicity ratchet passes in `--phase s0` — zero production code/package.
@@ -1214,18 +1443,18 @@ present. These are NOT enforced in S0 CI.
   shorthand expansion. External stores/repos and `.aitp` directories are
   never accessed.
 
-- [ ] **Fail-closed baseline rule**: After this reviewed Phase 1 plan commit,
-  the set of S0 changed/created paths relative to that commit MUST be a
-  subset of the Allowed new/modify S0 paths below. Every tracked path
-  existing at the plan commit outside that allowlist must remain
-  byte-identical. Under `tests/**`, existing files are protected; only new
-  files under `tests/aitp2/**` and `tests/fixtures/aitp2/**` are allowed.
-  The active spec and plan are not authorized for silent S0 edits; any
-  later normative change requires a separate reviewed amendment before S0
-  continues. The authority guard and S0 simplicity ratchet must compare
-  against the reviewed Phase 1 plan commit and fail on any path outside the
-  exact S0 allowlist or any modified pre-existing historical file under
-  protected roots.
+- [ ] **Fail-closed baseline rule**: After the AUTHORITY_COMMIT (the pushed
+  SHA of this two-doc amendment), the set of S0 changed/created paths
+  relative to that commit MUST be a subset of the Allowed new/modify S0
+  paths below. Every tracked path existing at AUTHORITY_COMMIT outside that
+  allowlist must remain byte-identical. Under `tests/**`, existing files are
+  protected; only new files under `tests/aitp2/**` and
+  `tests/fixtures/aitp2/**` are allowed. The active spec and plan are not
+  authorized for silent S0 edits; any later normative change requires a
+  separate reviewed amendment before S0 continues. The authority guard and
+  S0 simplicity ratchet must compare against AUTHORITY_COMMIT and fail on
+  any path outside the exact S0 allowlist or any modified pre-existing
+  historical file under protected roots.
 
   **Allowed new/modify S0 paths**: S0 may create or modify files only under:
   - `tests/aitp2/**` — validators, test files, synthetic test fixtures
@@ -1241,12 +1470,12 @@ present. These are NOT enforced in S0 CI.
   These allowed paths are precise exceptions to baseline protection, not
   exceptions that permit modifying pre-existing historical files.
   `docs/superpowers/progress/<date>-aitp-2-0-s0-acceptance.md` may be newly
-  created only; current plan/spec changes happen now in Phase 1, not during
-  S0. Any S0-created file outside these allowed paths → S0 FAIL. The T1a
-  decision register and provenance stubs (allowed before Gate B) live under
-  `tests/fixtures/aitp2/`; custom validators, fixture corpus, and production
-  artifacts are forbidden before Gate B per §10.2. U1 and Gate B ordering
-  unchanged.
+    created only; S0/T2 regeneration begins after pushed AUTHORITY_COMMIT +
+    successful T0, then produces reviewed T2 PASS; only after T2 PASS does T3+
+    begin. T1a (decision register, provenance stubs), Oracle Gate B, and T1b
+    (validator skeleton) are historical completed prerequisites and are not
+    repeated. The current execution order is: AUTHORITY_COMMIT → T0 preflight
+    → T2 regeneration/validation → reviewed T2 PASS → T3+.
 - [ ] Zero unresolved `user-decision-required` in decision register.
 - [ ] Local HEAD equals remote HEAD for this branch.
 - [ ] `python3 scripts/check_repository_authority.py` exits 0.
@@ -1322,24 +1551,30 @@ This amendment requires:
 
 For the historical Phase 1 amendment, only after both Council and Oracle Gate A
 passed could the exact four-path commit and push proceed. After the current
-two-path authority amendment is separately reviewed and committed, S0 follows:
-1. T1a creates `S0_DECISIONS.json` (copying frozen D1–D9 decisions; U1 frozen traceability-only)
-   and pre-read `FIXTURE_PROVENANCE.md` — these are the only S0 artifacts
-   allowed before Gate B.
-2. Oracle Gate B reviews those T1a artifacts (not the spec amendment).
-3. Only after Gate B passes may T1b (validator skeleton), custom validators,
-   fixture corpus, or production package/CLI be created.
+two-path authority amendment is separately reviewed and committed (pushed),
+the correct dependency order is:
+1. T0: clean-tree/remote/guard preflight (depends on pushed AUTHORITY_COMMIT).
+2. T2: regenerate FREEZE.json and T2 validator modules from the amended active
+   spec, using AUTHORITY_COMMIT as the authority anchor/baseline input;
+   execute all oracle/schema/vector/negative validation and achieve reviewed
+   T2 PASS. T2's Depends-on explicitly consumes recorded AUTHORITY_COMMIT as
+   baseline input.
+3. Only after reviewed T2 PASS: T3 (fixture authorization/provenance,
+   authorized sanitized structural fixtures with provenance).
+4. T4: simplicity ratchet and S0 CI workflow.
+5. T5: acceptance packet / S0 Acceptance Gate.
+
+T1a (decision register, provenance stubs), Oracle Gate B, and T1b (validator
+skeleton) are historical completed prerequisites and are NOT repeated.
 
 ### 10.3 Future S0 Execution Commits
 
-S0 execution (when authorized) follows T0–T5:
-1. T1a: `docs: establish S0 decisions and authorization record`
-2. Oracle Gate B review
-3. T1b: `test: establish S0 validator core`
-4. T2: `test: reviewed FREEZE.json oracle with authority anchors and synthetic negative suite`
-5. T3: `test: authorized sanitized structural fixtures with provenance`
-6. T4: `ci: S0 simplicity ratchet and contract workflow`
-7. T5: `docs: S0 freeze acceptance`
+S0 execution follows T0–T5 (T1a/GateB/T1b are historical completed):
+1. T0: preflight (rerun after this amendment commit)
+2. T2: `test: reviewed FREEZE.json oracle with authority anchors and synthetic negative suite`
+3. T3: `test: authorized sanitized structural fixtures with provenance`
+4. T4: `ci: S0 simplicity ratchet and contract workflow`
+5. T5: `docs: S0 freeze acceptance`
 
 ### 10.4 Gate Naming
 
@@ -1347,20 +1582,19 @@ S0 execution (when authorized) follows T0–T5:
   code-shape coherence) before Oracle Gate A. Completed and passed for the
   Phase 1 four-path commit.
 - **Council review (current)**: reviews the decision coherence and spec
-  consistency of the two-path T1a authority amendment. Pending.
+  consistency of this two-path authority amendment. Pending.
 - **Oracle Gate A (completed, historical)**: reviewed the Phase 1 amended
   plan only (plan-only, before the four-path commit). Renewed from the
   original Oracle Gate 3 (renamed Gate A) to reflect the Phase 1 scope.
   Gate A passed; commit `7de57f34` reflects the reviewed state.
 - **Independent Oracle review (current)**: reviews the exact two tracked
-  paths (active spec + S0 plan) of the T1a authority amendment. This is a
+  paths (active spec + S0 plan) of this authority amendment. This is a
   focused review distinct from historical Gate A — it does not re-open
   Gate A's scope and is not a new named gate. Pending.
-- **Oracle Gate B**: reviews T1a artifacts (decisions, authorization stubs)
-  before any custom validator or fixture corpus is created; the T1a decision
-  register and pre-read provenance stubs are the only allowed exceptions.
-  Must pass before T1b begins. Gate B reviews artifacts only, not the spec
-  amendment. Gate B does NOT say validator exists before gates.
+- **T1a, Oracle Gate B, T1b (historical completed)**: T1a created the
+  decision register and provenance stubs; Oracle Gate B reviewed T1a
+  artifacts; T1b produced the validator skeleton. All three are historical
+  prerequisites and are not repeated in this amendment's execution.
 - **S0 Acceptance Gate**: final S0 execution gate (independent review of
   T1a + Gate B + T1b + T2 + T3 + T4 + T5).
 
