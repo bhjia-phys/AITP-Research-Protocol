@@ -1,0 +1,242 @@
+{
+  "protocol": "aitp/2.0",
+  "artifact": "S0/T1a",
+  "stage": "S0_DECISIONS",
+  "state": "ready_for_gate_b_review",
+  "description": "Populated decision register for Oracle Gate B review. All D1–D9 plus U1 are frozen. This JSON is review/test evidence, not a second normative authority — the active spec §6 T1a subsection and S0 plan §3.1 are the sole normative truth. All decided_at dates herein are noncanonical JSON-evidence timestamps, not canonical Markdown frontmatter timestamps governed by D1.",
+  "t0_metadata": {
+    "branch": "codex/aitp-2-authority-cutover",
+    "head": "fbfcd6d4856e62b289026e6171e81054dba9ea89",
+    "origin_main": "eec20f6faeb089ec2fcdc982ad65adce242a21a9",
+    "cutover_ancestor": "389b3149ef9f6dd054ed82e0e7821c2868a4972e",
+    "phase1_ancestor": "7de57f34ae3b77f133cee83ac8ee44084bb42c81",
+    "authority_commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89",
+    "t0_verified_at": "2026-07-23",
+    "t0_checks": {
+      "ancestor_389b3149": true,
+      "ancestor_7de57f34": true,
+      "local_equals_remote": true,
+      "tree_clean": true,
+      "authority_guard_pass": true,
+      "origin_main_baseline_match": true
+    }
+  },
+  "approval_evidence": {
+    "decided_by": "human:bhjia",
+    "decided_at": "2026-07-23",
+    "method": "Explicit user decisions in this session — D1–D6 and D8–D9 resolved by user on 2026-07-23; D7 and U1 previously frozen and now confirmed for T1a traceability. No private locator or external evidence required."
+  },
+  "decisions": [
+    {
+      "id": "D1",
+      "decision": "Timestamp lexical form",
+      "status": "frozen",
+      "decided_by": "human:bhjia",
+      "decided_at": "2026-07-23",
+      "summary": "YYYY-MM-DDTHH:MM:SSZ UTC, uppercase Z only, no offset/space/fractional seconds. Applies to created_at, decided_at, and review/approval timestamps in canonical frontmatter.",
+      "authority_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-20-aitp-2-0-command-skill-protocol-design.md",
+          "section": "§6 T1a — D1 Timestamp Lexical Form",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-07-23-aitp-2-0-s0-contract-and-fixture-freeze-plan.md",
+          "section": "§3.1 Decision Table D1",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        }
+      ]
+    },
+    {
+      "id": "D2",
+      "decision": "created_by identity format",
+      "status": "frozen",
+      "decided_by": "human:bhjia",
+      "decided_at": "2026-07-23",
+      "summary": "human:<slug> or agent:<slug>. Slug grammar [a-z0-9]+(?:[._-][a-z0-9]+)*, 1–64 code points, no whitespace/uppercase/consecutive delimiters. decided_by and reviewer must use human:. created_by and assessor.identity may use either.",
+      "authority_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-20-aitp-2-0-command-skill-protocol-design.md",
+          "section": "§6 T1a — D2 Identity Form",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-07-23-aitp-2-0-s0-contract-and-fixture-freeze-plan.md",
+          "section": "§3.1 Decision Table D2",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        }
+      ]
+    },
+    {
+      "id": "D3",
+      "decision": "YAML subset for frontmatter",
+      "status": "frozen",
+      "decided_by": "human:bhjia",
+      "decided_at": "2026-07-23",
+      "summary": "Stdlib-only test parser; bounded block-style YAML subset. Exact line grammar frozen: 2-space indent, map scalar <key>: <scalar>, map container <key>:, sequence scalar <indent>- <scalar>, sequence container <indent>-, no blank lines, no map/sequence mixing. Frozen scalar dispatch order: token begins \"→parse entire token as JSON double-quoted form; else exact []/{}→empty sentinels before plain checks; else plain. Plain scalar positional first-char restrictions: forbidden !, &, *, %, @, |, >, \", ', {, [, `; and -, ?, : only when followed by space/EOL; leading # forbidden; bare #anchor=... requires JSON quote; internal :  and  # forbidden within plain scalar; internal # not preceded by space (e.g. path.md#anchor=...) is plain data. JSON double-quoted string via stdlib json.loads for ambiguous content (starts with indicator, contains :  or  #, equals reserved typed token, needs escaping); post-decode string must be nonempty single-line printable, no CR/LF/ASCII controls, no leading/trailing whitespace; escaped newline/control cannot bypass. Single-quoted/YAML-specific quotes forbidden. Typed interpretation: true/false→bool, 0|[1-9][0-9]*→int, []/{}→empty collection, else string. Comments completely forbidden. Duplicate keys rejected at every level; unknown fields rejected. Deterministic error mapping: malformed/duplicate/unknown→primary profile_mismatch; candidate validation entry {check_id: frontmatter_profile, status: fail}; optional secondary validation_failed may appear ONLY in common envelope errors[] and cannot override primary profile_mismatch because of frozen total order.",
+      "summary_scope": "This summary is a machine-readable synopsis. Validators MUST resolve and enforce the complete committed authority referenced by authority_refs. Any omission from this synopsis never creates permission; the authoritative specification at the referenced commits governs.",
+      "authority_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-20-aitp-2-0-command-skill-protocol-design.md",
+          "section": "§6 T1a — D3 Bounded YAML / Frontmatter Subset + Parser Policy",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-07-23-aitp-2-0-s0-contract-and-fixture-freeze-plan.md",
+          "section": "§3.1 Decision Table D3",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        }
+      ]
+    },
+    {
+      "id": "D4",
+      "decision": "Duplicate YAML keys",
+      "status": "frozen",
+      "decided_by": "human:bhjia",
+      "decided_at": "2026-07-23",
+      "summary": "Duplicate mapping keys rejected at every nesting level before any last-key-wins or silent-overwrite behavior. Fail closed with profile_mismatch per D3 deterministic error mapping.",
+      "authority_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-20-aitp-2-0-command-skill-protocol-design.md",
+          "section": "§6 T1a — D4 Duplicate Keys Rejected",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-07-23-aitp-2-0-s0-contract-and-fixture-freeze-plan.md",
+          "section": "§3.1 Decision Table D4",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        }
+      ]
+    },
+    {
+      "id": "D5",
+      "decision": "ULID case normalization",
+      "status": "frozen",
+      "decided_by": "human:bhjia",
+      "decided_at": "2026-07-23",
+      "summary": "Uppercase Crockford Base32: [0-9A-HJKMNP-TV-Z]{26} (26 characters). Reject lowercase (a–z) and forbidden letters I, L, O, U. Prefixes use short forms per spec §6 exhaustive role-prefix list: ent-, route-, stmt-, ep-, assess-, asset-, rel-. Asset owner records use asset-<ULID> only. run-<ULID> retired.",
+      "authority_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-20-aitp-2-0-command-skill-protocol-design.md",
+          "section": "§6 T1a — D5 ULID Canonical Form",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-07-23-aitp-2-0-s0-contract-and-fixture-freeze-plan.md",
+          "section": "§3.1 Decision Table D5",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        }
+      ]
+    },
+    {
+      "id": "D6",
+      "decision": "Encoding and newline",
+      "status": "frozen",
+      "decided_by": "human:bhjia",
+      "decided_at": "2026-07-23",
+      "summary": "UTF-8 without BOM. No CR (U+000D) bytes. LF (U+000A) exclusively for line endings. Exactly one trailing LF — no additional blank line bytes after it. Applies to all canonical Markdown files.",
+      "authority_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-20-aitp-2-0-command-skill-protocol-design.md",
+          "section": "§6 T1a — D6 File Encoding and Newline",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-07-23-aitp-2-0-s0-contract-and-fixture-freeze-plan.md",
+          "section": "§3.1 Decision Table D6",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        }
+      ]
+    },
+    {
+      "id": "D7",
+      "decision": "Full Git object-id in refs",
+      "status": "frozen",
+      "decided_by": "human:bhjia",
+      "decided_at": "2026-07-23",
+      "summary": "Previously frozen — now copied/confirmed for T1a traceability. Use whatever full object-id the owning Git resolves and emits. No fixed hex length. Interactive show may accept unambiguous abbreviations but emits the full id. No change from prior authority.",
+      "resolution_note": "Previously frozen (pre-T1a). Confirmed unchanged for traceability.",
+      "authority_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-20-aitp-2-0-command-skill-protocol-design.md",
+          "section": "§6.1 Ref Resolution — D7 Git Object-Id",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-07-23-aitp-2-0-s0-contract-and-fixture-freeze-plan.md",
+          "section": "§3.1 Decision Table D7",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        }
+      ]
+    },
+    {
+      "id": "D8",
+      "decision": "Field order non-normative",
+      "status": "frozen",
+      "decided_by": "human:bhjia",
+      "decided_at": "2026-07-23",
+      "summary": "Equality is semantic (parsed key/value pairs), not byte-order. Validators MUST NOT reject a record solely for key reordering. Sequence element order is normative where a field is semantically a list. Writers may produce stable display order for human readability but that order is not authority.",
+      "authority_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-20-aitp-2-0-command-skill-protocol-design.md",
+          "section": "§6 T1a — D8 Field Order Non-Normative",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-07-23-aitp-2-0-s0-contract-and-fixture-freeze-plan.md",
+          "section": "§3.1 Decision Table D8",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        }
+      ]
+    },
+    {
+      "id": "D9",
+      "decision": "Unknown frontmatter fields",
+      "status": "frozen",
+      "decided_by": "human:bhjia",
+      "decided_at": "2026-07-23",
+      "summary": "Rejected at every level including nested objects (e.g. assessor). Exact set is 7 common fields + required/optional additional fields for selected type/kind/overlay profile. Fail closed with profile_mismatch per D3 error mapping. approval_binding is NOT a nested frontmatter example — it is runtime CANDIDATE JSON/commit metadata. New frontmatter field requires reviewed protocol amendment or version change.",
+      "authority_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-20-aitp-2-0-command-skill-protocol-design.md",
+          "section": "§6 T1a — D9 Closed Field Set",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-07-23-aitp-2-0-s0-contract-and-fixture-freeze-plan.md",
+          "section": "§3.1 Decision Table D9",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        }
+      ]
+    },
+    {
+      "id": "U1",
+      "decision": "S0 wheel/resource and legacy-read stage interpretation",
+      "status": "frozen",
+      "decided_by": "human:bhjia",
+      "decided_at": "2026-07-23",
+      "summary": "Previously frozen — now copied/confirmed for T1a traceability. S0 = pure contract/oracle/fixture/static test-only validation. S1 = production CLI/wheel/resources/legacy reader/CLI runtime acceptance. Package/import/wheel expectations in S0 are future contract + absence ratchet only. Not re-opened.",
+      "resolution_note": "Previously frozen (user decision 2026-07-23, pre-T1a). Confirmed unchanged for traceability. No new gate or decision required at T1a.",
+      "authority_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-20-aitp-2-0-command-skill-protocol-design.md",
+          "section": "§17 Implementation Sequence — S0/S1 Boundary (U1)",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-07-23-aitp-2-0-s0-contract-and-fixture-freeze-plan.md",
+          "section": "§3.1 Decision Table U1",
+          "commit": "fbfcd6d4856e62b289026e6171e81054dba9ea89"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "total_decisions": 10,
+    "frozen_count": 10,
+    "user_decision_required_count": 0,
+    "explicitly_deferred_count": 0,
+    "forbidden_statuses_absent": ["TBD", "pending", "discuss", "blank"],
+    "decision_ids_exact_set": ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "U1"]
+  }
+}
