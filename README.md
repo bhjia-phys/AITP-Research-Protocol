@@ -111,6 +111,7 @@ must remain inspectable, evidence-linked, uncertainty-aware, and correctable.
 | Stage | Outcome | Exit gate |
 |---|---|---|
 | M0 — Ledger | Reliable single-Topic records and Notes | Idempotent writes, pinned evidence, grounded `enter`, real-project use |
+| M0.5 — Slim core | One small canonical runtime with measured startup and no copied implementation | No runtime source duplication, no oversized module, unchanged ledger contracts |
 | M1 — Graph | Multi-Topic catalog, sync, query, and explicit links | Three Topics query with provenance; index rebuild is deterministic |
 | M2 — Compilers | Physical knowledge, Skill candidates, Insights, briefs | Complete provenance, contradiction handling, evaluations, human approval |
 | M3 — Context engine | Task-aware Context Packets and inspectable write policy | A fresh session resumes real work with correct conventions, evidence, failures, and commitments |
@@ -121,6 +122,31 @@ We advance one gate at a time. Later stages may not weaken earlier evidence guar
 Multi-user synchronization, permissions, and remote federation are optional
 infrastructure, not a core milestone. Git and author/reviewer provenance are
 sufficient until real team use demonstrates a stronger requirement.
+
+## Complexity budget
+
+AITP must remain a protocol with a small deterministic tool, not grow into an
+agent framework.
+
+- Keep one canonical copy of runtime source. Plugin packaging must not create a
+  second hand-maintained implementation.
+- Keep each Python module below 400 nonblank lines. Split by stable
+  responsibility, not by abstract framework layers.
+- Freeze the M0 command surface: `init`, `enter`, `record`, and `note`.
+- Python may parse, validate, persist, project, and benchmark records. Physical
+  reasoning, synthesis, and collaboration policy belong in Skills and reviewed
+  artifacts.
+- Build the first graph projection as deterministic JSONL. Add SQLite/FTS only
+  if a reproducible realistic benchmark shows JSONL lookup is insufficient.
+- Do not add a required database, vector service, MCP server, hook, daemon,
+  scheduler, event bus, dependency-injection system, or plugin framework.
+- Target installed-plugin startup below 250 ms for `--help` and below one
+  second for `enter` on a 1,000-Entry fixture.
+- A new feature must include a measured use case, an acceptance test, and its
+  effect on code size and startup time.
+
+If a milestone cannot fit these constraints, reduce its scope before expanding
+the runtime.
 
 ## Current state
 
@@ -141,14 +167,16 @@ Properties:
 - the ledger has been validated against a real theoretical-physics workspace;
 - all current tests pass.
 
-M1 is the active design and implementation stage on `research-graph`.
+M0.5 is the next implementation stage. M1 remains the active product design,
+but graph code must not land until the slim-core gate passes.
 
 ## Branch policy
 
 ```text
 main            stable integrated protocol, roadmap, and released capabilities
 ledger-core     immutable M0 ledger baseline
-research-graph  active M1 development
+slim-core       active M0.5 runtime simplification
+research-graph  M1 design baseline; runtime work waits for M0.5
 ```
 
 The former repository implementation is retained separately as `legacy/v5-final` during repository cutover. Old authority and experimental branches are archival evidence, not active product lines.

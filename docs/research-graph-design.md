@@ -25,7 +25,9 @@ Topic repositories ──> Research Graph ──> cross-Topic views
 - Do not copy canonical artifacts into the graph.
 - Inferred links remain proposals until explicitly saved.
 - No required vector service, MCP server, hook, or daemon.
-- A local SQLite/FTS index is allowed only as a disposable cache.
+- The first implementation uses deterministic JSONL and ordinary filesystem
+  lookup. SQLite/FTS is deferred until a reproducible realistic benchmark
+  demonstrates the need, and may then exist only as a disposable cache.
 - Generated Skills are never published automatically.
 
 ## Workspace
@@ -41,7 +43,6 @@ Topic repositories ──> Research Graph ──> cross-Topic views
 │   └── evals.yaml
 └── local/
     ├── roots.toml
-    ├── graph.sqlite
     ├── graph.jsonl
     ├── snapshots/
     └── locks/
@@ -49,6 +50,9 @@ Topic repositories ──> Research Graph ──> cross-Topic views
 
 Versioned: portable Topic identities, explicit links, Skill candidates.
 Local: absolute paths, derived indexes, snapshots, locks.
+
+`graph.sqlite` may be added under `local/` later only if the benchmark gate is
+met. It is not part of the initial contract.
 
 ## Catalog
 
@@ -88,9 +92,12 @@ Every explicit edge records source, target, rationale, author, time, limitations
 
 ## Index and lookup
 
-`graph.sqlite` stores normalized nodes, edges, FTS text, source paths, locators, hashes, and sync times. It must rebuild deterministically from Topic stores and explicit links.
+`graph.jsonl` stores normalized nodes, edges, searchable text, source paths,
+locators, hashes, and sync times. It is the initial index and remains readable
+with `rg`.
 
-`graph.jsonl` is the portable fallback readable with `rg`. No vector index is required.
+Any later `graph.sqlite` cache must rebuild deterministically from the same
+Topic stores, explicit links, and JSONL projection. No vector index is required.
 
 A query result must include:
 
@@ -165,7 +172,7 @@ Graph answers cite sources and disclose stale or unavailable Topics.
 ## Delivery stages
 
 1. G0: schemas, fixtures, errors.
-2. G1: catalog, sync, JSONL/SQLite, query.
+2. G1: catalog, sync, JSONL, and query.
 3. G2: explicit links and neighborhood views.
 4. G3: candidate generation, provenance, evaluations.
 5. G4: approval-gated publication and plugin Skills.
@@ -174,6 +181,7 @@ Graph answers cite sources and disclose stale or unavailable Topics.
 
 - Three fixture Topics query with exact provenance.
 - Deleting and rebuilding the index gives the same projection.
+- A 1,000-Entry benchmark completes within the repository performance budget.
 - Missing Topic roots remain visible as stale.
 - Suggested links cannot become durable without `link save`.
 - Missing provenance blocks `distill check`.
