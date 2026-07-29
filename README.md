@@ -1,3 +1,5 @@
+> 追求真理，而不是沽名钓誉。
+
 <p align="center">
   <img src="plugins/aitp-research-protocol/assets/icon.svg" alt="AITP icon" width="128" height="128">
 </p>
