@@ -1,12 +1,12 @@
 # AITP Research Graph
 
 Status: design baseline
-Base: `memory-core`
+Base: `ledger-core`
 Development: `research-graph`
 
 ## Goal
 
-Build two layers above single-Topic memory:
+Build two layers above the single-Topic evidence ledger:
 
 1. grounded knowledge management and lookup across multiple Topics;
 2. provenance-preserving Skill distillation from one Topic.
@@ -104,7 +104,7 @@ The query layer returns evidence-bearing matches, not an unsupported synthesized
 
 ## Commands
 
-Memory-core commands remain unchanged. This branch adds:
+Ledger commands remain unchanged. This branch adds:
 
 ```text
 aitp graph init
@@ -178,4 +178,4 @@ Graph answers cite sources and disclose stale or unavailable Topics.
 - Suggested links cannot become durable without `link save`.
 - Missing provenance blocks `distill check`.
 - Publication requires explicit approval.
-- All memory-core tests remain unchanged and pass.
+- All ledger tests remain unchanged and pass.

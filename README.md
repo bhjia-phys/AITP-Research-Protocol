@@ -14,7 +14,8 @@ After weeks or years of work, a new session should be able to:
 - connect a current problem to relevant results from other Topics;
 - distinguish physical knowledge, reusable procedure, and speculative Insight;
 - propose a reusable Skill with provenance and evaluations;
-- collaborate with several people without erasing disagreement or private context.
+- work with a researcher across many sessions without losing corrections,
+  commitments, or the reasoning behind the current direction.
 
 AITP records project memory, not scientific truth. Evidence and human judgment remain authoritative.
 
@@ -29,9 +30,9 @@ Research graph
       ↓
 Knowledge / Skill / Insight compilers
       ↓
-Collaborator memory and context selection
+Conversation memory orchestration
       ↓
-Multi-researcher project federation
+Scientific collaborator loop
 ```
 
 ### 1. Research artifacts
@@ -71,30 +72,39 @@ The same evidence can produce different reviewed artifacts:
 
 Every compiled statement must map back to source records. Compilation never silently promotes a hypothesis into knowledge.
 
-### 5. Collaborator memory
+### 5. Conversation memory orchestration
 
-The collaborator layer decides what to read and when to propose a record. It should:
+M3 connects the preceding layers to each research conversation. It does not
+add another source of truth. It:
 
-- enter the relevant Topic at session start;
-- remember notation, physical conventions, computational constraints, and ownership;
-- retrieve prior failures before repeating an attempt;
-- notice contradictions and ask for resolution;
-- propose durable records at meaningful moments rather than logging every message;
-- retain commitments, open questions, and next actions;
-- provide compact context instead of dumping the complete archive.
+- detects the current workspace, Topic, task, and context budget;
+- builds a compact Context Packet containing the active question, conventions,
+  constraints, relevant decisions and failures, reviewed knowledge, useful
+  Skills, candidate Insights, open commitments, and exact evidence references;
+- refreshes that packet when the task, object, method, or assumptions change;
+- proposes an Entry only at a durable research event, using the existing
+  `prepare → validate on save → commit` path;
+- records corrections and closeout state so the next session can resume;
+- explains why each item was included, omitted, or marked stale.
 
-Automatic behavior remains inspectable: the agent explains what it read, what it proposes to write, and which evidence supports it.
+The agent may write an attributable agent Entry when workspace policy allows
+it. Decisions, promoted knowledge, published Skills, and accepted Insights
+remain human-gated. See [Collaborator Design](docs/collaborator-design.md).
 
-### 6. Project federation
+### 6. Scientific collaborator loop
 
-Long-term team collaboration requires:
+M4 is the actual research-collaboration layer. It uses grounded memory to:
 
-- shared and private memory boundaries;
-- author and reviewer identity;
-- concurrent edits and explicit conflict handling;
-- portable Topic catalogs across machines;
-- auditable publication of Knowledge Cards and Skills;
-- selective sharing across projects rather than one global memory pool.
+- maintain active questions, competing hypotheses, assumptions, predictions,
+  tests, outcomes, and contradictions;
+- challenge a proposed step with known failures or validity limits;
+- suggest the next derivation, calculation, source check, or numerical test;
+- record predictions before seeing outcomes and compare the result afterward;
+- turn supported Insights into reviewed knowledge while preserving rejected
+  alternatives and uncertainty.
+
+M4 is not a claim that the agent is an autonomous scientist. Its contribution
+must remain inspectable, evidence-linked, uncertainty-aware, and correctable.
 
 ## Roadmap
 
@@ -103,15 +113,18 @@ Long-term team collaboration requires:
 | M0 — Ledger | Reliable single-Topic records and Notes | Idempotent writes, pinned evidence, grounded `enter`, real-project use |
 | M1 — Graph | Multi-Topic catalog, sync, query, and explicit links | Three Topics query with provenance; index rebuild is deterministic |
 | M2 — Compilers | Physical knowledge, Skill candidates, Insights, briefs | Complete provenance, contradiction handling, evaluations, human approval |
-| M3 — Collaborator | Conversation-aware read/write proposals and context selection | A fresh session resumes real work without hidden state or repeated failures |
-| M4 — Team | Multi-researcher permissions, review, merge, and sharing | Concurrent collaboration remains attributable and auditable |
-| M5 — Research intelligence | Cross-project synthesis and hypothesis support | Suggestions remain evidence-linked, uncertainty-calibrated, and human-gated |
+| M3 — Context engine | Task-aware Context Packets and inspectable write policy | A fresh session resumes real work with correct conventions, evidence, failures, and commitments |
+| M4 — Scientific collaborator | Long-horizon question → hypothesis → prediction → test → outcome loop | Real projects are advanced without unsupported recall, hidden state, or hindsight rewriting |
 
 We advance one gate at a time. Later stages may not weaken earlier evidence guarantees.
 
+Multi-user synchronization, permissions, and remote federation are optional
+infrastructure, not a core milestone. Git and author/reviewer provenance are
+sufficient until real team use demonstrates a stronger requirement.
+
 ## Current state
 
-M0 is implemented as AITP Research Memory:
+M0 is implemented as the AITP Evidence Ledger:
 
 ```text
 aitp init
@@ -134,7 +147,7 @@ M1 is the active design and implementation stage on `research-graph`.
 
 ```text
 main            stable integrated protocol, roadmap, and released capabilities
-memory-core     immutable M0 ledger baseline
+ledger-core     immutable M0 ledger baseline
 research-graph  active M1 development
 ```
 
@@ -147,9 +160,9 @@ Feature branches should be short-lived. Stable milestones land on `main`; perman
 ```text
 .agents/plugins/                  local Codex marketplace
 docs/                             concise active designs
-plugins/aitp-research-memory/     installable Codex plugin
+plugins/aitp-research-protocol/   installable Codex plugin
 src/aitp/                         standalone runtime
-tests/aitp_lite/                  ledger and plugin contracts
+tests/ledger/                     ledger and plugin contracts
 ```
 
 The repository contains no compatibility runtime for former implementations.
@@ -159,8 +172,8 @@ The repository contains no compatibility runtime for former implementations.
 Install the local Codex plugin:
 
 ```bash
-codex plugin marketplace add /absolute/path/to/AITP-Research-Memory
-codex plugin add aitp-research-memory@aitp-memory
+codex plugin marketplace add /absolute/path/to/AITP-Research-Protocol
+codex plugin add aitp-research-protocol@aitp-protocol
 ```
 
 Start a new Codex session and invoke:
@@ -195,6 +208,7 @@ python3.12 -m venv .venv
 - not a transcript archive;
 - not a vector database presented as memory;
 - not an autonomous scientific authority;
+- not a general-purpose team permissions or synchronization platform;
 - not a replacement for Git, notebooks, papers, or human review;
 - not a reason to record every conversational detail.
 
