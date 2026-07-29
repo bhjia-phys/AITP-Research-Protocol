@@ -109,7 +109,8 @@ def _safe_slug(value: str, label: str) -> str:
 
 def _git_root(start: Path) -> Path | None:
     for candidate in (start, *start.parents):
-        if (candidate / ".git").exists():
+        marker = candidate / ".git"
+        if marker.is_file() or (marker.is_dir() and (marker / "HEAD").is_file()):
             return candidate
     return None
 

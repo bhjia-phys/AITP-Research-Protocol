@@ -1,7 +1,7 @@
 # {title}
 
 This repository is a theoretical-physics research workspace initialized by
-AITP Lite.
+AITP Research Protocol.
 
-Canonical memory lives in `.aitp/topic/`. Research artifacts remain in the
+The canonical evidence ledger lives in `.aitp/topic/`. Research artifacts remain in the
 ordinary top-level folders.

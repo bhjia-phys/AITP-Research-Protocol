@@ -38,7 +38,7 @@ def build_parser() -> argparse.ArgumentParser:
     init.add_argument("--dry-run", action="store_true")
     init.add_argument("--json", action="store_true")
 
-    enter = commands.add_parser("enter", help="return grounded recorded memory")
+    enter = commands.add_parser("enter", help="return grounded recorded research state")
     enter.add_argument("--cwd", default=".")
     enter.add_argument("--recent", type=int, default=20)
     enter.add_argument("--json", action="store_true")

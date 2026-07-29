@@ -1,6 +1,6 @@
 ---
 name: using-aitp
-description: Use AITP as the local research memory while working in a theoretical-physics repository. Trigger when entering or resuming a project, after a durable result, failure, decision, source assessment, code change, reproducible run, or closeout, and when writing a working or theory note from recorded evidence.
+description: Use AITP Research Protocol to recover and preserve grounded research state while working in a theoretical-physics repository. Trigger when entering or resuming a project, after a durable result, failure, decision, source assessment, code change, reproducible run, or closeout, and when writing a working or theory note from recorded evidence.
 ---
 
 # Using AITP
@@ -46,7 +46,7 @@ The CLI template is the schema. Keep claims small, state limitations, and distin
 - Use `git`, `sha256`, `run`, `version`, or `retrieved` pins for evidence that may change.
 - Reuse the same idempotency key when retrying the same logical write.
 
-## Write a note from memory
+## Write a note from recorded evidence
 
 Use a Note for synthesis, not as the only evidence for a result:
 

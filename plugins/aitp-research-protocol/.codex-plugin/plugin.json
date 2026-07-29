@@ -1,7 +1,7 @@
 {
-  "name": "aitp-research-memory",
+  "name": "aitp-research-protocol",
   "version": "0.1.0",
-  "description": "Lightweight, evidence-grounded local research memory for theoretical physics",
+  "description": "Local-first, evidence-grounded research protocol for theoretical physics",
   "author": {
     "name": "Bohan Jia",
     "email": "bhjia@users.noreply.github.com",
@@ -9,6 +9,7 @@
   },
   "license": "MIT",
   "keywords": [
+    "research-protocol",
     "research-memory",
     "theoretical-physics",
     "notes",
@@ -16,9 +17,9 @@
   ],
   "skills": "./skills/",
   "interface": {
-    "displayName": "AITP Research Memory",
-    "shortDescription": "Grounded local memory for theoretical-physics research.",
-    "longDescription": "Initialize a research workspace, recover source-linked project state, record durable results and failures, and write evidence-based working or theory notes.",
+    "displayName": "AITP Research Protocol",
+    "shortDescription": "Grounded research continuity for theoretical physics.",
+    "longDescription": "Initialize a research workspace, recover source-linked project state, record durable results and failures, and evolve them into graph, knowledge, Skill, Insight, and collaborator layers.",
     "developerName": "bhjia-phys",
     "category": "Productivity",
     "capabilities": [

@@ -1,4 +1,4 @@
-# AITP Research Memory Design
+# AITP Evidence Ledger Design
 
 ## Purpose
 
@@ -11,7 +11,7 @@ AITP preserves the small amount of research state that must survive across conve
 - what should happen next;
 - which synthesis Notes are grounded in those records.
 
-It records project memory, not scientific truth.
+It records project evidence and working state, not scientific truth.
 
 ## Repository model
 

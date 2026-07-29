@@ -1,6 +1,6 @@
 ---
 name: aitp
-description: Explicit short entrypoint for the installed AITP Research Memory plugin. Use only when the user invokes $aitp to enter, initialize, read, record, or write Notes in a theoretical-physics research workspace.
+description: Explicit short entrypoint for the installed AITP Research Protocol plugin. Use only when the user invokes $aitp to enter, initialize, read, record, or write Notes in a theoretical-physics research workspace.
 ---
 
 # AITP

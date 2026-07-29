@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 REPOSITORY = Path(__file__).resolve().parents[2]
-PLUGIN = REPOSITORY / "plugins" / "aitp-research-memory"
+PLUGIN = REPOSITORY / "plugins" / "aitp-research-protocol"
 RUNNER = PLUGIN / "scripts" / "aitp.py"
 
 
@@ -31,11 +31,11 @@ def test_plugin_manifest_and_marketplace_are_wired() -> None:
         )
     )
 
-    assert manifest["name"] == "aitp-research-memory"
+    assert manifest["name"] == "aitp-research-protocol"
     assert manifest["skills"] == "./skills/"
-    assert marketplace["name"] == "aitp-memory"
+    assert marketplace["name"] == "aitp-protocol"
     assert marketplace["plugins"][0]["source"]["path"] == (
-        "./plugins/aitp-research-memory"
+        "./plugins/aitp-research-protocol"
     )
 
 

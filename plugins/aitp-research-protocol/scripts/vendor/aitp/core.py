@@ -1,4 +1,4 @@
-"""Stable public API over the private AITP Lite engine."""
+"""Stable public API for the AITP Evidence Ledger."""
 
 from __future__ import annotations
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the AITP Lite CLI bundled with the Codex plugin."""
+"""Run the AITP Research Protocol CLI bundled with the Codex plugin."""
 
 from __future__ import annotations
 

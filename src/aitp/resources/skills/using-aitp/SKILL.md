@@ -1,11 +1,11 @@
 ---
 name: using-aitp
-description: Use AITP Lite as the local research memory while working in an initialized theoretical-physics repository. Trigger when entering or resuming a project, after a durable result, failure, decision, source assessment, code change, reproducible run, or closeout, and when writing a working or theory note from recorded evidence.
+description: Use AITP Research Protocol to recover and preserve grounded research state in an initialized theoretical-physics repository. Trigger when entering or resuming a project, after a durable result, failure, decision, source assessment, code change, reproducible run, or closeout, and when writing a working or theory note from recorded evidence.
 ---
 
 # Using AITP
 
-Use the `aitp` CLI for durable memory. Use ordinary filesystem tools and `rg` for ad hoc reading; there is no `aitp search`.
+Use the `aitp` CLI for the durable evidence ledger. Use ordinary filesystem tools and `rg` for ad hoc reading; there is no `aitp search`.
 
 ## Start or resume work
 
@@ -41,7 +41,7 @@ The CLI template is the schema. Do not invent a second record format. Keep claim
 
 Reuse the same idempotency key when retrying the same logical write.
 
-## Write a note from memory
+## Write a note from recorded evidence
 
 Use a note for synthesis, not as the only evidence for a result:
 

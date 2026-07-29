@@ -1,14 +1,14 @@
 {
-  "name": "aitp-memory",
+  "name": "aitp-protocol",
   "interface": {
-    "displayName": "AITP Memory"
+    "displayName": "AITP Research Protocol"
   },
   "plugins": [
     {
-      "name": "aitp-research-memory",
+      "name": "aitp-research-protocol",
       "source": {
         "source": "local",
-        "path": "./plugins/aitp-research-memory"
+        "path": "./plugins/aitp-research-protocol"
       },
       "policy": {
         "installation": "AVAILABLE",

@@ -1,6 +1,6 @@
 interface:
   display_name: "AITP"
-  short_description: "Explicit entrypoint for AITP research memory"
-  default_prompt: "Use $aitp to enter this research workspace and manage its durable memory."
+  short_description: "Explicit entrypoint for AITP Research Protocol"
+  default_prompt: "Use $aitp to enter this research workspace and manage its grounded research state."
 policy:
   allow_implicit_invocation: false

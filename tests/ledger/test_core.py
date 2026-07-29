@@ -15,6 +15,7 @@ from aitp.core import (
     prepare_entry,
     prepare_note,
     render_markdown,
+    resolve_root,
     save_entry,
     save_note,
 )
@@ -26,6 +27,15 @@ def initialized(tmp_path: Path) -> Path:
     result = init_workspace(root, "nio", "Magnetic NiO")
     assert result["status"] == "initialized"
     return root
+
+
+def test_resolve_root_ignores_invalid_git_marker(tmp_path: Path):
+    container = tmp_path / "container"
+    project = container / "project"
+    (container / ".git").mkdir(parents=True)
+    project.mkdir()
+
+    assert resolve_root(project) == project
 
 
 def pinned_file(root: Path, relative: str, text: str = "evidence\n") -> dict[str, str]:
