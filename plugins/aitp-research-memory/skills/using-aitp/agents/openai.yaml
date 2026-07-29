@@ -1,0 +1,6 @@
+interface:
+  display_name: "Using AITP"
+  short_description: "Ground and preserve theoretical-physics research state"
+  default_prompt: "Use $using-aitp to recover this project state and record durable research progress."
+policy:
+  allow_implicit_invocation: true

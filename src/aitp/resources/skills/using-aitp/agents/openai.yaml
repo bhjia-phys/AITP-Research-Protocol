@@ -1,0 +1,4 @@
+interface:
+  display_name: "Using AITP"
+  short_description: "Record and recall local theoretical-physics research"
+  default_prompt: "Use $using-aitp to recover this project state and record durable research progress."

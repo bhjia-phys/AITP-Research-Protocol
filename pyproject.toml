@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aitp-lite"
+version = "0.1.0"
+description = "Lightweight local research memory for theoretical physics"
+requires-python = ">=3.11"
+dependencies = ["PyYAML>=5.4"]
+
+[project.scripts]
+aitp = "aitp.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+aitp = [
+    "resources/templates/**/*.md",
+    "resources/skills/**/*.md",
+    "resources/skills/**/*.yaml",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

@@ -1,0 +1,19 @@
+Third-party attribution notices for integrated design patterns and code-level adapters.
+
+This repository is licensed under the MIT License. Some repository files also
+adapt design patterns from the following MIT-licensed upstream projects.
+
+1. DeepXiv SDK
+   Repository: https://github.com/DeepXiv/deepxiv_sdk
+   License: MIT
+   Relevant AITP files:
+   - research/knowledge-hub/source-layer/scripts/enrich_with_deepxiv.py
+
+2. Graphify
+   Repository: https://github.com/safishamsi/graphify
+   License: MIT
+   Relevant AITP files:
+   - research/knowledge-hub/source-layer/scripts/build_concept_graph.py
+
+The upstream projects remain separately copyrighted by their original authors.
+AITP preserves attribution here and in the relevant source-file headers.
