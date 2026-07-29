@@ -38,6 +38,12 @@ def test_plugin_manifest_and_marketplace_are_wired() -> None:
         "./plugins/aitp-research-protocol"
     )
 
+    using_aitp = (PLUGIN / "skills" / "using-aitp" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    assert "python3.12" in using_aitp
+    assert "Python 3.11 or newer" in using_aitp
+
 
 def test_offline_plugin_runner_initializes_and_enters_workspace(tmp_path: Path) -> None:
     root = tmp_path / "research"

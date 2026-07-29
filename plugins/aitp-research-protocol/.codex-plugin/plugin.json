@@ -1,6 +1,6 @@
 {
   "name": "aitp-research-protocol",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260729110858",
   "description": "Local-first, evidence-grounded research protocol for theoretical physics",
   "author": {
     "name": "Bohan Jia",

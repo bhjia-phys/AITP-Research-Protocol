@@ -5,13 +5,20 @@ description: Use AITP Research Protocol to recover and preserve grounded researc
 
 # Using AITP
 
-Use the CLI bundled with this plugin. Resolve `../../scripts/aitp.py` relative to this `SKILL.md`, convert it to an absolute path, and invoke it with Python 3.11 or newer:
+Use the CLI bundled with this plugin. Resolve `../../scripts/aitp.py` relative
+to this `SKILL.md` and convert it to an absolute path. Select the first
+available compatible interpreter from `python3.13`, `python3.12`, `python3.11`,
+and `python3`, verifying that it is Python 3.11 or newer before invoking:
 
 ```text
-python3 <absolute-plugin-root>/scripts/aitp.py <command>
+<compatible-python> <absolute-plugin-root>/scripts/aitp.py <command>
 ```
 
-Do not require a globally installed `aitp` executable. In user-facing explanations, the shorter `aitp <command>` spelling is acceptable. Use ordinary filesystem tools and `rg` for ad hoc reading; there is no `aitp search`.
+If no compatible interpreter exists, report that Python 3.11 or newer is
+required. Do not require a globally installed `aitp` executable. In
+user-facing explanations, the shorter `aitp <command>` spelling is acceptable.
+Use ordinary filesystem tools and `rg` for ad hoc reading; there is no
+`aitp search`.
 
 ## Start or resume work
 
