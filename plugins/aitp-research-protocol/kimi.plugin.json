@@ -1,0 +1,13 @@
+{
+  "name": "aitp-research-protocol",
+  "version": "0.1.0",
+  "description": "Local-first, evidence-grounded research protocol for theoretical physics",
+  "skills": "./skills/",
+  "skillInstructions": "This plugin is platform-neutral: the bundled CLI is scripts/aitp.py and needs Python 3.11 or newer. On Kimi Code, invoke the entrypoint with /skill:aitp; any '$aitp' mention in the skills refers to that invocation. There is no MCP server, hook, or daemon by design.",
+  "interface": {
+    "displayName": "AITP Research Protocol",
+    "shortDescription": "Grounded research continuity for theoretical physics.",
+    "longDescription": "Initialize a research workspace, recover source-linked project state, record durable results and failures with pinned evidence, and write grounded notes.",
+    "developerName": "bhjia-phys"
+  }
+}
