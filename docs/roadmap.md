@@ -262,8 +262,8 @@ be implemented, and only from its implementation-level spec. Stages marked
 | Stage | Status | What stands between it and implementation |
 |---|---|---|
 | M0 — Ledger | done; stable baseline (`ledger-core` branch) | — |
-| M0.5 — Slim core | **green-lit**; implementation spec: `docs/slim-core-plan.md` | nothing — implement now |
-| M0.6 — Adopt & bootstrap | design complete; three independent gate items; starts after the M0.5 gate | per-item implementation specs written at stage start (`init --adopt` dry-run/conflict tests; manifest format + gold-set protocol; suite policy + adapters + hidden fixtures) |
+| M0.5 — Slim core | **done** (gate passed 2026-07-30; addendum in `docs/slim-core-plan.md`) | — |
+| M0.6 — Adopt & bootstrap | **green-lit**; three independent gate items, per-item implementation specs ready: item 1 `docs/m0.6-init-adopt.md`, item 2 `docs/m0.6-bootstrap.md`, item 3 `docs/m0.6-suite.md` | nothing — implement per item, in any order |
 | M1a — Memory that restores | design only; blocked | M0.5 + M0.6 gates; executable suite; `--json` schema freeze before golden fixtures |
 | M1b — Open items & pilot | design only; blocked | M1a gate; freeze `aitp/lite-entry-0.2` (single-target `resolves`, `resolution` enum, contradiction criteria, `aitp check` contract) |
 | M2 — Reviewed artifacts | design only; blocked | M1b gate; real reviewed material in the dogfood Topics |
@@ -281,7 +281,9 @@ Golden parity, benchmarks, no new features.
 ### M0.6 — Adopt and bootstrap (~1 week; end ≤ 1,100)
 
 Three independent gate items; the `topics.toml` convention itself is a plain
-file, not a gate condition.
+file, not a gate condition. Implementation specs: item 1
+`docs/m0.6-init-adopt.md`, item 2 `docs/m0.6-bootstrap.md`, item 3
+`docs/m0.6-suite.md`.
 
 - `aitp init --adopt`: create `.aitp/` inside an existing research tree
   without touching content or imposing the fixed layout. Gate item 1: works

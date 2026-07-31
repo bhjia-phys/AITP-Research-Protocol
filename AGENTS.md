@@ -1,9 +1,9 @@
 # Repository guidance
 
 - The `ledger-core` branch is the stable single-Topic evidence-ledger baseline.
-- Follow the stage order in `docs/roadmap.md`; complete the M0.5 slim-core gate before any later runtime work.
-- Keep one canonical runtime implementation; do not hand-maintain a copied plugin runtime.
-- Keep each Python module below 400 nonblank lines, and keep the total canonical runtime within the cumulative budget in `docs/roadmap.md` (~2,000 lines maximum); M0.5 must remove the duplicate runtime without net growth.
+- Follow the stage order in `docs/roadmap.md`. The M0.5 slim-core gate has passed; M0.6 is the active stage (`docs/m0.6-init-adopt.md`, `docs/m0.6-bootstrap.md`, `docs/m0.6-suite.md`).
+- Keep one canonical runtime implementation: `plugins/aitp-research-protocol/scripts/vendor/aitp/`; do not hand-maintain a copied plugin runtime.
+- Keep each Python module below 400 nonblank lines, and keep the total canonical runtime within the cumulative budget in `docs/roadmap.md` (~2,000 lines maximum; M0.6 ends ≤ 1,100).
 - Keep the installable Codex bundle under `plugins/aitp-research-protocol/`.
 - Preserve the core command groups and contracts: `init`, `enter`, `record`, and `note`. Later commands (`show`, `list`, `check`, `compile`, `catalog`, `link`) are additive and must not weaken the core contracts.
 - Cross-topic and compiled-artifact features must consume ledger records through the public parser and must never rewrite source records.
