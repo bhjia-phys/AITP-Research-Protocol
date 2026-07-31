@@ -6,10 +6,13 @@ from .md import AITPError, atomic_write, parse_markdown, render_markdown
 from .notes import prepare_note, save_note
 from .records import prepare_entry, save_entry
 from .state import enter_workspace
-from .workspace import init_workspace, resolve_root
+from .workspace import (
+    adopt_workspace, init_workspace, resolve_root,
+)
 
 __all__ = [
     "AITPError",
+    "adopt_workspace",
     "atomic_write",
     "enter_workspace",
     "init_workspace",

@@ -81,7 +81,7 @@ def load_store(root: Path) -> dict[str, str]:
     return result
 
 
-def _init_files(root: Path, topic_id: str, title: str) -> dict[Path, str]:
+def _store_files(root: Path, topic_id: str, title: str) -> dict[Path, str]:
     created_at = now_utc()
     topic_frontmatter = {
         "schema": "aitp/lite-topic-0.1",
@@ -103,6 +103,17 @@ def _init_files(root: Path, topic_id: str, title: str) -> dict[Path, str]:
         ]
     )
     local = f"workspace_root = {_quoted_toml(str(root))}\n"
+    return {
+        root / ".aitp" / ".gitignore": "local/\n",
+        root / ".aitp" / "STORE.toml": store,
+        root / ".aitp" / "topic" / "TOPIC.md": render_markdown(
+            topic_frontmatter, topic_body
+        ),
+        root / ".aitp" / "local" / "config.toml": local,
+    }
+
+
+def _init_files(root: Path, topic_id: str, title: str) -> dict[Path, str]:
     root_readme = _template("init/root-readme.md", {"title": title})
     purposes = {
         "theory": "Analytic derivations, proofs, examples, and consistency checks.",
@@ -125,12 +136,7 @@ def _init_files(root: Path, topic_id: str, title: str) -> dict[Path, str]:
                 "",
             ]
         ),
-        root / ".aitp" / ".gitignore": "local/\n",
-        root / ".aitp" / "STORE.toml": store,
-        root / ".aitp" / "topic" / "TOPIC.md": render_markdown(
-            topic_frontmatter, topic_body
-        ),
-        root / ".aitp" / "local" / "config.toml": local,
+        **_store_files(root, topic_id, title),
         root / "theory" / "README.md": _template(
             "init/folder-readme.md",
             {"folder": "theory", "purpose": purposes["theory"]},
@@ -201,36 +207,82 @@ def init_workspace(
         root / "data" / "derived",
         root / "references" / "reading-notes",
     ]
-    if not dry_run:
-        created: list[Path] = []
-        try:
-            for directory in directories:
-                directory.mkdir(parents=True, exist_ok=True)
-                created.append(directory)
-            for path, text in rendered.items():
-                if path.exists():
-                    raise AITPError("path_conflict", f"refusing overwrite: {path}")
-                atomic_write(path, text)
-                created.append(path)
-        except Exception:
-            for path in reversed(created):
-                if path.is_file():
-                    path.unlink(missing_ok=True)
-            for path in sorted(
-                {p for p in created if p.is_dir()},
-                key=lambda p: len(p.parts),
-                reverse=True,
-            ):
-                try:
-                    path.rmdir()
-                except OSError:
-                    pass
-            raise
+    _write_files(root, rendered, directories, dry_run)
     return {
         "status": "dry_run" if dry_run else "initialized",
         "root": str(root),
         "topic_id": topic_id,
         "created_files": [str(path.relative_to(root)) for path in rendered],
+        "mode": "init",
+    }
+
+
+def _write_files(
+    root: Path, rendered: dict[Path, str], directories: list[Path], dry_run: bool
+) -> None:
+    if dry_run:
+        return
+    created: list[Path] = []
+    try:
+        for directory in directories:
+            directory.mkdir(parents=True, exist_ok=True)
+            created.append(directory)
+        for path, text in rendered.items():
+            if path.exists():
+                raise AITPError("path_conflict", f"refusing overwrite: {path}")
+            atomic_write(path, text)
+            created.append(path)
+    except Exception:
+        for path in reversed(created):
+            if path.is_file():
+                path.unlink(missing_ok=True)
+        # prune the created dirs and any empty ancestors mkdir(parents=True)
+        # made (e.g. .aitp, .aitp/topic), up to the workspace root.
+        for path in sorted(
+            {p for p in created if p.is_dir()},
+            key=lambda p: len(p.parts),
+            reverse=True,
+        ):
+            for candidate in (path, *path.parents):
+                if candidate == root:
+                    break
+                try:
+                    candidate.rmdir()
+                except OSError:
+                    break
+        raise
+
+
+def adopt_workspace(
+    cwd: str | Path,
+    topic_id: str,
+    title: str,
+    *,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    root = resolve_root(cwd)
+    _ensure_safe_root(root)
+    _safe_slug(topic_id, "topic ID")
+    title = title.strip()
+    if not title:
+        raise AITPError("invalid_title", "topic title must not be empty")
+    if (root / ".aitp").exists():
+        raise AITPError("already_initialized", f"AITP already exists at {root}")
+    rendered = _store_files(root, topic_id, title)
+    directories = [
+        root / ".aitp" / "topic" / "entries",
+        root / ".aitp" / "topic" / "notes",
+        root / ".aitp" / "local" / "drafts",
+        root / ".aitp" / "local" / "scratch",
+        root / ".aitp" / "local" / "locks",
+    ]
+    _write_files(root, rendered, directories, dry_run)
+    return {
+        "status": "dry_run" if dry_run else "initialized",
+        "root": str(root),
+        "topic_id": topic_id,
+        "created_files": [str(path.relative_to(root)) for path in rendered],
+        "mode": "adopt",
     }
 
 

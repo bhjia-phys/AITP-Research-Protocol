@@ -7,6 +7,7 @@ from typing import Any
 
 from .core import (
     AITPError,
+    adopt_workspace,
     enter_workspace,
     init_workspace,
     prepare_entry,
@@ -35,6 +36,7 @@ def build_parser() -> argparse.ArgumentParser:
     init.add_argument("--cwd", default=".")
     init.add_argument("--topic", required=True)
     init.add_argument("--title", required=True)
+    init.add_argument("--adopt", action="store_true")
     init.add_argument("--dry-run", action="store_true")
     init.add_argument("--json", action="store_true")
 
@@ -77,7 +79,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.command == "init":
-            payload = init_workspace(
+            factory = adopt_workspace if args.adopt else init_workspace
+            payload = factory(
                 args.cwd,
                 args.topic,
                 args.title,
