@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -284,6 +285,49 @@ def adopt_workspace(
         "created_files": [str(path.relative_to(root)) for path in rendered],
         "mode": "adopt",
     }
+
+
+def build_inventory(cwd: str | Path, path: str | Path, name: str) -> dict[str, Any]:
+    root = resolve_root(cwd)
+    load_store(root)
+    _safe_slug(name, "inventory name")
+    scan_root = Path(path).expanduser().resolve()
+    if not scan_root.is_dir():
+        raise AITPError("invalid_root", f"workspace does not exist: {scan_root}")
+    store_aitp = (root / ".aitp").resolve()
+    entries: list[dict[str, Any]] = []
+    total_bytes = 0
+
+    def scan(directory: Path) -> None:
+        nonlocal total_bytes
+        for entry in sorted(os.scandir(directory), key=lambda e: e.name):
+            full = Path(entry.path)
+            if entry.name == ".git":
+                continue
+            relative = str(full.relative_to(scan_root))
+            if full.is_symlink():
+                entries.append({"path": relative, "type": "symlink"})
+            elif full.is_dir():
+                if full.resolve() != store_aitp:
+                    scan(full)
+            else:
+                data = full.read_bytes()
+                entries.append({"path": relative,
+                                "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)})
+                total_bytes += len(data)
+
+    scan(scan_root)
+    entries.sort(key=lambda item: item["path"])
+    manifest = {
+        "schema": "aitp/legacy-inventory-0.1", "name": name,
+        "generated_at": now_utc(), "root": str(scan_root), "files": entries,
+    }
+    manifest_path = root / ".aitp" / "local" / "legacy" / f"{name}-inventory.json"
+    atomic_write(manifest_path,
+                 json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
+    return {"status": "ok", "name": name,
+            "manifest": str(manifest_path.relative_to(root)),
+            "files": sum(1 for item in entries if "sha256" in item), "bytes": total_bytes}
 
 
 @contextmanager

@@ -8,6 +8,7 @@ from typing import Any
 from .core import (
     AITPError,
     adopt_workspace,
+    build_inventory,
     enter_workspace,
     init_workspace,
     prepare_entry,
@@ -44,6 +45,12 @@ def build_parser() -> argparse.ArgumentParser:
     enter.add_argument("--cwd", default=".")
     enter.add_argument("--recent", type=int, default=20)
     enter.add_argument("--json", action="store_true")
+
+    inventory = commands.add_parser("inventory", help="scan a legacy tree and write a hash manifest")
+    inventory.add_argument("path")
+    inventory.add_argument("--name", required=True)
+    inventory.add_argument("--cwd", default=".")
+    inventory.add_argument("--json", action="store_true")
 
     record = commands.add_parser("record", help="prepare or save an Entry")
     record_commands = record.add_subparsers(dest="record_command", required=True)
@@ -88,6 +95,8 @@ def main(argv: list[str] | None = None) -> int:
             )
         elif args.command == "enter":
             payload = enter_workspace(args.cwd, recent=args.recent)
+        elif args.command == "inventory":
+            payload = build_inventory(args.cwd, args.path, args.name)
         elif args.command == "record" and args.record_command == "prepare":
             payload = prepare_entry(
                 args.cwd,
