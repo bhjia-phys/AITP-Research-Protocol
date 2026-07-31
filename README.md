@@ -9,7 +9,8 @@ Its goal is not merely to save notes. A mature AITP collaborator should remember
 After weeks or years of work, a new session should be able to:
 
 - resume a Topic without asking the researcher to repeat its history;
-- cite the exact evidence behind every remembered claim;
+- trace every remembered claim to its source record, and every
+  evidence-bearing record to exact pinned evidence;
 - recall conventions, constraints, decisions, failures, and open questions;
 - connect a current problem to relevant results from other Topics;
 - distinguish physical knowledge, reusable procedure, and speculative Insight;
@@ -21,107 +22,60 @@ AITP records project memory, not scientific truth. Evidence and human judgment r
 
 ## Architecture
 
-```text
-Research artifacts
-      ↓
-Evidence ledger
-      ↓
-Research graph
-      ↓
-Knowledge / Skill / Insight compilers
-      ↓
-Conversation memory orchestration
-      ↓
-Scientific collaborator loop
-```
-
-### 1. Research artifacts
-
-Code, derivations, data, figures, literature, run outputs, and manuscripts remain in ordinary repositories. AITP references them with exact locators and immutable pins.
-
-### 2. Evidence ledger
-
-The ledger preserves small durable events:
+AITP's end state has two kinds of objects: **four stores** and **typed,
+provenance-carrying, append-only relation records** between them.
 
 ```text
-observation  result  failure  decision
-source       code-change  run  closeout
+L  literature   external (arXiv / INSPIRE / publishers); mirror: references/
+M  AITP memory  .aitp append-only records + reviewed artifacts (agent-facing)
+H  researcher   judgment and corrections; leaves attributable traces
+D  documents    the research itself: theory/, manuscripts/, notes, Obsidian
 ```
 
-Entries are append-only. `resolves` closes a failure; `supersedes` replaces an older record without rewriting history. Notes synthesize pinned evidence.
+M is memory; D is the research. Notes live in M; derivations and manuscripts
+live in D; M pins D and cites L; H gates promotion. Every durable movement
+that M relies on uses one of these relation records — cite, ground,
+synthesize, decide, supersede, link, review, publish — each with an author,
+a time, and an evidence pin where reachable. Proposals live as drafts;
+accepted relations are saved records. Not every movement is recorded:
+ordinary D edits live in Git, and unwritten H judgments are invisible by
+design.
 
-### 3. Research graph
+The protocol has three parts:
 
-The graph projects multiple Topic ledgers into a rebuildable knowledge view:
+1. **Schemas** — append-only Markdown records with evidence pins
+   ([ledger design](docs/design.md)), reviewed compiled artifacts, and link
+   records.
+2. **A small deterministic CLI** — the write gate: validate, persist,
+   project, benchmark. Nothing semantic runs in Python.
+3. **Methodology Skills** — the research discipline: when to read, how to
+   survey literature, when to record, how to distill, when to stop and ask.
 
-- Topic, Entry, Note, artifact, and candidate nodes;
-- evidence, resolution, contradiction, method, and extension edges;
-- grounded cross-Topic query with exact sources and freshness;
-- explicit saved links; inferred links remain proposals.
-
-The graph never replaces Topic repositories. See [Research Graph Design](docs/research-graph-design.md).
-
-### 4. Research compilers
-
-The same evidence can produce different reviewed artifacts:
-
-- **Physical knowledge** — claims, assumptions, validity domains, checks, and contradictions.
-- **Technical Skill** — repeatable procedure, prerequisites, commands, failure modes, and evaluations.
-- **Insight** — a potentially useful connection or hypothesis, clearly marked as unverified.
-- **Research brief** — the minimum grounded context needed to resume or hand off work.
-
-Every compiled statement must map back to source records. Compilation never silently promotes a hypothesis into knowledge.
-
-### 5. Conversation memory orchestration
-
-M3 connects the preceding layers to each research conversation. It does not
-add another source of truth. It:
-
-- detects the current workspace, Topic, task, and context budget;
-- builds a compact Context Packet containing the active question, conventions,
-  constraints, relevant decisions and failures, reviewed knowledge, useful
-  Skills, candidate Insights, open commitments, and exact evidence references;
-- refreshes that packet when the task, object, method, or assumptions change;
-- proposes an Entry only at a durable research event, using the existing
-  `prepare → validate on save → commit` path;
-- records corrections and closeout state so the next session can resume;
-- explains why each item was included, omitted, or marked stale.
-
-The agent may write an attributable agent Entry when workspace policy allows
-it. Decisions, promoted knowledge, published Skills, and accepted Insights
-remain human-gated. See [Collaborator Design](docs/collaborator-design.md).
-
-### 6. Scientific collaborator loop
-
-M4 is the actual research-collaboration layer. It uses grounded memory to:
-
-- maintain active questions, competing hypotheses, assumptions, predictions,
-  tests, outcomes, and contradictions;
-- challenge a proposed step with known failures or validity limits;
-- suggest the next derivation, calculation, source check, or numerical test;
-- record predictions before seeing outcomes and compare the result afterward;
-- turn supported Insights into reviewed knowledge while preserving rejected
-  alternatives and uncertainty.
-
-M4 is not a claim that the agent is an autonomous scientist. Its contribution
-must remain inspectable, evidence-linked, uncertainty-aware, and correctable.
+The original L0–L4 vision is preserved as cognitive discipline and dissolved
+as software. See [Roadmap and Product Design](docs/roadmap.md).
 
 ## Roadmap
+
+Full plan with scopes, complexity budgets, and gates:
+[docs/roadmap.md](docs/roadmap.md).
 
 | Stage | Outcome | Exit gate |
 |---|---|---|
 | M0 — Ledger | Reliable single-Topic records and Notes | Idempotent writes, pinned evidence, grounded `enter`, real-project use |
-| M0.5 — Slim core | One small canonical runtime with measured startup and no copied implementation | No runtime source duplication, no oversized module, unchanged ledger contracts |
-| M1 — Graph | Multi-Topic catalog, sync, query, and explicit links | Three Topics query with provenance; index rebuild is deterministic |
-| M2 — Compilers | Physical knowledge, Skill candidates, Insights, briefs | Complete provenance, contradiction handling, evaluations, human approval |
-| M3 — Context engine | Task-aware Context Packets and inspectable write policy | A fresh session resumes real work with correct conventions, evidence, failures, and commitments |
-| M4 — Scientific collaborator | Long-horizon question → hypothesis → prediction → test → outcome loop | Real projects are advanced without unsupported recall, hidden state, or hindsight rewriting |
+| M0.5 — Slim core | One canonical runtime, deduplicated without net growth | No runtime duplication, no oversized module, unchanged ledger contracts |
+| M0.6 — Adopt & bootstrap | `init --adopt`, workspace `topics.toml`, lazy legacy bootstrap, executable conformance core | Two dogfood Topics adopted; bootstrap Notes human-confirmed; core suite runs end-to-end; cold-start metrics recorded |
+| M1a — Memory that restores | `enter` v2, `show`/`list`, versioned `--json`, resumption discipline | Suite-scored resumption checklist on real Topics vs. control |
+| M1b — Open items & behavior pilot | question/prediction lifecycle with typed closures, collaborator pilot | Prediction order and correction persistence measured; one real question advanced |
+| M2 — Reviewed artifacts | Knowledge, Skill, Insight, Hypothesis with hash-bound human review | Reviewed knowledge and a reviewed Skill with complete provenance and passing evaluations |
+| M3 — Cross-topic links | Catalog plus explicit links; `rg` discovery, no index | Human-confirmed links answer a real cross-Topic question with provenance |
+| M4 — Collaborator protocol | Long-horizon question → hypothesis → prediction → test loop, Skill-only | Prospective real-project evaluation passes vs. baseline |
 
 We advance one gate at a time. Later stages may not weaken earlier evidence guarantees.
 
-Multi-user synchronization, permissions, and remote federation are optional
-infrastructure, not a core milestone. Git and author/reviewer provenance are
-sufficient until real team use demonstrates a stronger requirement.
+Multi-user synchronization, permissions, and remote federation are off the
+roadmap. For the default single-researcher, non-adversarial model, Git and
+author/reviewer provenance are sufficient until a concrete collaboration
+failure disproves it.
 
 ## Complexity budget
 
@@ -133,17 +87,23 @@ agent framework.
 - Keep each Python module below 400 nonblank lines. Split by stable
   responsibility, not by abstract framework layers.
 - Freeze the M0 command surface: `init`, `enter`, `record`, and `note`.
+  Later commands are additive and must not weaken these contracts.
+- Cumulative runtime budget: stage-end caps in `docs/roadmap.md`; about
+  2,000 lines total maximum. M0.5 must deduplicate without net growth.
 - Python may parse, validate, persist, project, and benchmark records. Physical
-  reasoning, synthesis, and collaboration policy belong in Skills and reviewed
-  artifacts.
-- Build the first graph projection as deterministic JSONL. Add SQLite/FTS only
-  if a reproducible realistic benchmark shows JSONL lookup is insufficient.
+  reasoning, synthesis, literature judgment, and collaboration policy belong in
+  Skills and reviewed artifacts.
+- Default to no index: `rg` over Markdown is the query path. Add a derived
+  cache only if a reproducible realistic benchmark demonstrates the need, and
+  only as a disposable artifact.
 - Do not add a required database, vector service, MCP server, hook, daemon,
   scheduler, event bus, dependency-injection system, or plugin framework.
 - Target installed-plugin startup below 250 ms for `--help` and below one
   second for `enter` on a 1,000-Entry fixture.
 - A new feature must include a measured use case, an acceptance test, and its
   effect on code size and startup time.
+- Agent behavior conformance is measured by an external suite, never enforced
+  by the runtime.
 
 If a milestone cannot fit these constraints, reduce its scope before expanding
 the runtime.
@@ -167,8 +127,8 @@ Properties:
 - the ledger has been validated against a real theoretical-physics workspace;
 - all current tests pass.
 
-M0.5 is the next implementation stage. M1 remains the active product design,
-but graph code must not land until the slim-core gate passes.
+M0.5 (slim core) is the next implementation stage, followed by M0.6 (adopt
+and bootstrap). The master plan is [docs/roadmap.md](docs/roadmap.md).
 
 ## Branch policy
 
@@ -176,7 +136,7 @@ but graph code must not land until the slim-core gate passes.
 main            stable integrated protocol, roadmap, and released capabilities
 ledger-core     immutable M0 ledger baseline
 slim-core       active M0.5 runtime simplification
-research-graph  M1 design baseline; runtime work waits for M0.5
+research-graph  archived; superseded by the M3 cross-topic-links design
 ```
 
 The former repository implementation is retained separately as `legacy/v5-final` during repository cutover. Old authority and experimental branches are archival evidence, not active product lines.
@@ -197,6 +157,10 @@ The repository contains no compatibility runtime for former implementations.
 
 ## Use the current ledger
 
+The same bundle under `plugins/aitp-research-protocol/` installs on both
+supported agent platforms (CLI + per-platform manifest; no MCP, hooks, or
+daemon).
+
 Install the local Codex plugin:
 
 ```bash
@@ -211,6 +175,16 @@ $aitp
 ```
 
 Use `/skills` to inspect installed Skills. `$aitp` is a Skill invocation; `/aitp` is not a Codex slash command.
+
+Install the same bundle in Kimi Code:
+
+```text
+/plugins install /absolute/path/to/AITP-Research-Protocol/plugins/aitp-research-protocol
+/reload
+```
+
+Kimi Code runs from its managed copy (`~/.kimi-code/plugins/managed/`), so
+re-run the install after the bundle changes. Invoke with `/skill:aitp`.
 
 For standalone development:
 

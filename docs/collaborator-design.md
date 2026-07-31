@@ -1,151 +1,130 @@
-# M3–M4 Collaborator Design
+# AITP Conversation Memory and Collaborator Design
 
-Status: roadmap baseline  
-Depends on: M0 ledger, M1 graph, M2 compilers
+Status: active design, v3.1 (aligned with `docs/roadmap.md` v3.1).
+Depends on: the M0 ledger and M1 memory for the alpha (Entries and Notes
+only); M2 reviewed artifacts enrich it later.
+Supersedes: the earlier M3 "context engine" proposal, including
+`aitp enter --task`.
 
-## Purpose
+## Principle
 
-M3 makes AITP memory operational inside a research conversation. M4 uses that
-grounded context to participate in a long-running scientific reasoning loop.
+Conversation memory is a **Skill-driven lifecycle over the ledger**, not an
+engine. Python provides deterministic structural access (`enter`, `show`,
+`list`, `check`); the Skill provides all semantic judgment — what is
+relevant, what is worth recording, when to stop and ask. Context packets are
+ephemeral: assembled inside the conversation, never stored. There is no
+transcript archive, no chain-of-thought capture, no session daemon.
 
-They are separate because remembering the right thing is easier to verify than
-proposing good science. M4 may start only after M3 is reliable.
+## Known limits (read before trusting)
 
-## M3: context engine
+- **Missed events are invisible.** The ledger validates what was written; it
+  cannot distinguish "nothing durable happened" from "the agent forgot to
+  record". Mitigation is the external conformance suite plus researcher
+  review — not hooks or runtime enforcement.
+- **Attribution is a claim, not proof.** `authority: human` and `created_by`
+  are attributable statements; Git makes post-hoc edits visible, but cannot
+  detect a first write that was already false. See the trust model in
+  `docs/roadmap.md`.
+- **Record order is checkable at write time; cognitive honesty is not.** A
+  resolving Entry can only reference a prediction that already exists when
+  it is saved; the save-time existence check is the causal proof. `aitp
+  check` re-validates final-state consistency — it does not rebuild history.
+  Whether the agent had already seen the outcome is Skill discipline,
+  measured by the conformance suite.
 
-M3 is a small orchestration layer over existing records, not a database,
-transcript store, daemon, or MCP server.
+## Lifecycle
 
-### Context Packet
+1. **Enter** — at the start of research work in a workspace with `.aitp`,
+   run `aitp enter`. Treat the output as recorded state, not scientific
+   truth.
+2. **Orient** — read the latest working Note, the latest closeout, and the
+   researcher's current task. Use `list`/`show`/`rg` to fetch records
+   relevant to the task.
+3. **Verify** — open the pinned evidence behind any claim before relying on
+   it. Disclose stale or missing sources.
+4. **Work** — refresh the selection when the task, object, method, or
+   assumptions change; check unresolved failures and conventions before
+   proposing a step. Before consequential compute — scientifically critical,
+   expensive, or convention-ambiguous — state the setup: the exact
+   Hamiltonian with sign and coupling conventions, boundary, sector, target
+   observable, scale; get an explicit confirm-or-correct when anything could
+   be misread, but do not pester on routine, cheap steps. When the
+   researcher pushes back, genuinely reconsider: restate the prior
+   reasoning, take the objection seriously, change the conclusion if
+   warranted or present both readings for re-ratification — never capitulate
+   by default, never defend at length. If the exchange changes course,
+   record it as a `decision`.
+5. **Capture** — at a durable event, draft the smallest valid Entry through
+   `prepare → save`. Predictions are saved before the executions they
+   constrain (order guaranteed by the save-time target-existence check).
+   Corrections from the researcher are recorded immediately (`decision`,
+   `authority: human`) and change behavior in the same session.
+6. **Close** — if work is unfinished, save a closeout Entry with a concrete
+   next action and supersede the working Note with an updated one.
 
-For the current task, M3 derives an ephemeral packet with:
+### Read triggers
 
-```text
-Topic and current task
-Active question and next action
-Notation, conventions, assumptions, and constraints
-Relevant decisions, results, failures, and unresolved contradictions
-Reviewed physical knowledge
-Applicable Skills and their validity limits
-Candidate Insights, visibly marked unverified
-Open commitments and questions
-Exact source references, freshness, and omissions
-```
+Session start or Topic change; before relying on a remembered claim; before
+proposing a step that resembles a recorded failure; when the researcher asks
+why a direction was chosen; when pins are stale or assumptions conflict.
 
-The packet is disposable. Its sources remain the ledger, graph, compiled
-artifacts, and research files.
+### Write triggers
 
-### Conversation loop
+Only durable events: observation, result, failure, decision, source,
+code-change, run, prediction, question, closeout, and evidence-based Notes.
+Never: conversational filler, scratch work, unverified speculation presented
+as results, duplicate retries.
 
-1. **Enter** — detect the workspace and Topic; read grounded state.
-2. **Orient** — interpret the user's current task and assemble a bounded packet.
-3. **Verify** — open decisive sources before relying on a remembered claim.
-4. **Work** — refresh context when the task, method, object, or assumptions change.
-5. **Capture** — classify durable events and draft the smallest valid Entry.
-6. **Close** — record unresolved questions, commitments, and the concrete next action.
+### Modes
 
-M3 should extend `aitp enter` with task-aware structured output rather than add
-a general `search` command:
+`suggest-only` or `agent-record` is a per-workspace policy in
+`.aitp/local/config.toml`, read by the Skill. In `suggest-only`, the agent
+prepares drafts and asks the researcher to save. When writes go through the
+CLI, neither mode bypasses validation or provenance; agent-written records
+carry `created_by: agent:*`.
 
-```text
-aitp enter --task "<current task>" --budget compact|standard|deep --explain
-```
+### Human gates (human-confirmed, attributable)
 
-The Codex Skill drives this lifecycle automatically. Researchers should not
-need to manage a separate session object.
+- `compile review` transitions (`agent_draft` → `human_reviewed`/`withdrawn`),
+  each bound to the artifact's content hash;
+- `compile export` (publication);
+- `decision` Entries with `authority: human` (the researcher speaks or
+  confirms; `created_by` still attributes the drafter);
+- cross-topic `link save` (explicit human confirmation; an agent may execute
+  the save with `created_by` attribution).
 
-### Read policy
+## M4 collaborator protocol
 
-Refresh context when:
+`aitp-collaborator` is a Skill, not a subsystem. For an active question it:
 
-- a session starts or the active Topic changes;
-- a named object, method, convention, or prior result becomes important;
-- a proposed step resembles a recorded failure;
-- assumptions conflict or evidence is stale;
-- the user asks why a direction was chosen.
+1. reconstructs the strongest current argument and its validity domain from
+   reviewed artifacts and Entries;
+2. keeps competing hypotheses visible, with their evidence and contradictions;
+3. proposes a discriminating derivation, calculation, source check, or run —
+   one whose outcome distinguishes specific hypotheses;
+4. saves a `prediction` Entry before the test, including what result would
+   kill the favored hypothesis;
+5. compares outcome with prediction afterward — matched, partly matched, or
+   did not match, and why; on mismatch, opens a failure and updates
+   hypotheses — never rewriting history;
+6. preserves rejected paths, disagreements, and uncertainty;
+7. treats verification beyond what backs the current claim as opt-in
+   compute: on challenge, proposes checks along the ladder limits →
+   symmetry/consistency → convergence → cross-method → literature, with
+   rough costs, and runs only what is confirmed;
+8. proposes artifact promotion only when evidence warrants it, and asks.
 
-Selection order is:
+## Acceptance
 
-```text
-current task relevance
-→ active decisions and constraints
-→ unresolved failures and commitments
-→ reviewed knowledge and applicable Skills
-→ candidate Insights
-→ recent activity
-```
+All behavioral acceptance runs through the external conformance suite, with
+the plain-files control group:
 
-Recency alone is never sufficient.
-
-### Write policy
-
-Do not save transcripts or internal chain of thought. Save only durable
-observations, results, failures, decisions, sources, code changes, reproducible
-runs, closeouts, and evidence-based Notes.
-
-All writes use the M0 draft, validation, and idempotency path. Agent-authored
-records are labeled as such. Human review is required to:
-
-- accept a scientific decision on the researcher's behalf;
-- promote a claim into reviewed physical knowledge;
-- publish a reusable Skill;
-- accept an Insight as a research direction.
-
-Workspace policy may choose `suggest-only` or `agent-record`. Neither mode may
-bypass validation or provenance.
-
-### M3 acceptance
-
-On a real Topic with a long ledger, an agent starting with no chat history must:
-
-- recover the correct objective, conventions, active line, and next action;
-- cite the decisive records and disclose stale or missing sources;
-- avoid proposing a previously resolved failed attempt;
-- retain a user correction in later sessions;
-- omit irrelevant history under a fixed context budget;
-- create no duplicate or conversational-noise Entries.
-
-## M4: scientific collaborator
-
-M4 adds a reviewed research-state model:
-
-```text
-question → competing hypotheses → predictions → tests → outcomes
-     ↑              ↓                  ↓          ↓
- assumptions   contradictions       methods    conclusions
-```
-
-The model is derived from evidence and reviewed artifacts. It does not replace
-the ledger or silently convert suggestions into facts.
-
-### Collaborator behavior
-
-For an active question, M4 should:
-
-1. reconstruct the strongest current argument and its validity domain;
-2. expose unresolved assumptions, contradictions, and alternative hypotheses;
-3. propose a discriminating derivation, calculation, source check, or run;
-4. state the expected observation before the test;
-5. execute or help execute an approved step using applicable Skills;
-6. compare outcome with prediction and update the research state;
-7. preserve rejected paths and uncertainty;
-8. propose knowledge or Insight promotion only when evidence warrants it.
-
-### M4 acceptance
-
-Evaluation must use prospective work on real projects, not only fixtures. A
-successful collaborator:
-
-- advances an active question across separate sessions;
-- distinguishes a useful next test from a generic suggestion;
-- records predictions before outcomes, preventing hindsight rewriting;
-- changes its view when evidence or the researcher corrects it;
-- keeps disagreements and uncertainty visible;
-- grounds every reusable claim, Skill, and Insight in inspectable evidence.
-
-## Deferred infrastructure
-
-Multi-user permissions, remote synchronization, private-memory federation, and
-custom merge protocols are not M4. Existing Git collaboration plus author and
-reviewer provenance should be used first. Add stronger team infrastructure
-only after a concrete collaboration failure cannot be solved by those tools.
+- A fresh session with no chat history recovers the objective, conventions,
+  active line, and next action; cites decisive records; does not re-propose
+  resolved failures; omits irrelevant history under a fixed budget.
+- A user correction persists and shapes later sessions.
+- Prediction→outcome save order is respected (guaranteed by the save-time
+  target-existence check).
+- Prospective evaluation on real projects (≥ 4 sessions): the collaborator
+  advances an active question, its proposed tests discriminate, and every
+  reusable claim is evidence-linked.

@@ -1,5 +1,13 @@
 # AITP Evidence Ledger Design
 
+Status: stable M0 baseline. The schema evolves to `aitp/lite-entry-0.2` in
+M1b (new `prediction` and `question` kinds; `resolves` generalized to
+failures, predictions, and questions with a typed `resolution` closure
+field and target-kind validation; `contradicts` on failure Entries under
+strict criteria; `aitp check` whole-store re-validation; Note `supersedes`
+validation; optional `citekey`/`trust` on `source` Entries) per
+`docs/roadmap.md`; v0.1 records remain valid without migration.
+
 ## Purpose
 
 AITP preserves the small amount of research state that must survive across conversations:
@@ -70,6 +78,9 @@ Kinds:
 observation  result  failure  decision
 source       code-change  run  closeout
 ```
+
+A `result` records a project outcome with its evidence boundary — it is not
+a credibility rank; trust gradients live in reviewed artifacts (M2).
 
 Relations are append-only:
 
