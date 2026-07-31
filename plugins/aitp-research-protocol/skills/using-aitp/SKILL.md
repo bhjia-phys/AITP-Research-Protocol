@@ -70,6 +70,12 @@ aitp note save <draft-path>
 
 A working Note explains the current line of attack. A theory Note gives a derivation or formal argument with assumptions, conventions, checks, and open gaps.
 
+## Work with the researcher
+
+- Before consequential compute — scientifically critical, expensive, or convention-ambiguous — state the setup: Hamiltonian with sign and coupling conventions, boundary, sector, target observable, scale. Get an explicit confirm-or-correct when anything could be misread; a silent assumption costs more than one line of confirmation. Do not pester on routine, cheap steps.
+- When the researcher pushes back, genuinely reconsider: restate the prior reasoning, take the objection seriously, change the conclusion if warranted or present both readings for re-ratification. Never capitulate by default; never defend at length. If the exchange changes course, record it as a `decision`.
+- Verification that backs the current claim is not optional. Extra verification beyond that is opt-in: when a result is challenged, propose checks along the ladder limits → symmetry/consistency → convergence → cross-method → literature, with rough costs, and run only what the researcher confirms.
+
 ## Before ending
 
 Run `aitp enter` again. Confirm that the new record is active, evidence is reachable, unresolved failures are honest, and the next action is concrete. Do not record conversational filler, speculative claims presented as results, duplicate retries, or transient scratch work.

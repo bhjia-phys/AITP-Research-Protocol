@@ -9,7 +9,13 @@ from pathlib import Path
 
 def run_cli(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
-    env["PYTHONPATH"] = str(Path(__file__).parents[2] / "src")
+    env["PYTHONPATH"] = str(
+        Path(__file__).parents[2]
+        / "plugins"
+        / "aitp-research-protocol"
+        / "scripts"
+        / "vendor"
+    )
     return subprocess.run(
         [sys.executable, "-m", "aitp", *args],
         cwd=repo,
