@@ -1,8 +1,16 @@
 # M1 Read/Write Balance
 
-Status: design proposal; blocked. This document refines the M1a and M1b design
-in `docs/roadmap.md` v3.2. It is not an implementation-level specification and
-does not green-light M1 runtime work before the M0.6 gates.
+Status: M1 specification index; blocked. This document is the product-rationale
+index for M1: it keeps the problem, dogfood evidence, governing constraints,
+and the disposition of the ten requests, and it fixes the implementation order
+and the documentation sync discipline. `docs/m1a-spec.md` exists as the
+written M1a implementation-level spec, but it is blocked: M1a runtime work
+may start only after the M0.6 gate. `docs/m1b-spec.md` exists as the frozen
+M1b **pre-spec** (design freeze; blocked, not green-lit, and not itself an
+implementation-level spec — its implementation-level spec is derived after
+the M1a gate). Both are M1a/M1b prerequisites. This index is not itself an
+implementation-level specification and does not green-light M1 runtime work
+before the M0.6 gates.
 
 ## Problem
 
@@ -69,6 +77,62 @@ a retrieval timestamp as an integrity pin.
 | implicit last-enter increment | Reject; use explicit deterministic `--since` | M1a |
 | Note trigger and coverage hint | Accept as a Skill trigger plus a structural age count | M1a |
 | Skill synchronization | Required in the stage that changes the behavior | every stage |
+
+## Implementation order
+
+M1 work proceeds only in this order; each step is gated:
+
+1. **M0.6 gate passes** — both dogfood bootstrap measurements and the paired
+   scored suite runs complete; M1a stays blocked.
+2. **M1a spec freeze (complete)** — `docs/m1a-spec.md` is written from the
+   M1a requirements below (`list`, `show`, `enter` v2, versioned `--json`
+   payloads, Skill changes, performance targets, 1,300-line budget) and
+   frozen before any M1a runtime work. The spec now exists as the written
+   implementation-level spec; it is blocked until the M0.6 gate.
+3. **M1a implementation** — from the frozen spec only, not from this index or
+   from `docs/roadmap.md` prose; the sync seven-piece set below is updated in
+   the same change and golden fixtures are regenerated.
+4. **M1a gate** — suite-scored resumption checklist on both dogfood Topics
+   against the control; the dated GW_librpa corpus is listed without changing
+   any existing file; ledger tests pass; `--help` < 250 ms, 1,000-Entry
+   `enter` < 1 s, and a 1,000-Entry `list` baseline is reported.
+5. **M1b pre-spec freeze (complete)** — `docs/m1b-spec.md` exists as the
+   frozen M1b **pre-spec** written from the M1b requirements below
+   (`based_on`, single-target `resolves`, typed `resolution` closures,
+   contradiction criteria, `aitp check` contract, run/source templates,
+   quick-run experiment). It is blocked: a design freeze, not an
+   implementation-level spec. After the M1a gate, the M1b implementation-level
+   spec is derived from the pre-spec and opens with the reconciliation of the
+   actual M1a total against the fixed caps (M1a ≤ 1,300, M1b ≤ 1,450; caps
+   never adjusted); it is frozen before any M1b runtime work.
+6. **M1b implementation** — from the frozen implementation-level spec
+   (derived from the pre-spec) only; the sync seven-piece set is updated in
+   the same change and golden fixtures are regenerated.
+7. **M1b gate** — prediction order respected and corrections persisting
+   across sessions; based-on targets and reverse views correct without an
+   index; a remote-run pointer bundle is auditable; the pilot advances one
+   real question over ≥ 2 sessions; v0.1 records and the GW_librpa corpus
+   stay untouched.
+
+## Sync discipline: the seven-piece set
+
+A stage that changes command behavior updates all seven artifacts in the same
+change (see the "Skill synchronization" row above; runtime, golden fixtures,
+and the conformance suite change under the stage spec's own rules — budget
+caps, fixture regeneration — and the seven pieces must not drift from them):
+
+| # | Artifact | Role |
+|---|---|---|
+| 1 | `docs/roadmap.md` | stage status, scope, gates |
+| 2 | `docs/design.md` | canonical command contracts |
+| 3 | `docs/m1-read-write-balance.md` | this index: product rationale, rejections, order |
+| 4 | `docs/m1a-spec.md` | M1a implementation-level spec (frozen before M1a work) |
+| 5 | `docs/m1b-spec.md` | M1b pre-spec, design freeze (blocked); implementation-level spec follows after the M1a gate |
+| 6 | `plugins/aitp-research-protocol/skills/using-aitp/SKILL.md` | agent-facing command map; future-command sync checklist |
+| 7 | `README.md` | user-facing "Current state" command overview |
+
+The `using-aitp` Skill keeps a future-command checklist naming the surfaces
+to verify when M1a/M1b land.
 
 ## M1a: retrieval-first memory
 
@@ -287,8 +351,8 @@ Additional input/build/job flags may be supplied, but the command must obey:
 
 The experiment is scored for typed recall, precision, non-durable rejection,
 and time-to-record. It is removed if it increases filler/noise or provides no
-measurable benefit. It is the first feature cut if the M1b 1,450-line cap is
-at risk.
+measurable benefit. It is the first item of the M1b cut order in
+`docs/m1b-spec.md` §12.4 if the M1b 1,450-line cap is at risk.
 
 ## Suite additions after the M0.6 baseline
 
@@ -339,12 +403,20 @@ acceptance checklist.
 
 ## Scope and cut order
 
-M1a ends at 1,300 nonblank canonical-runtime lines; M1b ends at 1,450. If the
-specification does not fit, scope is cut in this order:
+The line caps are fixed: M1a ends at 1,300 nonblank canonical-runtime lines;
+M1b ends at 1,450. After the M1a gate, the actual M1a total is reconciled
+against these fixed caps (M1a additions sit within its spec's target; M1b
+headroom = 1,450 − actual M1a total); the caps themselves are never adjusted.
+If the frozen semantics do not fit, scope is cut per each stage's own cut
+order in its spec:
 
-1. quick-run command;
-2. nonessential save-time hints that duplicate the Skill;
-3. cosmetic output features.
+- M1a — `docs/m1a-spec.md` §Cut order if over budget: (1) cosmetic output
+  features; (2) `--since` conveniences; (3) the `legacy-derived` tag in
+  `list` text rows (the JSON field stays).
+- M1b — `docs/m1b-spec.md` §12.4: (1) the quick-run experiment; (2)
+  nonessential save-time hints that duplicate the Skill; (3) cosmetic output
+  features.
 
-Never cut evidence validation, relation validation, v0.1 compatibility,
-read-only `check`, deterministic projections, or the no-index rule.
+Never cut for either stage: evidence validation, relation validation, v0.1
+compatibility, read-only `check`, deterministic projections, or the no-index
+rule.

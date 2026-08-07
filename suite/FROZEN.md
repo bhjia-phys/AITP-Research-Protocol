@@ -1,80 +1,94 @@
 # M0.6 conformance suite — first paired-run freeze (preregistration)
 
-Version: **5** — re-frozen from the current working tree; **supersedes
-version 4** (2026-08-06T19:56:51Z), which superseded version 3
-(2026-08-06T19:41:43Z), which superseded version 2 (2026-08-06T18:19:57Z),
-which superseded version 1 (2026-08-06T18:15:02Z). Version 5 is the
-operative freeze for the first scored paired run.
+Version: **6** — re-frozen from the current working tree; **supersedes
+version 5** (2026-08-06T20:13:02Z), which superseded version 4
+(2026-08-06T19:56:51Z), which superseded version 3 (2026-08-06T19:41:43Z),
+which superseded version 2 (2026-08-06T18:19:57Z), which superseded version 1
+(2026-08-06T18:15:02Z). Version 6 is the operative freeze for the first
+scored paired run.
 
 Status: **FROZEN** for the first scored paired run of the M0.6 conformance
 suite core. This document preregisters the exact bytes the first run is
 scored against. All values below were computed from the actual bytes of the
-current working tree on 2026-08-06 (UTC freeze time:
-`2026-08-06T20:13:02Z`), then independently re-verified (see
+current working tree on 2026-08-07 (UTC freeze time:
+`2026-08-07T06:30:59Z`), then independently re-verified (see
 [Verification](#verification)).
 
 This file is itself **excluded from its own hash table** (section 7): it is
 the record, not scored material, and it becomes the formal freeze proof of
 the first scored run only when anchored by an external immutable anchor
-(section 1).
+(section 1). **The anchor that covered version 5 does not cover the current
+bytes** — see section 1.
 
-## 0. What changed since version 4 (re-freeze reason)
+## 0. What changed since version 5 (re-freeze reason)
 
-Two frozen inputs changed after version 4 was recorded — blind-scoring
-wording de-ambiguation only — so, per the freeze discipline (section 6),
-this record is re-issued from the current bytes:
+Three frozen inputs changed after version 5 was recorded — a static fix of
+the identity preflight for the first scored run — so, per the freeze
+discipline (section 6), this record is re-issued from the current bytes:
 
-- `suite/rubric.md` changed (`f41014b7…` → `3fb5ee7e…`): the M4 definition
-  now states that the assessor reads only the resumption session's
-  condition-neutral evidence packet — the mechanically extracted verbatim
-  agent evidence from that session, per the scoring procedure — never the
-  raw resumption transcript or the live end state. Each of the four items
-  is 1 if the packet's verbatim evidence demonstrably used the end-state
-  record or file the gold answers name for that item (named or cited that
-  record or file), else 0; restating content without naming the record or
-  file scores 0. **The M4 definition, the four checklist items, the 1/0
-  scoring semantics, and the frozen threshold (M4 = 1.0, 4/4) are
-  unchanged** — this edit only pins the evidence source to the
-  condition-neutral blind packet.
-- `suite/README.md` changed (`0260c601…` → `f663ab46…`): step 5 point 5 is
-  synchronized with the rubric — the assessor scores the four M4 checklist
-  items from the session-2 condition-neutral evidence packet (the
-  mechanically extracted verbatim agent evidence from the resumption
-  session, per step 7), against the end-state records or files the gold
-  answers name for each item; the raw session-2 transcript and the live end
-  state never reach the assessor.
-- Unchanged from version 4: all other 13 frozen inputs (policy, both
-  adapters, all three scenarios, all three gold files, both templates, both
-  `events/S2/` artifacts), all three seed trees (section 4), the runtime
-  (1082 nonblank lines), and the test baseline (26 passed, section 5).
-- `docs/roadmap.md` and `docs/m0.6-suite.md` carry status notes about this
-  suite, but neither is part of this freeze's core table (section 3 covers
-  only the 15 `suite/` files listed there); they were not read for this
-  version beyond what is recorded here.
+- `suite/adapters/cli.md` changed (`b1e5aa13…` → `0b586894…`): the
+  Environment contract drops the unexecutable `aitp --version` requirement
+  (the runtime implements no version subcommand or option) and records
+  treatment identity deterministically from fixed files and the
+  interpreter: one fixed absolute launcher declared pre-run as
+  `<python3.11> <absolute-launcher>` (Python ≥ 3.11; bundled launcher
+  `plugins/aitp-research-protocol/scripts/aitp.py`; resolved via
+  `command -v aitp` if on `PATH`), plus the pre-run identity block —
+  launcher absolute path + sha256; interpreter absolute path + its
+  `--version` output; installed plugin manifest `version` field
+  (`kimi.plugin.json`, or `.codex-plugin/plugin.json` if that is the
+  installed manifest) + manifest sha256; canonical runtime revision/tree
+  hash (repo commit, `git status --porcelain` on the runtime path, and a
+  sorted sha256 tree manifest over every file in
+  `plugins/aitp-research-protocol/scripts/vendor/aitp/`); Skill hashes
+  (`SKILL.md` path + sha256 for `aitp` and `using-aitp`, as delivered).
+- `suite/README.md` changed (`f663ab46…` → `10b614ea…`): step 0's CLI
+  preflight is synchronized with the adapter — no `aitp --version`; the
+  same launcher/interpreter/manifest/runtime-tree/Skill identity block is
+  recorded pre-run, with an explicit note that the unexecutable
+  `--version` requirement was replaced by the deterministic identity
+  block.
+- `suite/run-notes-template.md` changed (`a034ce09…` → `57f4742e…`): §1.2's
+  CLI launcher row is synchronized — `<python3.11> <absolute-launcher>`
+  (resolved via `command -v aitp` if on `PATH`), launcher path + sha256,
+  interpreter path + `python --version` output, installed plugin manifest
+  `version` field + manifest sha256, "the CLI has no `--version`".
+- Unchanged from version 5: the other 12 frozen inputs (policy, rubric,
+  plain-files adapter, all three scenarios, all three gold files,
+  score-sheet template, both `events/S2/` artifacts), all three seed trees
+  (section 4), the runtime (1082 nonblank lines), and the test baseline
+  (26 passed, section 5). Thresholds, scenarios, gold, seeds, and events
+  semantics are untouched.
+- The README/Skill/M1-spec changes mentioned in the run documentation
+  (`docs/`, plugin `SKILL.md` files) are outside the freeze: only the files
+  listed in section 3 are frozen inputs; no other path enters this table.
 
-## 1. Anchor status — commit anchor obtained
+## 1. Anchor status — previous anchor does not cover the current bytes; new anchor pending
 
-The frozen suite core inputs were committed unchanged in
-`ac5209647f5f2a88a530dcd2856c13d39d31e856` (`chore: freeze M0.6
-conformance suite`). That commit is the immutable anchor for the 15 core
-inputs and the three seed trees listed below. `FROZEN.md` is excluded from
-its own hash table, so recording the anchor status below does not alter the
-scored input bytes.
+**Version 6 is a working-tree preregistration. The formal scored run's
+anchor is PENDING — the current bytes are not anchored by any commit.**
 
-- `git branch --show-current` → `main`.
-- The anchor commit contains the suite core, the planning documents
-  (`docs/roadmap.md`, `docs/m0.6-suite.md`,
-  `docs/m1-read-write-balance.md`), and the one-line `suite/runs/` ignore
-  rule. It does **not** contain `ref/`, `uv.lock`, the managed dry-run
-  archive under `suite/runs/`, or the separately updated Skill file.
-- The anchor commit was created only after the staged path list was inspected;
-  no dry-run result, `ref/`, or `uv.lock` path was staged. The current
-  `git status --porcelain suite/` must be re-verified in the run notes before
-  the formal run (`run-notes-template.md` §0).
-- This freeze is now an immutable preregistration for the first scored paired
-  run. The run notes must record this exact anchor hash alongside the file
-  and seed hashes below. Any change to a frozen input requires a new freeze,
-  a stage-note diff, and a new anchor before scoring.
+- Version 5 recorded that an anchor commit `ac5209647f5f2a88a530dcd2856c13d39d31e856`
+  (`chore: freeze M0.6 conformance suite`, branch `main`) was created for
+  the version-5 bytes, with the run notes instructed to verify its ancestry
+  and a clean `git status --porcelain suite/` at run time.
+- **That anchor does not cover the version-6 bytes.** After the anchor was
+  created, three frozen inputs were modified for the identity-preflight
+  static fix (`README.md`, `adapters/cli.md`, `run-notes-template.md` —
+  section 0), and **this version does not commit those changes**. Per the
+  instructions for this version, **no git command was run** while producing
+  version 6, and no claim is made about the current working-tree state
+  beyond the byte hashes in sections 3–5. Nothing here asserts that the
+  current bytes are contained in any commit — no anchor is fabricated or
+  inherited.
+- **Before the formal paired run**, the operator must obtain the user's
+  explicit authorization to commit the version-6 frozen state (or pin an
+  external immutable anchor), then record that anchor (commit hash or
+  equivalent) in the run notes alongside the hashes below, together with
+  the run's own `git rev-parse HEAD` and `git status --porcelain suite/`
+  (`run-notes-template.md` §0). The anchor is what turns this record into
+  the formal freeze proof of the scored run (section 7). Until then, the
+  formal scored run remains BLOCKED on the anchor.
 
 ## 2. Frozen scope
 
@@ -83,7 +97,7 @@ Frozen as of the timestamp above:
 - the suite core inputs: `README.md`, `policy.md`, `rubric.md` (thresholds),
   `adapters/cli.md`, `adapters/plain-files.md`, the three scenario files,
   the three gold files, the two record templates, and the two S2
-  event-artifact files — 15 files, 134,276 bytes total (section 3);
+  event-artifact files — 15 files, 136,604 bytes total (section 3);
   `docs/m0.6-suite.md` is deliberately **not** in the core table;
 - the three seed trees `seeds/S1`, `seeds/S2`, `seeds/S3` (section 4);
 - the canonical runtime `plugins/aitp-research-protocol/scripts/vendor/aitp/`
@@ -142,10 +156,10 @@ Explicitly **not** frozen / whitelisted to differ:
 
 | File | sha256 | Bytes |
 |---|---|---|
-| `suite/README.md` | `f663ab461909147fd4f06b90574fd5a9b03490423270337d0dcd76217e578a99` | 21545 |
+| `suite/README.md` | `10b614eac5e00863ee821ac4eff4a480a72ee494860c229bddac493dee52387f` | 22533 |
 | `suite/policy.md` | `e92b59ec88fd52d3dd896771980393ed2bb29fa72b734af56dd1c16d9d04c0d5` | 3515 |
 | `suite/rubric.md` | `3fb5ee7ef4057df8f2ea6b0681e2ca19293d27bf3b2c24b7f12f9205317dc51b` | 15617 |
-| `suite/adapters/cli.md` | `b1e5aa137edbbcd945509caef69e21d0d0d0b3eed300fa27bfb403b49ad84046` | 3331 |
+| `suite/adapters/cli.md` | `0b5868947586192dc0122b2d99e23740f46a0ef62e104f1c888b99b784527e19` | 4527 |
 | `suite/adapters/plain-files.md` | `3d3af41a8674f3fceb33db399f7f75c64c8380cce151a689270b5b2e57ab308f` | 3169 |
 | `suite/scenarios/S1-resumption.md` | `7b1be589d9f6041b7ab89f425b7944d95e7d492fd7ffbc7d9231342e9b458ba1` | 6774 |
 | `suite/scenarios/S2-durable-events.md` | `4db7486e4e655f8af43d9172ac1d7483d0357c5be1495312aa4133de2e4cd654` | 13515 |
@@ -153,7 +167,7 @@ Explicitly **not** frozen / whitelisted to differ:
 | `suite/gold/S1-resumption-gold.md` | `9393d87e0ae955a6f985844a63ac6764029d77843931910e1976e40c75ab80e2` | 4856 |
 | `suite/gold/S2-durable-events-gold.md` | `eb18d0b9f703cfc5ee63cb8015778b96b91038a823af8a768592a4140906ac0a` | 6081 |
 | `suite/gold/S3-heldout-gold.md` | `78ecc2a5e42681bb5554bc1c369588402282f5f644fbe290ff1371170c4cb085` | 3831 |
-| `suite/run-notes-template.md` | `a034ce098a9b00f2bc284f64510259a87805224d7839de0c4aa50f6dbc464feb` | 24240 |
+| `suite/run-notes-template.md` | `57f4742e054ce6ee81443f9c5480886a377ba5c0f4a8f560484a64962de6c7ac` | 24384 |
 | `suite/score-sheet-template.md` | `4825e8541eac4e8e806dd7235465236d8fb1c4d0b7bcff7a8170f5294a4bffd7` | 18239 |
 | `suite/events/S2/entropy-L64.dat` | `65dc4dbbc8854e1045c6569d702799952f086b8039553c2c64062548a77cd2de` | 10 |
 | `suite/events/S2/run-bond600-L64.out` | `1355a40401105ca7fa706d6864aa99bc574bbfab35e5a4569e7d5cd078f02bee` | 32 |
@@ -162,9 +176,9 @@ The two `events/S2/` files are the canonical artifacts injected at S2 turns
 4 and 5 (workspace targets `calculations/dmrg/entropy-L64.dat` and
 `calculations/dmrg/run-bond600-L64.out`; digests above are the ones the
 scenario pins and S2 gold requires records to reproduce). Of the 15 files,
-13 are unchanged from version 4; only `README.md` and `rubric.md` changed
-(§0). `FROZEN.md` itself is deliberately absent from this table
-(section 7).
+12 are unchanged from version 5; only `README.md`, `adapters/cli.md`, and
+`run-notes-template.md` changed (§0). `FROZEN.md` itself is deliberately
+absent from this table (section 7).
 
 ## 4. Seed trees — canonical manifests, file counts, and window counts
 
@@ -181,7 +195,7 @@ prefix, dotfiles included), then per file a line `path<TAB>sha256`
 | `suite/seeds/S3/` | 48 | 30311 | `697326340cd3a5042241c3cde1308fd4a2ed294d33316606a2b26e7ae6890530` |
 
 All three canonical hashes, file counts, and byte totals are **unchanged
-from versions 2–4**. Verified against the current seed trees:
+from versions 2–5**. Verified against the current seed trees:
 
 - No file path in any seed manifest matches `entropy-L64` or
   `run-bond600-L64` — the S2 event artifacts are absent from the canonical
@@ -192,7 +206,7 @@ from versions 2–4**. Verified against the current seed trees:
   `**/.venv/`) and `.aitp/.gitignore` (manifest line 1) are part of the
   manifest as in versions 1 and 2.
 
-Window counts, carried over from versions 2–4 (the seed bytes are identical
+Window counts, carried over from versions 2–5 (the seed bytes are identical
 to those versions, where they were verified with the frozen runtime `aitp
 enter --json` on byte-copies — the fixtures themselves were never executed
 against and never mutated):
@@ -214,10 +228,10 @@ before version 1; content repair, not iteration).
   rule (`grep -c '\S'` per module, summed) over all `.py` files in the
   canonical runtime `plugins/aitp-research-protocol/scripts/vendor/aitp/`
   (9 modules). Re-measured from the current tree for this version;
-  unchanged from versions 1–4. The runtime was **not modified** for
+  unchanged from versions 1–5. The runtime was **not modified** for
   this freeze.
 - **Tests: 26 passed, 0 failed** — `uv run --python 3.12 --with pytest
-  python -m pytest -q` (26 collected, 1.03 s, exit 0), re-run from the
+  python -m pytest -q` (26 collected, 2.00 s, exit 0), re-run from the
   current tree for this version. The command reuses the local `.venv`
   (Python 3.12, pytest already installed); the `.venv` was **not modified**
   for this freeze. Historical note: at version 1, the `.venv` bin-script
@@ -250,13 +264,13 @@ before version 1; content repair, not iteration).
   after this freeze invalidates the first paired run. The run must not
   proceed on mixed bytes. Note that the threshold values in `rubric.md`
   (M1 ≥ 0.6 AND > control; M2 recall/precision ≥ 0.7; M3 = 1.0; M4 = 1.0
-  (4/4); M5 reported only) are unchanged across versions 1–5: the
+  (4/4); M5 reported only) are unchanged across versions 1–6: the
   clarifications (§0) operationalize scoring; they never alter a threshold.
 - **Refreeze procedure.** After any such change, a new freeze must be
   recorded (new version/UTC timestamp and full re-computed hashes), and the
   change documented as a diff in the stage notes — per `rubric.md`'s
   revision rule, revisions happen only between stage runs and are recorded,
-  never silent. This file is version 5 precisely because of such a
+  never silent. This file is version 6 precisely because of such a
   change (section 0).
 - **Event-artifact discipline.** `events/S2/` files are injected only at
   their script turns, identically in both conditions (`README.md` step 4):
@@ -282,24 +296,27 @@ before version 1; content repair, not iteration).
   only by a new freeze or by a stage-note diff; it is not part of the
   agent-visible workspace.
 
-## 7. FROZEN.md self-exclusion and the immutable commit anchor
+## 7. FROZEN.md self-exclusion and the external anchor
 
 - `suite/FROZEN.md` is **excluded from its own hash table** (section 3): it
   is the record of the freeze, not a scoring input, and the agent never sees
   it. No sha256 of this file is part of the frozen input set.
-- Commit `ac5209647f5f2a88a530dcd2856c13d39d31e856` contains the exact frozen
-  core-input and seed bytes described in sections 3–5. It is the external
-  immutable anchor that turns this preregistration into the formal freeze
-  proof for the first scored paired run.
-- This post-commit anchor-status update changes only `FROZEN.md`, which is
-  self-excluded; it does not change any scored input, seed, threshold, event
-  artifact, adapter, or gold file. The run notes must record the anchor hash
-  and verify that it is an ancestor of the run checkout and that
-  `git status --porcelain suite/` is clean before deployment.
-- The anchor requirement is therefore satisfied. Formal scoring remains
-  conditional on the per-run identity, isolation, instrumentation, verbatim
-  delivery, budget, M4, and blind-packet preflights in `README.md` and
-  `run-notes-template.md`.
+- Version 5 recorded anchor commit `ac5209647f5f2a88a530dcd2856c13d39d31e856`
+  for the version-5 bytes. **That anchor does not cover the version-6
+  bytes**: three frozen inputs were modified after it was created (§0) and
+  this version does not commit those changes.
+- Version 6 therefore has **no valid anchor**: it is a working-tree
+  preregistration whose hashes (sections 3–5) pin the current bytes, not a
+  commit. It becomes the **formal freeze proof** for the first scored paired
+  run only when a **new external immutable anchor** exists — the user's
+  explicit authorization to commit the version-6 frozen state, or an
+  equivalent immutable external pin (e.g. a hash posted to an external
+  immutable ledger) — with the anchor recorded in the run notes alongside
+  the hashes in sections 3–5, and the run's own `git rev-parse HEAD` +
+  `git status --porcelain suite/` verified at run time
+  (`run-notes-template.md` §0).
+- Until such an anchor exists, the **formal scored run remains BLOCKED**;
+  no anchor is fabricated, inherited, or claimed for the current bytes.
 
 ## 8. Verification
 
@@ -307,30 +324,30 @@ Everything above was computed from the working tree bytes, then re-checked:
 
 1. Frozen-input sha256 and byte counts: `sha256sum` + `wc -c` over the 15
    files (section 3) — single pass; total bytes re-confirmed with a
-   concatenated `wc -c` (134,276).
+   concatenated `wc -c` (136,604).
 2. Seed manifests: re-built from the current tree with the canonical
    `find . -type f | sort` + `path<TAB>sha256` pipeline (section 4);
    hashes, file counts (58/57/48), and byte totals (30563/27108/30311)
-   match versions 2–4. Absence checks: `grep` for `entropy-L64` /
+   match versions 2–5. Absence checks: `grep` for `entropy-L64` /
    `run-bond600-L64` in the S2 manifest (0 matches) and for `gold` in all
    three manifests (0 matches).
-3. Window counts: carried over from versions 2–4, whose seeds are byte-
+3. Window counts: carried over from versions 2–5, whose seeds are byte-
    identical to the current trees (manifest equality above); they were
    originally verified with `aitp enter --json` on `diff -r`-verified
    byte-copies at `/tmp/freeze-check/v2/<S>` (S1 29/9, S2 28/8, S3 30/10).
 4. Runtime and tests: nonblank count (1082) and `uv run --python 3.12
-   --with pytest python -m pytest -q` (26 passed, 1.03 s) re-run from the
+   --with pytest python -m pytest -q` (26 passed, 2.00 s) re-run from the
    current tree for this version; the `.venv` was not modified (gitignored
    environment, unchanged mtimes).
 5. Exclusions: no file under `suite/runs/` (including
    `suite/runs/2026-08-06-dry-run/**`, its `reviews/` subtree, transcripts,
    end states, and manifests) is frozen; nothing from `gold/` or
-   `events/S2/` is inside any seed tree; `docs/m0.6-suite.md` is not in the
+   `events/S2/` is inside any seed tree; `docs/m0.6-suite.md`,
+   `docs/roadmap.md`, and Skill/README files outside `suite/` are not in the
    core table (section 3 covers only the 15 listed `suite/` files); no
    `ref/` or `uv.lock` file was read or frozen.
-6. Git anchor: after the frozen bytes and staged path list were verified, the
-   user explicitly authorized the suite freeze commit. Commit
-   `ac5209647f5f2a88a530dcd2856c13d39d31e856` contains the exact section 3–5
-   bytes and excludes `suite/runs/`, `ref/`, and `uv.lock`. This anchor-status
-   update is self-excluded and does not alter those bytes; the run notes must
-   re-verify the anchor ancestry and clean suite status at run time.
+6. Git anchor: **no git command was run for this version.** Version 5's
+   anchor commit `ac520964…` covered the version-5 bytes only; the
+   version-6 bytes (three inputs changed after that anchor, §0) are not
+   anchored. The formal scored run remains BLOCKED until a new anchor is
+   authorized and recorded (sections 1 and 7). No commit is claimed.

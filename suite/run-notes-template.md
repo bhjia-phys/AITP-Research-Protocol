@@ -72,7 +72,7 @@ run.
 | Skill policy decision (recorded pre-run): identical Skills in both conditions / treatment-only `aitp`+`using-aitp` as part of its adapter envelope | |
 | Are Skills identical across both conditions / disabled on control as declared? | |
 | Canonical runtime revision: repo `git rev-parse HEAD` (§0) + `git status --porcelain plugins/aitp-research-protocol/`; working-tree hash if uncommitted; sha256 of the runtime files as exercised | |
-| CLI launcher + interpreter (exact invocation per `adapters/cli.md`): `aitp` on `PATH` at <path>, or `<python3.11> <absolute-launcher>`; `aitp --version` + interpreter `--version` output | |
+| CLI launcher + interpreter (exact invocation per `adapters/cli.md`): `<python3.11> <absolute-launcher>` (resolved via `command -v aitp` if on `PATH`); launcher absolute path + sha256; interpreter absolute path + `python --version` output; installed plugin manifest `version` field + manifest sha256 — the CLI has no `--version` | |
 | Tool-call counting method (who counts, on what artifact: the operator, from the raw transcript / harness log, one fixed rule) | |
 | Where the raw transcript / harness log is written | |
 

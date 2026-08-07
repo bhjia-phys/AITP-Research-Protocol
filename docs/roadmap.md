@@ -1,8 +1,24 @@
 # AITP Roadmap and Product Design
 
-Status: active master plan, v3.2. Revised after dense-ledger dogfooding in
-`/home/bhjia/physics/GW_librpa`; the detailed design proposal is
+Status: active master plan, v3.4. Revised after dense-ledger dogfooding in
+`/home/bhjia/physics/GW_librpa`; the M1 specification index is
 `docs/m1-read-write-balance.md`.
+Changes in v3.4: the M1 spec state is recorded — `docs/m1a-spec.md` exists
+as the written M1a implementation-level spec, blocked until the M0.6 gate;
+`docs/m1b-spec.md` exists as the frozen M1b pre-spec (design freeze; blocked;
+not an implementation-level spec — its implementation-level spec follows
+after the M1a gate). Budget-review-of-cap wording is replaced by the
+reconciliation of the actual M1a total against the fixed caps (caps never
+adjusted), and each stage's cut order is defined by its own spec. Neither
+M1a nor M1b is implemented; `list`, `show`, and `check` remain unbuilt.
+Changes in v3.3: `docs/m1-read-write-balance.md` is promoted from design
+proposal to the M1 specification index — it links the M1 specs
+`docs/m1a-spec.md` and `docs/m1b-spec.md`, lists the M1 implementation
+order, and fixes a seven-piece documentation sync discipline. M1a's
+prerequisites now include freezing the M1a implementation spec before golden
+fixtures; M1b remains blocked behind the M1a gate plus the reconciliation of
+the actual M1a total against the fixed caps. Neither M1a nor M1b is
+implemented; `list`, `show`, and `check` remain unbuilt.
 Changes in v3.2: M1a is explicitly retrieval-first (`list`/`show`, stable
 handoff projection, Note-age hints, versioned JSON); M1b gains a narrowly
 defined optional `based_on` relation and remote-run pointer-bundle
@@ -277,8 +293,8 @@ be implemented, and only from its implementation-level spec. Stages marked
 | M0 — Ledger | done; stable baseline (`ledger-core` branch) | — |
 | M0.5 — Slim core | **done** (gate passed 2026-07-30; addendum in `docs/slim-core-plan.md`) | — |
 | M0.6 — Adopt & bootstrap | **in progress; not done** — item 1 (`init --adopt`) implemented; item 2 runtime inventory done, two dogfood bootstrap measurements pending; item 3 suite core implemented, static repair complete, paired scored runs pending. Specs: item 1 `docs/m0.6-init-adopt.md`, item 2 `docs/m0.6-bootstrap.md`, item 3 `docs/m0.6-suite.md` | remaining M0.6 gate evidence: two dogfood bootstrap measurements; paired scored suite runs; M0.6 gate review — M1a stays blocked |
-| M1a — Memory that restores | design only; blocked (`docs/m1-read-write-balance.md`) | M0.5 + M0.6 gates; executable suite; freeze versioned `enter`/`show`/`list --json` before golden fixtures |
-| M1b — Open items & pilot | design only; blocked (`docs/m1-read-write-balance.md`) | M1a gate; freeze `aitp/lite-entry-0.2` (`based_on`, single-target `resolves`, `resolution` enum, contradiction criteria, `aitp check` contract) |
+| M1a — Memory that restores | written implementation spec; blocked (`docs/m1a-spec.md`) | M0.6 gate: two dogfood bootstrap measurements, paired scored suite runs, gate review — the review flips this row, not the implementer; implementation proceeds only from the frozen `docs/m1a-spec.md` (versioned `enter`/`show`/`list --json` payloads; golden fixtures regenerate from the spec) |
+| M1b — Open items & pilot | pre-spec frozen; blocked (`docs/m1b-spec.md`; implementation-level spec follows after the M1a gate) | M1a gate with the reconciliation of the actual M1a total against the fixed caps (caps never adjusted); derive and green-light the M1b implementation-level spec from the frozen pre-spec — which achieves the `aitp/lite-entry-0.2` freeze (`based_on`, single-target `resolves`, `resolution` enum, contradiction criteria, `aitp check` contract) |
 | M2 — Reviewed artifacts | design only; blocked | M1b gate; real reviewed material in the dogfood Topics |
 | M3 — Cross-topic links | design complete (`docs/cross-topic-links.md`); blocked | ≥ 3 real Topics; M2 gate |
 | M4 — Collaborator protocol | design complete (`docs/collaborator-design.md`); Skill-only, +0 runtime lines | M1b pilot evidence; suite thresholds |
@@ -398,6 +414,10 @@ before the M0.6 gates. See `docs/m1-read-write-balance.md`.
   that margin — faster frontmatter loading or a cheaper projection path —
   without adding a persistent index or changing output semantics.
 
+Implementation begins only after the M0.6 gate review passes; the frozen
+implementation-level spec is `docs/m1a-spec.md` — neither this roadmap prose
+nor the spec index is an implementation-level specification.
+
 Gate: suite-scored resumption checklist on both dogfood Topics, against the
 control group; the dated GW_librpa corpus lists 60 Entries and 26 results
 without changing any existing file; all ledger tests pass; `--help` < 250 ms,
@@ -430,6 +450,12 @@ without changing any existing file; all ledger tests pass; `--help` < 250 ms,
   first feature cut if the 1,450-line cap is threatened.
 - `aitp-collaborator` alpha pilot; `surveying-literature` and
   `analyzing-a-source` land here as use-driven increments.
+
+M1b is not implemented. `docs/m1b-spec.md` is the frozen M1b pre-spec — a
+design freeze, not an implementation-level spec. M1b starts only after the
+M1a gate passes with the reconciliation of the actual M1a total against the
+fixed caps (caps never adjusted), and only from the M1b implementation-level
+spec derived from the pre-spec and green-lit.
 
 Gate: suite shows prediction order respected and corrections persisting
 across sessions; based-on targets and reverse views are correct without an

@@ -1,12 +1,15 @@
 # AITP Evidence Ledger Design
 
-Status: stable M0 baseline. The schema evolves to `aitp/lite-entry-0.2` in
+Status: stable M0 baseline, with the M0.6 adopt/inventory additions documented
+below. The schema evolves to `aitp/lite-entry-0.2` in
 M1b (new `prediction` and `question` kinds; `resolves` generalized to
 failures, predictions, and questions with a typed `resolution` closure
 field and target-kind validation; `contradicts` on failure Entries under
 strict criteria; `aitp check` whole-store re-validation; Note `supersedes`
 validation; optional `citekey`/`trust` on `source` Entries) per
-`docs/roadmap.md`; v0.1 records remain valid without migration.
+`docs/roadmap.md`; v0.1 records remain valid without migration. `list`,
+`show`, and `check` are planned M1 commands and are not implemented (see
+"Planned commands" below).
 
 ## Purpose
 
@@ -51,13 +54,31 @@ manuscripts/
 
 ## Commands
 
+Every command accepts `--cwd PATH` (default `.`) and `--json`; `--json`
+emits the same payload as machine-readable JSON. The commands below are the
+current implemented surface; the "Planned commands" subsection lists what is
+not implemented.
+
 ### `aitp init`
 
-Operate only on a blank directory, except for an optional `.git`. Create the fixed research layout and one Topic record. Never initialize Git or infer scientific content.
+Without `--adopt`, operate only on a blank directory, except for an optional
+`.git`. Create the fixed research layout and one Topic record. `--adopt`
+(M0.6) initializes `.aitp/` inside an existing research tree without touching
+content or imposing the fixed layout. `--dry-run` reports the intended
+changes without writing. Never initialize Git or infer scientific content.
+
+### `aitp inventory`
+
+`aitp inventory <path> --name <slug>` scans a legacy tree and writes a
+read-only hash manifest (`aitp/legacy-inventory-0.1`) under
+`.aitp/local/legacy/`. It is an operator-only M0.6 bootstrap tool for legacy
+stores; it is not part of the routine session flow.
 
 ### `aitp enter`
 
-Read the Topic, valid Entries, and Notes. Return:
+`aitp enter [--recent N] [--json]` reads the Topic, valid Entries, and Notes;
+`--recent` defaults to 20, the window is a projection, and `omitted_active`
+reports what it leaves out. Return:
 
 - memory status;
 - recent active Entries with exact source paths;
@@ -70,7 +91,10 @@ The output must distinguish recorded state from scientific truth and expose miss
 
 ### `aitp record prepare/save`
 
-Prepare exactly one draft from the selected kind-specific template. Save only after fast structural, relation, evidence-pin, and prompt-completion checks.
+`aitp record prepare --kind <kind> --authority <level> --created-by <id>
+[--idempotency-key <key>]` prepares exactly one draft from the selected
+kind-specific template. `aitp record save <draft>` saves only after fast
+structural, relation, evidence-pin, and prompt-completion checks.
 
 Kinds:
 
@@ -91,12 +115,27 @@ Logical retries use one idempotency key and must not create duplicates.
 
 ### `aitp note prepare/save`
 
-Prepare either:
+`aitp note prepare --mode working|theory --title "<title>" --created-by <id>`
+prepares either:
 
 - `working`: current research line, evidence map, uncertainty, and next actions;
 - `theory`: assumptions, conventions, derivation, checks, gaps, and implications.
 
-A Note synthesizes pinned research evidence. It is not the sole evidence for a result.
+`aitp note save <draft>` saves the filled draft. A Note synthesizes pinned
+research evidence. It is not the sole evidence for a result.
+
+### Planned commands (blocked)
+
+Not implemented; do not invoke them. Designed in
+`docs/m1-read-write-balance.md` and gated by `docs/roadmap.md` (M0.6 gate,
+then the M1a/M1b spec freezes):
+
+- `aitp list [--kind KIND] [--since DATE]` — M1a retrieval projection over
+  all canonical Entries;
+- `aitp show <entry-id>` — M1a exact-record read with full frontmatter and
+  body;
+- `aitp check` — M1b whole-store, read-only diagnostics over schema, pins,
+  and relation targets.
 
 ## Evidence pins
 

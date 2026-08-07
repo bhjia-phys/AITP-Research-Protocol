@@ -20,12 +20,43 @@ user-facing explanations, the shorter `aitp <command>` spelling is acceptable.
 Use ordinary filesystem tools and `rg` for ad hoc reading; there is no
 `aitp search`.
 
+## Current command map
+
+Every command accepts `--cwd PATH` (default `.`) and `--json`. No `aitp
+search` exists — `rg` over `.aitp/topic/` is the query path.
+
+- `aitp init --topic <slug> --title "<title>"` — blank repository only;
+  `--adopt` creates `.aitp/` inside an existing tree without touching
+  content; `--dry-run` previews without writing.
+- `aitp enter [--recent N]` — orientation at session start and before
+  ending; `--recent` defaults to 20 and is a projection, not the whole
+  ledger.
+- `aitp inventory <path> --name <slug>` — operator-only M0.6 bootstrap tool
+  (legacy scan + hash manifest); not part of routine session flow.
+- `aitp record prepare --kind <kind> --authority <level> --created-by <id>
+  [--idempotency-key <key>]` → `aitp record save <draft-path>`.
+- `aitp note prepare --mode working|theory --title "<title>" --created-by
+  <id>` → `aitp note save <draft-path>`.
+
+## Future commands — not implemented (sync checklist)
+
+`aitp list`, `aitp show`, `aitp check`, and the `enter` v2 handoff semantics
+(M1a/M1b) do not exist yet. Do not invoke them and do not describe them as
+available. When M1a or M1b lands, update in the same change:
+`docs/roadmap.md` (stage status), `docs/design.md` (command contracts),
+`docs/m1-read-write-balance.md` (spec index), `docs/m1a-spec.md` (M1a
+implementation-level spec), `docs/m1b-spec.md` (M1b pre-spec — its
+implementation-level spec follows after the M1a gate), this command map, and
+README's "Current state".
+
 ## Start or resume work
 
 1. If `.aitp/topic/TOPIC.md` does not exist and the repository is blank except for `.git`, run `aitp init --topic <slug> --title "<title>"`.
 2. At the beginning of every research session, run `aitp enter`.
 3. Treat its output as recorded project state, not as scientific truth. Open cited Entries, Notes, code, calculations, and pinned references before relying on a claim.
 4. If `memory_status` is `partial` or `not_established`, state what is missing and inspect files directly.
+
+The `enter` recent window is a projection, not the whole ledger: it shows the newest records and omits older active ones (`omitted_active`). Records outside the window are unread, not absent. Before planning, search the store — `rg` over `.aitp/topic/` — for the entries relevant to the current question: the newest record on every topic you will rely on, its `supersedes`/`resolves` chains, and the pinned evidence behind its claims. Before asserting that a record, pin, or relation does not exist, search the store for it.
 
 Never infer the real research state merely from directory names, Git history, or the latest modified file.
 
@@ -38,7 +69,7 @@ aitp record prepare --kind <kind> --authority <level> \
   --created-by agent:<name> --idempotency-key <stable-key>
 ```
 
-Choose one kind: `observation`, `result`, `failure`, `decision`, `source`, `code-change`, `run`, or `closeout`.
+Choose one kind: `observation`, `result`, `failure`, `decision`, `source`, `code-change`, `run`, or `closeout`. Set `authority` to the source of the event: `human` (`--created-by researcher`) when the researcher asserts it, `agent` when you act or observe.
 
 Open the returned draft, replace every inline prompt, add precise relations and pinned references, then run:
 
@@ -48,7 +79,9 @@ aitp record save <draft-path>
 
 The CLI template is the schema. Keep claims small, state limitations, and distinguish evidence from interpretation.
 
-- Use `resolves` only for an active failure this Entry actually resolves.
+- Before preparing a record, check that the ledger does not already contain the same logical event. A restatement, confirmation, or re-verification of an already-recorded convention, decision, or claim is not a durable event: cite the existing record and write nothing new. Never re-issue with `agent` authority a decision the ledger already records as `human`.
+- Record a verification only when it changes a live claim or surfaces auditable evidence the ledger lacks; do not wrap an ordinary re-read or an un-triggered check as a durable event.
+- Use `resolves` only when this Entry's own evidence directly closes an active failure — first check the failure's state and its `supersedes`/`resolves` chain, and confirm no existing record already settles the failure's subject. A projected counter (such as `unresolved_failures`) is ledger state, not an instruction: do not change a failure's status unless the records support the change.
 - Use `supersedes` only when replacing an older Entry; never silently rewrite history.
 - Use `git`, `sha256`, `run`, `version`, or `retrieved` pins for evidence that may change.
 - Reuse the same idempotency key when retrying the same logical write.

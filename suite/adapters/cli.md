@@ -9,14 +9,32 @@ correction handling, closeout discipline) come from `policy.md`.
 ## Environment contract (fixed before the run)
 
 The operator verifies and records pre-run that the treatment invocation works
-from the workspace root and stays fixed for the whole session:
+from the workspace root and stays fixed for the whole session. The CLI has no
+`--version` flag (the runtime implements no version subcommand or option), so
+treatment identity is recorded deterministically from fixed files and the
+interpreter, never from the CLI:
 
-- `aitp` is on `PATH` (record the resolved path pre-run); or, if not, one
-  fixed absolute launcher with a fixed interpreter is declared pre-run
-  (`<python3.11> <absolute-launcher>`; the CLI requires Python ≥ 3.11).
-- Record the exact command line, `aitp --version`, and the interpreter
-  version pre-run. Every command in this appendix runs with exactly that
-  invocation; the agent never needs a per-turn operator grant.
+- One fixed absolute launcher with a fixed interpreter, declared pre-run as
+  `<python3.11> <absolute-launcher>` (the CLI requires Python ≥ 3.11; the
+  bundled launcher is `plugins/aitp-research-protocol/scripts/aitp.py`). If
+  `aitp` is on `PATH`, resolve it pre-run with `command -v aitp` and use the
+  resolved absolute path — still that one fixed launcher, hashed below.
+- Record pre-run, as the treatment identity block:
+  - launcher absolute path + sha256 (`sha256sum <absolute-launcher>`);
+  - interpreter absolute path (`command -v python3.11`) and its `--version`
+    output (`python3.11 --version`);
+  - installed plugin manifest version — read the `version` field of the
+    installed `kimi.plugin.json` (or `.codex-plugin/plugin.json` if that is
+    the installed manifest) — plus the manifest file's sha256;
+  - canonical runtime revision/tree hash: repo commit (`git rev-parse
+    HEAD`), `git status --porcelain` on the runtime path, and a sha256 tree
+    manifest (sorted `path<TAB>sha256` lines) over every file in
+    `plugins/aitp-research-protocol/scripts/vendor/aitp/`;
+  - Skill hashes: `SKILL.md` path + sha256 for `aitp` and `using-aitp`, as
+    delivered to the agent.
+- Record the exact command line and the interpreter version pre-run. Every
+  command in this appendix runs with exactly that invocation for the whole
+  treatment session; the agent never needs a per-turn operator grant.
 
 The workspace is a ledger store initialized with the CLI. Run every command
 from the workspace root. Store layout: `.aitp/topic/TOPIC.md`,

@@ -70,11 +70,15 @@ These rules are not negotiable per run:
   `command -v aitp` prints nothing, and no `aitp` package is importable by the
   agent's interpreter.
 - Treatment CLI/Python/PATH preflight, recorded in the run notes BEFORE the
-  run: the exact invocation contract from `adapters/cli.md` holds — `aitp` on
-  `PATH`, or the one fixed absolute launcher + interpreter (Python ≥ 3.11)
-  declared there. Record the exact command line, `aitp --version`, and the
-  interpreter version. The same invocation is used for the entire run; the
-  agent never needs a per-turn operator grant.
+  run: the exact invocation contract from `adapters/cli.md` holds — the one
+  fixed absolute launcher + fixed interpreter (Python ≥ 3.11), resolved via
+  `command -v aitp` if `aitp` is on `PATH`. The CLI has no `--version`
+  flag, so identity is recorded deterministically, never from the CLI:
+  record the exact command line, the launcher absolute path + sha256, the
+  interpreter absolute path + `python --version` output, the installed
+  plugin manifest `version` field (+ manifest file sha256), the canonical
+  runtime revision/tree hash, and the Skill hashes. The same invocation is
+  used for the entire run; the agent never needs a per-turn operator grant.
 - The control condition never invokes AITP: its `I-O-APPENDIX.md` is the
   plain-files adapter, the control machine has no `aitp` on `PATH` and
   nothing importable (step 2), and no control-session tool call may invoke
@@ -84,12 +88,16 @@ These rules are not negotiable per run:
   Record in the run notes BEFORE the run, as mandatory identity: the model
   id, provider/endpoint, model version, the sha256 of the system prompt
   bytes (and of a separate developer prompt, if the harness has one), a hash
-  of the agent configuration, the adapter file hashes, the Skills as
+  of the agent configuration, the adapter file hashes, the treatment
+  launcher absolute path + sha256 and interpreter path + `python --version`
+  output (per `adapters/cli.md`), the installed plugin manifest version +
+  manifest file sha256, the Skills as
   delivered (path + sha256) and the Skill policy decision (identical Skills
   in both conditions, or treatment-only `aitp`/`using-aitp` Skills as part of
   its adapter envelope — decided and recorded pre-run), and the canonical
   runtime revision (repo commit, or working-tree hash + `git status
-  --porcelain` on the runtime path). If any of these differ between the two
+  --porcelain` on the runtime path, plus the `scripts/vendor/aitp/` tree
+  hash as exercised). If any of these differ between the two
   conditions, the run is void; any of these fields left unrecorded before the
   run is also a void condition.
 - Assessor is not the operator; the assessor receives only the
@@ -102,7 +110,13 @@ These rules are not negotiable per run:
   runtime/test baseline, S3 hold-out) must
   be frozen and recorded there. An unfrozen item voids the run as the first
   scored run and must be resolved and recorded in the stage notes before any
-  scoring.
+  scoring. The 2026-08-07 pre-first-scored-run static repair — the
+  unexecutable `aitp --version` requirement replaced by deterministic
+  treatment-identity recording (see Treatment preflight above; recorded in
+  `docs/m0.6-suite.md`) — supersedes the v5 freeze hashes of
+  `adapters/cli.md`, `README.md`, and `run-notes-template.md`, so FROZEN.md
+  must be re-issued as version 6 from the current tree before the first
+  scored run.
 - Templates are documentation, not tooling: the operator copies
   `run-notes-template.md` into `suite/runs/<date>/<scenario>/` and fills
   every hash/path placeholder by hand as the run proceeds; the assessor

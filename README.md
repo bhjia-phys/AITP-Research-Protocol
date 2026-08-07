@@ -56,21 +56,62 @@ as software. See [Roadmap and Product Design](docs/roadmap.md).
 
 ## Roadmap
 
-Full plan with scopes, complexity budgets, and gates:
-[docs/roadmap.md](docs/roadmap.md).
+The normative plan, including complexity budgets and gate definitions, is
+[docs/roadmap.md](docs/roadmap.md). This README keeps the public implementation
+checkpoint synchronized with it.
 
-| Stage | Outcome | Exit gate |
-|---|---|---|
-| M0 — Ledger | Reliable single-Topic records and Notes | Idempotent writes, pinned evidence, grounded `enter`, real-project use |
-| M0.5 — Slim core | One canonical runtime, deduplicated without net growth | No runtime duplication, no oversized module, unchanged ledger contracts |
-| M0.6 — Adopt & bootstrap | `init --adopt`, workspace `topics.toml`, lazy legacy bootstrap, executable conformance core | Two dogfood Topics adopted; bootstrap Notes human-confirmed; core suite runs end-to-end; cold-start metrics recorded |
-| M1a — Memory that restores | `enter` v2, `show`/`list`, versioned `--json`, resumption discipline | Suite-scored resumption checklist on real Topics vs. control |
-| M1b — Open items & behavior pilot | question/prediction lifecycle with typed closures, collaborator pilot | Prediction order and correction persistence measured; one real question advanced |
-| M2 — Reviewed artifacts | Knowledge, Skill, Insight, Hypothesis with hash-bound human review | Reviewed knowledge and a reviewed Skill with complete provenance and passing evaluations |
-| M3 — Cross-topic links | Catalog plus explicit links; `rg` discovery, no index | Human-confirmed links answer a real cross-Topic question with provenance |
-| M4 — Collaborator protocol | Long-horizon question → hypothesis → prediction → test loop, Skill-only | Prospective real-project evaluation passes vs. baseline |
+| Stage | Status | Outcome | Exit gate |
+|---|---|---|---|
+| M0 — Ledger | done | Reliable single-Topic records and Notes | Idempotent writes, pinned evidence, grounded `enter`, real-project use |
+| M0.5 — Slim core | done | One canonical runtime, deduplicated without net growth | No runtime duplication, no oversized module, unchanged ledger contracts |
+| M0.6 — Adopt & bootstrap | **in progress** | `init --adopt`, legacy `inventory`, lazy bootstrap, executable conformance suite | Two dogfood bootstrap measurements, held-out S3 report, paired S1/S2 scored runs, and gate review |
+| M1a — Memory that restores | implementation spec written; blocked on M0.6 | `list`, `show`, closeout-first `enter` v2, Note-age signal, versioned JSON | Retrieval/resumption suite, read-only GW_librpa acceptance, tests/performance/line-budget gates |
+| M1b — Open items & behavior pilot | pre-spec frozen; blocked on M1a | `aitp/lite-entry-0.2`, `based_on`, typed closures, `check`, derived `used_by`, local remote-run pointer bundles | Fixed-cap reconciliation, relation/check compatibility, prediction/correction persistence, real two-session pilot |
+| M2 — Reviewed artifacts | planned; blocked | Knowledge, Skill, Insight, Hypothesis with hash-bound human review | Reviewed knowledge and a reviewed Skill with complete provenance and passing evaluations |
+| M3 — Cross-topic links | planned; blocked | Catalog plus explicit links; `rg` discovery, no index | Human-confirmed links answer a real cross-Topic question with provenance |
+| M4 — Collaborator protocol | planned; blocked | Long-horizon question → hypothesis → prediction → test loop, Skill-only | Prospective real-project evaluation passes vs. baseline |
 
-We advance one gate at a time. Later stages may not weaken earlier evidence guarantees.
+### Current checkpoint
+
+M0.6 is the only active implementation stage:
+
+1. `aitp init --adopt` is implemented and accepted on real existing trees.
+2. `aitp inventory` is implemented; the two dogfood bootstrap measurements
+   and human-confirmed bootstrap Notes remain pending.
+3. The conformance suite core is implemented and frozen as
+   [`suite/FROZEN.md`](suite/FROZEN.md) v6. Its hashes are self-consistent,
+   but the v6 working-tree bytes still need a new immutable anchor before the
+   first scored run. The held-out S3 report and paired S1/S2 scored runs remain
+   pending.
+4. M1 runtime work is not started. [`docs/m1a-spec.md`](docs/m1a-spec.md) is
+   the blocked implementation specification; [`docs/m1b-spec.md`](docs/m1b-spec.md)
+   is a blocked pre-spec whose implementation-level version is derived only
+   after the M1a gate and fixed-cap reconciliation.
+
+### Implementation order
+
+1. Anchor FROZEN v6 and complete the remaining M0.6 dogfood and scored-suite
+   evidence.
+2. Pass the M0.6 gate review.
+3. Implement M1a only from `docs/m1a-spec.md`, update runtime/help/Skill/docs/
+   adapter/tests together, then pass the M1a gate.
+4. Reconcile the actual M1a line count against the fixed 1,300/1,450 caps,
+   derive and freeze the M1b implementation spec, then implement and gate M1b.
+5. Advance to reviewed artifacts, cross-topic links, and collaborator behavior
+   only in roadmap order.
+
+We advance one gate at a time. Later stages may not weaken earlier evidence
+guarantees. When a stage cannot fit its fixed budget, named scope is reduced;
+the cap is not silently expanded.
+
+### README maintenance contract
+
+This README is the public roadmap and current-state entry point. Any change
+that alters stage status, roadmap scope, CLI surface, gate evidence, spec
+paths, runtime budgets, installation, or user-facing operation must update the
+corresponding README sections in the **same change**. `docs/roadmap.md` remains
+the normative detailed plan; README maintenance must never be deferred to a
+later session.
 
 Multi-user synchronization, permissions, and remote federation are off the
 roadmap. For the default single-researcher, non-adversarial model, Git and
@@ -110,14 +151,24 @@ the runtime.
 
 ## Current state
 
-M0 is implemented as the AITP Evidence Ledger:
+M0 (Evidence Ledger) and M0.5 (slim core) are done. M0.6 (adopt and
+bootstrap) is in progress: `init --adopt` and `inventory` are implemented
+(dry-run, conflict, and rollback paths tested); the two dogfood bootstrap
+measurements and the paired scored suite runs are still pending, so the
+M0.6 gate is not passed.
+
+Implemented commands:
 
 ```text
-aitp init
+aitp init [--adopt]
 aitp enter
+aitp inventory <path> --name <name>
 aitp record prepare|save
 aitp note prepare|save
 ```
+
+`list`, `show`, and `check` are planned (M1a/M1b) and remain blocked — they
+are not available yet.
 
 Properties:
 
@@ -127,15 +178,14 @@ Properties:
 - the ledger has been validated against a real theoretical-physics workspace;
 - all current tests pass.
 
-M0.5 (slim core) is the next implementation stage, followed by M0.6 (adopt
-and bootstrap). The master plan is [docs/roadmap.md](docs/roadmap.md).
+The master plan is [docs/roadmap.md](docs/roadmap.md).
 
 ## Branch policy
 
 ```text
 main            stable integrated protocol, roadmap, and released capabilities
 ledger-core     immutable M0 ledger baseline
-slim-core       active M0.5 runtime simplification
+slim-core       M0.5 runtime simplification; gate passed, kept as a historical baseline
 research-graph  archived; superseded by the M3 cross-topic-links design
 ```
 
@@ -146,11 +196,11 @@ Feature branches should be short-lived. Stable milestones land on `main`; perman
 ## Repository layout
 
 ```text
-.agents/plugins/                  local Codex marketplace
-docs/                             concise active designs
-plugins/aitp-research-protocol/   installable Codex plugin
-src/aitp/                         standalone runtime
-tests/ledger/                     ledger and plugin contracts
+.agents/plugins/                                        local Codex marketplace
+docs/                                                   concise active designs
+plugins/aitp-research-protocol/                         installable Codex plugin
+plugins/aitp-research-protocol/scripts/vendor/aitp/     canonical single runtime
+tests/ledger/                                           ledger and plugin contracts
 ```
 
 The repository contains no compatibility runtime for former implementations.
