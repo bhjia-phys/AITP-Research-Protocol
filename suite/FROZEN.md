@@ -52,37 +52,29 @@ this record is re-issued from the current bytes:
   only the 15 `suite/` files listed there); they were not read for this
   version beyond what is recorded here.
 
-## 1. Anchor status — no git commit anchor; formal run still blocked
+## 1. Anchor status — commit anchor obtained
 
-There is **no git commit anchor** for this freeze. Per the instructions for
-this version, **no git command was run** while producing version 5; the
-anchor status below is carried over from the version-2 record
-(2026-08-06T18:19:57Z, itself re-verified at versions 3, 4, and 5 without
-git) and must be re-verified with the run's own `git rev-parse HEAD` +
-`git status --porcelain suite/` before the formal run
-(`run-notes-template.md` §0):
+The frozen suite core inputs were committed unchanged in
+`ac5209647f5f2a88a530dcd2856c13d39d31e856` (`chore: freeze M0.6
+conformance suite`). That commit is the immutable anchor for the 15 core
+inputs and the three seed trees listed below. `FROZEN.md` is excluded from
+its own hash table, so recording the anchor status below does not alter the
+scored input bytes.
 
-- `git branch --show-current` → `main`; `git log --oneline -1` →
-  `3a66e210 feat: aitp inventory (M0.6 gate item 2)`. That commit **does
-  not contain** the suite; the suite tree is untracked.
-- `git status --porcelain` showed `?? suite/` (untracked), plus uncommitted
-  working-tree changes: `M .gitignore`, `M docs/m0.6-suite.md`,
-  `M docs/roadmap.md`, and untracked `docs/m1-read-write-balance.md`,
-  `ref/`, `uv.lock`. The clarification updates in the spec
-  (`docs/m0.6-suite.md`, also `M`) and in the suite files (section 0) are
-  part of these uncommitted changes; this freeze pins their current bytes,
-  not a commit. `docs/m0.6-suite.md` is **not** part of this freeze's core
-  table (section 3 covers only the 15 `suite/` files listed there).
-- This freeze is therefore a **working-tree preregistration**: the hashes
-  below pin the current bytes, not a commit.
-- **The formal scored run remains BLOCKED on the anchor.** Before the
-  formal paired run, the operator must obtain the user's explicit
-  authorization to commit the frozen state (or pin an external immutable
-  anchor), then record that anchor (commit hash or equivalent) in the run
-  notes alongside the hashes below. No commit was created for this freeze,
-  and no commit hash is claimed here — no anchor is fabricated. The anchor
-  is what turns this record into the formal freeze proof of the scored run
-  (section 7).
+- `git branch --show-current` → `main`.
+- The anchor commit contains the suite core, the planning documents
+  (`docs/roadmap.md`, `docs/m0.6-suite.md`,
+  `docs/m1-read-write-balance.md`), and the one-line `suite/runs/` ignore
+  rule. It does **not** contain `ref/`, `uv.lock`, the managed dry-run
+  archive under `suite/runs/`, or the separately updated Skill file.
+- The anchor commit was created only after the staged path list was inspected;
+  no dry-run result, `ref/`, or `uv.lock` path was staged. The current
+  `git status --porcelain suite/` must be re-verified in the run notes before
+  the formal run (`run-notes-template.md` §0).
+- This freeze is now an immutable preregistration for the first scored paired
+  run. The run notes must record this exact anchor hash alongside the file
+  and seed hashes below. Any change to a frozen input requires a new freeze,
+  a stage-note diff, and a new anchor before scoring.
 
 ## 2. Frozen scope
 
@@ -290,24 +282,24 @@ before version 1; content repair, not iteration).
   only by a new freeze or by a stage-note diff; it is not part of the
   agent-visible workspace.
 
-## 7. FROZEN.md self-exclusion and the external anchor
+## 7. FROZEN.md self-exclusion and the immutable commit anchor
 
 - `suite/FROZEN.md` is **excluded from its own hash table** (section 3): it
   is the record of the freeze, not a scoring input, and the agent never sees
   it. No sha256 of this file is part of the frozen input set.
-- Because the suite is untracked (section 1), this file alone cannot prove
-  that the frozen bytes are the bytes of the first scored run: any edit to
-  this file or the inputs after this timestamp would change the working tree
-  undetected. The freeze becomes a **formal freeze proof** only when an
-  **external immutable anchor** exists — a commit of the frozen state
-  (requiring the user's explicit authorization) or an equivalent immutable
-  external pin (e.g. a hash posted to an external immutable ledger) — with
-  the anchor recorded in the run notes alongside the hashes in sections 3–5.
-  Until such an anchor exists, this record is a working-tree
-  preregistration and the **formal scored run remains blocked**: the run's
-  validity as the first scored run depends on the operator's freeze check
-  (section 6) against the anchored bytes, and no anchor is claimed or
-  fabricated in this file.
+- Commit `ac5209647f5f2a88a530dcd2856c13d39d31e856` contains the exact frozen
+  core-input and seed bytes described in sections 3–5. It is the external
+  immutable anchor that turns this preregistration into the formal freeze
+  proof for the first scored paired run.
+- This post-commit anchor-status update changes only `FROZEN.md`, which is
+  self-excluded; it does not change any scored input, seed, threshold, event
+  artifact, adapter, or gold file. The run notes must record the anchor hash
+  and verify that it is an ancestor of the run checkout and that
+  `git status --porcelain suite/` is clean before deployment.
+- The anchor requirement is therefore satisfied. Formal scoring remains
+  conditional on the per-run identity, isolation, instrumentation, verbatim
+  delivery, budget, M4, and blind-packet preflights in `README.md` and
+  `run-notes-template.md`.
 
 ## 8. Verification
 
@@ -336,7 +328,9 @@ Everything above was computed from the working tree bytes, then re-checked:
    `events/S2/` is inside any seed tree; `docs/m0.6-suite.md` is not in the
    core table (section 3 covers only the 15 listed `suite/` files); no
    `ref/` or `uv.lock` file was read or frozen.
-6. Git anchor: no git command was run for this version; the anchor status
-   in section 1 is carried from the version-2 record and must be re-verified
-   at run time (`run-notes-template.md` §0). No commit is claimed; the
-   formal scored run remains blocked until an anchor exists (section 7).
+6. Git anchor: after the frozen bytes and staged path list were verified, the
+   user explicitly authorized the suite freeze commit. Commit
+   `ac5209647f5f2a88a530dcd2856c13d39d31e856` contains the exact section 3–5
+   bytes and excludes `suite/runs/`, `ref/`, and `uv.lock`. This anchor-status
+   update is self-excluded and does not alter those bytes; the run notes must
+   re-verify the anchor ancestry and clean suite status at run time.
