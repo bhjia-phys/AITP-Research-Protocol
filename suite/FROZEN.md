@@ -63,32 +63,29 @@ discipline (section 6), this record is re-issued from the current bytes:
   (`docs/`, plugin `SKILL.md` files) are outside the freeze: only the files
   listed in section 3 are frozen inputs; no other path enters this table.
 
-## 1. Anchor status — previous anchor does not cover the current bytes; new anchor pending
+## 1. Anchor status — version 6 commit anchor obtained
 
-**Version 6 is a working-tree preregistration. The formal scored run's
-anchor is PENDING — the current bytes are not anchored by any commit.**
+The exact version-6 frozen inputs and seed bytes are contained in commit
+`145261805d5205d2150dca18c6c42d5a18a628f2`
+(`docs: finalize M1 planning and suite preflight`, branch `main`). That commit
+is the immutable anchor for the section 3–5 bytes.
 
-- Version 5 recorded that an anchor commit `ac5209647f5f2a88a530dcd2856c13d39d31e856`
-  (`chore: freeze M0.6 conformance suite`, branch `main`) was created for
-  the version-5 bytes, with the run notes instructed to verify its ancestry
-  and a clean `git status --porcelain suite/` at run time.
-- **That anchor does not cover the version-6 bytes.** After the anchor was
-  created, three frozen inputs were modified for the identity-preflight
-  static fix (`README.md`, `adapters/cli.md`, `run-notes-template.md` —
-  section 0), and **this version does not commit those changes**. Per the
-  instructions for this version, **no git command was run** while producing
-  version 6, and no claim is made about the current working-tree state
-  beyond the byte hashes in sections 3–5. Nothing here asserts that the
-  current bytes are contained in any commit — no anchor is fabricated or
-  inherited.
-- **Before the formal paired run**, the operator must obtain the user's
-  explicit authorization to commit the version-6 frozen state (or pin an
-  external immutable anchor), then record that anchor (commit hash or
-  equivalent) in the run notes alongside the hashes below, together with
-  the run's own `git rev-parse HEAD` and `git status --porcelain suite/`
-  (`run-notes-template.md` §0). The anchor is what turns this record into
-  the formal freeze proof of the scored run (section 7). Until then, the
-  formal scored run remains BLOCKED on the anchor.
+- Version 5's earlier anchor `ac5209647f5f2a88a530dcd2856c13d39d31e856`
+  remains historical evidence for the version-5 bytes only.
+- Commit `145261805d5205d2150dca18c6c42d5a18a628f2` contains the three
+  identity-preflight repairs (`README.md`, `adapters/cli.md`, and
+  `run-notes-template.md`) together with the unchanged thresholds, scenarios,
+  gold, seeds, event artifacts, and runtime recorded below. `ref/`, `uv.lock`,
+  and `suite/runs/` are not part of that commit.
+- This post-commit anchor-status update changes only `FROZEN.md`, which is
+  excluded from its own hash table; it does not alter any scored input or
+  seed byte.
+- Before the formal paired run, the operator must record the anchor hash in
+  the run notes and verify that it is an ancestor of the run checkout and
+  that `git status --porcelain suite/` is clean
+  (`run-notes-template.md` §0). The anchor requirement is satisfied; all
+  remaining identity, isolation, instrumentation, budget, M4, and blind-
+  packet preflights still apply.
 
 ## 2. Frozen scope
 
@@ -301,22 +298,16 @@ before version 1; content repair, not iteration).
 - `suite/FROZEN.md` is **excluded from its own hash table** (section 3): it
   is the record of the freeze, not a scoring input, and the agent never sees
   it. No sha256 of this file is part of the frozen input set.
-- Version 5 recorded anchor commit `ac5209647f5f2a88a530dcd2856c13d39d31e856`
-  for the version-5 bytes. **That anchor does not cover the version-6
-  bytes**: three frozen inputs were modified after it was created (§0) and
-  this version does not commit those changes.
-- Version 6 therefore has **no valid anchor**: it is a working-tree
-  preregistration whose hashes (sections 3–5) pin the current bytes, not a
-  commit. It becomes the **formal freeze proof** for the first scored paired
-  run only when a **new external immutable anchor** exists — the user's
-  explicit authorization to commit the version-6 frozen state, or an
-  equivalent immutable external pin (e.g. a hash posted to an external
-  immutable ledger) — with the anchor recorded in the run notes alongside
-  the hashes in sections 3–5, and the run's own `git rev-parse HEAD` +
-  `git status --porcelain suite/` verified at run time
-  (`run-notes-template.md` §0).
-- Until such an anchor exists, the **formal scored run remains BLOCKED**;
-  no anchor is fabricated, inherited, or claimed for the current bytes.
+- Version 5's anchor `ac5209647f5f2a88a530dcd2856c13d39d31e856`
+  remains historical evidence for the version-5 bytes only.
+- Version 6 is anchored by commit
+  `145261805d5205d2150dca18c6c42d5a18a628f2`, which contains the exact
+  section 3–5 bytes. This post-commit metadata update changes only the
+  self-excluded `FROZEN.md` record and does not alter scored inputs or seeds.
+- The run notes must record the version-6 anchor, verify it is an ancestor of
+  the run checkout, and verify `git status --porcelain suite/` is clean before
+  deployment (`run-notes-template.md` §0). The anchor requirement is
+  satisfied; all other per-run validity checks remain mandatory.
 
 ## 8. Verification
 
@@ -346,8 +337,9 @@ Everything above was computed from the working tree bytes, then re-checked:
    `docs/roadmap.md`, and Skill/README files outside `suite/` are not in the
    core table (section 3 covers only the 15 listed `suite/` files); no
    `ref/` or `uv.lock` file was read or frozen.
-6. Git anchor: **no git command was run for this version.** Version 5's
-   anchor commit `ac520964…` covered the version-5 bytes only; the
-   version-6 bytes (three inputs changed after that anchor, §0) are not
-   anchored. The formal scored run remains BLOCKED until a new anchor is
-   authorized and recorded (sections 1 and 7). No commit is claimed.
+6. Git anchor: after the frozen bytes and staged path list were verified, the
+   user explicitly authorized commit and push. Commit
+   `145261805d5205d2150dca18c6c42d5a18a628f2` contains the exact version-6
+   section 3–5 bytes and excludes `suite/runs/`, `ref/`, and `uv.lock`. This
+   anchor-status update is self-excluded and does not alter those bytes; the
+   run notes must re-verify anchor ancestry and clean suite status at run time.
