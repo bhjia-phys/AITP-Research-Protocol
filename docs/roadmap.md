@@ -1,8 +1,14 @@
 # AITP Roadmap and Product Design
 
-Status: active master plan, v3.1. Revised after a second and third external
-adversarial review and a study of the QuantumBFS `quantum.harness`
-repository.
+Status: active master plan, v3.2. Revised after dense-ledger dogfooding in
+`/home/bhjia/physics/GW_librpa`; the detailed design proposal is
+`docs/m1-read-write-balance.md`.
+Changes in v3.2: M1a is explicitly retrieval-first (`list`/`show`, stable
+handoff projection, Note-age hints, versioned JSON); M1b gains a narrowly
+defined optional `based_on` relation and remote-run pointer-bundle
+conventions; unverifiable remote refs, implicit last-enter cursors, a
+next-action task tracker, and in-place quick-record upgrades are rejected.
+A one-command run capture remains suite-gated rather than committed scope.
 Changes in v3.1: the `created_at` ordering claim removed — target existence
 at save time is the only causal proof, and `aitp check` validates final
 state without reconstructing history; `resolves` limited to one target;
@@ -227,16 +233,23 @@ research sessions against agent + Skills and scores:
 The suite is built to resist gaming: it scores outcomes, not rituals.
 Scenarios hide decisive conventions and resolved failures that change a
 concrete action only if the memory was actually used, and require citing the
-decisive record with an evidence locator; seeded record counts exceed the
-`enter` recent window to force `list`/`show`/`rg`; typed-event recall and
-precision are scored jointly, and a one-size closeout counts as a type
-error. IDs, paths, phrasings, and numbers are randomized, with held-out
-scenarios whose gold labels never enter the repository; assessors are blind
-to condition. The control group runs a *hash-identical* semantic policy with
-two short I/O appendixes — the AITP CLI vs. direct Markdown writes under the
-same templates — in isolated environments (the control has no AITP on PATH),
-so the comparison isolates the write gate rather than the templates. If the
-CLI shows no measurable advantage, simplify toward conventions.
+decisive record with an evidence locator; portable seeds hold ≥ 28 active
+Entries — more than `enter`'s top-20 window (counted on active Entries),
+with at least one decisive memory-gated fact outside that window — forcing
+`rg`/direct file reads, the M0.6 retrieval path (`list`/`show` arrive in
+M1a); typed-event recall and precision are scored jointly, and a one-size
+closeout counts as a type error. IDs, paths, phrasings, and numbers are
+randomized. Held-out scenarios are never used for prompt/Skill iteration
+once the agent config is frozen (pre-first-run structural fixture fixes are
+recorded in the stage notes), and their gold labels never enter a seed or
+the agent-readable run environment — gold stays assessor-side and may live
+in the repo; assessors are blind to condition. The control group runs a
+*hash-identical* semantic policy with two short I/O appendixes — the AITP
+CLI vs. direct Markdown writes under the same templates — in isolated
+environments (the control has no AITP on PATH), so any measured difference
+is attributed to the full AITP I/O layer — commands, validation, `enter`
+projection, template mechanics — not to policy content or template wording.
+If the CLI shows no measurable advantage, simplify toward conventions.
 
 Suite scores are necessary, not sufficient. Dogfooding stages also record
 longitudinal adoption metrics — share of active sessions that ran `enter`,
@@ -263,9 +276,9 @@ be implemented, and only from its implementation-level spec. Stages marked
 |---|---|---|
 | M0 — Ledger | done; stable baseline (`ledger-core` branch) | — |
 | M0.5 — Slim core | **done** (gate passed 2026-07-30; addendum in `docs/slim-core-plan.md`) | — |
-| M0.6 — Adopt & bootstrap | **green-lit**; three independent gate items, per-item implementation specs ready: item 1 `docs/m0.6-init-adopt.md`, item 2 `docs/m0.6-bootstrap.md`, item 3 `docs/m0.6-suite.md` | nothing — implement per item, in any order |
-| M1a — Memory that restores | design only; blocked | M0.5 + M0.6 gates; executable suite; `--json` schema freeze before golden fixtures |
-| M1b — Open items & pilot | design only; blocked | M1a gate; freeze `aitp/lite-entry-0.2` (single-target `resolves`, `resolution` enum, contradiction criteria, `aitp check` contract) |
+| M0.6 — Adopt & bootstrap | **in progress; not done** — item 1 (`init --adopt`) implemented; item 2 runtime inventory done, two dogfood bootstrap measurements pending; item 3 suite core implemented, static repair complete, paired scored runs pending. Specs: item 1 `docs/m0.6-init-adopt.md`, item 2 `docs/m0.6-bootstrap.md`, item 3 `docs/m0.6-suite.md` | remaining M0.6 gate evidence: two dogfood bootstrap measurements; paired scored suite runs; M0.6 gate review — M1a stays blocked |
+| M1a — Memory that restores | design only; blocked (`docs/m1-read-write-balance.md`) | M0.5 + M0.6 gates; executable suite; freeze versioned `enter`/`show`/`list --json` before golden fixtures |
+| M1b — Open items & pilot | design only; blocked (`docs/m1-read-write-balance.md`) | M1a gate; freeze `aitp/lite-entry-0.2` (`based_on`, single-target `resolves`, `resolution` enum, contradiction criteria, `aitp check` contract) |
 | M2 — Reviewed artifacts | design only; blocked | M1b gate; real reviewed material in the dogfood Topics |
 | M3 — Cross-topic links | design complete (`docs/cross-topic-links.md`); blocked | ≥ 3 real Topics; M2 gate |
 | M4 — Collaborator protocol | design complete (`docs/collaborator-design.md`); Skill-only, +0 runtime lines | M1b pilot evidence; suite thresholds |
@@ -284,6 +297,27 @@ Three independent gate items; the `topics.toml` convention itself is a plain
 file, not a gate condition. Implementation specs: item 1
 `docs/m0.6-init-adopt.md`, item 2 `docs/m0.6-bootstrap.md`, item 3
 `docs/m0.6-suite.md`.
+
+Current progress (2026-08-06): item 1 is done — `aitp init --adopt` is
+implemented, with dry-run/conflict/rollback tested and before/after tree
+hashes verified on both dogfood trees. Item 2's runtime inventory (`aitp
+inventory`, hash manifest) is done; the two dogfood bootstrap measurements —
+bootstrap Notes confirmed by human `decision` Entries on both dogfood
+Topics, key-fact recall scored against the researcher-written gold set, and
+human time reported as a median — are pending (on hold, not abandoned).
+Item 3's suite core is implemented with its static repair complete: portable
+seeds under `seeds/S1/`, `seeds/S2/`, `seeds/S3/`, scenarios, gold, adapters,
+and rubric are all in place and consistent. The real human treatment/control
+scored runs (S1 and S2 in both isolated conditions, control PATH without
+`aitp`) and the S3 held-out report are pending. The M0.6 gate is therefore
+NOT passed; M1a remains blocked. After the unscored 2026-08-06 dry run,
+the `using-aitp` Skill gained three guidance items as M0.6 scored-run
+preparation — a projection-aware targeted sweep (the `enter` window is a
+projection; `rg` the store before planning), check-before-record (never
+re-record an already-recorded event), and evidence-backed `resolves` (close
+an open item only with this Entry's own evidence) — all zero runtime lines.
+This does not start M1a runtime work; M1a's `list`/`show`/`enter v2` remain
+blocked.
 
 - `aitp init --adopt`: create `.aitp/` inside an existing research tree
   without touching content or imposing the fixed layout. Gate item 1: works
@@ -307,49 +341,101 @@ file, not a gate condition. Implementation specs: item 1
   claims in the bootstrap Note as its denominator; human time is recorded
   with explicit start/stop points and reported as a median.
 - Executable conformance core (not a skeleton): a minimal but runnable
-  suite — scenario scripts, the scoring rubric, one plain-files control
-  adapter, at least one held-out scenario — plus cold-start metrics. Gate
-  item 3: the core suite runs end-to-end in both isolated conditions (the
-  control has no AITP on PATH) with pre-registered scoring thresholds.
+  suite — scenario scripts, portable per-scenario seeds, the scoring rubric,
+  one plain-files control adapter, at least one held-out scenario — plus
+  cold-start metrics. Gate item 3: the core suite runs end-to-end in both
+  isolated conditions (the control has no AITP on PATH) with pre-registered
+  scoring thresholds.
+
+### Dense-ledger dogfood input to M1
+
+A read-only audit of `/home/bhjia/physics/GW_librpa` on 2026-08-06 found a
+real 60-Entry store: 41 active, 19 superseded, 26 results, three closeouts,
+and no Notes. The store made the M1 priorities concrete:
+
+- `enter` is an orientation view, not a sufficient retrieval interface for a
+  dense store; kind/date filtering and exact record opening are required.
+- a newest-timestamp scan can surface a stale handoff when sessions omit or do
+  not replace closeouts; the source Entry and time must stay visible.
+- mutable local evidence had drifted (37 missing and 78 hash-mismatched local
+  pins in that dated snapshot). Reading must survive stale evidence while
+  `check` reports it; save-time pin discipline must not be weakened.
+- remote runs need host/path/job/build metadata, but unverifiable `host:path`
+  strings are not evidence pins. A local manifest or pointer bundle remains
+  the evidence boundary.
+- the real store is a compatibility corpus, not a scratch fixture: read-path
+  acceptance is run in place with a before/after hash check; write-path tests
+  use a temporary copy unless a genuine research event is being recorded.
+
+These findings refine the blocked M1 design; they do not green-light M1 code
+before the M0.6 gates. See `docs/m1-read-write-balance.md`.
 
 ### M1a — Memory that restores (~2 weeks; end ≤ 1,300)
 
-- `enter` v2 (deterministic structural sections, no semantic ranking;
-  labels legacy-derived material as orientation-only); `aitp show`;
-  `aitp list`; closeout and correction discipline; `using-aitp` update.
-- `enter`/`show`/`list` emit versioned `--json` with golden fixtures.
+- Retrieval-first `aitp list [--kind KIND] [--since DATE] [--json]` over all
+  canonical Entries, including visible active/superseded status, plus `aitp
+  show <entry-id>`. Text summaries are bounded; machine output keeps complete
+  values. Invalid legacy timestamps are surfaced without crashing reads.
+- `enter` v2 keeps deterministic structural sections and no semantic ranking;
+  labels legacy-derived material as orientation-only; treats the latest active
+  closeout as the authoritative handoff (falling back to another active Entry
+  only when no closeout establishes one); and retains exact source ID, time,
+  and path. It sorts Notes by record time and reports only the structural count
+  of active Entries newer than the latest working Note.
+- No implicit last-enter cursor: incremental inspection is an explicit,
+  reproducible `--since` query and `enter` remains free of local cursor writes.
+- `enter`/`show`/`list` emit versioned `--json` with deliberately regenerated
+  golden fixtures. `using-aitp` adds dense-store retrieval and requires each
+  session closeout to replace the previous handoff; four or more related
+  durable Entries are a Skill trigger to consider a working Note, not a
+  runtime semantic rule.
+- Error messages for stale or invalid pins provide actionable remediation
+  (including the actual local digest where available) without accepting the
+  changed evidence.
 - `enter` performance work: the 1,000-Entry `enter` sits at ≈ 0.94 s on the
   recorded machine (~6% under the 1 s threshold; fails under load), with
   per-record YAML frontmatter parsing ≈ 80% of the cost. M1a must widen
   that margin — faster frontmatter loading or a cheaper projection path —
-  without changing output semantics.
+  without adding a persistent index or changing output semantics.
 
 Gate: suite-scored resumption checklist on both dogfood Topics, against the
-control group; all ledger tests pass unchanged; `--help` < 250 ms and
-1,000-Entry `enter` < 1 s.
+control group; the dated GW_librpa corpus lists 60 Entries and 26 results
+without changing any existing file; all ledger tests pass; `--help` < 250 ms,
+1,000-Entry `enter` < 1 s, and a 1,000-Entry `list` baseline is reported.
 
 ### M1b — Open items and behavior pilot (~2 weeks; end ≤ 1,450)
 
-- Schema `aitp/lite-entry-0.2`: `prediction` and `question` kinds;
-  single-target `resolves` with the typed `resolution` closure field and
-  target-kind/resolver-kind validation; `contradicts` on failures under the
-  strict criteria; `aitp check` whole-store re-validation; Note `supersedes`
+- Schema `aitp/lite-entry-0.2`: `prediction` and `question` kinds; optional
+  `based_on` with the narrow meaning that the durable claim materially depends
+  on existing Entries (never a substitute for evidence `refs`); single-target
+  `resolves` with the typed `resolution` closure field and target-kind/
+  resolver-kind validation; `contradicts` on failures under the strict
+  criteria; `aitp check` whole-store re-validation; Note `supersedes`
   validation; optional `citekey`/`trust` on `source` Entries. v0.1 records
-  remain valid without migration.
-- Run conventions: `run` Entries record host, remote path, scheduler ID,
-  seed, and partial/cancelled states, and pin an existing local manifest or
-  pointer bundle (manifest + validation + output digests + index) rather
-  than a fixed new bundle shape. For expensive or remote runs they also
-  record estimated vs. actual cost (wall, memory); consequential parameters
-  are recorded as source/why/risk/fix rows so a later session can see what
-  can drift — a template convention, not validator schema. Lean-specific
-  fields are deferred until the first real Lean Topic.
+  remain valid without migration. `show`/`enter` derive reverse `used_by`
+  views from Markdown; no reverse index is written.
+- Run/source templates record host, remote path, scheduler ID, command/config,
+  binary digest or version, consequential build flags, input directory, exit
+  status, seed, partial/cancelled state, and estimated vs. actual cost where
+  relevant. Remote results pin an existing local manifest or pointer bundle
+  (validation + output digests + index); naked remote paths and retrieval
+  timestamps do not masquerade as integrity pins. Consequential parameters
+  remain source/why/risk/fix rows — a template convention, not validator
+  schema. Lean-specific fields wait for the first real Lean Topic.
+- A one-command quick run capture is a suite-gated addendum, not committed core
+  scope. If evidence shows that write friction, rather than event judgment,
+  causes durable-event misses, its first version accepts only complete caller-
+  supplied run content, requires a stable idempotency key, limitations and
+  pinned evidence, and can only be expanded by a superseding Entry. It is the
+  first feature cut if the 1,450-line cap is threatened.
 - `aitp-collaborator` alpha pilot; `surveying-literature` and
   `analyzing-a-source` land here as use-driven increments.
 
 Gate: suite shows prediction order respected and corrections persisting
-across sessions; the pilot advances one real question over ≥ 2 sessions;
-v0.1 records untouched.
+across sessions; based-on targets and reverse views are correct without an
+index; a remote-run pointer bundle is auditable; the pilot advances one real
+question over ≥ 2 sessions; v0.1 records and the GW_librpa corpus remain
+untouched.
 
 ### M2 — Reviewed artifacts (~3–4 weeks; end ≤ 1,700)
 
@@ -456,18 +542,19 @@ protocol → method → record protocol → compare protocol → stop conditions
 ## Non-goals
 
 Vector stores or embeddings; graph databases; sync/projection engines;
-`enter --task` semantic selection; Python-generated distillation content;
-required hooks, daemons, MCP servers, or schedulers; transcript or
-chain-of-thought storage; auto-saved inferred links; automatic
-insight→knowledge promotion; multi-user permissions or federation (Git plus
-author/authority/review provenance until a concrete failure disproves it);
-task management; tamper-proofing or signing infrastructure beyond the
-optional high-trust mode; validation-status ladders on `result` Entries — a
-`result` is a recorded project outcome with an evidence boundary, not a
-credibility rank, and `enter` never uses `kind` as a credibility signal;
-the `brief` artifact type (redundant); a dedicated referee-comment kind
-(handled by `source` + `decision` conventions until real pain demonstrates
-otherwise).
+`enter --task` semantic selection; an implicit shared "last enter" cursor;
+Python-generated distillation content; required hooks, daemons, MCP servers,
+or schedulers; transcript or chain-of-thought storage; auto-saved inferred
+links; automatic insight→knowledge promotion; multi-user permissions or
+federation (Git plus author/authority/review provenance until a concrete
+failure disproves it); task management or a next-action status dashboard;
+unverifiable remote paths presented as evidence pins; in-place expansion of a
+quick record; tamper-proofing or signing infrastructure beyond the optional
+high-trust mode; validation-status ladders on `result` Entries — a `result` is
+a recorded project outcome with an evidence boundary, not a credibility rank,
+and `enter` never uses `kind` as a credibility signal; the `brief` artifact
+type (redundant); a dedicated referee-comment kind (handled by `source` +
+`decision` conventions until real pain demonstrates otherwise).
 
 ## Non-negotiable invariants
 
