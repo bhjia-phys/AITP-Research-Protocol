@@ -170,6 +170,10 @@ aitp note prepare|save
 `list`, `show`, and `check` are planned (M1a/M1b) and remain blocked — they
 are not available yet.
 
+The Hakimi integration handoff baseline (compatibility matrix, versioned
+envelope decisions, red lines, phased H0/H1/H2 plan) lives in
+[`docs/hakimi/`](docs/hakimi/README.md).
+
 Properties:
 
 - Markdown and filesystem are canonical;

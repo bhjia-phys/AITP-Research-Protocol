@@ -3,6 +3,7 @@
 - The `ledger-core` branch is the stable single-Topic evidence-ledger baseline.
 - Follow the stage order in `docs/roadmap.md`. The M0.5 slim-core gate has passed; M0.6 is the active stage (`docs/m0.6-init-adopt.md`, `docs/m0.6-bootstrap.md`, `docs/m0.6-suite.md`).
 - Whenever a change alters stage status, roadmap scope, CLI surface, gate evidence, spec paths, runtime budgets, installation, or user-facing operation, update the corresponding `README.md` roadmap/current-state sections in the same change; never defer README maintenance to a later session.
+- The Hakimi integration handoff lives in `docs/hakimi/` (`README.md`, `compatibility-matrix.md`); update it in the same change as any stage status, CLI surface, or schema change, per its own maintenance contract.
 - Keep one canonical runtime implementation: `plugins/aitp-research-protocol/scripts/vendor/aitp/`; do not hand-maintain a copied plugin runtime.
 - Keep each Python module below 400 nonblank lines, and keep the total canonical runtime within the cumulative budget in `docs/roadmap.md` (~2,000 lines maximum; M0.6 ends ≤ 1,100).
 - Keep the installable Codex bundle under `plugins/aitp-research-protocol/`.
