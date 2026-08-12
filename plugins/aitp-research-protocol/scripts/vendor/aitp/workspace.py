@@ -334,15 +334,37 @@ def build_inventory(cwd: str | Path, path: str | Path, name: str) -> dict[str, A
             "files": sum(1 for item in entries if "sha256" in item), "bytes": total_bytes}
 
 
+def _lock_owner_alive(lock_path: Path) -> bool:
+    """True when the recorded owner process is alive; pidless locks are stale."""
+    try:
+        pid = int(lock_path.read_text(encoding="utf-8").strip())
+    except (OSError, ValueError):
+        return False
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+        return True
+    except (ProcessLookupError, OverflowError):
+        return False
+    except OSError:
+        return True
+
+
 @contextmanager
 def store_lock(root: Path):
     lock_path = root / ".aitp" / "local" / "locks" / "write.lock"
     lock_path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        descriptor = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-    except FileExistsError as exc:
-        raise AITPError("store_busy", "another AITP write is in progress") from exc
-    os.close(descriptor)
+    for attempt in (0, 1):
+        try:
+            descriptor = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+            os.write(descriptor, str(os.getpid()).encode("ascii"))
+            os.close(descriptor)
+            break
+        except FileExistsError:
+            if attempt or _lock_owner_alive(lock_path):
+                raise AITPError("store_busy", "another AITP write is in progress")
+            lock_path.unlink(missing_ok=True)
     try:
         yield
     finally:

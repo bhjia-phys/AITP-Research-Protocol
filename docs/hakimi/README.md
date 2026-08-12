@@ -21,17 +21,17 @@ schema status changes.
   recall/false-import/human-time, held-out S3, paired S1/S2, cold-start,
   conformance, causal, and treatment-advantage evidence remains not measured;
   deferred; not counted. M1a now exposes the versioned read contracts; see
-  [`docs/m1a-stage-notes.md`](../m1a-stage-notes.md),
-  [`docs/m0.6-stage-notes.md`](../m0.6-stage-notes.md), and the
-  [review packet](../m0.6-gate-review.md).
+  [`docs/archive/m1a-stage-notes.md`](../archive/m1a-stage-notes.md),
+  [`docs/archive/m0.6-stage-notes.md`](../archive/m0.6-stage-notes.md), and the
+  [review packet](../archive/m0.6-gate-review.md).
 - 2026-08-12 M1b planning sync: the natural-use pause is complete and the
-  reviewed freeze revision ([`docs/m1b-adjudication.md`](../m1b-adjudication.md))
+  reviewed freeze revision ([`docs/archive/m1b-adjudication.md`](../archive/m1b-adjudication.md))
   selected the read-side slice **M1b-R1**, implemented per its
   implementation spec
-  [`docs/m1b-r1-spec.md`](../m1b-r1-spec.md).
+  [`docs/archive/m1b-r1-spec.md`](../archive/m1b-r1-spec.md).
 - 2026-08-12 M1b-R1 gate completion: the R1 deterministic gate **passed**
   (evidence in
-  `docs/m1b-r1-stage-notes.md`). Hakimi may now feature-detect
+  `docs/archive/m1b-r1-stage-notes.md`). Hakimi may now feature-detect
   `aitp/check-report-0.1` (parsing the
   report on exits 0 and 1; exit 2 is the error envelope). `lineage` is a
   deferred candidate.
@@ -72,7 +72,7 @@ adapter-revision rule in [`compatibility-matrix.md` §3](compatibility-matrix.md
 |---|---|---|
 | H0 | now (no gate) | Launcher adapter (argv-only, Python ≥ 3.11 probe), strict shape validation of unversioned envelopes, capability detection from `--help`, `enter` lifecycle, prepare→fill→save flow, graceful degradation on `not_initialized`, tree-hash zero-write tests |
 | H1 | M1a done; deterministic gate passed | Read-only feature detection and schema dispatch for `aitp/enter-0.2`, `aitp/list-0.1`, and `aitp/show-0.1`; closeout-first handoff; Note-age signal; generated-golden compatibility tests; plugin version `0.2.0` |
-| H2 | M1b-R1 selected 2026-08-12; implemented per `docs/m1b-r1-spec.md`; deterministic gate passed 2026-08-12 | Integrate only capabilities actually shipped by the R1 gate: `aitp check` (parse `aitp/check-report-0.1` on exits 0 and 1; exit 2 is the error envelope), and consume the compact `enter` text only as human-facing output (never parse it; machine output is the versioned JSON). Persisted `based_on`/`used_by`, pointer bundles, quick-run, and `lineage` are **not** in R1 and must not be scheduled for H2 |
+| H2 | M1b-R1 selected 2026-08-12; implemented per `docs/archive/m1b-r1-spec.md`; deterministic gate passed 2026-08-12 | Integrate only capabilities actually shipped by the R1 gate: `aitp check` (parse `aitp/check-report-0.1` on exits 0 and 1; exit 2 is the error envelope), and consume the compact `enter` text only as human-facing output (never parse it; machine output is the versioned JSON). Persisted `based_on`/`used_by`, pointer bundles, quick-run, and `lineage` are **not** in R1 and must not be scheduled for H2 |
 | Formal Hakimi contract | after M4 | Versioned `--json` + extended golden fixtures as the pass gate for any agent integration |
 
 Hakimi's research-loop capabilities (web, PDF, reasoning, session UX, private
@@ -96,8 +96,8 @@ here. M1a has landed; the synchronized version metadata is `0.3.0` and the
 read contracts are available. Keep the frozen `suite/adapters/cli.md`
 unchanged until a separately reviewed suite refreeze. Hakimi H1 may now
 feature-detect the three versioned read schemas; `check` is shipped and
-gated (M1b-R1 per `docs/m1b-r1-spec.md`; gate evidence in
-`docs/m1b-r1-stage-notes.md`) and may be feature-detected now;
+gated (M1b-R1 per `docs/archive/m1b-r1-spec.md`; gate evidence in
+`docs/archive/m1b-r1-stage-notes.md`) and may be feature-detected now;
 `lineage`
 is a deferred candidate.
 
@@ -107,7 +107,7 @@ is a deferred candidate.
 2. `/home/bhjia/physics/repo/AITP-Research-Protocol/README.md`
 3. `/home/bhjia/physics/repo/AITP-Research-Protocol/docs/roadmap.md` (stage table, M1a, M1b, Hakimi contract)
 4. `compatibility-matrix.md` (this directory)
-5. `docs/m1a-spec.md`, `docs/m1b-spec.md`, `docs/collaborator-design.md`
+5. `docs/archive/m1a-spec.md`, `docs/m1b-spec.md`, `docs/archive/collaborator-design.md`
 6. The installed plugin's `skills/using-aitp/SKILL.md` (python probe order, command map)
 7. The runtime: `plugins/aitp-research-protocol/scripts/aitp.py` + `scripts/vendor/aitp/`
 

@@ -1,5 +1,11 @@
 # AITP conformance suite — operator manual
 
+**Status: DORMANT.** This suite has never been scored: FROZEN v6 is an
+anchored, unexecuted preregistration. The suite is not an active gate, and no
+M4 or future gate depends on it. The frozen materials below are retained as
+evaluation design history; any future evaluation needs a fresh, runnable,
+predeclared design.
+
 One scored run of the M0.6 suite core. The suite is an evaluation protocol
 executed by a human operator with an agent under test; it is not an automated
 harness. Everything here is files: seeds, event artifacts, transcripts,
@@ -113,7 +119,7 @@ These rules are not negotiable per run:
   scoring. The 2026-08-07 pre-first-scored-run static repair — the
   unexecutable `aitp --version` requirement replaced by deterministic
   treatment-identity recording (see Treatment preflight above; recorded in
-  `docs/m0.6-suite.md`) — supersedes the v5 freeze hashes of
+  `docs/archive/m0.6-suite.md`) — supersedes the v5 freeze hashes of
   `adapters/cli.md`, `README.md`, and `run-notes-template.md`, so FROZEN.md
   must be re-issued as version 6 from the current tree before the first
   scored run.

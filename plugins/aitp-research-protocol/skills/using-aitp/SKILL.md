@@ -43,12 +43,12 @@ search` exists — `rg` over `.aitp/topic/` is the query path.
 The current CLI is `init`, `enter`, `inventory`, `record`, `note`, `list`,
 `show`, and `check`. `check` is the M1b-R1 read-only store-health command,
 implemented per
-[`docs/m1b-r1-spec.md`](../../../../docs/m1b-r1-spec.md) with its
+[`docs/archive/m1b-r1-spec.md`](../../../../docs/archive/m1b-r1-spec.md) with its
 deterministic gate **passed** (evidence recorded in
-`docs/m1b-r1-stage-notes.md`). `lineage` is a deferred candidate — do not
+`docs/archive/m1b-r1-stage-notes.md`). `lineage` is a deferred candidate — do not
 invoke or teach it.
 M1a is **done; deterministic gate passed**; the implementation evidence is in
-[`docs/m1a-stage-notes.md`](../../../../docs/m1a-stage-notes.md).
+[`docs/archive/m1a-stage-notes.md`](../../../../docs/archive/m1a-stage-notes.md).
 
 - `aitp list [--kind KIND] [--since DATE] [--json]` is the read-only retrieval
   projection. Use `--kind` for a kind filter and `--since` for an inclusive
@@ -94,18 +94,19 @@ M1a is **done; deterministic gate passed**; the implementation evidence is in
 M1b's exhaustive A–H + Followup roster, dispositions, and freeze rule remain
 normative in [`docs/m1b-spec.md` §0.1](../../../../docs/m1b-spec.md#01-authoritative-candidate-roster-and-current-dispositions).
 The natural-use pause is complete and the 2026-08-12 reviewed freeze revision
-([`docs/m1b-adjudication.md`](../../../../docs/m1b-adjudication.md)) selected
+([`docs/archive/m1b-adjudication.md`](../../../../docs/archive/m1b-adjudication.md)) selected
 the read-side slice **M1b-R1** — `aitp check` (v0.1-only) and a compact
 `enter` text renderer — implemented per its
 implementation-level spec
-[`docs/m1b-r1-spec.md`](../../../../docs/m1b-r1-spec.md); the deterministic
+[`docs/archive/m1b-r1-spec.md`](../../../../docs/archive/m1b-r1-spec.md); the deterministic
 gate **passed** (evidence recorded in
-`docs/m1b-r1-stage-notes.md`). Do not teach or invoke the deferred candidates
+`docs/archive/m1b-r1-stage-notes.md`). Do not teach or invoke the deferred candidates
 (`based_on`/`used_by`, typed open items, pointer bundles, quick-run,
 structured prepare, `lineage`) — they stay out of this Skill.
 
-When a selected slice lands, sync the roadmap, command contracts, M1 indexes and
-specs, Hakimi handoff, this command map, and README in the same change. A
+When a selected slice lands, sync the roadmap, README, Hakimi handoff, and
+this command map in the same change; historical specs, adjudications, and
+stage notes live frozen in `docs/archive/` and are not updated. A
 selected capability that changes an unversioned success envelope must first use
 a versioned envelope (preferred) or an explicit same-change Hakimi adapter
 revision; never add a response key silently.

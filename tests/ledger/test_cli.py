@@ -71,3 +71,13 @@ def test_cli_refuses_nonblank_workspace(tmp_path: Path):
     assert result.returncode == 2
     payload = json.loads(result.stdout)
     assert payload["code"] == "workspace_not_blank"
+
+
+def test_cli_enter_rejects_nonpositive_recent(tmp_path: Path):
+    root = tmp_path / "project"
+    root.mkdir()
+
+    for bad_recent in ("0", "-1", "not-a-number"):
+        result = run_cli(root, "enter", "--cwd", ".", "--recent", bad_recent)
+        assert result.returncode == 2, result.stderr
+        assert "--recent" in result.stderr

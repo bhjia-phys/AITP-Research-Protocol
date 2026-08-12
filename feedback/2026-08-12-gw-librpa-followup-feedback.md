@@ -4,7 +4,7 @@
 来源：研究者对
 [`2026-08-11-gw-librpa-natural-use-feedback.md`](2026-08-11-gw-librpa-natural-use-feedback.md)
 的后续口头建议，随 2026-08-12 的继续开发指示一并给出
-（处置见 [`docs/m1b-adjudication.md`](../docs/m1b-adjudication.md)）
+（处置见 [`docs/archive/m1b-adjudication.md`](../docs/archive/m1b-adjudication.md)）
 Topic：`/home/bhjia/physics/GW_librpa`（`.aitp/topic/`）
 协议版本：当前 M1a 命令面，`enter-0.2` / `list-0.1` / `show-0.1`
 
@@ -15,7 +15,7 @@ Topic：`/home/bhjia/physics/GW_librpa`（`.aitp/topic/`）
 AITP 优于 plain files，也不声称任何行为或因果效果。它连同
 [`2026-08-12-power-law-heisenberg-natural-use-feedback.md`](2026-08-12-power-law-heisenberg-natural-use-feedback.md)
 一起构成 M1b 自然使用 pause 的证据输入，最终处置以
-`docs/m1b-adjudication.md` 为准。
+`docs/archive/m1b-adjudication.md` 为准。
 
 它与两份自然 session 的关系：
 
@@ -60,12 +60,12 @@ AITP 优于 plain files，也不声称任何行为或因果效果。它连同
 
 ## 4. 建议的采纳状态（以 adjudication 为准）
 
-完整 A–H 与六项建议的逐项处置见 `docs/m1b-adjudication.md`；本文件
+完整 A–H 与六项建议的逐项处置见 `docs/archive/m1b-adjudication.md`；本文件
 不自行裁决。概括而言：建议 1/3/4/5 的 read-side 文本与诊断部分被选入
-M1b-R1 切片（实现规格 `docs/m1b-r1-spec.md`；adjudication 时点
+M1b-R1 切片（实现规格 `docs/archive/m1b-r1-spec.md`；adjudication 时点
 implementation pending，R1 已于同日实现并通过 deterministic gate，见
-`docs/m1b-r1-stage-notes.md`）；
+`docs/archive/m1b-r1-stage-notes.md`）；
 建议 2（lineage/relations）曾在 freeze revision 中被选入 R1，但在
 2026-08-12 预算核算中因实测余量不足被移回 deferred（记录在
-`docs/m1b-adjudication.md` §3，可经新的 reviewed freeze revision 回归）；
+`docs/archive/m1b-adjudication.md` §3，可经新的 reviewed freeze revision 回归）；
 建议 6 因证据混合、预算优先 read-side 而显式 deferred。

@@ -17,10 +17,10 @@ can retroactively satisfy the original M0.6 scored-run or bootstrap evidence
 gaps. Before any external output could be considered as new AITP evidence, AITP
 must separately review a protocol revision, record the changed conclusion
 strength, issue a new freeze version before any held-out turn is sent, and
-update `docs/roadmap.md`, `README.md`, and `docs/m0.6-stage-notes.md`. Until
+update `docs/roadmap.md`, `README.md`, and `docs/archive/m0.6-stage-notes.md`. Until
 then, external output is rehearsal/engineering evidence only. This contract
 does not itself revise or refreeze FROZEN v6. M1a is now **done; deterministic
-gate passed**; see [`docs/m1a-stage-notes.md`](m1a-stage-notes.md).
+gate passed**; see [`docs/archive/m1a-stage-notes.md`](archive/m1a-stage-notes.md).
 
 ## 1. Purpose and ownership
 
@@ -389,7 +389,7 @@ review closed M0.6 under the narrowed claim, and the post-review deterministic
 M1a gate is now **done; passed**. The original bootstrap and scored-suite
 evidence remains **not measured; deferred; not counted**, and no future harness
 run can retroactively change that disposition. See
-[`docs/m1a-stage-notes.md`](m1a-stage-notes.md) for the M1a evidence.
+[`docs/archive/m1a-stage-notes.md`](archive/m1a-stage-notes.md) for the M1a evidence.
 
 A run stops before participant turn 1 when identity, byte parity, anchor, or
 isolation is incomplete. At the predeclared budget, it stops at the first
@@ -406,9 +406,9 @@ preflight. It verified the FROZEN v6 inputs and preparation steps, then stopped
 before S3 because exact model/provider and prompt identity plus genuinely
 separate treatment/control machines or accounts were unavailable. It produced
 no scored result and did not change the approved narrowed M0.6 disposition.
-See [`docs/m0.6-stage-notes.md`](m0.6-stage-notes.md) for the AITP-side
+See [`docs/archive/m0.6-stage-notes.md`](archive/m0.6-stage-notes.md) for the AITP-side
 record.
 
 This contract describes future external work only. It does not implement or
 retroactively change the human-executed FROZEN v6 suite rules in
-[`docs/m0.6-suite.md`](m0.6-suite.md).
+[`docs/archive/m0.6-suite.md`](archive/m0.6-suite.md).

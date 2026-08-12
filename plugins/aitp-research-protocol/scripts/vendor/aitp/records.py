@@ -270,13 +270,6 @@ def _validate_relations(
             raise AITPError("invalid_relation", f"{field} cannot target itself")
         if value not in entries:
             raise AITPError("missing_relation", f"{field} target does not exist: {value}")
-        if field == "supersedes":
-            target_time = str(entries[value][0].get("created_at", ""))
-            if target_time >= str(frontmatter.get("created_at", "")):
-                raise AITPError(
-                    "invalid_supersession",
-                    f"supersedes target is not older: {value}",
-                )
 
 
 def validate_entry(

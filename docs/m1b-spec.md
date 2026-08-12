@@ -1,11 +1,11 @@
 # M1b — Open items and behavior pilot: candidate inventory
 
 Status: candidate-inventory pre-spec; **reviewed freeze revision 2026-08-12
-recorded** (`docs/m1b-adjudication.md`). The read-side slice **M1b-R1**
+recorded** (`docs/archive/m1b-adjudication.md`). The read-side slice **M1b-R1**
 (`aitp check` v0.1-only + compact `enter` text) is **selected and
-implemented** per its implementation-level spec `docs/m1b-r1-spec.md`;
+implemented** per its implementation-level spec `docs/archive/m1b-r1-spec.md`;
 its deterministic gate **passed** (evidence recorded in
-`docs/m1b-r1-stage-notes.md`). All other rows
+`docs/archive/m1b-r1-stage-notes.md`). All other rows
 — including the Followup-2 lineage projection, re-deferred at the budget
 reconciliation — are deferred, moved, or dropped and produce no
 implementation spec.
@@ -13,9 +13,12 @@ implementation spec.
 This document is the M1b candidate pre-spec under `docs/roadmap.md` §M1b and
 the M1 index. It is not an implementation-level spec or permission to code.
 §§1–11 are candidate contracts; only selected rows bind, per the §0.1 process
-below and the 2026-08-12 reviewed freeze revision. The M1a gate and the
+below and the 2026-08-12 reviewed freeze revision. **§§1–11 are historical
+candidates, not default designs**: a deferred capability that reappears is
+re-derived from fresh natural-use evidence, not resurrected from these
+sections. The M1a gate and the
 two-session natural-use pause are complete; the §0.1 freeze revision is done
-and selects M1b-R1. Its implementation-level spec (`docs/m1b-r1-spec.md`) is
+and selects M1b-R1. Its implementation-level spec (`docs/archive/m1b-r1-spec.md`) is
 implemented and its deterministic gate has passed; deferred, moved, dropped,
 and no-runtime outcomes produce no implementation spec. Selecting no M1b
 runtime slice remains a valid outcome for every other row.
@@ -49,18 +52,18 @@ interfaces.
 This table is the authoritative M1b unit roster, not one implementation
 bundle. The **disposition** column is the current freeze outcome — the
 **2026-08-12 reviewed freeze revision** recorded in
-[`docs/m1b-adjudication.md`](m1b-adjudication.md), the single record that
+[`docs/archive/m1b-adjudication.md`](archive/m1b-adjudication.md), the single record that
 confirms or revises all rows and their dependencies after the M1a gate and the
 completed two-session natural-use pause. Deferred, moved, dropped, and
 no-runtime outcomes produce no implementation spec; only selected rows enter a
 separately reviewed, green-lit implementation spec. The revision selects the
-read-side slice **M1b-R1** (implemented per `docs/m1b-r1-spec.md`;
+read-side slice **M1b-R1** (implemented per `docs/archive/m1b-r1-spec.md`;
 deterministic gate passed);
 every other row produces no implementation spec.
 
 | ID | Candidate unit | Dependencies and boundary | Current disposition |
 |---|---|---|---|
-| A | Store health: a read-only `check` report over current v0.1 records and any selected M1b schemas | M1a gate, the post-M1a natural-use review, a selected report schema, and the existing validators; no index. Independent of B–D. It is a candidate command only if selected and shipped. | **selected in M1b-R1 — v0.1-only, read-only `check`**; schema `aitp/check-report-0.1`; exit 0 clean / 1 findings / 2 unable; zero-write, no fix, no migration; diagnostics for unselected M1b schemas are **not** in R1; implemented per `docs/m1b-r1-spec.md`, deterministic gate passed |
+| A | Store health: a read-only `check` report over current v0.1 records and any selected M1b schemas | M1a gate, the post-M1a natural-use review, a selected report schema, and the existing validators; no index. Independent of B–D. It is a candidate command only if selected and shipped. | **selected in M1b-R1 — v0.1-only, read-only `check`**; schema `aitp/check-report-0.1`; exit 0 clean / 1 findings / 2 unable; zero-write, no fix, no migration; diagnostics for unselected M1b schemas are **not** in R1; implemented per `docs/archive/m1b-r1-spec.md`, deterministic gate passed |
 | B | Dependency links: `based_on`, derived `used_by`, and the required success-envelope/schema versioning | M1a versioned `list`/`show`/`enter` payloads for projections; a versioned `record save` success envelope before any warning key, or an explicitly revised Hakimi adapter contract in the same slice; A is required only if full `based_on` semantics retain `check`; no index. | **deferred** (persisted `based_on`, derived `used_by`, and their envelope/schema versioning are all deferred; the narrow read-side lineage view is tracked separately as Followup-2 below) |
 | C | Open-item schema: `prediction`, `question`, typed `resolves`/`resolution`, `contradicts`, and Note `supersedes` | v0.1 compatibility, selected v0.2 file schemas, templates, and validators; A is optional unless whole-store diagnostics are selected; no semantic judgment in Python. | **deferred** |
 | D | Remote-run pointer bundle plus run/source templates | Existing local `sha256:`/`git:` pin machinery and external run tooling; the bundle is a local evidence object, while a naked remote path remains location metadata and cannot verify remote bytes; independent of A–C. | **deferred** (only the GW session needs it; one-session evidence) |
@@ -78,14 +81,14 @@ one disposition:
 | ID | Candidate unit | Current disposition |
 |---|---|---|
 | Followup 1 | Compact `enter` **text renderer only** (`aitp/enter-0.2` JSON unchanged), restoring the two M1a safety lines | **selected in M1b-R1** |
-| Followup 2 | Current-v0.1 lineage projection (`aitp lineage <entry-id>`, schema `aitp/lineage-0.1`: outgoing `resolves`/`supersedes`, incoming `resolved_by`/`superseded_by`; no recursion/graph/index) | **deferred** — selected in R1 at the freeze revision, **re-deferred at the 2026-08-12 budget reconciliation** (with it the measured prototype leaves ~5 lines of the 1,450 cap and exceeds the 1,425 target; see `docs/m1b-adjudication.md` §Budget reconciliation). May return only through a new reviewed freeze revision |
+| Followup 2 | Current-v0.1 lineage projection (`aitp lineage <entry-id>`, schema `aitp/lineage-0.1`: outgoing `resolves`/`supersedes`, incoming `resolved_by`/`superseded_by`; no recursion/graph/index) | **deferred** — selected in R1 at the freeze revision, **re-deferred at the 2026-08-12 budget reconciliation** (with it the measured prototype leaves ~5 lines of the 1,450 cap and exceeds the 1,425 target; see `docs/archive/m1b-adjudication.md` §Budget reconciliation). May return only through a new reviewed freeze revision |
 | Followup 3 | `enter` text-only `handoff_status: review` (handoff source older than a newer unresolved active failure; factual structural prompt, not restored H) | **selected in M1b-R1** |
 | Followup 4 | Malformed diagnostics: read-only `check` plus a warning-count summary in `enter` text pointing at it; no persistent suppression | **selected in M1b-R1** |
 | Followup 5 | `enter` text-only `goal_status: not_established` on the placeholder, and `check` warning `empty_topic_goal` | **selected in M1b-R1** |
 | Followup 6 | Structured JSON/YAML prepare input preserving the draft | **deferred (explicit)** — a separate candidate, not an E variant; mixed evidence; budget prioritized for the read-side slice; the draft-preserving property is kept as a design constraint if re-proposed |
 
 Current dispositions are therefore: A and Followups 1, 3, 4, 5 selected in
-M1b-R1 (implemented per `docs/m1b-r1-spec.md`; deterministic gate passed);
+M1b-R1 (implemented per `docs/archive/m1b-r1-spec.md`; deterministic gate passed);
 B, C–E, Followup 2 (lineage), and Followup
 6 (structured prepare) deferred; F moved to M4; G moved to the independent
 use-driven Skill track; H dropped from M1b. G and H are outside M1b
@@ -97,7 +100,7 @@ new reviewed freeze revision. No later change may grow M1b scope silently.
 ### R1 boundary (frozen 2026-08-12)
 
 The reviewed freeze revision selects exactly the **M1b-R1 read-side slice**,
-fully specified in [`docs/m1b-r1-spec.md`](m1b-r1-spec.md):
+fully specified in [`docs/archive/m1b-r1-spec.md`](archive/m1b-r1-spec.md):
 
 1. compact `enter` **text renderer only** (`aitp/enter-0.2` JSON unchanged)
    with two frozen M1a safety lines (`recent_entries: <shown> of <active>
@@ -273,8 +276,11 @@ the recorded content of the target Entry.
 
 `save_note` validates a Note's `supersedes` like Entry supersession plus a kind
 boundary: list of Note IDs only (`invalid_supersedes_target` for a non-Note
-target), no self-target, target exists (`missing_relation`), target
-`created_at` older (`invalid_supersession`). If roster A is selected and
+target), no self-target, target exists (`missing_relation`). Supersession
+ordering is write-time causality — the target already exists at save time —
+not a `created_at` comparison (roadmap §Auditability); the 2026-08-12
+stability revision removed the `invalid_supersession` timestamp rule. If
+roster A is selected and
 shipped, `check` also validates that rule. Entry `supersedes` likewise requires
 Entry targets (`invalid_supersedes_target`). A superseded Note remains readable;
 nothing is rewritten. (The GW_librpa corpus contains no Notes, so no legacy
@@ -286,7 +292,7 @@ This is the candidate A store-health contract. The 2026-08-12 reviewed
 freeze revision **selects it in M1b-R1 as a v0.1-only read-only `check`**;
 the frozen implementation-level subset (per-file rules, grading, exact
 payload/text, exit codes, budget, tests) is in
-[`docs/m1b-r1-spec.md`](m1b-r1-spec.md) and is **implemented and gated** —
+[`docs/archive/m1b-r1-spec.md`](archive/m1b-r1-spec.md) and is **implemented and gated** —
 `check` is a shipped CLI. The contract below
 remains the full candidate (v0.1 plus selected M1b schemas); the parts that
 depend on unselected M1b schemas (§7.6 codes for 0.2 records, pointer
@@ -355,9 +361,9 @@ is byte-identical before and after a check run.
   "findings": [
     {
       "level": "error" | "warning",
-      "code": "invalid_supersession",
+      "code": "missing_relation",
       "path": ".aitp/topic/entries/entry-<hex>.md",
-      "message": "supersedes target is not older: entry-<hex>"
+      "message": "supersedes target does not exist: entry-<hex>"
     }
   ]
 }
@@ -378,13 +384,15 @@ New codes (existing codes — `malformed_record`, `unreadable_record`,
 `invalid_limitations`, `missing_limitations`, `missing_refs`, `invalid_refs`,
 `invalid_ref`, `invalid_ref_pin`, `invalid_retrieved_ref`,
 `invalid_version_ref`, `unfilled_template`, `empty_section`,
-`invalid_relation`, `missing_relation`, `invalid_supersession`, `missing_ref`,
+`invalid_relation`, `missing_relation`, `missing_ref`,
 `hash_mismatch`, `invalid_run_ref` — are reused for errors (a pin that fails
 verification makes the record invalid as written, exactly as on the save
 path); `invalid_git_ref` is reused for both grades — error when Git is
 available and the commit genuinely lacks the target, warning when the Git
 environment is unavailable (no Git binary, or the workspace is not inside a
-Git work tree) so the pin cannot be verified):
+Git work tree) so the pin cannot be verified). `invalid_supersession` is no
+longer produced: the 2026-08-12 stability revision removed the `created_at`
+ordering rule; supersession ordering is target-existence causality only:
 
 | Code | Level | Meaning |
 |---|---|---|
@@ -497,7 +505,7 @@ Unchanged and green: `test_cli.py`, `test_core.py`, `test_adopt.py`,
 ### 10.4 Suite and Skills
 
 Suite: after the M0.6 baseline, add the dense-ledger scenario per
-`docs/m1-read-write-balance.md` §Suite additions (no private-project claims;
+`docs/archive/m1-read-write-balance.md` §Suite additions (no private-project claims;
 long supersession chain; invalid legacy timestamp; stale handoff replaced by
 a later closeout; a run whose evidence is a local pointer bundle; Note-trigger
 distractors), with the rubric diff recorded. **Not in R1**: the suite stays
@@ -507,7 +515,7 @@ Skills: `using-aitp` gains the M1b norms (evidence-backed `resolves`,
 `based_on` discipline, prediction/question recording, pointer-bundle
 disclosure) **only when the corresponding capabilities ship**; R1 syncs the
 Skill for `check` and the compact `enter` text semantics per
-`docs/m1b-r1-spec.md` §Version and docs sync. Roster G's
+`docs/archive/m1b-r1-spec.md` §Version and docs sync. Roster G's
 `surveying-literature` and `analyzing-a-source` remain
 independent use-driven Skill-track work, not M1b runtime/schema/gate
 deliverables; each lands only after real use separately justifies it and its own
@@ -520,7 +528,7 @@ The real store is compatibility evidence, not a test namespace.
 - In-place read acceptance runs `list`/`show` and, with A selected in
   M1b-R1, `check` (all read-only). Before and after, hash every file under
   `.aitp`; the maps must be byte-identical. The frozen R1 acceptance
-  procedure is in `docs/m1b-r1-spec.md` §Real-store acceptance; the
+  procedure is in `docs/archive/m1b-r1-spec.md` §Real-store acceptance; the
   candidate notes below are the fuller M1b picture.
 - Historical compatibility snapshot (2026-08-06 audit): 60 structurally
   readable v0.1 Entries; 41 active, 19 superseded; 26 `result` Entries; one
@@ -543,9 +551,9 @@ The real store is compatibility evidence, not a test namespace.
 
 ### 12.1 Numbers
 
-M0.5 actual: 981 nonblank lines (recorded in `docs/slim-core-plan.md`).
+M0.5 actual: 981 nonblank lines (recorded in `docs/archive/slim-core-plan.md`).
 M0.6 actual: 1,082 nonblank lines (the frozen baseline recorded in
-`docs/m1a-spec.md`; the ≤ 1,100 cap was met).
+`docs/archive/m1a-spec.md`; the ≤ 1,100 cap was met).
 Caps are fixed and never adjusted: M1a ≤ 1,300; M1b ≤ 1,450. M1b headroom
 is 1,450 minus the actual M1a total; if M1a lands near its cap, M1b has
 roughly 150 lines.
@@ -560,14 +568,14 @@ This is a structural risk, not a cosmetic one: the full selected runtime subset
 may exceed the cap. G's independent Skills and H's dropped relation do not enter
 this runtime budget. The 2026-08-12 adjudication avoided the risk by selecting
 only the read-side slice M1b-R1; its per-module budget and cut order are frozen
-in `docs/m1b-r1-spec.md` §Implementation map / §Cut order, proving each module
+in `docs/archive/m1b-r1-spec.md` §Implementation map / §Cut order, proving each module
 stays below 400 nonblank lines and the cumulative total stays ≤ 1,450 (target
 1,425), not only a cumulative total.
 
 ### 12.3 Adjudication (recorded 2026-08-12)
 
 The §0.1 review is complete and recorded in
-[`docs/m1b-adjudication.md`](m1b-adjudication.md): actual M1a total 1,256
+[`docs/archive/m1b-adjudication.md`](archive/m1b-adjudication.md): actual M1a total 1,256
 against fixed caps (M1b headroom **194**), every A–H disposition and every
 followup suggestion with the full roster/dependencies, the smallest
 selected slice (**M1b-R1**, read-side: `check` v0.1-only + compact `enter`
@@ -576,13 +584,13 @@ approval, and the budget-reconciliation re-deferral of Followup 2
 (`lineage`). Deferred, moved, dropped, and no-runtime outcomes produce no
 implementation spec. Budget review never adjusts caps, compresses
 validators, or silently grows the roster; the selected spec
-(`docs/m1b-r1-spec.md`) was separately reviewed and green-lit after this
+(`docs/archive/m1b-r1-spec.md`) was separately reviewed and green-lit after this
 §0.1 record, and the R1 deterministic gate passed on 2026-08-12 (evidence
-in `docs/m1b-r1-stage-notes.md`).
+in `docs/archive/m1b-r1-stage-notes.md`).
 
 ### 12.4 Cut order and prohibitions
 
-Cut order (from `docs/roadmap.md` §M1b and `docs/m1-read-write-balance.md`
+Cut order (from `docs/roadmap.md` §M1b and `docs/archive/m1-read-write-balance.md`
 §Scope and cut order):
 
 1. the quick-run experiment — roster E is currently deferred/not selected by
@@ -640,8 +648,8 @@ Standing prohibitions for M1b:
 The 2026-08-12 reviewed freeze revision selects the **M1b-R1** read-side
 slice (`aitp check` v0.1-only + compact `enter` text), implemented per its
 implementation-level spec
-`docs/m1b-r1-spec.md`; its deterministic gate **passed** (evidence recorded
-in `docs/m1b-r1-stage-notes.md`); B, C–E,
+`docs/archive/m1b-r1-spec.md`; its deterministic gate **passed** (evidence recorded
+in `docs/archive/m1b-r1-stage-notes.md`); B, C–E,
 Followup 2 (lineage), and Followup 6 (structured prepare) deferred, F → M4,
 G → the independent Skill track, H dropped. The unselected rows produce no
 implementation spec. This selection does not authorize M2; M2 needs its own

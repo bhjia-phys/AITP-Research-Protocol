@@ -23,15 +23,15 @@ CLI/payload/zero-write checks and refresh this matrix.
 | `note prepare\|save` | M0 | available | yes | — | envelope shape + `status` enum |
 | `list` | M1a | **available** (read-only) | **yes** (feature-detect schema) | —; M1a deterministic gate passed | top-level `schema == "aitp/list-0.1"` |
 | `show` | M1a | **available** (read-only) | **yes** (feature-detect schema) | —; M1a deterministic gate passed | top-level `schema == "aitp/show-0.1"` |
-| `check` | M1b-R1 (selected 2026-08-12) | **available** (read-only) | **yes** (feature-detect schema) | —; M1b-R1 deterministic gate passed 2026-08-12 (evidence in `docs/m1b-r1-stage-notes.md`); v0.1-only, read-only, zero-write | parse `aitp/check-report-0.1` on exits 0 and 1; exit 2 is the standard error envelope |
+| `check` | M1b-R1 (selected 2026-08-12) | **available** (read-only) | **yes** (feature-detect schema) | —; M1b-R1 deterministic gate passed 2026-08-12 (evidence in `docs/archive/m1b-r1-stage-notes.md`); v0.1-only, read-only, zero-write | parse `aitp/check-report-0.1` on exits 0 and 1; exit 2 is the standard error envelope |
 | `lineage` | deferred candidate (Followup 2, re-deferred 2026-08-12) | **absent** | no | a new reviewed freeze revision selecting it, then its own reviewed spec | `aitp/lineage-0.1` only if actually shipped |
 
 M0.6→M1a authorization is not a Hakimi-side decision: the approved 2026-08-10
 narrowed gate review flipped the M1a roadmap row to ready, and the post-review
 M1a deterministic gate passed. The 2026-08-12 reviewed freeze revision
-(`docs/m1b-adjudication.md`) selected M1b-R1, implemented per
-`docs/m1b-r1-spec.md` with its deterministic gate passed (evidence in
-`docs/m1b-r1-stage-notes.md`); the current read
+(`docs/archive/m1b-adjudication.md`) selected M1b-R1, implemented per
+`docs/archive/m1b-r1-spec.md` with its deterministic gate passed (evidence in
+`docs/archive/m1b-r1-stage-notes.md`); the current read
 contracts are available, `check` is shipped and gated,
 `lineage` is a
 deferred candidate, and the matrix reflects the closed R1 gate.
@@ -49,9 +49,9 @@ feature-detect or parse it; machine output remains the versioned JSON.
 | `aitp/lite-note-0.1` | file | exists | `notes.py` Note schema validation contract |
 | `aitp/legacy-inventory-0.1` | file | exists | `workspace.py` legacy inventory contract |
 | `aitp/enter-0.1` | **transport** | **does not exist** | `enter --json` has no top-level `schema` (`state.py` enter projection; verified live) |
-| `aitp/enter-0.2`, `aitp/list-0.1`, `aitp/show-0.1` | transport | **exists and available** | `docs/m1a-spec.md` headings `aitp list` → `JSON payload (schema aitp/list-0.1)`, `aitp show` → `JSON payload (schema aitp/show-0.1)`, and `enter v2 (schema aitp/enter-0.2)`; Hakimi feature-detects these read-only contracts |
+| `aitp/enter-0.2`, `aitp/list-0.1`, `aitp/show-0.1` | transport | **exists and available** | `docs/archive/m1a-spec.md` headings `aitp list` → `JSON payload (schema aitp/list-0.1)`, `aitp show` → `JSON payload (schema aitp/show-0.1)`, and `enter v2 (schema aitp/enter-0.2)`; Hakimi feature-detects these read-only contracts |
 | `aitp/lite-entry-0.2` | file | candidate contract; blocked, not present | Candidate inventory only; not selected in M1b-R1 (`docs/m1b-spec.md` §0.1 2026-08-12 reviewed freeze revision); selected schema version would require its own freeze revision and a green-lit implementation spec |
-| `aitp/check-report-0.1` | transport | **shipped and gated** (M1b-R1) | The 2026-08-12 reviewed freeze revision selected v0.1-only `check`, implemented per `docs/m1b-r1-spec.md`, and the R1 deterministic gate passed (evidence in `docs/m1b-r1-stage-notes.md`); feature-detectable by Hakimi — parse the report on exits 0 and 1; exit 2 is the standard error envelope (`docs/m1b-spec.md` §7.5 JSON, `docs/m1b-r1-spec.md` §Report) |
+| `aitp/check-report-0.1` | transport | **shipped and gated** (M1b-R1) | The 2026-08-12 reviewed freeze revision selected v0.1-only `check`, implemented per `docs/archive/m1b-r1-spec.md`, and the R1 deterministic gate passed (evidence in `docs/archive/m1b-r1-stage-notes.md`); feature-detectable by Hakimi — parse the report on exits 0 and 1; exit 2 is the standard error envelope (`docs/m1b-spec.md` §7.5 JSON, `docs/archive/m1b-r1-spec.md` §Report) |
 | `aitp/lineage-0.1` | transport | deferred candidate; not present | The v0.1 `resolves`/`supersedes` read projection (Followup 2) was re-deferred at the 2026-08-12 budget reconciliation; available to Hakimi only if a new reviewed freeze revision selects it and it ships |
 | `aitp/run-pointer-0.1` | file | candidate contract; blocked, not present | Candidate inventory only; deferred in the 2026-08-12 freeze revision; selected pointer-bundle capability would require a shipped gated slice (`docs/m1b-spec.md` §8 Remote evidence) |
 
@@ -66,7 +66,7 @@ The A–H + Followup mapping and disposition process are authoritative in
 [`docs/m1b-spec.md` §0.1](../m1b-spec.md#01-authoritative-candidate-roster-and-current-dispositions);
 this matrix does not schedule one H2 bundle. The 2026-08-12 reviewed freeze
 revision selected **M1b-R1** (implemented per
-[`docs/m1b-r1-spec.md`](../m1b-r1-spec.md); deterministic gate passed):
+[`docs/archive/m1b-r1-spec.md`](../archive/m1b-r1-spec.md); deterministic gate passed):
 `check` (v0.1-only) plus the
 compact `enter` text renderer. B, C, D pointer bundles, and E quick-run are
 deferred (not in R1); Followup 2 (`lineage`) was re-deferred at the budget
@@ -85,7 +85,7 @@ own natural-demand evidence.
   guess a contract or write canonical files directly as a fallback. No M1b
   response change is implemented or claimed here. Evidence: the M1a
   implementation map changes `records.py` only for the `hash_mismatch` message
-  and leaves `notes.py` unchanged (`docs/m1a-spec.md` §Implementation map
+  and leaves `notes.py` unchanged (`docs/archive/m1a-spec.md` §Implementation map
   (files/functions; line budget)).
 - **Selected M1b envelope rule:** the `based_on` candidate's optional
   `warnings` list would change an unversioned `record save` success envelope and
@@ -105,14 +105,14 @@ own natural-demand evidence.
   - `note prepare` → same shape as `record prepare`.
 - **First versioned contract point for Hakimi:** `aitp/enter-0.2`,
   `aitp/list-0.1`, and `aitp/show-0.1` are available after the completed M1a
-  deterministic gate (`docs/m1a-spec.md` §enter v2 and the list/show JSON
+  deterministic gate (`docs/archive/m1a-spec.md` §enter v2 and the list/show JSON
   payload sections). Hakimi must feature-detect each read-only schema; the
   M0.6 authorization and M1a implementation are recorded separately from the
   historical audit below.
 - **Golden fixtures:** regenerated deliberately at M1a in
   `tests/ledger/fixtures/golden/` (`enter.json`, `enter-after-save.json`,
   new `list.json`, `show.json`); `root` normalized to `<golden-store>`;
-  synthetic `nio` store only — no real research data (`docs/m1a-spec.md`
+  synthetic `nio` store only — no real research data (`docs/archive/m1a-spec.md`
   §Golden fixtures (deliberate regeneration)). Hakimi may consume them as
   official protocol fixtures.
 
@@ -123,7 +123,7 @@ own natural-demand evidence.
 | 1 | Manifest discovers `skills/` relative to plugin root | PASS | `kimi.plugin.json` and `.codex-plugin/plugin.json` manifests declare `"skills": "./skills/"`; both carry a `version` field (`0.2.0` / `0.2.0+codex.20260810134547`) |
 | 2 | Launcher probed as `python3.13 → 3.12 → 3.11 → python3`, verified ≥ 3.11 | PASS | `using-aitp` Skill launcher instructions (exact order); `scripts/aitp.py` launcher version guard. Verified live: system `python3` = 3.10.12 is rejected with `AITP requires Python 3.11 or newer.` on stderr, exit 2 |
 | 3 | `--cwd` semantics | PASS (two caveats) | default `.`, relative/absolute ok (`cli.py` command handling); `workspace.py` `resolve_root` chooses the nearest ancestor with `.aitp/STORE.toml`, else git root, else cwd. Verified live from a subdirectory. Caveat 1: ancestor-store priority ⇒ a nested second store inside a workspace cannot be opened (known design item on the M1a pre-list). Caveat 2: in a directory without a store, a parent Git root becomes the workspace root |
-| 4 | Exit codes 0/2; `check` 0/1/2 | PASS | success 0; `AITPError` and argparse handling in `cli.py`; `check` exit mapping per `docs/m1b-r1-spec.md` §Exit codes; verified live |
+| 4 | Exit codes 0/2; `check` 0/1/2 | PASS | success 0; `AITPError` and argparse handling in `cli.py`; `check` exit mapping per `docs/archive/m1b-r1-spec.md` §Exit codes; verified live |
 | 5 | Error payload `{"status":"error","code","message"}` | PASS (one detail) | `cli.py` error handling, verified live. Detail: with `--json` the JSON goes to **stdout**; in text mode the error goes to **stderr only** (stdout empty) |
 | 6 | `record/note save` drafts must live under `.aitp/local/drafts` | PASS | `records.py` and `notes.py` draft-path validation (`invalid_draft`); verified live (absolute path outside drafts rejected, exit 2) |
 | 7 | Read-only commands are zero-write | PASS | verified live: two `enter --json` runs (root + subdir `--cwd`) on a byte-copy of `suite/seeds/S1` leave the tree sha256-identical. `enter` never calls `atomic_write`/`store_lock`; the lock is save-path only. **`inventory` is a write command — never treated as read-only** |
@@ -132,7 +132,7 @@ own natural-demand evidence.
 
 1. Call `list` and `show` only after feature-detecting their versioned schemas;
    they are current read-only commands. `check` is shipped and gated (M1b-R1;
-   evidence in `docs/m1b-r1-stage-notes.md`) — feature-detect
+   evidence in `docs/archive/m1b-r1-stage-notes.md`) — feature-detect
    `aitp/check-report-0.1` before consuming it; `lineage` is a deferred candidate.
    Never emulate `show` with `rg` or ad-hoc Markdown parsing. The compact
    `enter` **text** is human-facing only — never parse or feature-detect it;
@@ -142,7 +142,7 @@ own natural-demand evidence.
 3. Never assume `aitp/enter-0.1`; it does not exist. The current M1a read
    contracts are `aitp/enter-0.2`, `aitp/list-0.1`, and `aitp/show-0.1`; feature-
    detect them before consuming their payloads. `aitp/check-report-0.1` is
-   shipped and gated (M1b-R1; evidence in `docs/m1b-r1-stage-notes.md`);
+   shipped and gated (M1b-R1; evidence in `docs/archive/m1b-r1-stage-notes.md`);
    **parse the report on exits 0 and 1** (clean and findings both carry the
    payload) and treat exit 2 as the standard error envelope.
    `aitp/lineage-0.1` and `aitp/run-pointer-0.1` remain deferred candidates.
@@ -153,7 +153,7 @@ own natural-demand evidence.
 5. Uninitialized workspace = graceful degradation (`not_initialized`, exit 2),
    never auto-adopt.
 6. Private caches never written back; no transcript/CoT storage; context
-   packets are ephemeral (`docs/collaborator-design.md` `Principle` section).
+   packets are ephemeral (`docs/archive/collaborator-design.md` `Principle` section).
 7. Remote evidence: `target: host:/path` is handled by the canonical
    `records.py` `_inside`/`validate_refs` path as a workspace-relative target,
    not categorically as `ref_escape`; it normally yields `missing_ref` unless
@@ -174,16 +174,16 @@ AITP side (by gate):
    measured; deferred; not counted. The no-turn preflight remains preparation
    evidence only.
 2. M1a is **done; deterministic gate passed**. The complete evidence packet is
-   [`docs/m1a-stage-notes.md`](../m1a-stage-notes.md): unchanged ledger tests,
+   [`docs/archive/m1a-stage-notes.md`](../archive/m1a-stage-notes.md): unchanged ledger tests,
    generated read goldens, deterministic S1/S2 regression, read-only
    byte-identical GW_librpa acceptance, performance, and line-budget checks.
    This is not behavioral, causal, treatment-control, or treatment-advantage
    evidence. Hakimi H1 may feature-detect the three versioned read schemas.
 3. The natural-use pause is complete and the 2026-08-12 reviewed freeze
    revision selected **M1b-R1**, implemented per
-   ([`docs/m1b-adjudication.md`](../m1b-adjudication.md),
-   [`docs/m1b-r1-spec.md`](../m1b-r1-spec.md)); its deterministic gate
-   passed (evidence in `docs/m1b-r1-stage-notes.md`). Only selected shipped
+   ([`docs/archive/m1b-adjudication.md`](../archive/m1b-adjudication.md),
+   [`docs/archive/m1b-r1-spec.md`](../archive/m1b-r1-spec.md)); its deterministic gate
+   passed (evidence in `docs/archive/m1b-r1-stage-notes.md`). Only selected shipped
    capabilities schedule H2 — `check` (`aitp/check-report-0.1`, exits 0/1
    carry the report, exit 2 is the error envelope), feature-detected and
    read-only, is now available for H2. `lineage` is a deferred candidate, not H2 scope.
@@ -201,7 +201,7 @@ capabilities remain independent of AITP gates.
 
 Blocking chain: M1a done → natural-use pause complete → M1b freeze revision
 (2026-08-12) → M1b-R1 implementation and gate (passed 2026-08-12; evidence
-in `docs/m1b-r1-stage-notes.md`). R1's completion does
+in `docs/archive/m1b-r1-stage-notes.md`). R1's completion does
 not authorize M2; M2/M3 require their own evidence. Hakimi H0 and the research
 loop have zero dependencies on this chain.
 
@@ -223,7 +223,7 @@ claim:
   `next_action.entry_id` = `entry-0a21…`).
 
 Current M1a amendment: the deterministic gate completed on 2026-08-10; see
-[`docs/m1a-stage-notes.md`](../m1a-stage-notes.md) for the authoritative
+[`docs/archive/m1a-stage-notes.md`](../archive/m1a-stage-notes.md) for the authoritative
 pytest, benchmark, runtime-budget, generated-golden, S1/S2, and
 byte-identical GW_librpa evidence. The amendment supersedes neither the
 historical audit observations nor the frozen suite inputs; it records the

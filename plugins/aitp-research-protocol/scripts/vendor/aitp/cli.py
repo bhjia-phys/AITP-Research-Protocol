@@ -27,6 +27,13 @@ def _add_common_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--json", action="store_true")
 
 
+def _positive_int(value: str) -> int:
+    number = int(value)
+    if number < 1:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return number
+
+
 def _emit(payload: dict[str, Any], as_json: bool) -> None:
     if as_json:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
@@ -113,7 +120,7 @@ def build_parser() -> argparse.ArgumentParser:
     init.add_argument("--dry-run", action="store_true")
 
     enter = commands.add_parser("enter", help="return grounded recorded research state")
-    enter.add_argument("--recent", type=int, default=20)
+    enter.add_argument("--recent", type=_positive_int, default=20)
 
     listing = commands.add_parser(
         "list", help="list canonical Entries with optional --kind and --since filters"
@@ -138,21 +145,29 @@ def build_parser() -> argparse.ArgumentParser:
 
     record = commands.add_parser("record", help="prepare or save an Entry")
     record_commands = record.add_subparsers(dest="record_command", required=True)
-    record_prepare = record_commands.add_parser("prepare")
+    record_prepare = record_commands.add_parser(
+        "prepare", help="prepare an Entry draft from a kind template"
+    )
     record_prepare.add_argument("--kind", required=True)
     record_prepare.add_argument("--authority", default="agent")
     record_prepare.add_argument("--created-by", default="agent:unknown")
     record_prepare.add_argument("--idempotency-key")
-    record_save = record_commands.add_parser("save")
+    record_save = record_commands.add_parser(
+        "save", help="validate and save a prepared Entry draft"
+    )
     record_save.add_argument("draft")
 
     note = commands.add_parser("note", help="prepare or save a Note")
     note_commands = note.add_subparsers(dest="note_command", required=True)
-    note_prepare = note_commands.add_parser("prepare")
+    note_prepare = note_commands.add_parser(
+        "prepare", help="prepare a Note draft from a mode template"
+    )
     note_prepare.add_argument("--mode", choices=("working", "theory"), required=True)
     note_prepare.add_argument("--title", required=True)
     note_prepare.add_argument("--created-by", default="agent:unknown")
-    note_save = note_commands.add_parser("save")
+    note_save = note_commands.add_parser(
+        "save", help="validate and save a prepared Note draft"
+    )
     note_save.add_argument("draft")
     for command_parser in (init, enter, listing, show, check, inventory, record_prepare, record_save, note_prepare, note_save):
         _add_common_options(command_parser)

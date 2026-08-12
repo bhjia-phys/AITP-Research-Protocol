@@ -2,14 +2,14 @@
 
 Status: stable M0 baseline with M0.6 adopt/inventory additions and completed M1a
 read projections documented below. M1a is **done; deterministic gate passed**;
-see [`docs/m1a-stage-notes.md`](m1a-stage-notes.md). The current persistent
+see [`docs/archive/m1a-stage-notes.md`](archive/m1a-stage-notes.md). The current persistent
 schema remains `aitp/lite-entry-0.1`; M1a transport schemas are
 `aitp/enter-0.2`, `aitp/list-0.1`, and `aitp/show-0.1`. The M1b natural-use
 pause is complete; the 2026-08-12 reviewed freeze revision
-([`docs/m1b-adjudication.md`](m1b-adjudication.md)) selected the read-side
+([`docs/archive/m1b-adjudication.md`](archive/m1b-adjudication.md)) selected the read-side
 slice **M1b-R1** — `aitp check` (v0.1-only) is implemented per
-[`docs/m1b-r1-spec.md`](m1b-r1-spec.md) and its deterministic gate **passed**
-(evidence in [`docs/m1b-r1-stage-notes.md`](m1b-r1-stage-notes.md));
+[`docs/archive/m1b-r1-spec.md`](archive/m1b-r1-spec.md) and its deterministic gate **passed**
+(evidence in [`docs/archive/m1b-r1-stage-notes.md`](archive/m1b-r1-stage-notes.md));
 `lineage` is a deferred candidate. M2/M3 remain design options.
 
 ## Purpose
@@ -148,9 +148,9 @@ findings sorted by `(path, code, message)`; exit 0 clean / 1 findings /
 zero-write (no lock, cache, index, repair, or migration) with frozen
 no-crash mappings (invalid UTF-8 records and refs become findings; no path
 raises a traceback). The frozen implementation contract is in
-[`docs/m1b-r1-spec.md`](m1b-r1-spec.md); the implementation is complete and
+[`docs/archive/m1b-r1-spec.md`](archive/m1b-r1-spec.md); the implementation is complete and
 its deterministic gate passed (evidence in
-[`docs/m1b-r1-stage-notes.md`](m1b-r1-stage-notes.md)). `aitp lineage` is a deferred
+[`docs/archive/m1b-r1-stage-notes.md`](archive/m1b-r1-stage-notes.md)). `aitp lineage` is a deferred
 candidate (Followup 2, re-deferred at the 2026-08-12 budget
 reconciliation). `enter`'s text rendering is compact in R1 with two frozen
 M1a safety lines; its `aitp/enter-0.2` JSON contract is unchanged.
