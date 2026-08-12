@@ -147,7 +147,14 @@ findings sorted by `(path, code, message)`; exit 0 clean / 1 findings /
 2 cannot run (not a workspace, unreadable store metadata, or CLI misuse);
 zero-write (no lock, cache, index, repair, or migration) with frozen
 no-crash mappings (invalid UTF-8 records and refs become findings; no path
-raises a traceback). The frozen implementation contract is in
+raises a traceback). Finding codes produced today: structural/validation
+codes from the save path plus `duplicate_id`; relation codes
+`invalid_relation`/`missing_relation` (no `invalid_supersession` — the
+2026-08-12 stability revision removed the `created_at` ordering rule);
+pin grades `hash_mismatch`, `unreadable_ref`, `invalid_run_ref`,
+`invalid_version_ref`, `invalid_retrieved_ref`, `invalid_ref_pin`, and
+`invalid_git_ref` (error when Git verifies wrong, warning when Git is
+unavailable); warnings `invalid_timestamp` and `empty_topic_goal`. The frozen implementation contract is in
 [`docs/archive/m1b-r1-spec.md`](archive/m1b-r1-spec.md); the implementation is complete and
 its deterministic gate passed (evidence in
 [`docs/archive/m1b-r1-stage-notes.md`](archive/m1b-r1-stage-notes.md)). `aitp lineage` is a deferred

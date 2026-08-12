@@ -551,7 +551,7 @@ complete; the researcher's six followup suggestions are archived in
 `docs/archive/m1b-adjudication.md`.
 
 After the pause, the actual M1a total (1,256) was reconciled against the
-fixed caps in `docs/m1b-spec.md` §12.3 (M1b headroom **194**) and its §0.1
+fixed caps in `docs/archive/m1b-candidates-1-14.md` §12.3 (M1b headroom **194**) and the `docs/m1b-spec.md` §0.1
 roster process applied. Selected rows retain their validation, v0.1
 compatibility, and no-index boundary; only the R1 read slice is selected.
 F is moved to M4 and does not

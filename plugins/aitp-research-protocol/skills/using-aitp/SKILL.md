@@ -145,6 +145,7 @@ The CLI template is the schema. Keep claims small, state limitations, and distin
 - Record a verification only when it changes a live claim or surfaces auditable evidence the ledger lacks; do not wrap an ordinary re-read or an un-triggered check as a durable event.
 - Use `resolves` only when this Entry's own evidence directly closes an active failure — first check the failure's state and its `supersedes`/`resolves` chain, and confirm no existing record already settles the failure's subject. A projected counter (such as `unresolved_failures`) is ledger state, not an instruction: do not change a failure's status unless the records support the change.
 - Use `supersedes` only when replacing an older Entry; never silently rewrite history.
+- When the researcher challenges an existing result/closeout: first write a narrowly scoped `failure`; after the fix, resolve it with direct evidence and write a new closeout; never rewrite the old result to manufacture a clean history. If the main claim stands and only a local statement is corrected, state that distinction in the failure/resolver `limitations`.
 - Use `git`, `sha256`, `run`, `version`, or `retrieved` pins for evidence that may change.
 - Reuse the same idempotency key when retrying the same logical write.
 
@@ -153,6 +154,17 @@ immutable submission/result report (job IDs, binary/build/input identity,
 boundaries and status), then index that durable campaign moment with a single
 `run` or `result` Entry. One Entry per job is not expected; transient queue
 snapshots and preflight churn are not separately recorded.
+
+### Remote evidence — pointer manifest (non-normative example)
+
+A naked remote path is location metadata, not locally verifiable evidence.
+When a durable result depends on remote immutable runs, first write a local
+pointer manifest (e.g. `data/run-<job-id>.pointer.json`) carrying the host,
+remote path, scheduler job ID, binary/input SHAs, a local hash manifest, the
+verification time, and a `boundary` line stating that the remote bytes were
+checked then and not re-verified since; then pin that local file with
+`sha256:` in the Entry's `refs`. Never record a bare `host:path` as a pin.
+This is a Skill convention with no runtime support (roster D is deferred).
 
 ## Write a note from recorded evidence
 
