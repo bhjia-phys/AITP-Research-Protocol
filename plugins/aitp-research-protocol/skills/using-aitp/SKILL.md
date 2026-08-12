@@ -200,3 +200,16 @@ the new record is active, evidence is reachable, unresolved failures are
 honest, and the next action is concrete. Do not record conversational filler,
 speculative claims presented as results, duplicate retries, or transient
 scratch work.
+
+### Natural-use feedback (optional, never blocking)
+
+After ending an ordinary, unscripted research session on a real Topic, write
+a 4–6 line natural-use note following
+[`feedback/natural-use-session-template.md`](../../../../feedback/natural-use-session-template.md)
+into the AITP protocol checkout's `feedback/` directory as
+`feedback/YYYY-MM-DD-<topic-slug>-natural-use.md`. This is an observation
+log, not an evaluation or a gate: record observable facts only, never claim
+superiority over plain files, and never edit the template. Skip it without
+ceremony when the session had no research substance, when the AITP checkout
+cannot be located, or when writing it would delay the researcher; a missing
+note never blocks work and is never treated as a failure.
