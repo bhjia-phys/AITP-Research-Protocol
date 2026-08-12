@@ -57,6 +57,8 @@ def prepare_note(
     store = load_store(root)
     if mode not in NOTE_MODES:
         raise AITPError("invalid_mode", f"unsupported Note mode: {mode}")
+    if created_by == "agent:unknown":
+        raise AITPError("missing_provenance", "created_by is required for Note prepare")
     if not title.strip():
         raise AITPError("invalid_title", "Note title must not be empty")
     note_id = f"note-{uuid.uuid4().hex}"
@@ -121,6 +123,9 @@ def validate_note(
             raise AITPError("missing_refs", "Note requires nonempty basis_refs")
         validate_refs(root, basis_refs)
     validate_string_list(frontmatter["supersedes"], "supersedes", "Note IDs")
+    for target in frontmatter["supersedes"]:
+        if not NOTE_ID_RE.fullmatch(target) or not (root / ".aitp" / "topic" / "notes" / f"{target}.md").is_file():
+            raise AITPError("missing_relation", f"supersedes target does not exist: {target}")
     validate_json_safe(frontmatter, "Note frontmatter")
     if not isinstance(body, str): raise AITPError("invalid_type", "Note body must be a string")
     if PROMPT_MARKER in body:

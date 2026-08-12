@@ -80,10 +80,10 @@ no behavioral or treatment-superiority claim is implied.
    reviewed implementation-level spec selecting the smallest coherent,
    evidence-backed slice.
 3. Line caps are ceilings, not targets. Spare budget never justifies scope.
-   If a future selected slice needs headroom, the pre-declared first release
-   is deduplicating the three repeated scan/validate loops in `query.py`/
-   `state.py`/`diagnostics.py` into one shared reader — deduplication, not
-   validator compression.
+   The 2026-08-12 stability batch consumed the first pre-declared release:
+   the three repeated scan/validate loops are now one shared reader
+   (`query._scan_records`). Any further headroom needs a fresh pre-declared
+   release — deduplication, not validator compression.
 4. If scope lacks evidence or does not fit, split, revise, defer, or drop it
    before code; never compress validators, weaken compatibility, or expand caps.
 5. After the M1a gate, run a deliberately small natural-use pause: at least two
@@ -208,6 +208,14 @@ judgment, literature retrieval, PDF parsing, embeddings.
 
 ## Open items
 
+Only the plain parts of this section are current: `failure` exists as a
+kind and `resolves` as a plain list, with the reopen mechanism below. The
+typed parts — `prediction`/`question` kinds, the `resolution` closure field
+with per-kind enums, and the `contradicts` structure — are **roster C
+candidate contract, deferred**: they bind only if C is selected by a
+reviewed freeze revision and shipped. Until then they are design history,
+not a current contract.
+
 `failure`, `prediction`, and `question` are **open items** — one lifecycle:
 
 - `resolves` names exactly one open item and closes it. The resolving Entry
@@ -254,7 +262,7 @@ And Dependencies; Why It Matters; Discharge Criterion And Evidence Required.
 An agent-authored question states its basis in Context — a ref, or an
 explicit note that the researcher posed it.
 
-## Agent conformance suite
+## Agent conformance suite (dormant)
 
 An external evaluation suite (scenario scripts + scoring rubrics), **not
 part of the runtime**, built before M1 and used as predeclared, episodic gate
@@ -639,7 +647,7 @@ Decisions forced by the real workspace survey
 7. **Guard hooks and the v5 MCP server are retired, not replaced** —
    orientation is absorbed by `enter` + Skills; the write path is owned by
    the CLI. All agent platforms integrate via CLI + per-platform Skills.
-8. **Skill governance gains a per-skill review state** (M2).
+8. **Skill governance gains a per-skill review state** (only if M2 is authorized on natural demand).
 
 ## Methodology skill library
 

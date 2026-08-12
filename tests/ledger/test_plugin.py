@@ -72,6 +72,8 @@ def test_offline_plugin_runner_initializes_and_enters_workspace(tmp_path: Path) 
         "code-change",
         "--authority",
         "agent",
+        "--created-by",
+        "agent:test",
         "--json",
         cwd=root,
     )

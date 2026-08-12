@@ -94,8 +94,10 @@ The output must distinguish recorded state from scientific truth and expose miss
 
 `aitp record prepare --kind <kind> --authority <level> --created-by <id>
 [--idempotency-key <key>]` prepares exactly one draft from the selected
-kind-specific template. `aitp record save <draft>` saves only after fast
-structural, relation, evidence-pin, and prompt-completion checks.
+kind-specific template. `--created-by` is required for `authority: agent`
+(missing provenance is `missing_provenance`); `aitp record save <draft>`
+saves only after fast structural, relation, evidence-pin, and
+prompt-completion checks.
 
 Kinds:
 
@@ -122,8 +124,17 @@ prepares either:
 - `working`: current research line, evidence map, uncertainty, and next actions;
 - `theory`: assumptions, conventions, derivation, checks, gaps, and implications.
 
-`aitp note save <draft>` saves the filled draft. A Note synthesizes pinned
-research evidence. It is not the sole evidence for a result.
+`--created-by` is required (Notes are agent artifacts; missing provenance is
+`missing_provenance`). `aitp note save <draft>` saves the filled draft; a
+Note `supersedes` targets must exist among canonical Notes. A Note
+synthesizes pinned research evidence. It is not the sole evidence for a
+result.
+
+`review_state` currently has exactly one legal value, `agent_draft`: the
+Note lifecycle has no built-in "reviewed" transition. Researcher
+confirmation of a Note's content is expressed outside the Note schema — by a
+`decision` Entry with `authority: human` pinning the Note file. Do not read
+`review_state` as a promise of a future review mechanism.
 
 ### `aitp list`
 
@@ -135,8 +146,13 @@ and writes no cursor, cache, lock, or local state.
 ### `aitp show`
 
 `aitp show <entry-id> [--json]` is the M1a exact-record read projection. Its
-JSON payload is `aitp/show-0.1`; it returns the complete structurally valid
-Entry and active/superseded status without revalidating evidence pins.
+JSON payload is `aitp/show-0.1`; for a valid Entry it returns the complete
+structurally valid Entry and active/superseded status without revalidating
+evidence pins. If the target file exists but fails validation, `show` still
+renders it: `status: "malformed"`, `frontmatter: null`, `body` is the raw
+file text, and `warning` carries the validation finding (code/path/message).
+`check` remains the whole-store diagnostic; `show` never hides a broken
+record.
 
 ### `aitp check` (M1b-R1; shipped, deterministic gate passed)
 
@@ -149,12 +165,14 @@ zero-write (no lock, cache, index, repair, or migration) with frozen
 no-crash mappings (invalid UTF-8 records and refs become findings; no path
 raises a traceback). Finding codes produced today: structural/validation
 codes from the save path plus `duplicate_id`; relation codes
-`invalid_relation`/`missing_relation` (no `invalid_supersession` — the
+`invalid_relation`/`missing_relation` apply to Entry `resolves`/`supersedes`
+targets and Note `supersedes` targets (no `invalid_supersession` — the
 2026-08-12 stability revision removed the `created_at` ordering rule);
 pin grades `hash_mismatch`, `unreadable_ref`, `invalid_run_ref`,
 `invalid_version_ref`, `invalid_retrieved_ref`, `invalid_ref_pin`, and
 `invalid_git_ref` (error when Git verifies wrong, warning when Git is
-unavailable); warnings `invalid_timestamp` and `empty_topic_goal`. The frozen implementation contract is in
+unavailable); warnings `invalid_timestamp` and
+`empty_topic_goal`. The frozen implementation contract is in
 [`docs/archive/m1b-r1-spec.md`](archive/m1b-r1-spec.md); the implementation is complete and
 its deterministic gate passed (evidence in
 [`docs/archive/m1b-r1-stage-notes.md`](archive/m1b-r1-stage-notes.md)). `aitp lineage` is a deferred
@@ -172,7 +190,13 @@ at: sha256:<digest> | git:<revision> | run:<id> | version:<id> | retrieved:<time
 locator: exact section, equation, line, or object
 ```
 
-Saving verifies pins that can be checked locally.
+Saving verifies pins that can be checked locally. Remote evidence is
+location metadata, not a pin: a durable result that depends on remote
+immutable runs first lands a local pointer manifest (host, remote path, job
+id, SHAs, verification time, and the "remote bytes not re-verified since"
+boundary) inside the workspace, and the Entry pins that manifest with
+`sha256:`. This is a Skill convention with no runtime support (roster D is
+deferred).
 
 ## Agent behavior
 

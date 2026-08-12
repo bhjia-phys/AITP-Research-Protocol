@@ -77,6 +77,8 @@ def prepare_entry(
         raise AITPError("invalid_kind", f"unsupported Entry kind: {kind}")
     if authority not in AUTHORITIES:
         raise AITPError("invalid_authority", f"unsupported authority: {authority}")
+    if authority == "agent" and created_by == "agent:unknown":
+        raise AITPError("missing_provenance", "created_by is required for agent authority")
     if idempotency_key:
         existing = _find_idempotency(root, idempotency_key)
         if existing:

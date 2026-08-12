@@ -58,7 +58,6 @@ def test_adopt_creates_exact_store(tmp_path: Path) -> None:
         ".aitp/topic/entries",
         ".aitp/topic/notes",
         ".aitp/local/drafts",
-        ".aitp/local/scratch",
         ".aitp/local/locks",
     ]:
         assert (root / directory).is_dir()

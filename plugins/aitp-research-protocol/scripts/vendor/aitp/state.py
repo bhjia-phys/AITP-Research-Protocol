@@ -7,7 +7,7 @@ from typing import Any
 
 from .md import AITPError, _section_content, parse_markdown
 from .notes import validate_note
-from .query import _projection, _descending_key, _is_legacy_derived, _scan_entries, _stored_time, _superseded_ids, _warning
+from .query import _projection, _descending_key, _is_legacy_derived, _scan_entries, _scan_records, _stored_time, _superseded_ids, _warning
 from .workspace import load_store, resolve_root
 
 
@@ -31,21 +31,9 @@ def _pick_next_action(ordered: list[tuple[dict[str, Any], str, Path]]) -> dict[s
 def _scan_notes(
     root: Path, *, topic_id: str | None = None
 ) -> tuple[list[tuple[dict[str, Any], str, Path]], list[dict[str, str]]]:
-    notes: list[tuple[dict[str, Any], str, Path]] = []
-    warnings: list[dict[str, str]] = []
     notes_dir = root / ".aitp" / "topic" / "notes"
-    for path in sorted(notes_dir.glob("note-*.md"), key=lambda item: item.name):
-        try:
-            frontmatter, body, _ = parse_markdown(path)
-            validate_note(
-                root, frontmatter, body, validate_evidence=False, topic_id=topic_id
-            )
-            notes.append((frontmatter, body, path))
-        except AITPError as exc:
-            warnings.append(_warning(root, path, exc.code, str(exc)))
-        except Exception as exc:
-            warnings.append(_warning(root, path, "invalid_schema", f"{path}: {exc}"))
-    return notes, warnings
+    paths = sorted(notes_dir.glob("note-*.md"), key=lambda item: item.name)
+    return _scan_records(root, paths, validate_note, "Note", topic_id=topic_id)
 
 
 def enter_workspace(cwd: str | Path, *, recent: int = 20) -> dict[str, Any]:

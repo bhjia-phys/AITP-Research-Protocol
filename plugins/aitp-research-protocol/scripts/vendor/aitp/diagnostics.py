@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from .md import AITPError, _section_content, parse_markdown
 from .notes import validate_note
-from .query import _stored_time
+from .query import _scan_records, _stored_time
 from .records import (
     _canonical_entries,
     _validate_relations,
@@ -23,43 +23,18 @@ def _finding(level: str, code: str, relative: str, message: str) -> dict[str, st
     return {"level": level, "code": code, "path": relative, "message": message}
 
 
-def _parse_all(root: Path, paths: list[Path], findings: list[dict[str, str]]) -> list[tuple[dict[str, Any], str, Path]]:
-    parsed: list[tuple[dict[str, Any], str, Path]] = []
-    for path in paths:
-        relative = str(path.relative_to(root))
-        try:
-            frontmatter, body, _ = parse_markdown(path)
-        except AITPError as exc:
-            findings.append(_finding("error", exc.code, relative, str(exc))); continue
-        except Exception as exc:
-            findings.append(_finding("error", "invalid_schema", relative, f"{path}: {exc}")); continue
-        parsed.append((frontmatter, body, path))
-    return parsed
-
-
-def _grade_records(root: Path, parsed: list[tuple[dict[str, Any], str, Path]], validate: Callable[..., None],
-                   refs_key: str, label: str, *, relations: bool, require_refs: bool,
-                   topic_id: str, findings: list[dict[str, str]], seen: set[str],
+def _grade_records(root: Path, items: list[tuple[dict[str, Any], str, Path]], refs_key: str, label: str,
+                   *, relations: bool, require_refs: bool, findings: list[dict[str, str]],
                    entry_map: dict[str, tuple[dict[str, Any], Path]] | None = None) -> None:
-    for frontmatter, body, path in parsed:
+    for frontmatter, _, path in items:
         relative = str(path.relative_to(root))
-        try:
-            validate(root, frontmatter, body, validate_evidence=False, topic_id=topic_id)
-        except AITPError as exc:
-            findings.append(_finding("error", exc.code, relative, str(exc))); continue
-        except Exception as exc:
-            findings.append(_finding("error", "invalid_schema", relative, f"{path}: {exc}")); continue
-        record_id = frontmatter["id"]
-        if record_id in seen:
-            findings.append(_finding("error", "duplicate_id", relative, f"duplicate {label} ID: {record_id}")); continue
-        seen.add(record_id)
         if _stored_time(frontmatter.get("created_at")) is None:
             findings.append(_finding("warning", "invalid_timestamp", relative, f"unparseable created_at: {frontmatter.get('created_at')}"))
         if relations:
             relation_failed = False
             for field in ("resolves", "supersedes"):
                 try:
-                    _validate_relations(root, frontmatter, field, record_id, entry_map)
+                    _validate_relations(root, frontmatter, field, frontmatter["id"], entry_map)
                 except AITPError as exc:
                     findings.append(_finding("error", exc.code, relative, str(exc))); relation_failed = True
                 except Exception as exc:
@@ -82,16 +57,16 @@ def check_workspace(cwd: str | Path) -> dict[str, Any]:
     topic_id = load_store(root)["topic_id"]
     findings: list[dict[str, str]] = []
     entry_paths = sorted(_canonical_entries(root), key=lambda item: item.name)
-    parsed = _parse_all(root, entry_paths, findings)
-    entry_map = {fm["id"]: (fm, path) for fm, _, path in parsed if isinstance(fm.get("id"), str)}
-    _grade_records(root, parsed, validate_entry, "refs", "Entry", relations=True,
-                   require_refs=False, topic_id=topic_id, findings=findings,
-                   seen=set(), entry_map=entry_map)
+    entries, entry_warnings = _scan_records(root, entry_paths, validate_entry, "Entry", topic_id=topic_id)
+    findings.extend(_finding("error", item["code"], item["path"], item["message"]) for item in entry_warnings)
+    entry_map = {fm["id"]: (fm, path) for fm, _, path in entries if isinstance(fm.get("id"), str)}
+    _grade_records(root, entries, "refs", "Entry", relations=True, require_refs=False,
+                   findings=findings, entry_map=entry_map)
     notes_dir = root / ".aitp" / "topic" / "notes"
     note_paths = sorted(notes_dir.glob("note-*.md"), key=lambda item: item.name)
-    _grade_records(root, _parse_all(root, note_paths, findings), validate_note,
-                   "basis_refs", "Note", relations=False, require_refs=True,
-                   topic_id=topic_id, findings=findings, seen=set())
+    notes, note_warnings = _scan_records(root, note_paths, validate_note, "Note", topic_id=topic_id)
+    findings.extend(_finding("error", item["code"], item["path"], item["message"]) for item in note_warnings)
+    _grade_records(root, notes, "basis_refs", "Note", relations=False, require_refs=True, findings=findings)
     topic_path = root / ".aitp" / "topic" / "TOPIC.md"
     relative = str(topic_path.relative_to(root))
     try:

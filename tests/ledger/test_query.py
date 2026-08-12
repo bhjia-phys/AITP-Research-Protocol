@@ -238,7 +238,7 @@ def make_note(
     body: str | None = None,
     basis_refs: list[dict[str, str]] | None = None,
 ) -> Path:
-    prepared = prepare_note(root, mode, title)
+    prepared = prepare_note(root, mode, title, created_by="agent:test")
     draft = root / prepared["path"]
     frontmatter, _, _ = parse_markdown(draft)
     frontmatter.update(
@@ -533,7 +533,7 @@ def test_hash_mismatch_message(tmp_path: Path) -> None:
     evidence = root / "theory" / "check.md"
     evidence.parent.mkdir(parents=True, exist_ok=True)
     evidence.write_text("evidence\n", encoding="utf-8")
-    prepared = prepare_entry(root, "result", "agent")
+    prepared = prepare_entry(root, "result", "agent", created_by="agent:test")
     draft = root / prepared["path"]
     frontmatter, _, _ = parse_markdown(draft)
     frontmatter.update(
@@ -589,8 +589,11 @@ def test_nonstring_created_at_is_structural_malformed(tmp_path: Path) -> None:
     assert state["counts"]["malformed"] == 4
     assert state["recent_entries"] == []
     shown = run_cli(root, "show", entry_id("a"), "--json")
-    assert shown.returncode == 2
-    assert json.loads(shown.stdout)["code"] == "invalid_timestamp"
+    assert shown.returncode == 0, shown.stderr
+    payload = json.loads(shown.stdout)
+    assert payload["status"] == "malformed"
+    assert payload["frontmatter"] is None
+    assert payload["warning"]["code"] == "invalid_timestamp"
     assert "Traceback" not in shown.stderr
 
 
@@ -621,8 +624,11 @@ def test_show_uses_requested_canonical_target_with_duplicates(tmp_path: Path) ->
     duplicate = make_entry(malformed_root, "b")
     rewrite_frontmatter(duplicate, id=entry_id("a"))
     malformed = run_cli(malformed_root, "show", entry_id("a"), "--json")
-    assert malformed.returncode == 2
-    assert json.loads(malformed.stdout)["code"] == "malformed_record"
+    assert malformed.returncode == 0, malformed.stderr
+    payload = json.loads(malformed.stdout)
+    assert payload["status"] == "malformed"
+    assert payload["warning"]["code"] == "malformed_record"
+    assert "not markdown" in payload["body"]
     valid_root = initialized(tmp_path, "valid-target")
     target = make_entry(valid_root, "a")
     duplicate = make_entry(valid_root, "b")
@@ -717,8 +723,8 @@ def test_read_validators_do_not_call_evidence_or_write_hooks(tmp_path: Path, mon
     assert Counter(query_calls) == Counter(entries)
     query_calls.clear()
     enter_workspace(root)
-    assert Counter(query_calls) == Counter(entries)
-    assert Counter(path for path in state_calls if path in notes_paths) == Counter(notes_paths)
+    assert Counter(query_calls) == Counter(entries + notes_paths)
+    assert state_calls == [root / ".aitp" / "topic" / "TOPIC.md"]
 
 
 def test_parse_time_offsets_tie_break_and_marker_variations(tmp_path: Path) -> None:
@@ -796,7 +802,7 @@ def test_read_commands_load_store_metadata_once(tmp_path: Path, monkeypatch: pyt
 
 def test_save_note_still_validates_basis_refs(tmp_path: Path) -> None:
     root = initialized(tmp_path)
-    prepared = prepare_note(root, "working", "Evidence")
+    prepared = prepare_note(root, "working", "Evidence", created_by="agent:test")
     draft = root / prepared["path"]
     frontmatter, _, _ = parse_markdown(draft)
     evidence = root / "evidence.md"

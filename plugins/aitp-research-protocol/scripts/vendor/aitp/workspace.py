@@ -77,10 +77,11 @@ def load_store(root: Path) -> dict[str, str]:
         key, raw = (part.strip() for part in line.split("=", 1))
         try:
             value = json.loads(raw)
-        except json.JSONDecodeError:
-            continue
-        if isinstance(value, str):
-            result[key] = value
+        except json.JSONDecodeError as exc:
+            raise AITPError("malformed_store", f"invalid store metadata line: {store_path}: {line.strip()}") from exc
+        if not isinstance(value, str):
+            raise AITPError("malformed_store", f"invalid store metadata value: {store_path}: {line.strip()}")
+        result[key] = value
     if not result.get("topic_id") or not result.get("title"):
         raise AITPError("malformed_store", f"invalid store metadata: {store_path}")
     return result
@@ -205,7 +206,6 @@ def init_workspace(
         root / ".aitp" / "topic" / "entries",
         root / ".aitp" / "topic" / "notes",
         root / ".aitp" / "local" / "drafts",
-        root / ".aitp" / "local" / "scratch",
         root / ".aitp" / "local" / "locks",
         root / "data" / "external",
         root / "data" / "raw",
@@ -278,7 +278,6 @@ def adopt_workspace(
         root / ".aitp" / "topic" / "entries",
         root / ".aitp" / "topic" / "notes",
         root / ".aitp" / "local" / "drafts",
-        root / ".aitp" / "local" / "scratch",
         root / ".aitp" / "local" / "locks",
     ]
     _write_files(root, rendered, directories, dry_run)

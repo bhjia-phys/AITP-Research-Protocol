@@ -139,6 +139,7 @@ Only three momentum points were checked; repeat with three cutoffs.
         root,
         "result",
         "agent",
+        created_by="agent:test",
         idempotency_key="turn-1-result",
     )
     assert retry["status"] == "existing"
@@ -160,7 +161,7 @@ def test_hash_mismatch_blocks_save(tmp_path: Path):
     root = initialized(tmp_path)
     ref = pinned_file(root, "theory/check.md")
     ref["at"] = f"sha256:{'0' * 64}"
-    prepared = prepare_entry(root, "result", "agent")
+    prepared = prepare_entry(root, "result", "agent", created_by="agent:test")
     body = """\
 ## Durable Summary
 
@@ -193,7 +194,7 @@ def test_active_state_reopens_failure_when_resolution_is_superseded(tmp_path: Pa
     ref = pinned_file(root, "calculations/small-q/input.txt")
     base_time = datetime.now(UTC).replace(microsecond=0)
 
-    failure_prepared = prepare_entry(root, "failure", "agent")
+    failure_prepared = prepare_entry(root, "failure", "agent", created_by="agent:test")
     failure_body = """\
 ## Durable Summary
 
@@ -286,7 +287,7 @@ Require a new diagnostic before resolving it again.
 def test_note_template_round_trip(tmp_path: Path):
     root = initialized(tmp_path)
     ref = pinned_file(root, "theory/summary.md")
-    prepared = prepare_note(root, "working", "Current Status")
+    prepared = prepare_note(root, "working", "Current Status", created_by="agent:test")
     draft = root / prepared["path"]
     frontmatter, _, _ = parse_markdown(draft)
     frontmatter["summary"] = "Current evidence and open checks."

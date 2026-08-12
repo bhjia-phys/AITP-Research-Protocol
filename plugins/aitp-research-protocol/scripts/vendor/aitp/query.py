@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from .md import AITPError, parse_markdown
 from .records import ENTRY_ID_RE, ENTRY_KINDS, _canonical_entries, validate_entry
@@ -59,35 +59,44 @@ def _warning(root: Path, path: Path, code: str, message: str) -> dict[str, str]:
     return {"code": code, "path": str(path.relative_to(root)), "message": message}
 
 
-def _scan_entries(
+def _scan_records(
     root: Path,
-    preferred: Path | None = None,
+    paths: list[Path],
+    validate: Callable[..., None],
+    label: str,
     *,
     topic_id: str | None = None,
 ) -> tuple[list[tuple[dict[str, Any], str, Path]], list[dict[str, str]]]:
     items: list[tuple[dict[str, Any], str, Path]] = []
     warnings: list[dict[str, str]] = []
     seen: set[str] = set()
-    paths = sorted(_canonical_entries(root), key=lambda item: item.name)
-    if preferred in paths:
-        paths.remove(preferred)
-        paths.insert(0, preferred)
     for path in paths:
         try:
             frontmatter, body, _ = parse_markdown(path)
-            validate_entry(
-                root, frontmatter, body, validate_evidence=False, topic_id=topic_id
-            )
-            entry_id = frontmatter["id"]
-            if entry_id in seen:
-                raise AITPError("duplicate_id", f"duplicate Entry ID: {entry_id}")
-            seen.add(entry_id)
+            validate(root, frontmatter, body, validate_evidence=False, topic_id=topic_id)
+            record_id = frontmatter["id"]
+            if record_id in seen:
+                raise AITPError("duplicate_id", f"duplicate {label} ID: {record_id}")
+            seen.add(record_id)
             items.append((frontmatter, body, path))
         except AITPError as exc:
             warnings.append(_warning(root, path, exc.code, str(exc)))
         except Exception as exc:
             warnings.append(_warning(root, path, "invalid_schema", f"{path}: {exc}"))
     return items, warnings
+
+
+def _scan_entries(
+    root: Path,
+    preferred: Path | None = None,
+    *,
+    topic_id: str | None = None,
+) -> tuple[list[tuple[dict[str, Any], str, Path]], list[dict[str, str]]]:
+    paths = sorted(_canonical_entries(root), key=lambda item: item.name)
+    if preferred in paths:
+        paths.remove(preferred)
+        paths.insert(0, preferred)
+    return _scan_records(root, paths, validate_entry, "Entry", topic_id=topic_id)
 
 
 def _superseded_ids(items: list[tuple[dict[str, Any], str, Path]]) -> set[str]:
@@ -157,6 +166,14 @@ def show_entry(cwd: str | Path, entry_id: str) -> dict[str, Any]:
     items, warnings = _scan_entries(root, target, topic_id=topic_id)
     source = str(target.relative_to(root))
     failure = next((item for item in warnings if item["path"] == source), None)
+    if failure and target.is_file():
+        try:
+            text = target.read_text(encoding="utf-8")
+        except OSError as exc:
+            raise AITPError("unreadable_record", f"cannot read Entry file: {target}: {exc}") from exc
+        return {"schema": "aitp/show-0.1", "root": str(root), "id": entry_id,
+                "status": "malformed", "source": source, "legacy_derived": False,
+                "frontmatter": None, "body": text, "warning": failure}
     if failure:
         raise AITPError(failure["code"], failure["message"])
     if not target.is_file():

@@ -60,6 +60,12 @@ def _emit_show(payload: dict[str, Any], as_json: bool) -> None:
     for key in ("id", "status", "source"):
         print(f"{key}: {payload[key]}")
     print(f"legacy_derived: {str(payload['legacy_derived']).lower()}")
+    if payload["status"] == "malformed":
+        warning = payload["warning"]
+        print(f"warning[{warning['code']}]: {warning['message']}")
+        print()
+        print(payload["body"], end="")
+        return
     for key, value in payload["frontmatter"].items():
         print(f"{key}: {_frontmatter_value(value)}")
     print()
@@ -215,9 +221,6 @@ def main(argv: list[str] | None = None) -> int:
             )
         elif args.command == "note" and args.note_command == "save":
             payload = save_note(args.cwd, args.draft)
-        else:
-            parser.error("unsupported command")
-            return 2
         as_json = getattr(args, "json", False)
         renderer = {"list": _emit_list, "show": _emit_show, "enter": _emit_enter,
                     "check": _emit_check}.get(args.command, _emit)

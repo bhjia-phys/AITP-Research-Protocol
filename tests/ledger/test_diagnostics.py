@@ -266,7 +266,7 @@ def make_note(
     basis_refs: list[dict[str, str]] | None = None,
     supersedes: list[str] | None = None,
 ) -> Path:
-    prepared = prepare_note(root, mode, title)
+    prepared = prepare_note(root, mode, title, created_by="agent:test")
     draft = root / prepared["path"]
     frontmatter, _, _ = parse_markdown(draft)
     frontmatter.update(
@@ -526,7 +526,7 @@ def test_check_multiref_first_failure(tmp_path: Path) -> None:
         "invalid_git_ref", "invalid_run_ref", "missing_ref",
     ]
     assert ref_findings[0]["message"] == "Git ref does not contain target: https://example.com/x@abc123"
-    prepared = prepare_entry(root, "result", "agent")
+    prepared = prepare_entry(root, "result", "agent", created_by="agent:test")
     draft = root / prepared["path"]
     frontmatter, _, _ = parse_markdown(draft)
     frontmatter.update({"summary": "A result.", "limitations": ["L"], "refs": refs})
@@ -572,7 +572,7 @@ def test_check_git_env_warning(tmp_path: Path) -> None:
     assert len(finding) == 1
     assert finding[0]["level"] == "warning"
     assert finding[0]["message"] == "Git ref does not contain target: theory/check.md@abc123"
-    prepared = prepare_entry(root, "result", "agent")
+    prepared = prepare_entry(root, "result", "agent", created_by="agent:test")
     draft = root / prepared["path"]
     frontmatter, _, _ = parse_markdown(draft)
     frontmatter.update({"summary": "A result.", "limitations": ["L"], "refs": refs})
@@ -636,6 +636,7 @@ def test_check_note_rules(tmp_path: Path) -> None:
     drifted = pinned_file(root, "theory/evidence.md")
     drifted["at"] = "sha256:" + "0" * 64
     make_note(root, "d", basis_refs=[drifted])
+    make_note(root, "f", basis_refs=[pinned_file(root, "theory/evidence.md")])
     make_note(root, "e", supersedes=[note_id("f")],
               basis_refs=[pinned_file(root, "theory/evidence.md")])
     payload = check_workspace(root)
@@ -730,7 +731,7 @@ def test_enter_text_compact(tmp_path: Path) -> None:
 def test_save_envelope_exact(tmp_path: Path) -> None:
     root = initialized(tmp_path)
     ref = pinned_file(root, "theory/check.md")
-    prepared = prepare_entry(root, "result", "agent")
+    prepared = prepare_entry(root, "result", "agent", created_by="agent:test")
     assert set(prepared) == {"status", "id", "path", "save_command"}
     draft = root / prepared["path"]
     frontmatter, _, _ = parse_markdown(draft)
@@ -739,7 +740,7 @@ def test_save_envelope_exact(tmp_path: Path) -> None:
     path = f".aitp/topic/entries/{prepared['id']}.md"
     assert save_entry(root, draft) == {"status": "saved", "path": path}
     assert save_entry(root, draft) == {"status": "already_saved", "path": path}
-    note_prepared = prepare_note(root, "working", "Evidence")
+    note_prepared = prepare_note(root, "working", "Evidence", created_by="agent:test")
     assert set(note_prepared) == {"status", "id", "path", "save_command"}
     note_draft = root / note_prepared["path"]
     frontmatter, _, _ = parse_markdown(note_draft)
@@ -777,7 +778,7 @@ def test_save_pin_parity(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
     ]
     for char, ref, code, message in cases:
         make_entry(root, char, kind="result", refs=[ref], limitations=["L"])
-        prepared = prepare_entry(root, "result", "agent")
+        prepared = prepare_entry(root, "result", "agent", created_by="agent:test")
         draft = root / prepared["path"]
         frontmatter, _, _ = parse_markdown(draft)
         frontmatter.update({"summary": "A result.", "limitations": ["L"], "refs": [ref]})
