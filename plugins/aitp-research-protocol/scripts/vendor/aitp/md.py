@@ -41,7 +41,7 @@ def render_markdown(frontmatter: dict[str, Any], body: str) -> str:
 def parse_markdown(path: Path) -> tuple[dict[str, Any], str, str]:
     try:
         text = path.read_text(encoding="utf-8")
-    except OSError as exc:
+    except (OSError, UnicodeDecodeError) as exc:
         raise AITPError("unreadable_record", f"{path}: {exc}") from exc
     if not text.startswith("---\n"):
         raise AITPError("malformed_record", f"{path}: missing YAML frontmatter")

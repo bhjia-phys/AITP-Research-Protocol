@@ -1,6 +1,6 @@
 # AITP Cross-Topic Links (M3)
 
-Status: active design for the M3 stage of `docs/roadmap.md`.
+Status: design option for M3; blocked, not an implementation commitment.
 Supersedes: `docs/research-graph-design.md`.
 
 ## Scope
@@ -14,6 +14,11 @@ The only irreducible cross-topic needs are:
 Everything else — discovery, relevance, freshness judgment — is Skill work
 over `rg` and per-topic `enter`. There is no sync, no projection, no index,
 no graph database. Topic repositories remain the only canonical stores.
+
+Schedule M3 only if natural cross-Topic use shows that `rg` plus ordinary
+citations cannot answer a recurring question with sufficient provenance; this
+design option does not authorize commands. If selected, the rules below remain
+binding.
 
 ## Layout
 
@@ -73,7 +78,10 @@ Entries, an agent may execute the save on the human's behalf, attributed via
 `created_by`. Withdrawal is out of scope until real pain demonstrates the
 need.
 
-## Commands (M3)
+## Candidate commands (M3 design option)
+
+The following is a proposed surface only; no command is available while this
+design option is blocked:
 
 ```text
 aitp catalog init|add|list
@@ -91,7 +99,9 @@ present candidate links with rationale as proposals; on human confirmation,
 exact path, and disclose unavailable roots — measured by the conformance
 suite.
 
-## Acceptance
+## Exit gate if selected
+
+Only after the entry evidence above and a separate roadmap authorization:
 
 - Three real Topics in one catalog.
 - ≥ 5 human-saved links answer a real cross-topic question with exact

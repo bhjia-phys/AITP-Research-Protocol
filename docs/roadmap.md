@@ -1,13 +1,75 @@
 # AITP Roadmap and Product Design
 
-Status: active master plan, v3.4. Revised after dense-ledger dogfooding in
+Status: active master plan, v3.10. Revised after dense-ledger dogfooding in
 `/home/bhjia/physics/GW_librpa`; the M1 specification index is
 `docs/m1-read-write-balance.md`.
+Changes in v3.10 (2026-08-12): the M1b-R1 deterministic gate **passed**; the
+auditable evidence is recorded in `docs/m1b-r1-stage-notes.md` (independent
+code review with no S0/S1/S2 blockers; 78 tests; benchmark final PASS;
+1,423-line runtime within the 1,425 target and 1,450 cap; goldens; S1/S2
+seed regression; GW_librpa and Power-law Heisenberg read-only byte-identical
+acceptance; suite untouched; same-day precision-fix amendment — the
+pre-amendment 77-test/1,421-line run is retained as history in the stage
+notes). M1b is **done; deterministic gate passed**
+under the approved 2026-08-12 reviewed freeze revision — total M1b denotes
+**only** that the selected read-side slice M1b-R1 completed: A and Followups
+1/3/4/5 shipped (`aitp check` v0.1-only + compact `enter` text); B, C–E,
+Followup 2 (`aitp lineage`), and Followup 6 (structured prepare) remain
+deferred; F → M4; G independent; H dropped. `check` is now a shipped, gated
+read-only diagnostic (schema `aitp/check-report-0.1`, exit 0 clean / 1
+findings / 2 cannot run); `lineage` remains absent and deferred. This is not
+a behavioral or treatment-superiority gate; the real-store diagnostics prove
+only diagnosis and zero-write, not research improvement.
+Changes in v3.9 (2026-08-12): the two-session ordinary natural-use pause is
+**complete** — the first GW feedback (`feedback/2026-08-11-gw-librpa-natural-use-feedback.md`)
+and the second ordinary session (`feedback/2026-08-12-power-law-heisenberg-natural-use-feedback.md`,
+an independent real-Topic correction session) — and the reviewed freeze
+revision is recorded in `docs/m1b-adjudication.md`. It selects the read-side
+slice **M1b-R1** (`aitp check` v0.1-only + compact `enter` text with two
+frozen M1a safety lines), implemented per `docs/m1b-r1-spec.md`; the
+deterministic gate was **pending** at that revision (evidence recorded since
+in `docs/m1b-r1-stage-notes.md`); A and Followups 1/3/4/5 selected in R1, B deferred, Followup 2
+(`aitp lineage`) re-deferred at the 2026-08-12 budget reconciliation,
+Followup 6 (structured prepare) explicitly deferred, C–E deferred, F → M4,
+G independent, H dropped. The current CLI is `init`, `enter`,
+`inventory`, `record`, `note`, `list`, `show`, and `check` (`check` is the
+shipped, gated M1b-R1 read-only diagnostic).
+Changes in v3.8 (2026-08-11 feedback): the first GW natural-use feedback is
+recorded in `feedback/2026-08-11-gw-librpa-natural-use-feedback.md`. It
+authorizes only Skill/docs improvements — dense-campaign record granularity,
+working-Note natural-use checks, closeout replacement over stale-handoff
+editing, and a non-normative pointer-manifest example — no runtime change.
+M1b remains a blocked candidate inventory; the second ordinary session is
+still required, and the A–H dispositions in `docs/m1b-spec.md` §0.1 are
+unchanged.
+Changes in v3.7 (2026-08-10 evidence): M1a is **done; deterministic gate
+passed**. The auditable evidence is recorded in
+`docs/m1a-stage-notes.md`: 56 tests passed, benchmark/performance and line caps
+passed, generated public-schema goldens passed, deterministic S1/S2 regression
+passed, and the latest concurrent GW_librpa read-only snapshot was byte-identical
+before/after. The dynamic GW snapshot is compatibility evidence, not a fixed
+behavioral score. The current CLI is `init`, `enter`, `inventory`, `record`,
+`note`, `list`, and `show`; `enter`/`list`/`show` use the versioned read
+contracts. `check` remains absent. M1b remains a blocked candidate inventory;
+the next step is the two-session ordinary natural-use pause, and no M1b runtime
+slice remains a valid result. Bootstrap, treatment-control, causal, conformance,
+and AITP-over-plain-files claims remain not measured; deferred; not counted.
+Changes in v3.6 (historical authorization record, 2026-08-10): the approved
+narrowed gate review closed M0.6 as **done under the approved narrowed reviewed
+claim** and authorized M1a for implementation. FROZEN v6 remains an anchored,
+unexecuted preregistration; its original empirical gaps remain not measured,
+deferred, and not counted.
+Changes in v3.5: policy-only simplicity amendment. Predecessor gates close
+only their own claims; later runtime requires explicit authorization and the
+smallest evidence-backed slice; line caps are ceilings; M1b is a candidate
+inventory preceded by a post-M1a natural-use pause and separate adjudication;
+and M2/M3 are design options with episodic evaluation.
 Changes in v3.4: the M1 spec state is recorded — `docs/m1a-spec.md` exists
-as the written M1a implementation-level spec, blocked until the M0.6 gate;
-`docs/m1b-spec.md` exists as the frozen M1b pre-spec (design freeze; blocked;
-not an implementation-level spec — its implementation-level spec follows
-after the M1a gate). Budget-review-of-cap wording is replaced by the
+as the written M1a implementation-level spec, blocked until the M0.6 gate review;
+`docs/m1b-spec.md` exists as the frozen M1b candidate-inventory pre-spec
+(design freeze; blocked; not an implementation-level spec — its selected-slice
+implementation-level spec follows after the M1a gate, natural-use pause, and
+adjudication). Budget-review-of-cap wording is replaced by the
 reconciliation of the actual M1a total against the fixed caps (caps never
 adjusted), and each stage's cut order is defined by its own spec. Neither
 M1a nor M1b is implemented; `list`, `show`, and `check` remain unbuilt.
@@ -16,8 +78,9 @@ proposal to the M1 specification index — it links the M1 specs
 `docs/m1a-spec.md` and `docs/m1b-spec.md`, lists the M1 implementation
 order, and fixes a seven-piece documentation sync discipline. M1a's
 prerequisites now include freezing the M1a implementation spec before golden
-fixtures; M1b remains blocked behind the M1a gate plus the reconciliation of
-the actual M1a total against the fixed caps. Neither M1a nor M1b is
+fixtures; M1b remains blocked behind the M1a gate, post-M1a natural-use
+pause, selected-slice adjudication, and reconciliation of the actual M1a total
+against the fixed caps. Neither M1a nor M1b is
 implemented; `list`, `show`, and `check` remain unbuilt.
 Changes in v3.2: M1a is explicitly retrieval-first (`list`/`show`, stable
 handoff projection, Note-age hints, versioned JSON); M1b gains a narrowly
@@ -90,6 +153,44 @@ but once a record in M depends on a D artifact, it pins the exact revision.
 H judgments that were never written down are invisible — that is a human
 discipline problem, measured (not solved) by the conformance suite.
 
+## Simplicity and stage authorization
+
+The following evidence-before-complexity rules are binding on AITP design and
+stage decisions.
+
+For the M0.6→M1a transition, the approved 2026-08-10 M0.6 gate review was
+the sole M1a authorization transition. It flipped the M1a roadmap row to ready;
+the deterministic implementation gate is now passed and M1a is done. The
+implementation and gate evidence are recorded in `docs/m1a-stage-notes.md`;
+no behavioral or treatment-superiority claim is implied.
+
+1. A predecessor gate closes only its own claim. It makes the next stage
+   eligible for adjudication; it never automatically green-lights all designed
+   scope.
+2. Runtime work requires an explicit roadmap status flip and a separately
+   reviewed implementation-level spec selecting the smallest coherent,
+   evidence-backed slice.
+3. Line caps are ceilings, not targets. Spare budget never justifies scope.
+4. If scope lacks evidence or does not fit, split, revise, defer, or drop it
+   before code; never compress validators, weaken compatibility, or expand caps.
+5. After the M1a gate, run a deliberately small natural-use pause: at least two
+   ordinary, unscripted real-Topic sessions plus a short review of actual use,
+   unmet pain, workarounds, and maintenance cost. “No M1b runtime yet” is a
+   valid result; no new gold set or synthetic suite is required for this pause.
+6. The M1b candidate-inventory pre-spec is frozen. Every row
+   receives exactly one disposition — selected, deferred, moved to a named
+   slice, or dropped — in a reviewed freeze revision recording the full revised
+   roster and dependencies; all candidates need not ship together. Deferred,
+   moved, dropped, and no-runtime outcomes produce no implementation spec. Only
+   after that review may a selected implementation spec be drafted, separately
+   reviewed, and green-lit. Selecting no M1b runtime slice is a valid outcome. Selected
+   schema/payload versions are re-frozen before implementation.
+7. M2/M3 are design options, not commitments. Their predecessor gates and
+   minimum Topic counts are necessary but insufficient; natural workflow must
+   first show that Entries/Notes or `rg`/ordinary citations are inadequate.
+8. Suite runs and researcher-written gold sets are episodic, predeclared gate
+   instruments—not routine session work or automatic work at every gate.
+
 ## Trust model
 
 AITP provides **auditability, not tamper-proofing**. The default threat model
@@ -99,9 +200,11 @@ With writes going through the CLI and an intact Git history, the following
 are checkable:
 
 - Append-oriented history. Content is plain Markdown, so post-hoc edits are
-  visible in Git. `aitp check` (M1b) re-validates the whole store — schema,
-  pins, relation targets, closure rules — and surfaces inconsistency in the
-  final state; it does not reconstruct history.
+  visible in Git. The shipped M1b-R1 `aitp check` (v0.1-only, read-only,
+  zero-write) re-validates the whole store — schema, pins, relation targets,
+  closure rules — and surfaces inconsistency in the final state; it does not
+  reconstruct history and never repairs. Prior to M1b-R1 no such whole-store
+  diagnostic was a current command.
 - Prediction order as **write-time causality**: a resolving Entry can only
   reference a prediction that already exists when it is saved; the save-time
   target-existence check is the causal proof. `created_at` is a CLI-stamped,
@@ -159,18 +262,21 @@ transitions are human-gated.
 
 ## Python boundary
 
-Python does exactly four verbs: **validate**, **persist** (atomic,
-idempotent), **project** (`enter`/`show`/`list`/`check`), **benchmark**.
+Python's current implementation boundary has exactly five verbs:
+**validate**, **persist** (atomic, idempotent), **project** (`enter`/`show`/`list`),
+**diagnose** (`check`), **benchmark**. `check` is the shipped M1b-R1
+read-only whole-store diagnostic (v0.1-only, schema `aitp/check-report-0.1`).
 
 Deterministic constraints belong in the gate, not in Skills: target-existence
-and closure validation at save, whole-store re-validation (`check`),
-review↔hash binding, relation existence, pin verification, template
-completion.
+and closure validation at save, relation existence, pin verification, template
+completion, and — as shipped in M1b-R1 — whole-store re-validation via
+`check`. Review↔hash binding remains a deterministic check where the
+relevant reviewed-artifact capability is selected.
 
-`aitp check` (M1b) is read-only diagnostics over the whole store: no cache,
-no repair, no migration, no new canonical files. It cannot detect missed
-records, forged first-write attribution, or whether an agent saw a result
-early — those remain suite- and Git-visible concerns.
+The shipped `aitp check` is read-only diagnostics over the whole
+store: no cache, no repair, no migration, no new canonical files. It cannot
+detect missed records, forged first-write attribution, or whether an agent saw
+a result early — those remain suite- and Git-visible concerns.
 
 - Cumulative runtime budget: stage-end caps below, counted as **nonblank
   lines** of the canonical package (`grep -c '\S'` per module, summed);
@@ -235,8 +341,20 @@ explicit note that the researcher posed it.
 ## Agent conformance suite
 
 An external evaluation suite (scenario scripts + scoring rubrics), **not
-part of the runtime**, built before M1 and run at every gate. It scripts
-research sessions against agent + Skills and scores:
+part of the runtime**, built before M1 and used as predeclared, episodic gate
+evidence only where a stage's gate calls for it. It is not routine session work
+or automatic work at every gate. It scripts research sessions against agent +
+Skills and scores:
+
+For this evaluation boundary, orchestration infrastructure belongs to a
+separate optional future project. AITP contains only the frozen suite inputs
+and the [external evaluation-harness contract](external-evaluation-harness.md);
+no harness is implemented or required here. That contract is the normative
+requirements and ownership handoff. FROZEN v6 remains an anchored, unexecuted
+preregistration and does not retroactively satisfy the narrowed M0.6 closure;
+any future external output requires its own review/revision/refreeze before it
+could be considered evidence. No external output is needed for current M1a
+authorization.
 
 - `enter` executed unprompted at session start;
 - resolved failures not re-proposed;
@@ -273,31 +391,35 @@ human review minutes, draft abandonment, records-per-session noise —
 because the v5 failure was abandonment under maintenance cost, not low
 scores.
 
-Each stage gate reports suite scores alongside code tests. Rubric thresholds
-are defined in the suite, not negotiated per stage.
+When a gate predeclares suite evidence, it reports those suite scores alongside
+code tests. Rubric thresholds are defined in the suite, not negotiated per
+stage; a gate without a predeclared suite instrument does not invent a routine
+suite run.
 
 ## Stages
 
 One gate at a time. A stage that does not fit its budget is cut, not
 expanded. Budgets are cumulative end-of-stage caps for the canonical runtime,
-in nonblank lines.
+in nonblank lines; caps are ceilings, not targets.
 
 ### Stage status
 
 Implementation prompts must respect this table: only a green-lit stage may
-be implemented, and only from its implementation-level spec. Stages marked
-"design only" must not be implemented or "helpfully" started early.
+be implemented, and only from a separately reviewed implementation-level spec
+that selects the smallest coherent, evidence-backed slice. Stages marked
+"design only" or "design option" must not be implemented or "helpfully"
+started early; a predecessor gate never authorizes later scope automatically.
 
 | Stage | Status | What stands between it and implementation |
 |---|---|---|
 | M0 — Ledger | done; stable baseline (`ledger-core` branch) | — |
 | M0.5 — Slim core | **done** (gate passed 2026-07-30; addendum in `docs/slim-core-plan.md`) | — |
-| M0.6 — Adopt & bootstrap | **in progress; not done** — item 1 (`init --adopt`) implemented; item 2 runtime inventory done, two dogfood bootstrap measurements pending; item 3 suite core implemented, static repair complete, paired scored runs pending. Specs: item 1 `docs/m0.6-init-adopt.md`, item 2 `docs/m0.6-bootstrap.md`, item 3 `docs/m0.6-suite.md` | remaining M0.6 gate evidence: two dogfood bootstrap measurements; paired scored suite runs; M0.6 gate review — M1a stays blocked |
-| M1a — Memory that restores | written implementation spec; blocked (`docs/m1a-spec.md`) | M0.6 gate: two dogfood bootstrap measurements, paired scored suite runs, gate review — the review flips this row, not the implementer; implementation proceeds only from the frozen `docs/m1a-spec.md` (versioned `enter`/`show`/`list --json` payloads; golden fixtures regenerate from the spec) |
-| M1b — Open items & pilot | pre-spec frozen; blocked (`docs/m1b-spec.md`; implementation-level spec follows after the M1a gate) | M1a gate with the reconciliation of the actual M1a total against the fixed caps (caps never adjusted); derive and green-light the M1b implementation-level spec from the frozen pre-spec — which achieves the `aitp/lite-entry-0.2` freeze (`based_on`, single-target `resolves`, `resolution` enum, contradiction criteria, `aitp check` contract) |
-| M2 — Reviewed artifacts | design only; blocked | M1b gate; real reviewed material in the dogfood Topics |
-| M3 — Cross-topic links | design complete (`docs/cross-topic-links.md`); blocked | ≥ 3 real Topics; M2 gate |
-| M4 — Collaborator protocol | design complete (`docs/collaborator-design.md`); Skill-only, +0 runtime lines | M1b pilot evidence; suite thresholds |
+| M0.6 — Adopt & bootstrap | **done under the approved narrowed reviewed claim** — item 1 (`init --adopt`) and item 2 deterministic inventory implementation are complete; item 3 is an anchored, unexecuted FROZEN v6 packet. Specs: item 1 `docs/m0.6-init-adopt.md`, item 2 `docs/m0.6-bootstrap.md`, item 3 `docs/m0.6-suite.md` | The approved narrowed gate review closes M0.6. Original bootstrap Notes/decisions, recall/false-import/human-time, held-out S3, paired S1/S2, cold-start, conformance, causal, and treatment-advantage evidence is not measured; deferred; not counted, and does not block M1a |
+| M1a — Memory that restores | **done; deterministic gate passed** (`docs/m1a-spec.md`, evidence in `docs/m1a-stage-notes.md`) | Versioned read projections: `list`, `show`, and `enter` v2; closeout-first handoff; Note-age structural signal; generated goldens; deterministic S1/S2 regression; read-only GW_librpa acceptance; all tests and performance/line caps. This is not a behavioral or treatment-superiority gate |
+| M1b — Open items & pilot | **done; deterministic gate passed (M1b-R1)** — 2026-08-12 reviewed freeze revision recorded in `docs/m1b-adjudication.md`; the selected read-side slice M1b-R1 is implemented per `docs/m1b-r1-spec.md` and its deterministic gate passed (evidence in `docs/m1b-r1-stage-notes.md`). Total M1b denotes **only** that this selected slice completed; B, C–E, Followup 2 (`lineage`), and Followup 6 (structured prepare) remain deferred; F → M4; G independent Skill track; H dropped | The R1 gate is closed. Deferred/dropped rows produce no implementation spec and may return only through a new reviewed freeze revision; M2/M3 require their own natural-demand evidence. This is not a behavioral or treatment-superiority gate |
+| M2 — Reviewed artifacts | design option; blocked | M1b selected-slice gate, if any; natural workflow must show Entries/Notes are inadequate before scheduling, then real reviewed material in the dogfood Topics |
+| M3 — Cross-topic links | design option (`docs/cross-topic-links.md`); blocked | M2 gate, ≥ 3 real Topics, and a natural cross-Topic failure of `rg` plus ordinary citations before scheduling |
+| M4 — Collaborator protocol | blocked design option (`docs/collaborator-design.md`); Skill-only, +0 runtime lines | If a reviewed freeze revision selects F in M1b, its separately reviewed selected-slice spec, pilot evidence, and suite thresholds; otherwise M4's own natural-demand and prospective-evidence adjudication plus suite thresholds |
 | Hakimi contract | not an AITP stage | after M4 |
 
 ### M0.5 — Slim core (end ≤ 1,000)
@@ -314,32 +436,41 @@ file, not a gate condition. Implementation specs: item 1
 `docs/m0.6-init-adopt.md`, item 2 `docs/m0.6-bootstrap.md`, item 3
 `docs/m0.6-suite.md`.
 
-Current progress (2026-08-06): item 1 is done — `aitp init --adopt` is
-implemented, with dry-run/conflict/rollback tested and before/after tree
-hashes verified on both dogfood trees. Item 2's runtime inventory (`aitp
-inventory`, hash manifest) is done; the two dogfood bootstrap measurements —
-bootstrap Notes confirmed by human `decision` Entries on both dogfood
-Topics, key-fact recall scored against the researcher-written gold set, and
-human time reported as a median — are pending (on hold, not abandoned).
-Item 3's suite core is implemented with its static repair complete: portable
-seeds under `seeds/S1/`, `seeds/S2/`, `seeds/S3/`, scenarios, gold, adapters,
-and rubric are all in place and consistent. The real human treatment/control
-scored runs (S1 and S2 in both isolated conditions, control PATH without
-`aitp`) and the S3 held-out report are pending. The M0.6 gate is therefore
-NOT passed; M1a remains blocked. After the unscored 2026-08-06 dry run,
-the `using-aitp` Skill gained three guidance items as M0.6 scored-run
-preparation — a projection-aware targeted sweep (the `enter` window is a
-projection; `rg` the store before planning), check-before-record (never
-re-record an already-recorded event), and evidence-backed `resolves` (close
-an open item only with this Entry's own evidence) — all zero runtime lines.
-This does not start M1a runtime work; M1a's `list`/`show`/`enter v2` remain
-blocked.
+Current status (`docs/m0.6-stage-notes.md`): item 1 runtime is implemented —
+`aitp init --adopt` has dry-run/conflict/rollback coverage. Recovery evidence
+records byte-identical before/after evidence for the heavy legacy tree; GW_librpa
+adoption succeeded but its original session preserved no before/after tree-hash
+record. Exact repository/Git-history locators are unavailable, so no claim of
+two preserved real-tree hash records is made. Item 2's runtime inventory is
+implemented: it deterministically traverses and orders paths and hashes content
+in a timestamped local manifest; its `generated_at` and absolute `root` make
+repeated manifest bytes non-identical. Bootstrap Notes, human decision Entries,
+recall, false-import rate, and human-time evidence are not measured; deferred;
+not counted.
+Item 3's suite core and static repair are complete. A 2026-08-09 no-turn
+preflight verified the v6 hashes/anchor, S3 seed, clean treatment export, and
+packet neutralization, then stopped before S3 because exact model/prompt
+identity and two-machine/account isolation were unavailable. That preflight is
+preparation and an explicit invalid-start decision, not a held-out report or
+score. FROZEN v6 is therefore an anchored, unexecuted preregistration; held-out
+S3, paired S1/S2, cold-start, conformance, causal, and treatment-advantage
+evidence is not measured; deferred; not counted.
+
+The approved 2026-08-10 narrowed gate review
+([review packet](m0.6-gate-review.md)) closes M0.6 under the narrowed reviewed
+claim. M1a has since completed its deterministic implementation gate; the
+implementation evidence and current counts are recorded in
+[`docs/m1a-stage-notes.md`](m1a-stage-notes.md). The original full-gate
+acceptance descriptions below remain for provenance, but are not complete and
+their empirical items are deferred/not counted. The unscored 2026-08-06 dry
+run's projection-aware sweep, check-before-record, and evidence-backed
+`resolves` lessons remain Skill-only preparation (+0 runtime lines).
 
 - `aitp init --adopt`: create `.aitp/` inside an existing research tree
-  without touching content or imposing the fixed layout. Gate item 1: works
-  on both dogfood trees without modifying any existing file, verified by
-  before/after tree hashes; dry-run, conflict, and rollback paths are
-  tested.
+  without touching content or imposing the fixed layout. The local
+  implementation and tests cover dry-run, conflict, rollback, and fixture
+  byte-identity; the recorded real-tree evidence is asymmetric as described
+  above.
 - Workspace `topics.toml` file convention (portable Topic IDs vs. local
   paths); no catalog CLI. Its minimal example and portable-ID rules are
   frozen before M1a.
@@ -351,7 +482,8 @@ blocked.
   the researcher confirmed it as recovery orientation, not as revalidated
   science. Legacy decisions, failures, and conventions enter only as
   individually confirmed drafts marked legacy-derived — never as new
-  verification. Gate item 2: bootstrap Notes confirmed by human decision
+  verification. **Original gate item 2 acceptance (not complete;
+  deferred/not counted):** bootstrap Notes confirmed by human decision
   Entries on both dogfood Topics; key-fact recall is scored against a
   researcher-written gold set; false-import rate uses judgeable atomic
   claims in the bootstrap Note as its denominator; human time is recorded
@@ -359,9 +491,10 @@ blocked.
 - Executable conformance core (not a skeleton): a minimal but runnable
   suite — scenario scripts, portable per-scenario seeds, the scoring rubric,
   one plain-files control adapter, at least one held-out scenario — plus
-  cold-start metrics. Gate item 3: the core suite runs end-to-end in both
-  isolated conditions (the control has no AITP on PATH) with pre-registered
-  scoring thresholds.
+  cold-start metrics. **Original gate item 3 acceptance (not complete;
+  deferred/not counted):** the core suite runs end-to-end in both isolated
+  conditions (the control has no AITP on PATH) with pre-registered scoring
+  thresholds.
 
 ### Dense-ledger dogfood input to M1
 
@@ -374,8 +507,9 @@ and no Notes. The store made the M1 priorities concrete:
 - a newest-timestamp scan can surface a stale handoff when sessions omit or do
   not replace closeouts; the source Entry and time must stay visible.
 - mutable local evidence had drifted (37 missing and 78 hash-mismatched local
-  pins in that dated snapshot). Reading must survive stale evidence while
-  `check` reports it; save-time pin discipline must not be weakened.
+  pins in that dated snapshot). Reading must survive stale evidence; a selected
+  and shipped `check` may report it, but save-time pin discipline must not be
+  weakened.
 - remote runs need host/path/job/build metadata, but unverifiable `host:path`
   strings are not evidence pins. A local manifest or pointer bundle remains
   the evidence boundary.
@@ -383,8 +517,9 @@ and no Notes. The store made the M1 priorities concrete:
   acceptance is run in place with a before/after hash check; write-path tests
   use a temporary copy unless a genuine research event is being recorded.
 
-These findings refine the blocked M1 design; they do not green-light M1 code
-before the M0.6 gates. See `docs/m1-read-write-balance.md`.
+These findings refine the implemented and deterministically gated M1a design;
+they do not authorize M1b, M2, or M3. See `docs/m1-read-write-balance.md` and
+`docs/m1a-stage-notes.md`.
 
 ### M1a — Memory that restores (~2 weeks; end ≤ 1,300)
 
@@ -414,26 +549,38 @@ before the M0.6 gates. See `docs/m1-read-write-balance.md`.
   that margin — faster frontmatter loading or a cheaper projection path —
   without adding a persistent index or changing output semantics.
 
-Implementation begins only after the M0.6 gate review passes; the frozen
-implementation-level spec is `docs/m1a-spec.md` — neither this roadmap prose
-nor the spec index is an implementation-level specification.
+The approved 2026-08-10 M0.6 gate review authorized the M1a implementation.
+M1a is now **done; deterministic gate passed** under the frozen
+implementation-level spec `docs/m1a-spec.md`; the auditable evidence is in
+`docs/m1a-stage-notes.md`. This is not a behavioral or treatment-superiority
+gate.
 
-Gate: suite-scored resumption checklist on both dogfood Topics, against the
-control group; the dated GW_librpa corpus lists 60 Entries and 26 results
-without changing any existing file; all ledger tests pass; `--help` < 250 ms,
-1,000-Entry `enter` < 1 s, and a 1,000-Entry `list` baseline is reported.
+M1a gate evidence passed: deterministic S1/S2 seed-regression checks, generated
+goldens, all ledger tests, read-only byte-identical GW_librpa acceptance,
+`--help` < 250 ms, 1,000-Entry `enter`/`list` < 1 s, and cumulative/per-module
+line caps. A paired treatment-control evaluation remains optional future
+evidence, not an M1a gate.
 
 ### M1b — Open items and behavior pilot (~2 weeks; end ≤ 1,450)
 
-- Schema `aitp/lite-entry-0.2`: `prediction` and `question` kinds; optional
+This section only indexes the authoritative A–H roster and process in
+`docs/m1b-spec.md` §0.1; it is not an implementation commitment. Candidate
+semantics bind only for selected rows. Nonselected outcomes produce no spec;
+selected rows require the §0.1 review before a separately reviewed, green-lit
+implementation spec. Any selected capability that changes an unversioned save
+envelope must first freeze a versioned envelope or explicitly revise the Hakimi
+adapter contract in the same change; no silent key addition is allowed.
+
+- Candidate schema `aitp/lite-entry-0.2`: `prediction` and `question` kinds; optional
   `based_on` with the narrow meaning that the durable claim materially depends
   on existing Entries (never a substitute for evidence `refs`); single-target
   `resolves` with the typed `resolution` closure field and target-kind/
-  resolver-kind validation; `contradicts` on failures under the strict
-  criteria; `aitp check` whole-store re-validation; Note `supersedes`
-  validation; optional `citekey`/`trust` on `source` Entries. v0.1 records
-  remain valid without migration. `show`/`enter` derive reverse `used_by`
-  views from Markdown; no reverse index is written.
+  resolver-kind validation; `check` whole-store re-validation only if the A
+  store-health row is selected and shipped; Note `supersedes` validation;
+  optional `citekey`/`trust` on `source` Entries. v0.1 records remain valid
+  without migration. `show`/`enter` derive reverse `used_by` views from
+  Markdown only if the relevant B capability is selected; no reverse index is
+  written.
 - Run/source templates record host, remote path, scheduler ID, command/config,
   binary digest or version, consequential build flags, input directory, exit
   status, seed, partial/cancelled state, and estimated vs. actual cost where
@@ -448,22 +595,63 @@ without changing any existing file; all ledger tests pass; `--help` < 250 ms,
   supplied run content, requires a stable idempotency key, limitations and
   pinned evidence, and can only be expanded by a superseding Entry. It is the
   first feature cut if the 1,450-line cap is threatened.
-- `aitp-collaborator` alpha pilot; `surveying-literature` and
-  `analyzing-a-source` land here as use-driven increments.
+- `aitp-collaborator` alpha behavior pilot is roster F, whose current
+  disposition is **moved to M4**. It is Skill-only and is not an M1b runtime or
+  gate prerequisite. Only an explicit reviewed freeze revision could select it
+  for M1b.
+- Roster G moves `surveying-literature` and `analyzing-a-source` to an
+  independent use-driven Skill track, not tied to M1b runtime, schema, or gate.
+  Each Skill may land only after real use separately justifies it and its own
+  reviewed Skill change is ready.
+- Roster H is the next-action closure relation, **dropped from M1b** because
+  closeout-first is the selected M1a solution and no evidence yet justifies
+  another task lifecycle. It may return only as a new reviewed proposal after
+  natural-use evidence, never through silent M1b scope growth.
 
-M1b is not implemented. `docs/m1b-spec.md` is the frozen M1b pre-spec — a
-design freeze, not an implementation-level spec. M1b starts only after the
-M1a gate passes with the reconciliation of the actual M1a total against the
-fixed caps (caps never adjusted), and only from the M1b implementation-level
-spec derived from the pre-spec and green-lit.
+M1b-R1 is implemented per its implementation-level spec
+`docs/m1b-r1-spec.md` (`docs/m1b-spec.md` remains the frozen
+candidate-inventory pre-spec — a design freeze, not an
+implementation-level spec). Its deterministic gate **passed** on 2026-08-12;
+the auditable evidence is in `docs/m1b-r1-stage-notes.md`: independent code
+review with no S0/S1/S2 blockers, **78 tests**, benchmark final PASS
+(`--help` < 250 ms; 1,000-Entry `enter`/`list` < 1 s), a 1,423-line runtime
+within the 1,425 target and the 1,450 cap, the `check.json`/`enter.txt`
+goldens with M1a `enter` JSON unchanged, deterministic S1/S2 seed regression,
+and GW_librpa / Power-law Heisenberg read-only acceptance with byte-identical
+`.aitp` trees and exit codes consistent with the reports. **Total M1b denotes
+only that the selected R1 slice completed**: B, C–E, Followup 2 (`lineage`),
+and Followup 6 (structured prepare) remain deferred, F → M4, G independent,
+H dropped — no later change may grow M1b scope silently. No new
+gold set or synthetic suite was required for the pause.
 
-Gate: suite shows prediction order respected and corrections persisting
-across sessions; based-on targets and reverse views are correct without an
-index; a remote-run pointer bundle is auditable; the pilot advances one real
-question over ≥ 2 sessions; v0.1 records and the GW_librpa corpus remain
-untouched.
+Pause progress: the first natural-use feedback arrived 2026-08-11
+(`feedback/2026-08-11-gw-librpa-natural-use-feedback.md`, one long session
+chain); the second ordinary session arrived 2026-08-12
+(`feedback/2026-08-12-power-law-heisenberg-natural-use-feedback.md`, an
+independent real-Topic correction session). The pause is therefore
+complete; the researcher's six followup suggestions are archived in
+`feedback/2026-08-12-gw-librpa-followup-feedback.md` and adjudicated in
+`docs/m1b-adjudication.md`.
 
-### M2 — Reviewed artifacts (~3–4 weeks; end ≤ 1,700)
+After the pause, the actual M1a total (1,256) was reconciled against the
+fixed caps in `docs/m1b-spec.md` §12.3 (M1b headroom **194**) and its §0.1
+roster process applied. Selected rows retain their validation, v0.1
+compatibility, and no-index boundary; only the R1 read slice is selected.
+F is moved to M4 and does not
+force any A–E selection now; M4 adjudication must resolve dependencies. If the
+selected collaborator protocol requires typed `prediction`/`question` records,
+C or an explicitly reviewed equivalent contract must first be selected and
+shipped under a separately reviewed selected-slice spec. G and H stay outside
+M1b runtime/schema/gate scope. v0.1 records and GW_librpa remain untouched.
+
+### M2 — Reviewed artifacts (design option; ~3–4 weeks; end ≤ 1,700)
+
+M2 is not a promised stage. A no-runtime M1b result — or the completion of
+the selected M1b-R1 slice — closes only the M1b decision point, produces no
+implementation spec beyond it, and does not authorize M2.
+M2 needs its own natural-demand evidence showing Entries/Notes are inadequate;
+that evidence and any M1b selected-slice gate do not authorize every design
+bullet.
 
 - `.aitp/topic/compiled/`: four artifact types (`knowledge`, `skill`,
   `insight`, `hypothesis`) with `basis_refs`, `source_records`,
@@ -489,7 +677,13 @@ Gate: ≥ 1 reviewed knowledge artifact + 1 reviewed skill with passing evals
 + 1 visibly-marked draft insight from a real Topic; provenance gaps block
 `compile check`; post-review edits detected; unreviewed export refused.
 
-### M3 — Cross-topic links (~2 weeks; end ≤ 1,900; start only with ≥ 3 real Topics)
+### M3 — Cross-topic links (design option; ~2 weeks; end ≤ 1,900; start only with ≥ 3 real Topics)
+
+M3 is not a promised stage. Entry evidence, distinct from the exit gate below,
+requires a real cross-Topic failure showing that `rg` plus ordinary citations
+cannot answer a recurring question with sufficient provenance. The M2 gate,
+three real Topics, and this natural demand are necessary but do not authorize
+every design bullet.
 
 - `aitp catalog init|add|list` over `topics.toml`; `aitp link prepare|save`.
 - Saving a link requires explicit human confirmation; as with `decision`
@@ -503,15 +697,22 @@ baseline.
 
 ### M4 — Collaborator protocol (~1 month; +0 lines)
 
+M4 is a blocked design option and remains Skill-only (+0 runtime lines). F is
+moved to M4 and does not force any A–E selection now; M4 adjudication must resolve
+dependencies. If a reviewed freeze revision selects F in M1b, its separately
+reviewed selected-slice spec and gate resolve dependencies; otherwise M4 has its
+own natural-demand review followed by prospective evidence adjudication.
+
 - `aitp-collaborator` full protocol: competing hypotheses, discriminating
   tests, predictions before outcomes, immediate correction capture, visible
   uncertainty.
 - Prospective evaluation via the conformance suite: ≥ 4 real sessions, with
   the plain-files baseline.
 
-Gate: suite rubric thresholds pass — an active question advances, proposed
-tests discriminate specific hypotheses, predictions precede outcomes,
-corrections persist, uncertainty stays visible.
+Gate: M4's natural-demand and prospective-evidence adjudication passes the
+suite rubric — an active question advances, proposed tests discriminate
+specific hypotheses, predictions precede outcomes, corrections persist,
+uncertainty stays visible.
 
 ### Hakimi contract (after M4; hakimi's milestone, not an AITP stage)
 
@@ -557,13 +758,13 @@ protocol → method → record protocol → compare protocol → stop conditions
 | Skill | Stage | Responsibility |
 |---|---|---|
 | `using-aitp` | M0→M1a | session lifecycle: when to read, durable-event judgment, closeout |
-| `surveying-literature` | M1b | literature need → search → triage → reading notes + source Entries |
-| `analyzing-a-source` | M1b | deep-read one source: reproduce, bounded claims, assumptions, killers |
+| `surveying-literature` | G: independent use-driven Skill track | literature need → search → triage → reading notes + source Entries; lands only after real use separately justifies it and its reviewed Skill change |
+| `analyzing-a-source` | G: independent use-driven Skill track | deep-read one source: reproduce, bounded claims, assumptions, killers; lands only after real use separately justifies it and its reviewed Skill change |
 | `comparing-with-memory` | M2 | check failures/conventions before proposing; contradictions after results |
 | `synthesizing-knowledge` | M2 | draft compiled artifacts with evidence maps; request human review |
 | `writing-it-up` | post-M2 | assemble notes/manuscripts from reviewed material; reflow new claims |
 | `aitp-catalog` | M3 | cross-topic discovery and link proposals |
-| `aitp-collaborator` | M1b alpha → M4 | long-horizon question→hypothesis→prediction→test loop |
+| `aitp-collaborator` | F: moved to M4 | separate Skill-only behavior track for the long-horizon question→hypothesis→prediction→test loop; not an M1b runtime/schema/gate dependency |
 
 ## Non-goals
 
@@ -584,13 +785,14 @@ type (redundant); a dedicated referee-comment kind (handled by `source` +
 
 ## Non-negotiable invariants
 
-- Evidence before abstraction; append history, never silently rewrite.
-- Claims stay within the trust model: auditable and tamper-evident, not
-  tamper-proof. Documentation must not promise more.
-- Markdown files stay readable without AITP; any future index is disposable.
-- Review transitions are human-gated; a compliant agent never promotes its
-  own output — attribution makes violations visible, not impossible.
-- Canonical runtime exists exactly once; Python only validates, persists,
-  projects, benchmarks; behavior conformance is measured, not enforced.
-- Every new capability is justified by a real research workflow, with an
-  acceptance test and a complexity/performance cost statement.
+The binding simplicity ratchet is defined once in §Simplicity and stage
+authorization; the trust boundary is §Trust model. This section adds only the
+remaining standing invariants:
+
+- Markdown remains readable and canonical; any future index is disposable.
+- Review transitions are human-gated; attribution makes violations visible, not
+  impossible.
+- The canonical runtime exists exactly once; Python validates, persists,
+  projects, and benchmarks, while behavior conformance is measured externally.
+- Every new capability needs a real workflow, acceptance test, and
+  complexity/performance cost statement.

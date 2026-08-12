@@ -6,7 +6,7 @@ construction is not timed), then measures real subprocess startup and runtime
 for the CLI entry points:
 
 - ``python -m aitp --help`` and ``python -I <plugin runner> --help``;
-- ``enter --json`` on both fixture sizes for both runners.
+- ``enter --json`` on both fixture sizes; report-only ``list --json`` on the 1,000-entry fixture for both runners.
 
 The module runner's subprocess env carries the vendor directory on
 ``PYTHONPATH``, same as ``test_cli.py``.  One warmup plus five timed runs are
@@ -150,6 +150,16 @@ def main() -> int:
             ),
             "plugin_enter_1000": measure(
                 [sys.executable, "-I", str(RUNNER), "enter", "--json"],
+                store_1000,
+                env_plugin,
+            ),
+            "module_list_1000": measure(
+                [sys.executable, "-m", "aitp", "list", "--json"],
+                store_1000,
+                env_module,
+            ),
+            "plugin_list_1000": measure(
+                [sys.executable, "-I", str(RUNNER), "list", "--json"],
                 store_1000,
                 env_plugin,
             ),

@@ -1,33 +1,130 @@
-# M1b — Open items and behavior pilot: pre-specification
+# M1b — Open items and behavior pilot: candidate inventory
 
-Status: pre-spec; blocked until the M1a gate and fixed-cap line-budget reconciliation.
+Status: candidate-inventory pre-spec; **reviewed freeze revision 2026-08-12
+recorded** (`docs/m1b-adjudication.md`). The read-side slice **M1b-R1**
+(`aitp check` v0.1-only + compact `enter` text) is **selected and
+implemented** per its implementation-level spec `docs/m1b-r1-spec.md`;
+its deterministic gate **passed** (evidence recorded in
+`docs/m1b-r1-stage-notes.md`). All other rows
+— including the Followup-2 lineage projection, re-deferred at the budget
+reconciliation — are deferred, moved, or dropped and produce no
+implementation spec.
 
-This document freezes the M1b design per `docs/roadmap.md` §M1b (v3.4) and
-`docs/m1-read-write-balance.md` §M1b. It is **not** an implementation-level
-specification and does **not** green-light M1b runtime work. Implementation
-may start only when all of the following hold:
+This document is the M1b candidate pre-spec under `docs/roadmap.md` §M1b and
+the M1 index. It is not an implementation-level spec or permission to code.
+§§1–11 are candidate contracts; only selected rows bind, per the §0.1 process
+below and the 2026-08-12 reviewed freeze revision. The M1a gate and the
+two-session natural-use pause are complete; the §0.1 freeze revision is done
+and selects M1b-R1. Its implementation-level spec (`docs/m1b-r1-spec.md`) is
+implemented and its deterministic gate has passed; deferred, moved, dropped,
+and no-runtime outcomes produce no implementation spec. Selecting no M1b
+runtime slice remains a valid outcome for every other row.
 
-1. the M1a gate has passed (roadmap stage table);
-2. the line-budget reconciliation of §12 has been performed and recorded in
-   the implementation spec;
-3. a separate implementation-level spec derived from this freeze has been
-   reviewed and green-lit.
-
-Until then the roadmap stage table governs: M1b stays design only. The
-`aitp/lite-entry-0.2` freeze milestone listed there is achieved by this
-document, which is not the same as permission to code.
+Beyond the selected read slice, M1b stays design-only: `check` is shipped and
+gated, while
+`aitp/lite-entry-0.2` and its commands are candidate contracts, not existing
+interfaces.
 
 ## 0. Binding rules
 
-- Semantics below are frozen. The post-gate implementation spec may choose
-  implementation economy (shared validators, single-pass scans, module
-  placement) but may not weaken, extend, or re-interpret these rules.
-- Templates and Skills are part of the deliverable. Templates are not counted
-  in the Python line budget, but their section sets are frozen here; exact
-  prompt wording is fixed by the implementation spec.
+- The sections below are candidate contracts, not a monolithic implementation
+  commitment. For any capability selected, its semantics are frozen. The
+  post-gate implementation spec may choose implementation economy (shared
+  validators, single-pass scans, module placement) but may not weaken, extend,
+  or re-interpret the selected rules.
+- Templates and Skills are part of the deliverable for selected capabilities.
+  Templates are not counted in the Python line budget, but their section sets
+  are frozen here; exact prompt wording is fixed by the implementation spec.
+- The §0.1 roster is the disposition protocol: each row gets selected,
+  deferred, moved to a named slice, or dropped. A moved row re-freezes coherent
+  schema/payload versions for its named slice; nonselected or no-runtime rows
+  produce no implementation spec. Only selected rows may enter the separately
+  reviewed implementation spec described by §0.1.
 - Everything in this document stays inside the trust model: auditable and
   tamper-evident, never tamper-proof. Nothing here promises detection of
   forged attribution, early outcome exposure, or dishonest claims.
+
+## 0.1 Authoritative candidate roster and current dispositions
+
+This table is the authoritative M1b unit roster, not one implementation
+bundle. The **disposition** column is the current freeze outcome — the
+**2026-08-12 reviewed freeze revision** recorded in
+[`docs/m1b-adjudication.md`](m1b-adjudication.md), the single record that
+confirms or revises all rows and their dependencies after the M1a gate and the
+completed two-session natural-use pause. Deferred, moved, dropped, and
+no-runtime outcomes produce no implementation spec; only selected rows enter a
+separately reviewed, green-lit implementation spec. The revision selects the
+read-side slice **M1b-R1** (implemented per `docs/m1b-r1-spec.md`;
+deterministic gate passed);
+every other row produces no implementation spec.
+
+| ID | Candidate unit | Dependencies and boundary | Current disposition |
+|---|---|---|---|
+| A | Store health: a read-only `check` report over current v0.1 records and any selected M1b schemas | M1a gate, the post-M1a natural-use review, a selected report schema, and the existing validators; no index. Independent of B–D. It is a candidate command only if selected and shipped. | **selected in M1b-R1 — v0.1-only, read-only `check`**; schema `aitp/check-report-0.1`; exit 0 clean / 1 findings / 2 unable; zero-write, no fix, no migration; diagnostics for unselected M1b schemas are **not** in R1; implemented per `docs/m1b-r1-spec.md`, deterministic gate passed |
+| B | Dependency links: `based_on`, derived `used_by`, and the required success-envelope/schema versioning | M1a versioned `list`/`show`/`enter` payloads for projections; a versioned `record save` success envelope before any warning key, or an explicitly revised Hakimi adapter contract in the same slice; A is required only if full `based_on` semantics retain `check`; no index. | **deferred** (persisted `based_on`, derived `used_by`, and their envelope/schema versioning are all deferred; the narrow read-side lineage view is tracked separately as Followup-2 below) |
+| C | Open-item schema: `prediction`, `question`, typed `resolves`/`resolution`, `contradicts`, and Note `supersedes` | v0.1 compatibility, selected v0.2 file schemas, templates, and validators; A is optional unless whole-store diagnostics are selected; no semantic judgment in Python. | **deferred** |
+| D | Remote-run pointer bundle plus run/source templates | Existing local `sha256:`/`git:` pin machinery and external run tooling; the bundle is a local evidence object, while a naked remote path remains location metadata and cannot verify remote bytes; independent of A–C. | **deferred** (only the GW session needs it; one-session evidence) |
+| E | Conditional quick-run experiment | Existing prepare/save validator, lock, idempotency, and evidence path; D is required for remote-run evidence; suite or at least four real sessions must show write friction is the cause before consideration. It is not committed M1b core. | **deferred** (the structured-prepare followup suggestion is separately explicitly deferred — see the R1 boundary note below) |
+| F | Optional `aitp-collaborator` Skill behavior pilot | F is moved to M4 and does not force any A–E selection now; M4 adjudication must resolve dependencies. If the selected collaborator protocol requires typed `prediction`/`question` records, roster C or an explicitly reviewed equivalent contract must first be selected and shipped. | **moved to M4** |
+| G | Methodology Skills: `surveying-literature` and `analyzing-a-source` | Independent use-driven Skill track; no M1b runtime, schema, or gate dependency. Each Skill may land only after real use separately justifies it and its own reviewed Skill change is ready. | **moved to an independent use-driven Skill track** |
+| H | Next-action closure relation | Dropped because M1a's closeout-first handoff is the selected solution and no evidence yet justifies another task lifecycle. It may return only as a new reviewed proposal after natural-use evidence, never through silent M1b scope growth. | **dropped from M1b** |
+
+### Followup suggestions roster (2026-08-12; six independent rows)
+
+The researcher's six followup suggestions (archived in
+`feedback/2026-08-12-gw-librpa-followup-feedback.md`) each receive exactly
+one disposition:
+
+| ID | Candidate unit | Current disposition |
+|---|---|---|
+| Followup 1 | Compact `enter` **text renderer only** (`aitp/enter-0.2` JSON unchanged), restoring the two M1a safety lines | **selected in M1b-R1** |
+| Followup 2 | Current-v0.1 lineage projection (`aitp lineage <entry-id>`, schema `aitp/lineage-0.1`: outgoing `resolves`/`supersedes`, incoming `resolved_by`/`superseded_by`; no recursion/graph/index) | **deferred** — selected in R1 at the freeze revision, **re-deferred at the 2026-08-12 budget reconciliation** (with it the measured prototype leaves ~5 lines of the 1,450 cap and exceeds the 1,425 target; see `docs/m1b-adjudication.md` §Budget reconciliation). May return only through a new reviewed freeze revision |
+| Followup 3 | `enter` text-only `handoff_status: review` (handoff source older than a newer unresolved active failure; factual structural prompt, not restored H) | **selected in M1b-R1** |
+| Followup 4 | Malformed diagnostics: read-only `check` plus a warning-count summary in `enter` text pointing at it; no persistent suppression | **selected in M1b-R1** |
+| Followup 5 | `enter` text-only `goal_status: not_established` on the placeholder, and `check` warning `empty_topic_goal` | **selected in M1b-R1** |
+| Followup 6 | Structured JSON/YAML prepare input preserving the draft | **deferred (explicit)** — a separate candidate, not an E variant; mixed evidence; budget prioritized for the read-side slice; the draft-preserving property is kept as a design constraint if re-proposed |
+
+Current dispositions are therefore: A and Followups 1, 3, 4, 5 selected in
+M1b-R1 (implemented per `docs/m1b-r1-spec.md`; deterministic gate passed);
+B, C–E, Followup 2 (lineage), and Followup
+6 (structured prepare) deferred; F moved to M4; G moved to the independent
+use-driven Skill track; H dropped from M1b. G and H are outside M1b
+runtime/schema/gate scope. F can move back only through §0.1; G needs
+separate real-use justification and a reviewed Skill change; H and Followup
+2 can return only as new reviewed proposals after natural-use evidence or a
+new reviewed freeze revision. No later change may grow M1b scope silently.
+
+### R1 boundary (frozen 2026-08-12)
+
+The reviewed freeze revision selects exactly the **M1b-R1 read-side slice**,
+fully specified in [`docs/m1b-r1-spec.md`](m1b-r1-spec.md):
+
+1. compact `enter` **text renderer only** (`aitp/enter-0.2` JSON unchanged)
+   with two frozen M1a safety lines (`recent_entries: <shown> of <active>
+   active (<omitted> omitted)` and `recent_notes: <shown>;
+   latest_working_note: <id @ time|(none)>; active_newer: <n|unknown>`);
+2. `aitp check` over the current shipped v0.1 Entry/Note contracts only
+   (schema `aitp/check-report-0.1`), with the frozen no-crash mappings
+   (`unreadable_record`, `unreadable_ref`, `malformed_store`,
+   `invalid_git_ref` warning/error split) and deterministic
+   `(path, code, message)` findings;
+3. `enter` text-only `goal_status: not_established` on the placeholder
+   (empty/missing/literal all normalized to it), and `check` warning
+   `empty_topic_goal`;
+4. `enter` text-only `handoff_status: review` when the selected handoff
+   source's `created_at` is older than a newer unresolved active failure —
+   a factual structural prompt, not semantic staleness, not restored H;
+5. `enter` text shows only a warning-count summary pointing at `aitp check`;
+   JSON keeps the full warnings; no persistent suppression.
+
+`aitp lineage` (Followup 2) is **not** in R1 (re-deferred at budget
+reconciliation; measured with lineage the prototype leaves insufficient
+cap margin). Candidate sections **not** in R1: §§1–6 (0.2 schema,
+`based_on`, `used_by`, typed closures, `contradicts`, Note `supersedes`
+rules), §8 (pointer bundles), §9 (template additions), §10.2/§10.3 0.2
+parts, §10.4 suite/Skill additions, and §11 write-path acceptance. These
+remain candidate contracts for future freeze revisions; none authorizes
+code.
 
 ## 1. Schema freeze — `aitp/lite-entry-0.2`
 
@@ -78,11 +175,22 @@ the recorded content of the target Entry.
 - Dependence on a superseded Entry is allowed for history but is a
   **warning**, not an error: reported at save time through a new optional
   `warnings` list on the **save payload** (only present when a non-blocking
-  condition exists; no warning ⇒ payload unchanged) and by `aitp check` as
-  `based_on_superseded` — nowhere else. `prepare` adds no flag and no
-  `warnings` field; supersession of an existing target is only checkable
-  at save, not at prepare.
-- `aitp check` validates all targets (`missing_relation` when absent).
+  condition exists; no warning ⇒ payload unchanged) and, if the A capability
+  is selected and shipped, by `check` as `based_on_superseded` — nowhere else.
+  `prepare` adds no flag and no `warnings` field; supersession of an existing
+  target is only checkable at save, not at prepare.
+- The save-response warning is a candidate behavior and cannot silently add a
+  key to the current unversioned exact-key success envelope. If this capability
+  is selected, the implementation-level spec must first freeze a versioned
+  success-envelope schema for the changed save response (preferred), including
+  its exact success keys and warning shape, or explicitly revise the Hakimi
+  adapter contract in the same selected-slice change. No implemented schema is
+  claimed here; no silent key addition is allowed.
+- If the A capability is selected and shipped, `check` validates all targets
+  (`missing_relation` when absent). If A is omitted, the full `based_on`
+  candidate is deferred or moved to a named slice, with that disposition
+  recorded in the §0.1 freeze revision, unless its semantics are explicitly
+  revised and re-reviewed.
 
 ## 3. `used_by` — reverse of `based_on` only
 
@@ -161,17 +269,30 @@ the recorded content of the target Entry.
 - `enter` groups unsettled contradictions (open items whose `contradicts`
   targets are both still active) in its M1b output.
 
-## 6. Note `supersedes` validation — frozen
+## 6. Note `supersedes` validation — frozen candidate rule
 
-`save_note` and `aitp check` validate a Note's `supersedes` like Entry
-supersession plus a kind boundary: list of Note IDs only
-(`invalid_supersedes_target` for a non-Note target), no self-target, target
-exists (`missing_relation`), target `created_at` older
-(`invalid_supersession`). Entry `supersedes` likewise requires Entry targets
-(`invalid_supersedes_target`). A superseded Note remains readable; nothing is
-rewritten. (The GW_librpa corpus contains no Notes, so no legacy exposure.)
+`save_note` validates a Note's `supersedes` like Entry supersession plus a kind
+boundary: list of Note IDs only (`invalid_supersedes_target` for a non-Note
+target), no self-target, target exists (`missing_relation`), target
+`created_at` older (`invalid_supersession`). If roster A is selected and
+shipped, `check` also validates that rule. Entry `supersedes` likewise requires
+Entry targets (`invalid_supersedes_target`). A superseded Note remains readable;
+nothing is rewritten. (The GW_librpa corpus contains no Notes, so no legacy
+exposure.)
 
-## 7. `aitp check` — frozen contract
+## 7. `aitp check` — candidate read-only contract
+
+This is the candidate A store-health contract. The 2026-08-12 reviewed
+freeze revision **selects it in M1b-R1 as a v0.1-only read-only `check`**;
+the frozen implementation-level subset (per-file rules, grading, exact
+payload/text, exit codes, budget, tests) is in
+[`docs/m1b-r1-spec.md`](m1b-r1-spec.md) and is **implemented and gated** —
+`check` is a shipped CLI. The contract below
+remains the full candidate (v0.1 plus selected M1b schemas); the parts that
+depend on unselected M1b schemas (§7.6 codes for 0.2 records, pointer
+bundles, Note `supersedes` target rules) are **not** in R1. The R1 spec
+adds one R1-only code, `empty_topic_goal` (warning), and grades
+`invalid_timestamp` warnings exactly as §7.6 below.
 
 ### 7.1 CLI
 
@@ -179,18 +300,18 @@ rewritten. (The GW_librpa corpus contains no Notes, so no legacy exposure.)
 aitp check [--json] [--cwd PATH]
 ```
 
-Whole-store re-validation: every canonical Entry and Note, using the same
-structural validators as the save path, plus relation closure rules
-(§2, §4, §5, §6). Store metadata must load (`not_initialized`,
+If shipped, whole-store re-validation covers every canonical Entry and Note,
+using the same structural validators as the save path, plus relation closure
+rules (§2, §4, §5, §6). Store metadata must load (`not_initialized`,
 `malformed_store` → cannot run).
 
 ### 7.2 Read-only scope
 
-`check` writes nothing: no lock file (it must not take `store_lock`, which
-creates a file), no cache, no index, no repair, no migration, no scratch, no
-new canonical files, no `--fix` flag now or later. It is a projection like
-`enter`/`list`/`show`. A test asserts the `.aitp` tree is byte-identical
-before and after a check run.
+If shipped, `check` writes nothing: no lock file (it must not take
+`store_lock`, which creates a file), no cache, no index, no repair, no
+migration, no scratch, no new canonical files, no `--fix` flag now or later.
+It is a projection like `enter`/`list`/`show`. A test asserts the `.aitp` tree
+is byte-identical before and after a check run.
 
 ### 7.3 Exit codes
 
@@ -280,26 +401,28 @@ Git work tree) so the pin cannot be verified):
 | `relation_cycle` | warning | a cycle in `based_on`/`supersedes` links — each record is valid as written, the relation graph is degraded |
 | `double_resolution` | warning | an open item closed by more than one active resolver |
 
-## 8. Remote evidence — local pointer bundle (frozen)
+## 8. Remote evidence — local pointer bundle (candidate contract)
 
-- A remote path is location metadata, not locally verifiable evidence. A 0.2
-  `run` Entry that depends on remote outputs pins an **existing local pointer
-  bundle** through the ordinary `refs` machinery.
-- Bundle contract: a JSON file, schema `aitp/run-pointer-0.1`, with host,
-  remote path, scheduler/job ID and collection time; binary and input
+- A remote path is location metadata, not locally verifiable evidence. If the
+  D row is selected and shipped, a 0.2 `run` Entry that depends on remote
+  outputs would pin an **existing local pointer bundle** through the ordinary
+  `refs` machinery. This design is a candidate, not a current contract.
+- Candidate bundle contract: a JSON file, schema `aitp/run-pointer-0.1`, with
+  host, remote path, scheduler/job ID and collection time; binary and input
   identities; output file names, sizes, and remotely computed digests;
   validation status and any unavailable objects. It is written by the run
   tooling next to its outputs (no fixed location imposed by AITP); AITP never
   creates it, only pins and reads it.
-- The bundle is pinned with the existing `sha256:` (preferred) or `git:`
-  scheme. **No new pin scheme is introduced** — the five explicit schemes
-  (sha256, git, run, version, retrieved) are unchanged, and `retrieved:` never
-  serves as integrity.
-- What this buys: the captured claim and its provenance are auditable — the
-  bundle's bytes are bound to the record and re-verified by `check`
-  (`missing_ref`/`hash_mismatch` errors on drift — the same grading the save
-  path applies; `invalid_pointer_bundle` error when the pinned bytes are not
-  a valid bundle). It does not prove the remote host was honest.
+- If shipped, the bundle is pinned with the existing `sha256:` (preferred) or
+  `git:` scheme. **No new pin scheme is introduced** — the five explicit
+  schemes (sha256, git, run, version, retrieved) are unchanged, and
+  `retrieved:` never serves as integrity.
+- What this candidate buys: the captured claim and its provenance would be
+  auditable because the bundle's bytes are bound to the record. Whole-store
+  re-verification through `check` is conditional on the A row also shipping;
+  it would report `missing_ref`/`hash_mismatch` on drift and
+  `invalid_pointer_bundle` when pinned bytes are not a valid bundle. It does
+  not prove the remote host was honest.
 - Rejected alternatives (unchanged from the design base): `target: host:/path`
   with `sha256:` when the local validator did not read those bytes; local
   mutable files with `retrieved:` as if observation time were integrity;
@@ -377,26 +500,37 @@ Suite: after the M0.6 baseline, add the dense-ledger scenario per
 `docs/m1-read-write-balance.md` §Suite additions (no private-project claims;
 long supersession chain; invalid legacy timestamp; stale handoff replaced by
 a later closeout; a run whose evidence is a local pointer bundle; Note-trigger
-distractors), with the rubric diff recorded.
+distractors), with the rubric diff recorded. **Not in R1**: the suite stays
+frozen and unchanged; R1 has no suite deliverable.
 
 Skills: `using-aitp` gains the M1b norms (evidence-backed `resolves`,
 `based_on` discipline, prediction/question recording, pointer-bundle
-disclosure); `surveying-literature` and `analyzing-a-source` land here as
-use-driven Skill-only increments. Runtime never enforces any of this.
+disclosure) **only when the corresponding capabilities ship**; R1 syncs the
+Skill for `check` and the compact `enter` text semantics per
+`docs/m1b-r1-spec.md` §Version and docs sync. Roster G's
+`surveying-literature` and `analyzing-a-source` remain
+independent use-driven Skill-track work, not M1b runtime/schema/gate
+deliverables; each lands only after real use separately justifies it and its own
+reviewed Skill change is ready. Runtime never enforces any of this.
 
 ## 11. GW_librpa read-only acceptance
 
 The real store is compatibility evidence, not a test namespace.
 
-- In-place read acceptance runs `list`/`show`/`check` (all read-only).
-  Before and after, hash every file under `.aitp`; the maps must be
-  byte-identical.
-- Expected dated baseline (2026-08-06 audit): 60 structurally readable v0.1
-  Entries; 41 active, 19 superseded; 26 `result` Entries; one unresolved
-  active failure; `check` reports zero record-content errors under v0.1 rules;
-  drifted local pins (37 missing, 78 hash-mismatched in that dated snapshot)
-  surface as errors — the same grading the save path applies — with exit 1,
-  never as crashes; `list`/`show` remain readable.
+- In-place read acceptance runs `list`/`show` and, with A selected in
+  M1b-R1, `check` (all read-only). Before and after, hash every file under
+  `.aitp`; the maps must be byte-identical. The frozen R1 acceptance
+  procedure is in `docs/m1b-r1-spec.md` §Real-store acceptance; the
+  candidate notes below are the fuller M1b picture.
+- Historical compatibility snapshot (2026-08-06 audit): 60 structurally
+  readable v0.1 Entries; 41 active, 19 superseded; 26 `result` Entries; one
+  unresolved active failure; if shipped, `check` reports zero record-content
+  errors under v0.1 rules; drifted local pins (37 missing, 78 hash-mismatched
+  in that dated snapshot) surface as errors — the same grading the save path
+  applies — with exit 1, never as crashes; `list`/`show` remain readable.
+- These historical values are not fixed current-count assertions; current read
+  acceptance records dynamic counts as observed and requires the read-only
+  projection and before/after byte-identity invariants.
 - Write-path acceptance runs only on a `cp -a` temporary copy or a fresh
   temporary store: valid and missing `based_on` targets; reverse `used_by`
   projection; a remote run pinning a local pointer bundle; rejection of a
@@ -418,40 +552,52 @@ roughly 150 lines.
 
 ### 12.2 Structural risk
 
-M1b is the largest validation-surface addition since M0.5: two new kinds,
-four new relation/closure rules, and a whole-store check module. The
-nonbinding estimate in §10.1 sums to roughly +250–375 lines — above the
-likely headroom even at the low end. This is a structural risk, not a
-cosmetic one: the frozen contract's minimal implementation may exceed the
-cap. The post-M1a reconciliation must include a per-module table proving each
-module remains below 400 nonblank lines, not only a cumulative total.
+If the runtime rows are selected, M1b is the largest validation-surface
+addition since M0.5: two new kinds, four new relation/closure rules, and a
+whole-store check module only if A is selected. The nonbinding estimate in §10.1
+sums to roughly +250–375 lines — above the likely headroom even at the low end.
+This is a structural risk, not a cosmetic one: the full selected runtime subset
+may exceed the cap. G's independent Skills and H's dropped relation do not enter
+this runtime budget. The 2026-08-12 adjudication avoided the risk by selecting
+only the read-side slice M1b-R1; its per-module budget and cut order are frozen
+in `docs/m1b-r1-spec.md` §Implementation map / §Cut order, proving each module
+stays below 400 nonblank lines and the cumulative total stays ≤ 1,450 (target
+1,425), not only a cumulative total.
 
-### 12.3 Adjudication (after the M1a gate)
+### 12.3 Adjudication (recorded 2026-08-12)
 
-The implementation spec must open with a reconciliation table: actual M1a
-total → the fixed 1,300 M1a cap and the fixed 1,450 M1b cap → the actual M1b
-headroom (1,450 minus the actual M1a total) → the minimal implementation of
-this freeze → the cut list (empty, or named items from §12.4). Every budget
-review reconciles the actual M1a total against the fixed caps; the caps are
-never adjusted, stretched, or reinterpreted. If the cut order is exhausted
-and the minimal implementation still exceeds 1,450, the gatekeeper does not
-expand the cap: a documented freeze revision names each dropped or narrowed
-feature in the roadmap stage table and the implementation spec, then the
-revised scope is re-reviewed before implementation. The freeze binds
-semantics; the reconciliation decides line economy.
+The §0.1 review is complete and recorded in
+[`docs/m1b-adjudication.md`](m1b-adjudication.md): actual M1a total 1,256
+against fixed caps (M1b headroom **194**), every A–H disposition and every
+followup suggestion with the full roster/dependencies, the smallest
+selected slice (**M1b-R1**, read-side: `check` v0.1-only + compact `enter`
+text), the re-frozen schema (`aitp/check-report-0.1`), the attributable
+approval, and the budget-reconciliation re-deferral of Followup 2
+(`lineage`). Deferred, moved, dropped, and no-runtime outcomes produce no
+implementation spec. Budget review never adjusts caps, compresses
+validators, or silently grows the roster; the selected spec
+(`docs/m1b-r1-spec.md`) was separately reviewed and green-lit after this
+§0.1 record, and the R1 deterministic gate passed on 2026-08-12 (evidence
+in `docs/m1b-r1-stage-notes.md`).
 
 ### 12.4 Cut order and prohibitions
 
 Cut order (from `docs/roadmap.md` §M1b and `docs/m1-read-write-balance.md`
 §Scope and cut order):
 
-1. the quick-run experiment — already not committed core and not part of
-   this freeze (§13);
+1. the quick-run experiment — roster E is currently deferred/not selected by
+   the present disposition freeze; it is not committed implementation scope and
+   can be selected only through the post-M1a reviewed freeze revision (§13);
 2. nonessential save-time hints that duplicate the Skill;
 3. cosmetic output features.
 
-Never cut: evidence validation, relation validation, v0.1 compatibility,
-read-only `check`, deterministic projections, the no-index rule.
+For any selected capability, never cut its required evidence/relation
+validation, v0.1 compatibility, or no-index boundary. `check` and deterministic
+projections are candidate capabilities, not universal M1b indivisibles: a
+check-only slice is allowed; a `based_on` capability may be deferred or moved
+to a named slice when its required `check` capability is omitted, with that
+disposition recorded in the reviewed freeze revision. Never expand a cap or
+compress a validator to preserve a monolithic candidate bundle.
 
 Standing prohibitions for M1b:
 
@@ -459,35 +605,51 @@ Standing prohibitions for M1b:
 - No quick-run promise and no in-place upgrade of any record.
 - No reverse index or derived cache; `used_by` is always computed from
   Markdown.
-- No migration or rewriting of v0.1 records; `check` never repairs.
+- No migration or rewriting of v0.1 records; if A ships, `check` never
+  repairs.
 - No semantic enforcement: contradiction substance, outcome-vs-expectation
   honesty, and claim-dependency truth are author claims, auditable in Git,
   not validator checks.
-- No commands beyond `check`; no hooks, daemons, MCP, or scheduler; no new
-  dependencies beyond the vendored YAML.
+- No M1b commands beyond the selected candidate interfaces; A's `check` is
+  only present if that row is selected and shipped. No hooks, daemons, MCP, or
+  scheduler; no new dependencies beyond the vendored YAML.
 
 ## 13. Non-commitments
 
-- **No quick-run.** `aitp record quick` remains a suite-gated addendum per
-  `docs/roadmap.md` §M1b, considered only if suite or ≥ 4 real sessions show
-  that durable run events are missed primarily because of write friction. It
-  is the first feature cut, it is not in this freeze, and no CLI shape for it
-  is promised here.
+- **Deferred quick-run candidate.** `aitp record quick` remains a suite-gated
+  addendum per `docs/roadmap.md` §M1b, considered only if suite or ≥ 4 real
+  sessions show that durable run events are missed primarily because of write
+  friction. It is part of the authoritative candidate roster as E but is
+  currently deferred/not selected by the present disposition freeze; it is not
+  committed implementation scope, is the first feature cut, and no CLI shape
+  for it is promised here. It can be selected only through the post-M1a
+  reviewed freeze revision.
 - No new pin scheme (§8).
 - No dedicated contradiction template and no new prepare flag: a
   contradiction is a plain 0.2 `failure` Entry whose Evidence And Next
   Diagnostic section carries the §5 prompts.
 - No reverse index, no derived cache, no index of any kind.
 - No migration, no repair, no tamper-proofing additions.
-- The `aitp-collaborator` alpha remains a later Skill/pilot track from the
-  roadmap; it is not part of this M1b runtime or gate.
+- The roster's `aitp-collaborator` row is explicitly **moved to M4**. It is a
+  Skill-only behavior track, not an M1b runtime or gate prerequisite. A later
+  reviewed freeze revision may move it back into M1b only if the adjudication has a
+  concrete reason; only then would its pilot evidence enter an M1b gate.
 
 ## 14. Gate restated
 
-The roadmap §M1b gate, plus this pre-spec's additional condition: suite shows
-prediction order respected and corrections persisting across sessions;
-based-on targets and reverse views are correct without an index; a
-remote-run pointer bundle is auditable; the pilot advances one real question
-over ≥ 2 sessions; v0.1 records and the GW_librpa corpus remain untouched;
-and the §12.3 line-budget reconciliation is recorded in the implementation
-spec.
+The 2026-08-12 reviewed freeze revision selects the **M1b-R1** read-side
+slice (`aitp check` v0.1-only + compact `enter` text), implemented per its
+implementation-level spec
+`docs/m1b-r1-spec.md`; its deterministic gate **passed** (evidence recorded
+in `docs/m1b-r1-stage-notes.md`); B, C–E,
+Followup 2 (lineage), and Followup 6 (structured prepare) deferred, F → M4,
+G → the independent Skill track, H dropped. The unselected rows produce no
+implementation spec. This selection does not authorize M2; M2 needs its own
+natural-demand adjudication.
+
+Any later selected runtime row is subject to §0.1 and its separately reviewed
+implementation spec: preserve that row's validation, v0.1 compatibility, and
+no-index boundary; the full inventory never becomes a gate automatically. F's
+pilot enters an M1b gate only if row F is changed there; G remains independent,
+and H requires a new reviewed proposal after natural-use evidence. M4 has its
+own natural-demand and prospective-evidence adjudication.

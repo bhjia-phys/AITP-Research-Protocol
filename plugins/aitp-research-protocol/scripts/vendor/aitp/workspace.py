@@ -66,8 +66,12 @@ def load_store(root: Path) -> dict[str, str]:
     store_path = root / ".aitp" / "STORE.toml"
     if not store_path.is_file():
         raise AITPError("not_initialized", f"no AITP store at {root}")
+    try:
+        store_text = store_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        raise AITPError("malformed_store", f"store metadata is unreadable: {store_path}: {exc}") from exc
     result: dict[str, str] = {}
-    for line in store_path.read_text(encoding="utf-8").splitlines():
+    for line in store_text.splitlines():
         if not line or line.lstrip().startswith("#") or "=" not in line:
             continue
         key, raw = (part.strip() for part in line.split("=", 1))

@@ -1,17 +1,20 @@
 # M1a implementation spec — Memory that restores (`list`, `show`, `enter` v2)
 
-Status: implementation specification; blocked until M0.6 gate.
+Status: implementation specification; **done; deterministic gate passed**.
 
 Scope: this document is the complete implementation-level spec for M1a,
-"Memory that restores", per `docs/roadmap.md` §M1a (v3.4) and the M1
-specification index `docs/m1-read-write-balance.md`. Both M1 planning documents
-are written: this document is the blocked M1a implementation-level spec, while
-`docs/m1b-spec.md` is a blocked M1b pre-spec and is not yet an implementation-
-level spec. Neither stage is implemented (`list`, `show`, and `check` remain
-unbuilt). Nothing beyond this document is in M1a scope. It does not green-light
-implementation: M1a runtime work may start only after the M0.6 gate passes
-(see Gate prerequisite). The M0.6 remaining work — two dogfood bootstrap
-measurements and the paired scored suite runs — is untouched by this spec.
+"Memory that restores", per `docs/roadmap.md` §M1a (v3.7) and the M1
+specification index `docs/m1-read-write-balance.md`. The implementation and
+checklist evidence are recorded in [`docs/m1a-stage-notes.md`](m1a-stage-notes.md).
+`docs/m1b-spec.md` remains a blocked M1b candidate-inventory pre-spec and is not
+an implementation-level spec. The current CLI includes `list` and `show`, with
+versioned read payloads for `enter`, `list`, and `show`; `check` remains absent.
+The original M0.6 bootstrap Notes/decisions, recall/false-import/human-time,
+held-out S3, paired S1/S2, cold-start, conformance, causal, and
+treatment-advantage evidence is **not measured; deferred; not counted**. M1a
+completion is deterministic implementation evidence only; it does not claim
+bootstrap validation, behavioral or treatment superiority, causal effect, or
+AITP advantage over plain files.
 
 ## Goal
 
@@ -26,27 +29,49 @@ write is introduced.
 
 ## Gate prerequisite (binding)
 
-The canonical runtime is a frozen input of the first scored suite run.
-`suite/FROZEN.md` v6 records the current runtime baseline as 1,082 nonblank
-lines in 9 modules. The v5 anchor commit
-`ac5209647f5f2a88a530dcd2856c13d39d31e856` still contains identical runtime
-bytes, but it does not anchor the three identity-contract documents changed in
-v6; v6 is currently a working-tree preregistration with its new immutable
-anchor pending. Any runtime change before v6 is anchored and the M0.6 scored
-run completes voids that run. Therefore:
+`suite/FROZEN.md` v6 is an archived, anchored, unexecuted preregistration. It
+records the runtime baseline as 1,082 nonblank lines in 9 modules. The v5
+anchor commit `ac5209647f5f2a88a530dcd2856c13d39d31e856` still contains
+identical runtime bytes, while the v6 identity-contract documents are anchored
+by `145261805d5205d2150dca18c6c42d5a18a628f2`. The anchor and hashes establish
+packet identity only; they are not scored evaluation evidence. M1a runtime
+changes cannot be described as scores for v6. Any future external or human
+scored evaluation requires a separately reviewed protocol revision and a new
+freeze/refreeze before held-out execution.
 
-- M1a implementation starts only after the M0.6 gate review passes. The gate
-  review, not the implementer, flips the M1a row in `docs/roadmap.md` from
-  "written implementation spec; blocked" to "ready for implementation" and
-  points it at this spec.
-- The pre-first-run identity-contract repair is already recorded in
-  `suite/FROZEN.md` v6. Before the M0.6 scored run, the operator must obtain a
-  new immutable anchor for v6 and record it in the run notes. The later M1a
-  adapter update (see Sync) lands only after that run, with its diff recorded
-  in the stage notes per the freeze discipline.
-- If the M0.6 gate lands with a runtime baseline different from 1,082
-  nonblank lines, the M1a additions adjust so the cumulative total stays
-  ≤ 1,300 (see Line budget).
+The approved 2026-08-10 narrowed M0.6 gate review was the sole M1a
+authorization transition. M1a has now completed its deterministic
+implementation gate; the evidence is recorded in `docs/m1a-stage-notes.md`.
+The original bootstrap Notes/decisions, recall/false-import/human-time,
+held-out S3, paired S1/S2, cold-start, conformance, causal, and
+treatment-advantage evidence is **not measured; deferred; not counted**; these
+gaps are not M1a evidence.
+Therefore:
+
+- M1a implementation from this spec is complete. Deterministic S1/S2 seed
+  regression, generated goldens, all tests, read-only byte-identical GW_librpa
+  acceptance, performance, and line caps passed. Paired treatment-control
+  evidence is optional future evidence, not a required M1a gate.
+- `suite/adapters/cli.md` remains part of frozen v6 and was not changed by this
+  implementation. A future suite refreeze/review may synchronize it; runtime
+  changes must not be called v6 score evidence.
+- The measured runtime is 1,256 nonblank lines against the 1,082 baseline,
+  within the ≤ 1,300 cap (see the stage notes for the module breakdown).
+
+### Post-gate transition
+
+The M1a gate starts the two-session natural-use pause, not M1b; M1b remains a
+candidate inventory until its separate review and selected-slice authorization.
+
+### Read-only Note structural validator
+
+M1a requires one minimal, reusable structural Note validator for its read projections.
+It parses and checks only the Note schema/frontmatter/body structure needed for
+the projection; every read invocation calls it with
+`validate_evidence=False`. The read path must not acquire a store lock, call
+`atomic_write`, write `.aitp/local/`, or mutate any canonical file. Save keeps
+its existing validator, evidence validation, lock, and write semantics exactly
+unchanged; this read-only helper is not a save-path relaxation.
 
 ## CLI grammar and help intent
 
@@ -595,7 +620,15 @@ excepted — see Benchmark).
     marker on any other line, a substring elsewhere in the body, or any
     character variation (`legacy-derived:` alone, `LEGACY-DERIVED:`, missing
     `> ` prefix, wrong dash) is not labeled.
-15. `seed_regression_s1_s2` — on `cp -a` copies of `suite/seeds/S1` and
+15. `enter_v2_note_read_only_validator` — a structurally malformed canonical
+    Note is omitted from `recent_notes` and `latest_working_note`, emits a
+    structural warning, and increments `counts.malformed`; a structurally valid
+    Note with missing or drifted `basis_refs` remains readable because the read
+    path calls `validate_evidence=False`; before/after `.aitp` hashes are
+    byte-identical and the read path takes no lock, calls no `atomic_write`, and
+    writes no `.aitp/local` state; save-path evidence validation remains
+    unchanged.
+16. `seed_regression_s1_s2` — on `cp -a` copies of `suite/seeds/S1` and
     `suite/seeds/S2`: `list` counts 31 / 30, `--kind result` 7 / 8,
     `--kind failure` 3 / 3; `enter` S1: active 29, superseded 2, malformed 0,
     unresolved 1, omitted_active 9, `active_newer_than_latest_working_note`
@@ -605,9 +638,9 @@ excepted — see Benchmark).
     failure (`entry-0a03…`) is kind `failure`, status `active`; the copies
     are byte-identical (`diff -r`) before/after all reads; the seeds
     themselves are never modified.
-16. `error_payload_compat` — new commands reuse the shared error contract
+17. `error_payload_compat` — new commands reuse the shared error contract
     (stdout JSON + exit 2 with `--json`; stderr line + exit 2 in text mode).
-17. `hash_mismatch_message` — save an Entry whose `sha256:` pin is wrong:
+18. `hash_mismatch_message` — save an Entry whose `sha256:` pin is wrong:
     message contains `expected` and `actual` digests.
 
 ## Benchmark (extension of `tests/ledger/benchmark.py`)
@@ -634,37 +667,48 @@ for f in plugins/aitp-research-protocol/scripts/vendor/aitp/*.py; do grep -c '\S
 # per-module < 400; sum ≤ 1,300; M1a additions within 149–176
 ```
 
-### S1/S2 handoff (operator, after the M0.6 first scored run)
+### Deterministic S1/S2 seed regression
 
-- The seed-regression test (test 15) is the in-repo proof that M1a retrieval
+- The seed-regression test (test 16) is the in-repo proof that M1a retrieval
   surfaces the S1/S2 decisive records (γ=7/4 exclusion, cutoff=4 void, next
   action) that sit outside `enter`'s top-20 window, with byte-identical
-  workspaces before/after.
-- Resumption handoff: on a fresh `cp -a` copy of the recorded S1 and S2
-  end-state workspaces under `suite/runs/<date>/`, a fresh resumption session
-  (per the frozen M4 preregistration: new conversation, new process, no
-  session-1 transcript) must answer the four-item checklist — current goal,
-  active route, next action, open corrections — from `enter` v2 plus
-  `list`/`show`, against the gold answers, scored per the frozen rubric
-  (M4 = 1.0). Recorded in the stage notes with the workspace hashes
-  before/after (byte-identical).
+  workspaces before/after. It is deterministic fixture evidence, not a
+  treatment-control score and not evidence from FROZEN v6 execution.
+- On `cp -a` copies of `suite/seeds/S1` and `suite/seeds/S2`, the regression
+  must preserve the declared counts, generated payloads, and source-tree byte
+  identity before/after all reads. No participant, assessor, or gold-scoring
+  run is required for this deterministic gate.
+
+### Optional future treatment-control evidence
+
+A paired treatment-control resumption evaluation may be run as optional future
+evidence. It is not a required M1a gate and cannot retroactively satisfy the
+original M0.6 evidence gaps or turn runtime changes into FROZEN v6 scores. If
+pursued, it requires its own reviewed protocol, freeze/refreeze, and explicit
+status synchronization.
 
 ### GW_librpa read acceptance (operator, in place, read-only)
 
 ```text
 find .aitp -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/m1a-before.txt
-aitp list --json            # dated baseline: 60 Entries, warnings []
-aitp list --kind result --json   # dated baseline: 26
-aitp enter --json           # dated baseline: 41 active, 19 superseded, 1 unresolved active failure
+aitp list --json            # historical compatibility snapshot (2026-08-06): 60 Entries, warnings []
+aitp list --kind result --json   # historical compatibility snapshot: 26
+aitp enter --json           # historical compatibility snapshot: 41 active, 19 superseded, 1 unresolved active failure
 aitp show <a superseded entry id>   # status: superseded; runs despite drifted local pins
 find .aitp -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/m1a-after.txt
 diff /tmp/m1a-before.txt /tmp/m1a-after.txt   # must be empty
 ```
 
-- Counts are asserted against the dated 2026-08-06 baseline (60 / 41 / 19 /
-  26 / 1); any delta caused by recorded M0.6 bootstrap records (a `source`
-  Entry per legacy corpus, a human `decision` Entry per bootstrap Note) is
-  enumerated in the stage notes — never repaired, never hidden.
+- The 60/41/19/26/1 values above are the historical compatibility snapshot
+  dated 2026-08-06, not fixed current-count assertions. Current acceptance
+  records dynamic counts as observed, retains the `invalid_timestamp` warning,
+  checks read-only projections, and requires byte-identical `.aitp` maps before
+  and after reads. The current 194-record snapshot is recorded in
+  [`docs/m1a-stage-notes.md`](m1a-stage-notes.md); 194 is not a fixed baseline
+  and is not treatment/advantage evidence. Historical deltas caused by
+  recorded M0.6 bootstrap records (a `source` Entry per legacy corpus, a human
+  `decision` Entry per bootstrap Note) are enumerated in the stage notes —
+  never repaired, never hidden.
 - The real store is compatibility evidence: no Entry, Note, or file under
   `.aitp` is written, moved, or touched by any M1a command; reads must
   survive stale local evidence (37 missing / 78 mismatched pins in the dated
@@ -672,22 +716,33 @@ diff /tmp/m1a-before.txt /tmp/m1a-after.txt   # must be empty
 - A new Entry is written to the real project only for a genuine research
   event with the researcher's approval — never to satisfy acceptance.
 
-### Gate evidence (roadmap §M1a gate, checklist for the gate review)
+### Gate evidence (roadmap §M1a gate, deterministic checklist)
 
-- [ ] M0.6 gate passed first (bootstrap measurements + paired scored suite
-      runs + gate review); M1a row flipped to ready-for-implementation with
-      this spec as its pointer.
-- [ ] Suite-scored resumption checklist on both dogfood Topics, against the
-      control group (S1/S2 rerun with the updated adapter, plus the dogfood
-      resumption exercise; rubric thresholds with the diff recorded per the
-      suite rules).
-- [ ] GW_librpa corpus lists 60 Entries and 26 results without changing any
-      existing file (hash maps byte-identical).
-- [ ] All ledger tests pass (26 existing + new `test_query.py`).
-- [ ] `--help` < 250 ms; 1,000-Entry `enter` < 1 s with the widened margin
-      recorded; 1,000-Entry `list` baseline reported.
-- [ ] Runtime ≤ 1,300 nonblank lines, additions within 149–176, every module
-      < 400.
+- [x] The approved 2026-08-10 narrowed M0.6 review is recorded; M1a is now
+      **done; deterministic gate passed**, with this spec as its pointer. The
+      original M0.6 empirical gaps are not counted here.
+- [x] Deterministic S1/S2 seed regression passes on fresh copies, including
+      declared counts, generated payloads, and byte-identical source trees
+      before/after all read commands.
+- [x] Generated goldens are produced from this spec and match the public API
+      contracts; no hand-edited payload is accepted.
+- [x] Read-only Note validator acceptance passes: a malformed structural Note
+      is omitted from `recent_notes`/`latest_working_note`, emits a warning, and
+      increments `counts.malformed`; a structurally valid Note with missing or
+      drifted `basis_refs` remains readable because the read path uses
+      `validate_evidence=False`; before/after `.aitp` hashes are byte-identical
+      with no lock, `atomic_write`, or `.aitp/local` state write, and save-path
+      evidence validation is unchanged.
+- [x] All 56 ledger and M1a tests pass.
+- [x] GW_librpa read acceptance is read-only and its `.aitp` before/after file
+      hash maps are byte-identical; stale local pins do not crash reads. The
+      dynamic snapshot counts and the single historical invalid-timestamp
+      warning are recorded in `docs/m1a-stage-notes.md`.
+- [x] `--help` < 250 ms; 1,000-Entry `enter` and `list` < 1 s; cumulative
+      runtime is 1,256 nonblank lines and every module is below 400.
+- [ ] Optional paired treatment-control evidence is not required. If pursued,
+      it is separately reviewed and frozen/refrozen and cannot be represented
+      as FROZEN v6 evidence.
 
 ## Sync (Skill / docs / adapter / version)
 
@@ -708,23 +763,25 @@ diff /tmp/m1a-before.txt /tmp/m1a-after.txt   # must be empty
   re-validated science; (5) `latest_working_note` and
   `active_newer_than_latest_working_note` are structural signals, not
   semantic coverage. The `aitp` entrypoint Skill is unchanged.
-- **Docs**: `docs/roadmap.md` — the M0.6 gate review flips the M1a row and
-  points it at this spec; the implementer never edits stage statuses.
-  `docs/design.md` §Planned commands drops `list` and `show` (both move to
-  §Commands with one-paragraph descriptions matching this spec); `check`
-  stays planned. `docs/m1-read-write-balance.md` is the approved design and
-  stays as-is.
-- **Adapter**: `suite/adapters/cli.md` "Read memory" gains `aitp list` /
-  `aitp show` and the `enter` v2 fields (`latest_working_note`,
-  `active_newer_than_latest_working_note`, `legacy_derived`); updated only
-  after the M0.6 first scored run, diff recorded in the stage notes.
-  `plain-files.md` unchanged.
-- **Version**: bump `plugins/aitp-research-protocol/kimi.plugin.json`
-  (0.1.0 → 0.2.0), `.codex-plugin/plugin.json`
-  (0.1.0+codex.… → 0.2.0+codex.<UTC timestamp>), and `pyproject.toml`
-  (0.1.0 → 0.2.0) in the same commit as the runtime. Schema identifiers
+- **Docs**: `docs/roadmap.md` records M1a as **done; deterministic gate passed**
+  and points to `docs/m1a-stage-notes.md`; the implementer never edits stage
+  status without the evidence record. `docs/design.md` §Commands documents
+  `list` and `show`; `check` stays an absent, blocked M1b candidate.
+  `docs/m1-read-write-balance.md` and the `using-aitp` Skill keep the post-M1a
+  pause and selected-slice checklist.
+- **Adapter**: `suite/adapters/cli.md` remains frozen v6 and is not changed by
+  M1a implementation. A future reviewed protocol revision/refreeze may sync
+  its "Read memory" appendix with `aitp list` / `aitp show` and the `enter` v2
+  fields (`latest_working_note`, `active_newer_than_latest_working_note`,
+  `legacy_derived`); `plain-files.md` remains unchanged until that same
+  future refreeze.
+- **Version**: the completed M1a implementation is synchronized at plugin
+  version **0.2.0** in `kimi.plugin.json`, `.codex-plugin/plugin.json` (with its
+  UTC timestamp suffix), `pyproject.toml`, and
+  `scripts/vendor/aitp/__init__.py` (`aitp.__version__`). Schema identifiers
   (`aitp/enter-0.2`, `aitp/list-0.1`, `aitp/show-0.1`) version independently
-  of the plugin version. No `aitp --version` flag is added.
+  of the plugin version. No `aitp --version` flag is added. Do not modify the
+  untracked `uv.lock` as part of version sync.
 
 ## Explicit prohibitions
 
@@ -742,13 +799,16 @@ diff /tmp/m1a-before.txt /tmp/m1a-after.txt   # must be empty
 - No guessing for invalid stored timestamps (omit with a warning under
   `--since`; never coerce).
 - No weakening of evidence validation, relation validation, template checks,
-  or v0.1 compatibility. The only validator change is the `hash_mismatch`
-  message.
+  or v0.1 compatibility. The read-only Note structural validator calls
+  `validate_evidence=False`, takes no lock, and writes nothing; save semantics
+  remain unchanged. The existing validator change is only the actionable
+  `hash_mismatch` message.
 - No M1b scope: no `based_on`, no `used_by`, no `resolution` closures, no
   `aitp check`, no schema `aitp/lite-entry-0.2`.
 - Frozen suite inputs (seeds, scenarios, gold, adapters, `events/`, rubric,
-  `FROZEN.md`) are untouched until the M0.6 first scored run; the adapter
-  update lands after, recorded.
+  `FROZEN.md`) remain untouched by M1a implementation. `suite/adapters/cli.md`
+  stays frozen; any future synchronization requires a separately reviewed
+  protocol revision and refreeze, with the change recorded.
 - No edits to existing test files except the documented `benchmark.py`
   extension and the deliberate golden regeneration; new tests land in
   `tests/ledger/test_query.py`.

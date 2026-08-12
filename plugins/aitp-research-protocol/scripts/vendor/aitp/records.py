@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import subprocess
 import uuid
@@ -36,6 +37,9 @@ AUTHORITIES = {"human", "agent", "source", "tool"}
 REF_REQUIRED_KINDS = {"result", "failure", "source", "code_change", "run"}
 LIMITATION_REQUIRED_KINDS = {"observation", "result", "source", "run"}
 ENTRY_ID_RE = re.compile(r"^entry-[0-9a-f]{32}$")
+ENTRY_REQUIRED = frozenset(
+    "schema id topic created_at created_by kind authority summary refs limitations resolves supersedes next_action".split()
+)
 
 
 def _drafts(root: Path) -> Iterable[Path]:
@@ -143,57 +147,100 @@ def _git_has(root: Path, commit: str, target: str) -> bool:
     return result.returncode == 0
 
 
-def validate_refs(root: Path, refs: Any) -> None:
+def _git_env(root: Path) -> bool:
+    try:
+        return subprocess.run(["git", "-C", str(root), "rev-parse", "--is-inside-work-tree"],
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False).returncode == 0
+    except OSError:
+        return False
+
+
+def validate_ref_shapes(refs: Any, field: str = "refs") -> None:
     if not isinstance(refs, list):
-        raise AITPError("invalid_refs", "refs must be a list")
+        raise AITPError("invalid_refs", f"{field} must be a list")
     for index, ref in enumerate(refs):
         if not isinstance(ref, dict):
-            raise AITPError("invalid_ref", f"refs[{index}] must be a map")
-        target = ref.get("target")
-        pin = ref.get("at")
+            raise AITPError("invalid_ref", f"{field}[{index}] must be a map")
+        target, pin = ref.get("target"), ref.get("at")
         if not isinstance(target, str) or not target.strip():
-            raise AITPError("invalid_ref", f"refs[{index}].target is required")
+            raise AITPError("invalid_ref", f"{field}[{index}].target is required")
         if not isinstance(pin, str) or ":" not in pin:
-            raise AITPError("invalid_ref", f"refs[{index}].at is required")
+            raise AITPError("invalid_ref", f"{field}[{index}].at is required")
+        if not pin.split(":", 1)[1]:
+            raise AITPError("invalid_ref", f"{field}[{index}].at has no value")
+        if "locator" in ref and not isinstance(ref["locator"], str):
+            raise AITPError("invalid_ref", f"{field}[{index}].locator must be a string")
+
+
+def validate_json_safe(value: Any, field: str) -> None:
+    try:
+        json.dumps(value, ensure_ascii=False, allow_nan=False)
+    except (TypeError, ValueError) as exc:
+        raise AITPError("invalid_type", f"{field} must contain only JSON-safe values") from exc
+
+
+def validate_string_list(values: Any, field: str, target: str) -> None:
+    if not isinstance(values, list) or not all(isinstance(value, str) for value in values):
+        raise AITPError("invalid_relation", f"{field} must be a list of {target}")
+
+
+def validate_string_fields(values: dict[str, Any], fields: tuple[str, ...], label: str) -> None:
+    invalid = next((field for field in fields if not isinstance(values[field], str)), None)
+    if invalid: raise AITPError("invalid_type", f"{label} {invalid} must be a string")
+
+
+def _verify_refs(root: Path, refs: Any) -> list[tuple[str, str, str]]:
+    failures: list[tuple[str, str, str]] = []
+    for ref in refs:
+        target, pin = ref["target"], ref["at"]
         scheme, value = pin.split(":", 1)
-        if not value:
-            raise AITPError("invalid_ref", f"refs[{index}].at has no value")
         external = target.startswith(("http://", "https://", "arxiv:", "doi:"))
         if scheme == "git":
-            if external or not _git_has(root, value, target):
-                raise AITPError(
-                    "invalid_git_ref",
-                    f"Git ref does not contain target: {target}@{value}",
-                )
+            if external:
+                failures.append(("invalid_git_ref", f"Git ref does not contain target: {target}@{value}", "error")); continue
+            if not _git_env(root):
+                failures.append(("invalid_git_ref", f"Git ref does not contain target: {target}@{value}", "warning")); continue
+            if not _git_has(root, value, target):
+                failures.append(("invalid_git_ref", f"Git ref does not contain target: {target}@{value}", "error")); continue
         elif scheme == "sha256":
-            path = _inside(root, target)
-            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            try:
+                path = _inside(root, target)
+            except AITPError as exc:
+                failures.append((exc.code, str(exc), "error")); continue
+            if not path.is_file():
+                failures.append(("unreadable_ref", f"reference target is not a file: {target}", "error")); continue
+            try:
+                digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            except OSError as exc:
+                failures.append(("unreadable_ref", f"reference target is unreadable: {target}: {exc}", "error")); continue
             if digest != value.lower():
-                raise AITPError("hash_mismatch", f"sha256 mismatch: {target}")
+                failures.append(("hash_mismatch", f"sha256 mismatch: {target}: expected {value}, actual {digest}", "error")); continue
         elif scheme == "run":
-            path = _inside(root, target)
+            try:
+                path = _inside(root, target)
+            except AITPError as exc:
+                failures.append((exc.code, str(exc), "error")); continue
             if not path.is_dir() or path.name != value:
-                raise AITPError("invalid_run_ref", f"run ref mismatch: {target}")
+                failures.append(("invalid_run_ref", f"run ref mismatch: {target}", "error")); continue
         elif scheme == "version":
             if not external:
-                raise AITPError(
-                    "invalid_version_ref",
-                    "version pins require an external persistent identifier",
-                )
+                failures.append(("invalid_version_ref", "version pins require an external persistent identifier", "error")); continue
         elif scheme == "retrieved":
             if not target.startswith(("http://", "https://")):
-                raise AITPError(
-                    "invalid_retrieved_ref",
-                    "retrieved pins require an HTTP(S) target",
-                )
+                failures.append(("invalid_retrieved_ref", "retrieved pins require an HTTP(S) target", "error")); continue
             try:
                 datetime.fromisoformat(value.replace("Z", "+00:00"))
-            except ValueError as exc:
-                raise AITPError(
-                    "invalid_retrieved_ref", f"invalid retrieval time: {value}"
-                ) from exc
+            except ValueError:
+                failures.append(("invalid_retrieved_ref", f"invalid retrieval time: {value}", "error")); continue
         else:
-            raise AITPError("invalid_ref_pin", f"unsupported ref pin: {scheme}")
+            failures.append(("invalid_ref_pin", f"unsupported ref pin: {scheme}", "error")); continue
+    return failures
+
+
+def validate_refs(root: Path, refs: Any) -> None:
+    validate_ref_shapes(refs)
+    for code, message, _ in _verify_refs(root, refs):
+        raise AITPError(code, message)
 
 
 def _entry_map(root: Path) -> dict[str, tuple[dict[str, Any], Path]]:
@@ -210,12 +257,14 @@ def _entry_map(root: Path) -> dict[str, tuple[dict[str, Any], Path]]:
 
 
 def _validate_relations(
-    root: Path, frontmatter: dict[str, Any], field: str, entry_id: str
+    root: Path,
+    frontmatter: dict[str, Any],
+    field: str,
+    entry_id: str,
+    entries: dict[str, tuple[dict[str, Any], Path]] | None = None,
 ) -> None:
-    values = frontmatter.get(field, [])
-    if not isinstance(values, list) or not all(isinstance(value, str) for value in values):
-        raise AITPError("invalid_relation", f"{field} must be a list of Entry IDs")
-    entries = _entry_map(root)
+    values = frontmatter[field]
+    entries = entries if entries is not None else _entry_map(root)
     for value in values:
         if value == entry_id:
             raise AITPError("invalid_relation", f"{field} cannot target itself")
@@ -236,37 +285,27 @@ def validate_entry(
     body: str,
     *,
     validate_evidence: bool,
+    topic_id: str | None = None,
 ) -> None:
-    required = {
-        "schema",
-        "id",
-        "topic",
-        "created_at",
-        "created_by",
-        "kind",
-        "authority",
-        "summary",
-        "refs",
-        "limitations",
-        "resolves",
-        "supersedes",
-        "next_action",
-    }
-    missing = sorted(required - frontmatter.keys())
+    missing = sorted(ENTRY_REQUIRED - frontmatter.keys())
     if missing:
         raise AITPError("missing_field", f"missing Entry fields: {', '.join(missing)}")
-    if frontmatter["schema"] != "aitp/lite-entry-0.1":
+    if not isinstance(frontmatter["schema"], str) or frontmatter["schema"] != "aitp/lite-entry-0.1":
         raise AITPError("invalid_schema", "unsupported Entry schema")
     entry_id = frontmatter["id"]
     if not isinstance(entry_id, str) or not ENTRY_ID_RE.fullmatch(entry_id):
         raise AITPError("invalid_id", "invalid Entry ID")
-    store = load_store(root)
-    if frontmatter["topic"] != store["topic_id"]:
+    if topic_id is None:
+        topic_id = load_store(root)["topic_id"]
+    if not isinstance(frontmatter["topic"], str) or frontmatter["topic"] != topic_id:
         raise AITPError("topic_mismatch", "Entry topic does not match repository")
+    if not isinstance(frontmatter["created_at"], str):
+        raise AITPError("invalid_timestamp", "Entry created_at must be a string")
+    validate_string_fields(frontmatter, ("created_by", "next_action"), "Entry")
     kind = frontmatter["kind"]
-    if kind not in ENTRY_KINDS:
+    if not isinstance(kind, str) or kind not in ENTRY_KINDS:
         raise AITPError("invalid_kind", f"unsupported Entry kind: {kind}")
-    if frontmatter["authority"] not in AUTHORITIES:
+    if not isinstance(frontmatter["authority"], str) or frontmatter["authority"] not in AUTHORITIES:
         raise AITPError("invalid_authority", "invalid Entry authority")
     if not isinstance(frontmatter["summary"], str) or not frontmatter["summary"].strip():
         raise AITPError("missing_summary", "Entry summary must not be empty")
@@ -286,6 +325,14 @@ def validate_entry(
         raise AITPError(
             "missing_refs", "non-human observation requires at least one pinned ref"
         )
+    validate_ref_shapes(refs)
+    for field in ("resolves", "supersedes"):
+        validate_string_list(frontmatter[field], field, "Entry IDs")
+    if "idempotency_key" in frontmatter and not isinstance(frontmatter["idempotency_key"], str):
+        raise AITPError("invalid_idempotency_key", "idempotency_key must be a string")
+    validate_json_safe(frontmatter, "Entry frontmatter")
+    if not isinstance(body, str):
+        raise AITPError("invalid_type", "Entry body must be a string")
     if validate_evidence:
         validate_refs(root, refs)
         _validate_relations(root, frontmatter, "resolves", entry_id)

@@ -16,12 +16,15 @@ from .md import (
     parse_markdown,
     render_markdown,
 )
-from .records import validate_refs
+from .records import validate_json_safe, validate_ref_shapes, validate_refs, validate_string_fields, validate_string_list
 from .workspace import _template, load_store, resolve_root, store_lock
 
 
 NOTE_ID_RE = re.compile(r"^note-[0-9a-f]{32}$")
 NOTE_MODES = {"working", "theory"}
+NOTE_REQUIRED = frozenset(
+    "schema id topic title mode created_at created_by review_state summary basis_refs supersedes".split()
+)
 NOTE_SECTIONS = {
     "working": [
         "Purpose",
@@ -81,6 +84,52 @@ def prepare_note(
     }
 
 
+def validate_note(
+    root: Path,
+    frontmatter: dict[str, Any],
+    body: str,
+    *,
+    validate_evidence: bool,
+    topic_id: str | None = None,
+) -> None:
+    if topic_id is None:
+        topic_id = load_store(root)["topic_id"]
+    missing = sorted(NOTE_REQUIRED - frontmatter.keys())
+    if missing:
+        raise AITPError("missing_field", f"missing Note fields: {', '.join(missing)}")
+    if not isinstance(frontmatter["schema"], str) or frontmatter["schema"] != "aitp/lite-note-0.1":
+        raise AITPError("invalid_schema", "unsupported Note schema")
+    if not isinstance(frontmatter["id"], str) or not NOTE_ID_RE.fullmatch(frontmatter["id"]):
+        raise AITPError("invalid_id", "invalid Note ID")
+    if not isinstance(frontmatter["topic"], str) or frontmatter["topic"] != topic_id:
+        raise AITPError("topic_mismatch", "Note topic does not match repository")
+    validate_string_fields(frontmatter, ("title", "created_by"), "Note")
+    if not isinstance(frontmatter["created_at"], str): raise AITPError("invalid_timestamp", "Note created_at must be a string")
+    mode = frontmatter["mode"]
+    if not isinstance(mode, str) or mode not in NOTE_MODES:
+        raise AITPError("invalid_mode", "invalid Note mode")
+    if not isinstance(frontmatter["review_state"], str):
+        raise AITPError("invalid_type", "Note review_state must be a string")
+    if frontmatter["review_state"] != "agent_draft":
+        raise AITPError("review_required", "save only creates agent_draft Notes")
+    if not isinstance(frontmatter["summary"], str) or not frontmatter["summary"].strip():
+        raise AITPError("missing_summary", "Note summary must not be empty")
+    basis_refs = frontmatter["basis_refs"]
+    validate_ref_shapes(basis_refs, "basis_refs")
+    if validate_evidence:
+        if not basis_refs:
+            raise AITPError("missing_refs", "Note requires nonempty basis_refs")
+        validate_refs(root, basis_refs)
+    validate_string_list(frontmatter["supersedes"], "supersedes", "Note IDs")
+    validate_json_safe(frontmatter, "Note frontmatter")
+    if not isinstance(body, str): raise AITPError("invalid_type", "Note body must be a string")
+    if PROMPT_MARKER in body:
+        raise AITPError("unfilled_template", "remove all AITP template prompts")
+    for heading in NOTE_SECTIONS[mode]:
+        if not _section_content(body, heading):
+            raise AITPError("empty_section", f"required section is empty: {heading}")
+
+
 def save_note(cwd: str | Path, draft: str | Path) -> dict[str, Any]:
     root = resolve_root(cwd)
     store = load_store(root)
@@ -91,44 +140,7 @@ def save_note(cwd: str | Path, draft: str | Path) -> dict[str, Any]:
     except ValueError as exc:
         raise AITPError("invalid_draft", "Note draft must be under .aitp/local/drafts") from exc
     frontmatter, body, text = parse_markdown(draft_path)
-    required = {
-        "schema",
-        "id",
-        "topic",
-        "title",
-        "mode",
-        "created_at",
-        "created_by",
-        "review_state",
-        "summary",
-        "basis_refs",
-        "supersedes",
-    }
-    missing = sorted(required - frontmatter.keys())
-    if missing:
-        raise AITPError("missing_field", f"missing Note fields: {', '.join(missing)}")
-    if frontmatter["schema"] != "aitp/lite-note-0.1":
-        raise AITPError("invalid_schema", "unsupported Note schema")
-    if not isinstance(frontmatter["id"], str) or not NOTE_ID_RE.fullmatch(frontmatter["id"]):
-        raise AITPError("invalid_id", "invalid Note ID")
-    if frontmatter["topic"] != store["topic_id"]:
-        raise AITPError("topic_mismatch", "Note topic does not match repository")
-    mode = frontmatter["mode"]
-    if mode not in NOTE_MODES:
-        raise AITPError("invalid_mode", "invalid Note mode")
-    if frontmatter["review_state"] != "agent_draft":
-        raise AITPError("review_required", "save only creates agent_draft Notes")
-    if not isinstance(frontmatter["summary"], str) or not frontmatter["summary"].strip():
-        raise AITPError("missing_summary", "Note summary must not be empty")
-    basis_refs = frontmatter["basis_refs"]
-    if not basis_refs:
-        raise AITPError("missing_refs", "Note requires nonempty basis_refs")
-    validate_refs(root, basis_refs)
-    if PROMPT_MARKER in body:
-        raise AITPError("unfilled_template", "remove all AITP template prompts")
-    for heading in NOTE_SECTIONS[mode]:
-        if not _section_content(body, heading):
-            raise AITPError("empty_section", f"required section is empty: {heading}")
+    validate_note(root, frontmatter, body, validate_evidence=True)
     final = root / ".aitp" / "topic" / "notes" / f"{frontmatter['id']}.md"
     with store_lock(root):
         if final.exists():

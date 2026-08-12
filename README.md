@@ -64,45 +64,86 @@ checkpoint synchronized with it.
 |---|---|---|---|
 | M0 — Ledger | done | Reliable single-Topic records and Notes | Idempotent writes, pinned evidence, grounded `enter`, real-project use |
 | M0.5 — Slim core | done | One canonical runtime, deduplicated without net growth | No runtime duplication, no oversized module, unchanged ledger contracts |
-| M0.6 — Adopt & bootstrap | **in progress** | `init --adopt`, legacy `inventory`, lazy bootstrap, executable conformance suite | Two dogfood bootstrap measurements, held-out S3 report, paired S1/S2 scored runs, and gate review |
-| M1a — Memory that restores | implementation spec written; blocked on M0.6 | `list`, `show`, closeout-first `enter` v2, Note-age signal, versioned JSON | Retrieval/resumption suite, read-only GW_librpa acceptance, tests/performance/line-budget gates |
-| M1b — Open items & behavior pilot | pre-spec frozen; blocked on M1a | `aitp/lite-entry-0.2`, `based_on`, typed closures, `check`, derived `used_by`, local remote-run pointer bundles | Fixed-cap reconciliation, relation/check compatibility, prediction/correction persistence, real two-session pilot |
-| M2 — Reviewed artifacts | planned; blocked | Knowledge, Skill, Insight, Hypothesis with hash-bound human review | Reviewed knowledge and a reviewed Skill with complete provenance and passing evaluations |
-| M3 — Cross-topic links | planned; blocked | Catalog plus explicit links; `rg` discovery, no index | Human-confirmed links answer a real cross-Topic question with provenance |
-| M4 — Collaborator protocol | planned; blocked | Long-horizon question → hypothesis → prediction → test loop, Skill-only | Prospective real-project evaluation passes vs. baseline |
+| M0.6 — Adopt & bootstrap | **done under the approved narrowed reviewed claim** | Deterministic `init --adopt`/`inventory` implementation and anchored, unexecuted FROZEN v6 packet; no bootstrap-validation or plain-files advantage claim | Narrowed gate review accepted; original bootstrap Notes/decisions, recall/false-import/human-time, held-out S3, paired S1/S2, cold-start, conformance, causal, and treatment-advantage evidence is not measured; deferred; not counted |
+| M1a — Memory that restores | **done; deterministic gate passed** | Versioned `list`, `show`, closeout-first `enter` v2, Note-age structural signal, generated public-schema goldens, deterministic S1/S2 regression, read-only GW_librpa acceptance | Deterministic gate passed; this is not a behavioral or treatment-superiority gate. Evidence: [`docs/m1a-stage-notes.md`](docs/m1a-stage-notes.md) |
+| M1b — Open items & behavior pilot | **done; deterministic gate passed (M1b-R1)** | Authoritative A–H + Followup roster in `docs/m1b-spec.md` §0.1 and the adjudication in `docs/m1b-adjudication.md`: A and Followups 1/3/4/5 selected in M1b-R1 (`check` v0.1-only + compact `enter` text), implemented per `docs/m1b-r1-spec.md`; B, C–E, Followup 2 (`lineage`), Followup 6 (structured prepare) deferred; F moved to M4 Skill-only; G independent; H dropped. Total M1b denotes only the selected R1 slice | R1 deterministic gate passed (independent review with no S0/S1/S2 blockers; 78 tests; benchmark final PASS; 1,423-line runtime within the 1,425 target and 1,450 cap; goldens; S1/S2 regression; read-only byte-identical real-store acceptance; same-day precision-fix amendment superseding the pre-amendment 77-test/1,421-line run) — evidence in [`docs/m1b-r1-stage-notes.md`](docs/m1b-r1-stage-notes.md). Not a behavioral or treatment-superiority gate; `lineage` is a deferred candidate |
+| M2 — Reviewed artifacts | design option; blocked | Optional Knowledge, Skill, Insight, Hypothesis artifacts with hash-bound human review | A no-runtime M1b decision does not authorize M2; its own natural-demand review must show Entries/Notes are inadequate before the reviewed-artifact gate |
+| M3 — Cross-topic links | design option; blocked | Optional catalog plus explicit links; `rg` discovery, no index | Natural cross-Topic use shows `rg` plus ordinary citations are inadequate, then human-confirmed links answer a real question with provenance |
+| M4 — Collaborator protocol | blocked design option; Skill-only | Long-horizon question → hypothesis → prediction → test loop | M1b pilot evidence only if that pilot is selected; otherwise M4's own natural-demand and prospective-evidence adjudication passes vs. the plain-files baseline |
+
+The 2026-08-10 M0.6 gate-review decision is applied in
+[`docs/m0.6-gate-review.md`](docs/m0.6-gate-review.md): M0.6 is closed only under
+the approved narrowed reviewed claim. M1a is now **done; deterministic gate
+passed**; see [`docs/m1a-stage-notes.md`](docs/m1a-stage-notes.md). This is not a
+behavioral or treatment-superiority gate. The original empirical M0.6 conditions
+remain not measured, deferred, and not counted.
 
 ### Current checkpoint
 
-M0.6 is the only active implementation stage:
+M1a is done. The two-session ordinary natural-use pause is **complete**, the
+M1b reviewed freeze revision is recorded, and the selected M1b-R1 read-side
+slice is implemented per [`docs/m1b-r1-spec.md`](docs/m1b-r1-spec.md) with
+its **deterministic gate passed** (evidence in
+[`docs/m1b-r1-stage-notes.md`](docs/m1b-r1-stage-notes.md)):
 
-1. `aitp init --adopt` is implemented and accepted on real existing trees.
-2. `aitp inventory` is implemented; the two dogfood bootstrap measurements
-   and human-confirmed bootstrap Notes remain pending.
+1. `aitp init --adopt` is implemented and tested, and has been exercised on
+   real trees; preserved operator before/after hash evidence is incomplete per
+   [`docs/m0.6-gate-review.md`](docs/m0.6-gate-review.md). This is a documented
+   real-tree evidence gap, not a claim of complete bootstrap validation.
+2. `aitp inventory` is implemented with deterministic traversal, ordering, and
+   content hashing in a timestamped local manifest. Bootstrap Notes, human
+   decision Entries, recall, false-import rate, and human-time evidence are not
+   measured; deferred; not counted.
 3. The conformance suite core is implemented and frozen as
-   [`suite/FROZEN.md`](suite/FROZEN.md) v6. Its hashes are self-consistent,
-   but the v6 working-tree bytes still need a new immutable anchor before the
-   first scored run. The held-out S3 report and paired S1/S2 scored runs remain
-   pending.
-4. M1 runtime work is not started. [`docs/m1a-spec.md`](docs/m1a-spec.md) is
-   the blocked implementation specification; [`docs/m1b-spec.md`](docs/m1b-spec.md)
-   is a blocked pre-spec whose implementation-level version is derived only
-   after the M1a gate and fixed-cap reconciliation.
+   [`suite/FROZEN.md`](suite/FROZEN.md) v6. It is an anchored, unexecuted
+   preregistration: its hashes are self-consistent and its identity-contract
+   bytes are anchored by commit `145261805d5205d2150dca18c6c42d5a18a628f2`.
+   A no-turn preflight verified preparation, then stopped before S3 because
+   exact model/prompt identity and two-machine/account isolation were
+   unavailable. It produced no score. Held-out S3, paired S1/S2 scores,
+   cold-start, conformance, causal, and treatment-advantage evidence are not
+   measured; deferred; not counted under the approved closure.
 
-### Implementation order
+   The optional future automation handoff is specified in
+   [`docs/external-evaluation-harness.md`](docs/external-evaluation-harness.md).
+   It is a separate project, not AITP scope or a runtime dependency; it cannot
+   retroactively satisfy M0.6 or replace the human gate decision.
+4. M1a implementation and its deterministic gate are complete; the auditable
+   evidence is in [`docs/m1a-stage-notes.md`](docs/m1a-stage-notes.md). The
+   current CLI is `init`, `enter`, `inventory`, `record`, `note`, `list`,
+   `show`, and `check`; `enter` uses `aitp/enter-0.2`, `list` uses
+   `aitp/list-0.1`, `show` uses `aitp/show-0.1`, and `check` (schema
+   `aitp/check-report-0.1`) is shipped and gated per
+   [`docs/m1b-r1-spec.md`](docs/m1b-r1-spec.md) with its deterministic gate
+   **passed** (evidence in [`docs/m1b-r1-stage-notes.md`](docs/m1b-r1-stage-notes.md)).
+   [`docs/m1b-spec.md`](docs/m1b-spec.md)
+   records the 2026-08-12 reviewed freeze revision; the natural-use pause is
+   complete and the M1b-R1 read-side slice is implemented and gated.
+   `lineage` is a deferred candidate, absent from the CLI.
+5. The natural-use evidence: the first feedback arrived 2026-08-11
+   ([`feedback/2026-08-11-gw-librpa-natural-use-feedback.md`](feedback/2026-08-11-gw-librpa-natural-use-feedback.md),
+   one long session chain) and the second ordinary session on 2026-08-12
+   ([`feedback/2026-08-12-power-law-heisenberg-natural-use-feedback.md`](feedback/2026-08-12-power-law-heisenberg-natural-use-feedback.md),
+   an independent real-Topic correction session); the researcher's six
+   followup suggestions are archived in
+   [`feedback/2026-08-12-gw-librpa-followup-feedback.md`](feedback/2026-08-12-gw-librpa-followup-feedback.md).
+   The reviewed freeze revision and dispositions are in
+   [`docs/m1b-adjudication.md`](docs/m1b-adjudication.md). Neither session is a
+   controlled experiment.
 
-1. Anchor FROZEN v6 and complete the remaining M0.6 dogfood and scored-suite
-   evidence.
-2. Pass the M0.6 gate review.
-3. Implement M1a only from `docs/m1a-spec.md`, update runtime/help/Skill/docs/
-   adapter/tests together, then pass the M1a gate.
-4. Reconcile the actual M1a line count against the fixed 1,300/1,450 caps,
-   derive and freeze the M1b implementation spec, then implement and gate M1b.
-5. Advance to reviewed artifacts, cross-topic links, and collaborator behavior
-   only in roadmap order.
+### Simplicity ratchet and implementation order
 
-We advance one gate at a time. Later stages may not weaken earlier evidence
-guarantees. When a stage cannot fit its fixed budget, named scope is reduced;
-the cap is not silently expanded.
+The binding evidence-before-complexity ratchet, gate order, fixed-cap rule,
+natural-use pause, exhaustive A–H disposition process, and no-runtime/M2 rule
+are normative in [`docs/roadmap.md` §Simplicity and stage authorization](docs/roadmap.md#simplicity-and-stage-authorization)
+and [`docs/m1b-spec.md` §0.1](docs/m1b-spec.md#01-authoritative-candidate-roster-and-current-dispositions).
+In brief: M1a is done with its deterministic gate passed; the two-session
+ordinary natural-use pause is complete (2026-08-11 GW session chain +
+2026-08-12 Power-law Heisenberg session); the 2026-08-12 reviewed freeze
+revision selected the read-side slice M1b-R1 (`aitp check` v0.1-only +
+compact `enter` text), implemented per `docs/m1b-r1-spec.md` with its
+deterministic gate passed (evidence in `docs/m1b-r1-stage-notes.md`).
+M2/M3 remain design options.
 
 ### README maintenance contract
 
@@ -152,12 +193,22 @@ the runtime.
 ## Current state
 
 M0 (Evidence Ledger) and M0.5 (slim core) are done. M0.6 (adopt and
-bootstrap) is in progress: `init --adopt` and `inventory` are implemented
-(dry-run, conflict, and rollback paths tested); the two dogfood bootstrap
-measurements and the paired scored suite runs are still pending, so the
-M0.6 gate is not passed.
+bootstrap) is **done under the approved narrowed reviewed claim**: `init
+--adopt` and `inventory` are implemented, while the original bootstrap and
+scored-suite evidence is not measured; deferred; not counted. FROZEN v6 remains
+an anchored, unexecuted preregistration. M1a is **done; deterministic gate
+passed**; its auditable evidence is in [`docs/m1a-stage-notes.md`](docs/m1a-stage-notes.md).
+M1b is **done; deterministic gate passed (M1b-R1)**: the natural-use pause is
+complete, the 2026-08-12 reviewed freeze revision selected the read-side
+slice M1b-R1, implemented per `docs/m1b-r1-spec.md`, and its deterministic
+gate passed — auditable evidence in
+[`docs/m1b-r1-stage-notes.md`](docs/m1b-r1-stage-notes.md)
+(`docs/m1b-adjudication.md`, `docs/m1b-r1-spec.md`). Total M1b denotes only
+that this selected slice completed; all other roster rows keep their
+dispositions (B, C–E, Followup 2 `lineage`, Followup 6 deferred; F → M4;
+G independent; H dropped).
 
-Implemented commands:
+Implemented command groups (the complete current CLI surface):
 
 ```text
 aitp init [--adopt]
@@ -165,10 +216,19 @@ aitp enter
 aitp inventory <path> --name <name>
 aitp record prepare|save
 aitp note prepare|save
+aitp list
+aitp show <entry-id>
+aitp check            # M1b-R1: shipped; deterministic gate passed
 ```
 
-`list`, `show`, and `check` are planned (M1a/M1b) and remain blocked — they
-are not available yet.
+`enter`, `list`, and `show` expose the versioned read contracts
+`aitp/enter-0.2`, `aitp/list-0.1`, and `aitp/show-0.1`. `check` is the
+M1b-R1 read-only store-health command (schema `aitp/check-report-0.1`,
+exit 0 clean / 1 findings / 2 cannot run; read-only, zero-write), shipped
+per `docs/m1b-r1-spec.md` with its deterministic gate passed (evidence in
+`docs/m1b-r1-stage-notes.md`); `lineage` is a deferred candidate and is
+absent from the CLI — it may return only through a new reviewed freeze
+revision.
 
 The Hakimi integration handoff baseline (compatibility matrix, versioned
 envelope decisions, red lines, phased H0/H1/H2 plan) lives in
@@ -179,7 +239,7 @@ Properties:
 - Markdown and filesystem are canonical;
 - no database, vector service, MCP server, hook, or daemon is required;
 - the Codex plugin bundles `$aitp` and `$using-aitp`;
-- the ledger has been validated against a real theoretical-physics workspace;
+- the M0 ledger contracts have been exercised against a real theoretical-physics workspace;
 - all current tests pass.
 
 The master plan is [docs/roadmap.md](docs/roadmap.md).

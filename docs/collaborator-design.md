@@ -1,6 +1,8 @@
 # AITP Conversation Memory and Collaborator Design
 
-Status: active design, v3.1 (aligned with `docs/roadmap.md` v3.1).
+Status: blocked design option, v3.7 (aligned with `docs/roadmap.md` v3.7);
+Skill-only (+0 runtime lines). M1a's deterministic gate has passed, but this
+collaborator design remains a blocked Skill-only design option.
 Depends on: the M0 ledger and M1 memory for the alpha (Entries and Notes
 only); M2 reviewed artifacts enrich it later.
 Supersedes: the earlier M3 "context engine" proposal, including
@@ -9,11 +11,11 @@ Supersedes: the earlier M3 "context engine" proposal, including
 ## Principle
 
 Conversation memory is a **Skill-driven lifecycle over the ledger**, not an
-engine. Python provides deterministic structural access (`enter`, `show`,
-`list`, `check`); the Skill provides all semantic judgment — what is
-relevant, what is worth recording, when to stop and ask. Context packets are
-ephemeral: assembled inside the conversation, never stored. There is no
-transcript archive, no chain-of-thought capture, no session daemon.
+engine. Now it uses `enter`, the M1a read-only commands `list` and `show`,
+the M1b-R1 read-only diagnostic `check` (shipped; deterministic gate
+passed), direct files, and `rg`. The Skill supplies semantic judgment; context packets stay
+ephemeral. There is no transcript archive, chain-of-thought capture, or session
+daemon.
 
 ## Known limits (read before trusting)
 
@@ -26,20 +28,19 @@ transcript archive, no chain-of-thought capture, no session daemon.
   detect a first write that was already false. See the trust model in
   `docs/roadmap.md`.
 - **Record order is checkable at write time; cognitive honesty is not.** A
-  resolving Entry can only reference a prediction that already exists when
-  it is saved; the save-time existence check is the causal proof. `aitp
-  check` re-validates final-state consistency — it does not rebuild history.
-  Whether the agent had already seen the outcome is Skill discipline,
-  measured by the conformance suite.
+  resolving Entry can reference only an existing prediction; that save-time
+  check is the causal proof. The shipped `aitp check` diagnoses final state,
+  not rebuild history; cognitive honesty remains Skill discipline.
 
 ## Lifecycle
 
 1. **Enter** — at the start of research work in a workspace with `.aitp`,
    run `aitp enter`. Treat the output as recorded state, not scientific
    truth.
-2. **Orient** — read the latest working Note, the latest closeout, and the
-   researcher's current task. Use `list`/`show`/`rg` to fetch records
-   relevant to the task.
+2. **Orient** — read the latest working Note, closeout, and task; use the M1a
+   read-only `list`/`show` commands now, the M1b-R1 read-only `check`
+   diagnostic (shipped), direct files/`rg` for full-text
+   investigation.
 3. **Verify** — open the pinned evidence behind any claim before relying on
    it. Disclose stale or missing sources.
 4. **Work** — refresh the selection when the task, object, method, or
@@ -55,12 +56,14 @@ transcript archive, no chain-of-thought capture, no session daemon.
    by default, never defend at length. If the exchange changes course,
    record it as a `decision`.
 5. **Capture** — at a durable event, draft the smallest valid Entry through
-   `prepare → save`. Predictions are saved before the executions they
-   constrain (order guaranteed by the save-time target-existence check).
+   `prepare → save`. In the future conditional collaborator loop, predictions
+   are saved before the executions they constrain (order guaranteed by the
+   save-time target-existence check).
    Corrections from the researcher are recorded immediately (`decision`,
    `authority: human`) and change behavior in the same session.
 6. **Close** — if work is unfinished, save a closeout Entry with a concrete
-   next action and supersede the working Note with an updated one.
+   next action. The latest active closeout is authoritative; a replacement
+   closeout supersedes the previous handoff. Update the working Note separately.
 
 ### Read triggers
 
@@ -85,15 +88,26 @@ carry `created_by: agent:*`.
 
 ### Human gates (human-confirmed, attributable)
 
-- `compile review` transitions (`agent_draft` → `human_reviewed`/`withdrawn`),
-  each bound to the artifact's content hash;
-- `compile export` (publication);
-- `decision` Entries with `authority: human` (the researcher speaks or
-  confirms; `created_by` still attributes the drafter);
-- cross-topic `link save` (explicit human confirmation; an agent may execute
-  the save with `created_by` attribution).
+- **Current:** `aitp record prepare --kind decision` → `record save`, with
+  `authority: human` for researcher confirmation and `created_by` for attribution.
+- **Future conditional M2:** `compile review` (hash-bound review/withdrawal) and
+  `compile export` (publication), only if M2 is selected and shipped.
+- **Future conditional M3:** `link save` requires explicit human confirmation;
+  only if M3 is selected and shipped, an agent may execute it with attribution.
 
 ## M4 collaborator protocol
+
+This blocked option remains Skill-only (+0 runtime lines). F is moved to M4 and
+does not force any A–E selection now; M4 adjudication must resolve dependencies.
+If a reviewed freeze revision selects the pilot in M1b, its separately reviewed
+selected-slice spec must resolve dependencies. If the selected collaborator
+protocol requires typed `prediction`/`question` records, roster C or an explicitly
+reviewed equivalent contract must first be selected and shipped. M4 otherwise
+needs its own natural-demand and prospective-evidence review before its gate.
+
+The full loop below is not executable by the current runtime. Steps that save
+`prediction`/`question` Entries are future conditional on C (or an explicitly
+reviewed equivalent contract) being selected and shipped.
 
 `aitp-collaborator` is a Skill, not a subsystem. For an active question it:
 

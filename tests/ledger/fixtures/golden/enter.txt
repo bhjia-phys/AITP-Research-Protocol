@@ -1,0 +1,13 @@
+topic: nio — Magnetic NiO
+memory_status: available
+goal_status: not_established
+recent_entries: 6 of 6 active (0 omitted)
+  2026-07-06T09:00:00.000001Z entry-77777777777777777777777777777777 decision Adopt the corrected cutoff for the campaign.
+  2026-07-05T09:00:00.000001Z entry-66666666666666666666666666666666 run Cutoff sweep over three values.
+  2026-07-04T09:00:00.000001Z entry-55555555555555555555555555555555 result The update removes the discontinuity under the corrected cutoff.
+  2026-07-02T09:00:00.000001Z entry-33333333333333333333333333333333 failure The large-q tail still deviates.
+  2026-07-01T09:30:00.000001Z entry-22222222222222222222222222222222 decision Treat the small-q failure as resolved by the corrected cutoff.
+  2026-07-01T09:00:00.000001Z entry-11111111111111111111111111111111 failure The small-q fit is unstable.
+unresolved_failures: 1
+next_action: Archive the old sweep logs. [entry-77777777777777777777777777777777 @ 2026-07-06T09:00:00.000001Z human]
+recent_notes: 2; latest_working_note: note-11111111111111111111111111111111 @ 2026-07-06T12:00:00.000001Z; active_newer: 0

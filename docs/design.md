@@ -1,15 +1,16 @@
 # AITP Evidence Ledger Design
 
-Status: stable M0 baseline, with the M0.6 adopt/inventory additions documented
-below. The schema evolves to `aitp/lite-entry-0.2` in
-M1b (new `prediction` and `question` kinds; `resolves` generalized to
-failures, predictions, and questions with a typed `resolution` closure
-field and target-kind validation; `contradicts` on failure Entries under
-strict criteria; `aitp check` whole-store re-validation; Note `supersedes`
-validation; optional `citekey`/`trust` on `source` Entries) per
-`docs/roadmap.md`; v0.1 records remain valid without migration. `list`,
-`show`, and `check` are planned M1 commands and are not implemented (see
-"Planned commands" below).
+Status: stable M0 baseline with M0.6 adopt/inventory additions and completed M1a
+read projections documented below. M1a is **done; deterministic gate passed**;
+see [`docs/m1a-stage-notes.md`](m1a-stage-notes.md). The current persistent
+schema remains `aitp/lite-entry-0.1`; M1a transport schemas are
+`aitp/enter-0.2`, `aitp/list-0.1`, and `aitp/show-0.1`. The M1b natural-use
+pause is complete; the 2026-08-12 reviewed freeze revision
+([`docs/m1b-adjudication.md`](m1b-adjudication.md)) selected the read-side
+slice **M1b-R1** — `aitp check` (v0.1-only) is implemented per
+[`docs/m1b-r1-spec.md`](m1b-r1-spec.md) and its deterministic gate **passed**
+(evidence in [`docs/m1b-r1-stage-notes.md`](m1b-r1-stage-notes.md));
+`lineage` is a deferred candidate. M2/M3 remain design options.
 
 ## Purpose
 
@@ -56,8 +57,8 @@ manuscripts/
 
 Every command accepts `--cwd PATH` (default `.`) and `--json`; `--json`
 emits the same payload as machine-readable JSON. The commands below are the
-current implemented surface; the "Planned commands" subsection lists what is
-not implemented.
+current implemented surface; the conditional M1b subsection lists what is not
+yet implemented.
 
 ### `aitp init`
 
@@ -87,7 +88,7 @@ reports what it leaves out. Return:
 - current next action;
 - recent Notes.
 
-The output must distinguish recorded state from scientific truth and expose missing or malformed memory.
+The output must distinguish recorded state from scientific truth and expose missing or malformed memory. The M1a JSON payload is `aitp/enter-0.2`; it uses closeout-first handoff selection, recorded-time Note ordering, the exact legacy-derived marker, and the structural Note-age count.
 
 ### `aitp record prepare/save`
 
@@ -124,18 +125,35 @@ prepares either:
 `aitp note save <draft>` saves the filled draft. A Note synthesizes pinned
 research evidence. It is not the sole evidence for a result.
 
-### Planned commands (blocked)
+### `aitp list`
 
-Not implemented; do not invoke them. Designed in
-`docs/m1-read-write-balance.md` and gated by `docs/roadmap.md` (M0.6 gate,
-then the M1a/M1b spec freezes):
+`aitp list [--kind KIND] [--since DATE] [--json]` is the M1a read-only
+projection over canonical Entries. Its JSON payload is `aitp/list-0.1`; it
+supports kind and inclusive timestamp filters, preserves superseded records,
+and writes no cursor, cache, lock, or local state.
 
-- `aitp list [--kind KIND] [--since DATE]` — M1a retrieval projection over
-  all canonical Entries;
-- `aitp show <entry-id>` — M1a exact-record read with full frontmatter and
-  body;
-- `aitp check` — M1b whole-store, read-only diagnostics over schema, pins,
-  and relation targets.
+### `aitp show`
+
+`aitp show <entry-id> [--json]` is the M1a exact-record read projection. Its
+JSON payload is `aitp/show-0.1`; it returns the complete structurally valid
+Entry and active/superseded status without revalidating evidence pins.
+
+### `aitp check` (M1b-R1; shipped, deterministic gate passed)
+
+`aitp check [--cwd PATH] [--json]` is the M1b-R1 read-only whole-store
+diagnostic (schema `aitp/check-report-0.1`). It validates every canonical
+Entry/Note against the shipped v0.1 contracts and reports deterministic
+findings sorted by `(path, code, message)`; exit 0 clean / 1 findings /
+2 cannot run (not a workspace, unreadable store metadata, or CLI misuse);
+zero-write (no lock, cache, index, repair, or migration) with frozen
+no-crash mappings (invalid UTF-8 records and refs become findings; no path
+raises a traceback). The frozen implementation contract is in
+[`docs/m1b-r1-spec.md`](m1b-r1-spec.md); the implementation is complete and
+its deterministic gate passed (evidence in
+[`docs/m1b-r1-stage-notes.md`](m1b-r1-stage-notes.md)). `aitp lineage` is a deferred
+candidate (Followup 2, re-deferred at the 2026-08-12 budget
+reconciliation). `enter`'s text rendering is compact in R1 with two frozen
+M1a safety lines; its `aitp/enter-0.2` JSON contract is unchanged.
 
 ## Evidence pins
 

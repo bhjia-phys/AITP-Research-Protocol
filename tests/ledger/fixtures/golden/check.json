@@ -1,0 +1,19 @@
+{
+  "schema": "aitp/check-report-0.1",
+  "status": "findings",
+  "root": "<golden-store>",
+  "counts": {
+    "entries": 7,
+    "notes": 2,
+    "errors": 0,
+    "warnings": 1
+  },
+  "findings": [
+    {
+      "level": "warning",
+      "code": "empty_topic_goal",
+      "path": ".aitp/topic/TOPIC.md",
+      "message": "Research Goal is not established"
+    }
+  ]
+}

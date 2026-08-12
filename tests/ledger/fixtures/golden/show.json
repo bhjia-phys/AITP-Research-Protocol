@@ -1,0 +1,32 @@
+{
+  "schema": "aitp/show-0.1",
+  "root": "<golden-store>",
+  "id": "entry-44444444444444444444444444444444",
+  "status": "superseded",
+  "source": ".aitp/topic/entries/entry-44444444444444444444444444444444.md",
+  "legacy_derived": false,
+  "frontmatter": {
+    "schema": "aitp/lite-entry-0.1",
+    "id": "entry-44444444444444444444444444444444",
+    "topic": "nio",
+    "created_at": "2026-07-03T09:00:00.000001Z",
+    "created_by": "agent:codex",
+    "kind": "result",
+    "authority": "agent",
+    "summary": "The update removes the discontinuity under the old cutoff.",
+    "refs": [
+      {
+        "target": "theory/check.md",
+        "at": "sha256:cdbdf8597befbea0b88f4d552a127719f52ad69ed1f6174140a60292590f1f65",
+        "locator": "whole file"
+      }
+    ],
+    "limitations": [
+      "Only three momentum points were checked."
+    ],
+    "resolves": [],
+    "supersedes": [],
+    "next_action": ""
+  },
+  "body": "## Durable Summary\n\nThe update removes the discontinuity under the old cutoff.\n\n## Basis And Checks\n\nThe pinned derivation gives the formula and the three-point check.\n\n## Validity And Implication\n\nOnly three momentum points were checked; repeat with three cutoffs.\n"
+}
