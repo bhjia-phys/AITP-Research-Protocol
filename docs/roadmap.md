@@ -30,7 +30,7 @@ The four stores:
 
 ```text
 L  literature   external (arXiv / INSPIRE / publishers); local mirror: references/
-M  AITP memory  .aitp append-only records and reviewed artifacts (agent-facing)
+M  AITP memory  .aitp append-only records (agent-facing)
 H  researcher   judgment, taste, corrections; never stored, leaves attributable traces
 D  documents    the research itself: theory/, manuscripts/, reading notes, Obsidian
 ```
@@ -47,19 +47,20 @@ pattern: **proposals live as drafts; accepted relations are saved records.**
 | reading & citation | L → D | `references/reading-notes/<citekey>.md`; citekeys in manuscripts | Git |
 | source assessment | L → M | `source` Entry (`retrieved`/`version` pin, optional `trust`, optional `citekey`); retraction or refutation recorded by a newer Entry superseding the old | open the original before citing |
 | claim grounding | D → M | any Entry's `sha256`/`git` pin on a D artifact | validated at save |
-| distillation | D → M | Note (`basis_refs`), compiled artifact (`source_records`) | human review for artifacts |
-| writing | M → D | manuscripts and notes assembled from reviewed material | Skill discipline |
+| distillation | D → M | Note (`basis_refs`); a reviewed-artifact form only if M2 is authorized on natural demand | human review |
+| writing | M → D | manuscripts and notes assembled from recorded material | Skill discipline |
 | new-claim capture | D → M | new claims in D reflow as Entries | Skill discipline |
 | correction / decision | H → M | `decision` Entry (`authority: human`) | human |
 | temporal evolution | M → M | `supersedes` / `resolves` / `contradicts` | validated at save |
 | cross-topic link | M → M | link record (rationale + author + pin) | human-confirmed save |
 | literature need | M → L | `next_action`, open questions, hypothesis Planned Tests | none; acted on by Skills |
-| publication | D → world | manuscripts; `compile export` for reviewed skills | human |
+| publication | D → world | manuscripts; an export mechanism only if M2 is authorized | human |
 
 Scope honesty: not every movement is recorded. Ordinary D edits live in Git;
 but once a record in M depends on a D artifact, it pins the exact revision.
 H judgments that were never written down are invisible — that is a human
-discipline problem, measured (not solved) by the conformance suite.
+discipline problem, measured (not solved) by any future predeclared
+evaluation; the conformance suite is dormant.
 
 ## Simplicity and stage authorization
 
@@ -79,6 +80,10 @@ no behavioral or treatment-superiority claim is implied.
    reviewed implementation-level spec selecting the smallest coherent,
    evidence-backed slice.
 3. Line caps are ceilings, not targets. Spare budget never justifies scope.
+   If a future selected slice needs headroom, the pre-declared first release
+   is deduplicating the three repeated scan/validate loops in `query.py`/
+   `state.py`/`diagnostics.py` into one shared reader — deduplication, not
+   validator compression.
 4. If scope lacks evidence or does not fit, split, revise, defer, or drop it
    before code; never compress validators, weaken compatibility, or expand caps.
 5. After the M1a gate, run a deliberately small natural-use pause: at least two
@@ -118,8 +123,10 @@ are checkable:
   target-existence check is the causal proof. `created_at` is a CLI-stamped,
   editable record time, not an ordering proof. This proves protocol record
   order at write time — not that the agent had not seen the outcome.
-- Reviews bind content: every `reviews.jsonl` line carries the artifact's
-  sha256; editing an artifact after review makes the review visibly stale.
+- Reviews would bind content only if a reviewed-artifact stage ships: a
+  review record binds the artifact's sha256, and editing after review makes
+  the review visibly stale. No such mechanism is shipped today (M2 is an
+  unpre-designed option).
 - `created_by`, `authority`, and timestamps are attributable *claims*; Git
   makes post-hoc edits visible, but cannot detect a first write that was
   already false.
@@ -138,9 +145,10 @@ scope.
 
 Honesty about automation: read/write judgment, contradiction discovery, and
 next-step suggestion are **Skill behaviors**. The protocol makes them aided
-and auditable, not automatic. The conformance suite below measures how often
-they actually happen — that measurement, not runtime enforcement, is the
-answer to the v5 adoption gap.
+and auditable, not automatic. A future predeclared evaluation would measure
+how often they actually happen — that measurement, not runtime enforcement,
+is the answer to the v5 adoption gap; the conformance suite is **dormant**
+and has never scored.
 
 ## What L0–L4 became
 
@@ -155,8 +163,8 @@ software state machine. The states are preserved; the software is gone.
 | L0 source acquisition | bridges, adapters | `references/` conventions + `source` Entry + literature Skills |
 | L1 provisional understanding | intake schemas | `drafts/`, reading notes, working Notes |
 | L3 exploratory output | candidate objects, state machine | ordinary Entries + open items (failure / prediction / question) + `agent_draft` insight and hypothesis artifacts |
-| L4 validation & adjudication | validation runtime, promotion flow | open-item lifecycle (`resolves` + typed closures, automatic reopen) + write-time order checks + `compile check` + hash-bound human review |
-| L2 trusted memory | typed kernel, schema sync | `human_reviewed` compiled artifacts; sharing via `compile export` |
+| L4 validation & adjudication | validation runtime, promotion flow | open-item lifecycle (`resolves` + typed closures, automatic reopen) + write-time order checks + human review via Skills (a reviewed-artifact mechanism only if M2 is authorized) |
+| L2 trusted memory | typed kernel, schema sync | reviewed synthesis as ordinary D files pinned by human decision Entries (an artifact store only if M2 is authorized) |
 | routing policy L0→L1→L3→L4→L2 | kernel enforcement | Skill discipline + the write gate |
 | source trust levels A–E | source schema field | optional `trust` field on `source` Entries |
 | decision_point blocking | control-plane runtime | the conversation itself; outcome recorded as `decision` |
@@ -165,7 +173,7 @@ software state machine. The states are preserved; the software is gone.
 
 Cognitive state becomes data (record kinds + `review_state`). Transition
 discipline becomes Skills. The only software enforcement is the write gate:
-evidence-bearing and compiled claims require provenance at save; review
+evidence-bearing claims require provenance at save; review
 transitions are human-gated.
 
 ## Python boundary
@@ -558,51 +566,24 @@ M1b runtime/schema/gate scope. v0.1 records and GW_librpa remain untouched.
 M2 is not a promised stage. A no-runtime M1b result — or the completion of
 the selected M1b-R1 slice — closes only the M1b decision point, produces no
 implementation spec beyond it, and does not authorize M2.
-M2 needs its own natural-demand evidence showing Entries/Notes are inadequate;
-that evidence and any M1b selected-slice gate do not authorize every design
-bullet.
-
-- `.aitp/topic/compiled/`: four artifact types (`knowledge`, `skill`,
-  `insight`, `hypothesis`) with `basis_refs`, `source_records`,
-  `supersedes`; type-specific sections (validity domain, failure modes,
-  evals for skills, competing alternatives for hypotheses). In `knowledge`
-  artifacts, quantitative anchors live in a table with a per-row basis-kind
-  tag — `literal` (verbatim from a cited source, with locator), `analytic`
-  (derived from stated premises, with premise refs), or `run-backed` (from a
-  pinned `run` Entry, with the cross-check named) — and each row carries its
-  own basis ref. `compile check` requires tags from this enum and validates
-  that the declared refs exist; it checks structure, not honesty. Untagged
-  numbers cannot be published as reviewed quantitative anchors. The `brief`
-  type is dropped as redundant with working Note + closeout + `enter`.
-- `aitp compile prepare|save|check|review|export`; append-only
-  `reviews.jsonl` binds each transition to the artifact's sha256;
-  post-review edits make the review visibly stale; `compile export` refuses
-  unreviewed or stale artifacts and never overwrites.
-- Skills: `synthesizing-knowledge`, `comparing-with-memory`; `writing-it-up`
-  follows once reviewed material exists. Existing distilled technical skills
-  are back-annotated with provenance, evals, and review status.
-
-Gate: ≥ 1 reviewed knowledge artifact + 1 reviewed skill with passing evals
-+ 1 visibly-marked draft insight from a real Topic; provenance gaps block
-`compile check`; post-review edits detected; unreviewed export refused.
+Scheduling M2 requires its own natural-demand evidence showing Entries/Notes
+are inadequate for recurring synthesis work; that evidence and any M1b
+selected-slice gate do not authorize any design bullet. No artifact schema,
+command surface, or skill is pre-designed here: if the evidence arrives, the
+minimal design is derived then under the simplicity ratchet, not restored
+from earlier drafts. Until then, reviewed synthesis is expressed with the
+existing tools — a synthesis written in `theory/`/notes files, pinned and
+superseded by an `authority: human` decision Entry.
 
 ### M3 — Cross-topic links (design option; ~2 weeks; end ≤ 1,900; start only with ≥ 3 real Topics)
 
-M3 is not a promised stage. Entry evidence, distinct from the exit gate below,
-requires a real cross-Topic failure showing that `rg` plus ordinary citations
-cannot answer a recurring question with sufficient provenance. The M2 gate,
-three real Topics, and this natural demand are necessary but do not authorize
-every design bullet.
-
-- `aitp catalog init|add|list` over `topics.toml`; `aitp link prepare|save`.
-- Saving a link requires explicit human confirmation; as with `decision`
-  Entries, an agent may execute the save on the human's behalf, attributed
-  via `created_by`. Inferred links remain drafts.
-- `aitp-catalog` Skill; discovery via `rg`; no sync, no projection, no index.
-
-Gate: ≥ 5 human-confirmed links answer a real cross-topic question with
-exact provenance; zero index; discovery recall compared against an `rg`
-baseline.
+M3 is not a promised stage. Scheduling requires ≥ 3 real Topics and a real
+cross-Topic failure showing that `rg` plus ordinary citations cannot answer a
+recurring question with sufficient provenance. The M2 gate, three real
+Topics, and this natural demand are necessary but not sufficient. No
+`catalog`/`link` runtime exists or is pre-designed: if the evidence arrives,
+the minimal design is derived then under the ratchet. Until then, cross-Topic
+references stay ordinary citations in Markdown.
 
 ### M4 — Collaborator protocol (~1 month; +0 lines)
 
@@ -671,10 +652,10 @@ protocol → method → record protocol → compare protocol → stop conditions
 | `using-aitp` | M0→M1a | session lifecycle: when to read, durable-event judgment, closeout |
 | `surveying-literature` | G: independent use-driven Skill track | literature need → search → triage → reading notes + source Entries; lands only after real use separately justifies it and its reviewed Skill change |
 | `analyzing-a-source` | G: independent use-driven Skill track | deep-read one source: reproduce, bounded claims, assumptions, killers; lands only after real use separately justifies it and its reviewed Skill change |
-| `comparing-with-memory` | M2 | check failures/conventions before proposing; contradictions after results |
-| `synthesizing-knowledge` | M2 | draft compiled artifacts with evidence maps; request human review |
+| `comparing-with-memory` | M2 (design option) | check failures/conventions before proposing; contradictions after results — lands only if M2 is authorized on natural demand |
+| `synthesizing-knowledge` | M2 (design option) | synthesis with evidence maps and human review — lands only if M2 is authorized on natural demand |
 | `writing-it-up` | post-M2 | assemble notes/manuscripts from reviewed material; reflow new claims |
-| `aitp-catalog` | M3 | cross-topic discovery and link proposals |
+| `aitp-catalog` | M3 (design option) | cross-topic discovery and link proposals — lands only if M3 is authorized on natural demand |
 | `aitp-collaborator` | F: moved to M4 | separate Skill-only behavior track for the long-horizon question→hypothesis→prediction→test loop; not an M1b runtime/schema/gate dependency |
 
 ## Non-goals
