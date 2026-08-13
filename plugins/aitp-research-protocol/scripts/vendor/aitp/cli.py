@@ -34,6 +34,15 @@ def _positive_int(value: str) -> int:
     return number
 
 
+class _SingleValue(argparse.Action):
+    """Single-occurrence flag: the second occurrence is a parse error."""
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if getattr(namespace, self.dest, None) is not None:
+            raise argparse.ArgumentError(self, "may only be given once")
+        setattr(namespace, self.dest, values)
+
+
 def _emit(payload: dict[str, Any], as_json: bool) -> None:
     if as_json:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
@@ -91,6 +100,8 @@ def _handoff_review(payload: dict[str, Any]) -> bool:
 
 def _emit_enter(payload: dict[str, Any], as_json: bool) -> None:
     if as_json: return _emit(payload, True)
+    if payload.get("workstream"):
+        print(f"workstream: {payload['workstream']}")
     topic = payload["topic"]
     print(f"topic: {topic['id']} — {topic['title']}")
     print(f"memory_status: {payload['memory_status']}")
@@ -127,9 +138,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     enter = commands.add_parser("enter", help="return grounded recorded research state")
     enter.add_argument("--recent", type=_positive_int, default=20)
+    enter.add_argument("--workstream", action=_SingleValue, help="scope projections to this workstream (single slug; repeatable on prepare only)")
 
     listing = commands.add_parser(
-        "list", help="list canonical Entries with optional --kind and --since filters"
+        "list", help="list canonical Entries with optional --kind, --since, and --workstream filters"
     )
     listing.add_argument(
         "--kind",
@@ -138,6 +150,9 @@ def build_parser() -> argparse.ArgumentParser:
     listing.add_argument(
         "--since",
         help="only Entries recorded at or after this ISO date/timestamp (inclusive)",
+    )
+    listing.add_argument(
+        "--workstream", action=_SingleValue, help="only Entries in this workstream (single slug; repeatable on prepare only)"
     )
 
     show = commands.add_parser("show", help="show one Entry's complete frontmatter and body")
@@ -158,6 +173,7 @@ def build_parser() -> argparse.ArgumentParser:
     record_prepare.add_argument("--authority", default="agent")
     record_prepare.add_argument("--created-by", default="agent:unknown")
     record_prepare.add_argument("--idempotency-key")
+    record_prepare.add_argument("--workstream", action="append", help="assign this workstream (repeatable)")
     record_save = record_commands.add_parser(
         "save", help="validate and save a prepared Entry draft"
     )
@@ -171,6 +187,7 @@ def build_parser() -> argparse.ArgumentParser:
     note_prepare.add_argument("--mode", choices=("working", "theory"), required=True)
     note_prepare.add_argument("--title", required=True)
     note_prepare.add_argument("--created-by", default="agent:unknown")
+    note_prepare.add_argument("--workstream", action="append", help="assign this workstream (repeatable)")
     note_save = note_commands.add_parser(
         "save", help="validate and save a prepared Note draft"
     )
@@ -193,9 +210,9 @@ def main(argv: list[str] | None = None) -> int:
                 dry_run=args.dry_run,
             )
         elif args.command == "enter":
-            payload = enter_workspace(args.cwd, recent=args.recent)
+            payload = enter_workspace(args.cwd, recent=args.recent, workstream=args.workstream)
         elif args.command == "list":
-            payload = list_workspace(args.cwd, kind=args.kind, since=args.since)
+            payload = list_workspace(args.cwd, kind=args.kind, since=args.since, workstream=args.workstream)
         elif args.command == "show":
             payload = show_entry(args.cwd, args.entry_id)
         elif args.command == "check":
@@ -209,6 +226,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.authority,
                 created_by=args.created_by,
                 idempotency_key=args.idempotency_key,
+                workstreams=args.workstream,
             )
         elif args.command == "record" and args.record_command == "save":
             payload = save_entry(args.cwd, args.draft)
@@ -218,6 +236,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.mode,
                 args.title,
                 created_by=args.created_by,
+                workstreams=args.workstream,
             )
         elif args.command == "note" and args.note_command == "save":
             payload = save_note(args.cwd, args.draft)

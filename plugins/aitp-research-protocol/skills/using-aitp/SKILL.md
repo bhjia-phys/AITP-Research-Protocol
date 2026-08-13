@@ -28,15 +28,18 @@ search` exists — `rg` over `.aitp/topic/` is the query path.
 - `aitp init --topic <slug> --title "<title>"` — blank repository only;
   `--adopt` creates `.aitp/` inside an existing tree without touching
   content; `--dry-run` previews without writing.
-- `aitp enter [--recent N]` — orientation at session start and before
-  ending; `--recent` defaults to 20 and is a projection, not the whole
-  ledger.
+- `aitp enter [--recent N] [--workstream <slug>]` — orientation at
+  session start and before ending; `--recent` defaults to 20 and is a
+  projection, not the whole ledger. The M1c `--workstream` flag (shipped;
+  deterministic gate passed) takes a single slug and scopes the view to that
+  research line (a repeated flag is parser-rejected misuse).
 - `aitp inventory <path> --name <slug>` — operator-only M0.6 bootstrap tool
   (legacy scan + hash manifest); not part of routine session flow.
 - `aitp record prepare --kind <kind> --authority <level> --created-by <id>
-  [--idempotency-key <key>]` → `aitp record save <draft-path>`.
+  [--idempotency-key <key>] [--workstream <slug>]...` → `aitp record save
+  <draft-path>`.
 - `aitp note prepare --mode working|theory --title "<title>" --created-by
-  <id>` → `aitp note save <draft-path>`.
+  <id> [--workstream <slug>]...` → `aitp note save <draft-path>`.
 
 ## M1a/M1b-R1 read commands — implemented (sync checklist)
 
@@ -50,10 +53,12 @@ invoke or teach it.
 M1a is **done; deterministic gate passed**; the implementation evidence is in
 [`docs/archive/m1a-stage-notes.md`](../../../../docs/archive/m1a-stage-notes.md).
 
-- `aitp list [--kind KIND] [--since DATE] [--json]` is the read-only retrieval
+- `aitp list [--kind KIND] [--since DATE] [--workstream <slug>] [--json]`
+  is the read-only retrieval
   projection. Use `--kind` for a kind filter and `--since` for an inclusive
   recorded-time filter; superseded Entries remain visible. Its JSON schema is
-  `aitp/list-0.1`.
+  `aitp/list-0.1`; with the M1c single-occurrence `--workstream` flag it is
+  `aitp/list-0.2` (shipped; deterministic gate passed).
 - `aitp show <entry-id> [--json]` opens one exact Entry. Its JSON schema is
   `aitp/show-0.1`. Do not emulate `show` with ad-hoc parsing.
 - `aitp check [--cwd PATH] [--json]` validates the whole store read-only
@@ -65,7 +70,9 @@ M1a is **done; deterministic gate passed**; the implementation evidence is in
   `(path, code, message)`.
 - `aitp enter --json` uses `aitp/enter-0.2`: the latest active closeout with a
   non-empty `next_action` is the handoff; only without such a closeout does it
-  fall back to another active Entry. Notes sort by recorded time.
+  fall back to another active Entry. Notes sort by recorded time. With the M1c
+  single-occurrence `--workstream <slug>` flag the payload is `aitp/enter-0.3`
+  (shipped; deterministic gate passed).
 - `enter`'s text rendering is compact: two frozen M1a safety lines
   (`recent_entries: <shown> of <active> active (<omitted> omitted)`;
   `recent_notes: <shown>; latest_working_note: <id @ time|(none)>;
@@ -110,6 +117,50 @@ stage notes live frozen in `docs/archive/` and are not updated. A
 selected capability that changes an unversioned success envelope must first use
 a versioned envelope (preferred) or an explicit same-change Hakimi adapter
 revision; never add a response key silently.
+
+## M1c — Topic workstreams (shipped; deterministic gate passed)
+
+The frozen implementation spec is
+[`docs/archive/m1c-workstreams-spec.md`](../../../../docs/archive/m1c-workstreams-spec.md)
+(2026-08-13). Status: **done; deterministic gate passed** — the auditable
+gate evidence is in
+[`docs/m1c-stage-notes.md`](../../../../docs/m1c-stage-notes.md).
+M1c is independent of the frozen M1b roster
+(`docs/m1b-spec.md` §0.1 dispositions unchanged) and of M3.
+
+- `workstreams` is an **optional frontmatter list** on Entries and Notes
+  (e.g. `workstreams: [crpa, magnetic-symmetry]`). A record without it is
+  **unscoped legacy**: it appears only in the unfiltered global view and is
+  excluded from every scoped view. A present field must be a non-empty,
+  no-duplicate slug list (an empty list is invalid). Membership is explicit
+  and multi-valued — never infer it from summary text, paths, kinds, or
+  relations; a cross-line record lists all its workstreams.
+- `record prepare`/`note prepare` accept a **repeatable** `--workstream
+  <slug>` flag that seeds the draft's list in flag order; a repeated
+  identical slug is rejected as a duplicate (no silent dedup); the
+  prepare/save envelopes are unchanged. Slugs reuse the Topic slug rule
+  `[a-z0-9][a-z0-9-]{0,62}`.
+- `enter --workstream <slug>` and `list --workstream <slug>` emit the
+  scoped schemas `aitp/enter-0.3`/`aitp/list-0.2`: the old payload plus one
+  additive top-level singular `workstream` key, with entries/notes/counts
+  filtered to strict exact membership (unscoped records are not in scope).
+  The flag is single-occurrence on both read commands. **Relations run on
+  the whole store first** — the superseded set and the resolved set are
+  global, so a cross-line resolver/superseder still closes/replaces its
+  target; then the projections, including the handoff (`next_action`), are
+  strictly scoped — an out-of-scope handoff is never shown.
+  `warnings`, `counts.malformed`,
+  and `memory_status` stay global; `check` has no scope flag. **Without the
+  flag the old schemas are byte-unchanged** (`aitp/enter-0.2`,
+  `aitp/list-0.1`).
+- No registry: there is no workstream file or command; enumerate slugs with
+  `rg` over frontmatter when needed.
+- In a dense multi-line store (e.g. GW_librpa running crpa,
+  magnetic-symmetry, and qsgw-semiconductor lines sharing one
+  source/build/provenance), scope `enter`/`list` to the line you are working
+  on; unscoped legacy records stay global-only — they do not appear in a
+  scoped view. When a record genuinely belongs to several lines, list all of
+  them explicitly in `workstreams`.
 
 ## Start or resume work
 

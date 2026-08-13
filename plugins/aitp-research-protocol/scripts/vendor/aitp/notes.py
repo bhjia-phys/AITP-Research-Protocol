@@ -16,7 +16,7 @@ from .md import (
     parse_markdown,
     render_markdown,
 )
-from .records import validate_json_safe, validate_ref_shapes, validate_refs, validate_string_fields, validate_string_list
+from .records import _validate_workstreams, validate_json_safe, validate_ref_shapes, validate_refs, validate_string_fields, validate_string_list
 from .workspace import _template, load_store, resolve_root, store_lock
 
 
@@ -52,6 +52,7 @@ def prepare_note(
     title: str,
     *,
     created_by: str = "agent:unknown",
+    workstreams: list[str] | None = None,
 ) -> dict[str, Any]:
     root = resolve_root(cwd)
     store = load_store(root)
@@ -75,6 +76,11 @@ def prepare_note(
         "basis_refs": [],
         "supersedes": [],
     }
+    if workstreams is not None:
+        # uncoerced: a bare string/int/empty list errors instead of being
+        # silently unpacked or skipped
+        _validate_workstreams(workstreams)
+        frontmatter["workstreams"] = list(workstreams)
     body = _template(f"note/{mode}.md")
     path = root / ".aitp" / "local" / "drafts" / f"{note_id}.md"
     atomic_write(path, render_markdown(frontmatter, body))
@@ -106,6 +112,8 @@ def validate_note(
     if not isinstance(frontmatter["topic"], str) or frontmatter["topic"] != topic_id:
         raise AITPError("topic_mismatch", "Note topic does not match repository")
     validate_string_fields(frontmatter, ("title", "created_by"), "Note")
+    if "workstreams" in frontmatter:
+        _validate_workstreams(frontmatter["workstreams"])
     if not isinstance(frontmatter["created_at"], str): raise AITPError("invalid_timestamp", "Note created_at must be a string")
     mode = frontmatter["mode"]
     if not isinstance(mode, str) or mode not in NOTE_MODES:

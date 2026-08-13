@@ -17,11 +17,11 @@ CLI/payload/zero-write checks and refresh this matrix.
 |---|---|---|---|---|---|
 | `init` | M0 | available | no — human decision, blank dir only | — | `--help` presence |
 | `init --adopt` | M0.6 | available | no — touches an existing tree, human decision | — | `--help` presence |
-| `enter` | M0 | available | **yes** (session start/end) | — | no `schema` key; strict shape check |
+| `enter` | M0 | available | **yes** (session start/end) | — | no `schema` key; strict shape check; M1c (shipped; gate passed): with the single-occurrence `--workstream <slug>` → `schema == "aitp/enter-0.3"` |
 | `inventory <path> --name <n>` | M0.6 | available | no — operator-only, **writes** `.aitp/local/legacy/<name>-inventory.json` | — | — |
-| `record prepare\|save` | M0 | available | yes (prepare → fill → save) | — | envelope shape + `status` enum |
-| `note prepare\|save` | M0 | available | yes | — | envelope shape + `status` enum |
-| `list` | M1a | **available** (read-only) | **yes** (feature-detect schema) | —; M1a deterministic gate passed | top-level `schema == "aitp/list-0.1"` |
+| `record prepare\|save` | M0 | available | yes (prepare → fill → save) | — | envelope shape + `status` enum; M1c (shipped; gate passed): repeatable `--workstream` seeds draft frontmatter only (repeated identical slug rejected as a duplicate), envelopes unchanged |
+| `note prepare\|save` | M0 | available | yes | — | envelope shape + `status` enum; M1c (shipped; gate passed): repeatable `--workstream` seeds draft frontmatter only (repeated identical slug rejected as a duplicate), envelopes unchanged |
+| `list` | M1a | **available** (read-only) | **yes** (feature-detect schema) | —; M1a deterministic gate passed | top-level `schema == "aitp/list-0.1"`; M1c (shipped; gate passed): with the single-occurrence `--workstream <slug>` → `schema == "aitp/list-0.2"` |
 | `show` | M1a | **available** (read-only) | **yes** (feature-detect schema) | —; M1a deterministic gate passed | top-level `schema == "aitp/show-0.1"` |
 | `check` | M1b-R1 (selected 2026-08-12) | **available** (read-only) | **yes** (feature-detect schema) | —; M1b-R1 deterministic gate passed 2026-08-12 (evidence in `docs/archive/m1b-r1-stage-notes.md`); v0.1-only, read-only, zero-write | parse `aitp/check-report-0.1` on exits 0 and 1; exit 2 is the standard error envelope |
 | `lineage` | deferred candidate (Followup 2, re-deferred 2026-08-12) | **absent** | no | a new reviewed freeze revision selecting it, then its own reviewed spec | `aitp/lineage-0.1` only if actually shipped |
@@ -50,6 +50,7 @@ feature-detect or parse it; machine output remains the versioned JSON.
 | `aitp/legacy-inventory-0.1` | file | exists | `workspace.py` legacy inventory contract |
 | `aitp/enter-0.1` | **transport** | **does not exist** | `enter --json` has no top-level `schema` (`state.py` enter projection; verified live) |
 | `aitp/enter-0.2`, `aitp/list-0.1`, `aitp/show-0.1` | transport | **exists and available** | `docs/archive/m1a-spec.md` headings `aitp list` → `JSON payload (schema aitp/list-0.1)`, `aitp show` → `JSON payload (schema aitp/show-0.1)`, and `enter v2 (schema aitp/enter-0.2)`; Hakimi feature-detects these read-only contracts. Additive 2026-08-12 stability revision to `show-0.1`: when the target file exists but fails validation, `show` returns exit 0 with `status: "malformed"`, `frontmatter: null`, raw file text in `body`, and a `warning` carrying the finding — consumers must tolerate the `malformed` status value and null `frontmatter` (`docs/design.md` §`aitp show`) |
+| `aitp/enter-0.3`, `aitp/list-0.2` | transport | **shipped and gated (M1c)** | Emitted **only when the single-occurrence `--workstream <slug>` is passed** to `enter`/`list` (a repeated flag is parser-rejected misuse): the old payload plus one additive top-level **singular `workstream`** key; entries/notes/counts filtered to strict exact membership (unscoped records are excluded); relations (superseded/resolved sets) are computed on the whole store first, then the projections including the handoff are strictly scoped; `warnings`, `counts.malformed`, and `memory_status` stay global. Without the flag the payloads are byte-identical `aitp/enter-0.2`/`aitp/list-0.1`. Frozen contract: `docs/archive/m1c-workstreams-spec.md`; M1c deterministic gate passed 2026-08-13 (evidence in `docs/m1c-stage-notes.md`) |
 | `aitp/lite-entry-0.2` | file | candidate contract; blocked, not present | Candidate inventory only; not selected in M1b-R1 (`docs/m1b-spec.md` §0.1 2026-08-12 reviewed freeze revision); selected schema version would require its own freeze revision and a green-lit implementation spec |
 | `aitp/check-report-0.1` | transport | **shipped and gated** (M1b-R1) | The 2026-08-12 reviewed freeze revision selected v0.1-only `check`, implemented per `docs/archive/m1b-r1-spec.md`, and the R1 deterministic gate passed (evidence in `docs/archive/m1b-r1-stage-notes.md`); feature-detectable by Hakimi — parse the report on exits 0 and 1; exit 2 is the standard error envelope (`docs/design.md` §`aitp check`, `docs/archive/m1b-r1-spec.md` §Report) |
 | `aitp/lineage-0.1` | transport | deferred candidate; not present | The v0.1 `resolves`/`supersedes` read projection (Followup 2) was re-deferred at the 2026-08-12 budget reconciliation; available to Hakimi only if a new reviewed freeze revision selects it and it ships |
@@ -75,7 +76,13 @@ Hakimi feature-detects only capabilities shipped by the selected, reviewed
 slice — `check-report-0.1` is shipped and gated.
 `lineage-0.1` requires a new reviewed freeze revision. The compact `enter`
 text is human-facing only and never feature-detected. M2/M3 require their
-own natural-demand evidence.
+own natural-demand evidence. **M1c (Topic workstreams) is a separate stage
+slice, not an M1b roster row and not M3** — frozen spec
+`docs/archive/m1c-workstreams-spec.md` (2026-08-13); done, deterministic
+gate passed (evidence in `docs/m1c-stage-notes.md`). Its scoped variants
+(`aitp/enter-0.3`, `aitp/list-0.2`) and the repeatable `--workstream`
+prepare flag are H3 scope, and Hakimi may integrate them now; the matrix
+rows above reflect the closed M1c gate.
 
 ## 3. Versioned transport envelope — decision
 
@@ -163,6 +170,16 @@ own natural-demand evidence.
    evidence is still a candidate and must not be treated as a current contract.
 8. Python ≥ 3.11 is launcher-enforced; probe order per the Skill, never
    invented.
+9. M1c workstreams (shipped; deterministic gate passed): never assume
+   `aitp/enter-0.3`/`aitp/list-0.2` unless the invocation passed the
+   single-occurrence `--workstream <slug>`; without the flag the payloads
+   stay `aitp/enter-0.2`/`aitp/list-0.1`, byte-unchanged. In scoped payloads
+   membership is strict exact membership — unscoped records are **not** in
+   scope; the superseded/resolved sets are computed on the whole store
+   first, then the projections including the handoff are strictly scoped;
+   `warnings` stay global; the scoped `workstream:` text line is
+   human-facing only — never parse it. There is no workstream registry file
+   or command; do not invent one. `check` has no scope flag.
 
 ## 6. Next steps and blocking
 
@@ -193,11 +210,25 @@ AITP side (by gate):
    first be selected and shipped. G is independent, and H is dropped.
    Persisted `based_on`/`used_by`, pointer bundles, and quick-run are not in
    R1. Selected envelope changes follow §3.
+4. M1c (Topic workstreams) is **done; deterministic gate passed**
+   (2026-08-13) per `docs/archive/m1c-workstreams-spec.md`; gate evidence in
+   `docs/m1c-stage-notes.md`.
+   H3 may integrate the scoped contracts now: with the
+   single-occurrence `--workstream <slug>`, feature-detect
+   `aitp/enter-0.3`/`aitp/list-0.2` (additive top-level singular
+   `workstream`; strict exact membership — unscoped records excluded;
+   relations computed on the whole store first, then strictly scoped
+   projections including the handoff; `warnings` global); without the flag,
+   keep the `aitp/enter-0.2`/`aitp/list-0.1` behavior. The repeatable
+   `--workstream` prepare flag seeds draft frontmatter only (duplicates
+   rejected) — prepare/save envelopes are unchanged. No
+   registry file or command exists.
 
 Hakimi side (parallel): H0 now; H1 may now run read-only feature detection for
 `aitp/enter-0.2`, `aitp/list-0.1`, and `aitp/show-0.1`; H2 may integrate the
-shipped, gated `aitp check`; formal contract after M4. Research-loop
-capabilities remain independent of AITP gates.
+shipped, gated `aitp check`; H3 may integrate the M1c scoped contracts (M1c
+done; deterministic gate passed 2026-08-13); formal contract after M4.
+Research-loop capabilities remain independent of AITP gates.
 
 Blocking chain: M1a done → natural-use pause complete → M1b freeze revision
 (2026-08-12) → M1b-R1 implementation and gate (passed 2026-08-12; evidence

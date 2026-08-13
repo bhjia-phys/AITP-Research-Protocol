@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .md import AITPError, parse_markdown
-from .records import ENTRY_ID_RE, ENTRY_KINDS, _canonical_entries, validate_entry
+from .records import ENTRY_ID_RE, ENTRY_KINDS, _canonical_entries, _validate_workstreams, validate_entry
 from .workspace import load_store, resolve_root
 
 _KIND_ORDER = (
@@ -53,6 +53,12 @@ def _truncate(text: str, limit: int = 110) -> str:
 
 def _is_legacy_derived(body: str) -> bool:
     return bool(body.splitlines()) and body.splitlines()[0] == LEGACY_MARKER
+
+
+def _in_scope(frontmatter: dict[str, Any], workstream: str | None) -> bool:
+    if workstream is None:
+        return True
+    return workstream in frontmatter.get("workstreams", [])
 
 
 def _warning(root: Path, path: Path, code: str, message: str) -> dict[str, str]:
@@ -123,8 +129,16 @@ def _projection(
     }
 
 
+def _validate_scope(workstream: Any) -> None:
+    if workstream is None:
+        return
+    if not isinstance(workstream, str):
+        raise AITPError("invalid_workstreams", "invalid workstreams: exactly one slug required")
+    _validate_workstreams([workstream])
+
+
 def list_workspace(
-    cwd: str | Path, *, kind: str | None = None, since: str | None = None
+    cwd: str | Path, *, kind: str | None = None, since: str | None = None, workstream: str | None = None
 ) -> dict[str, Any]:
     root = resolve_root(cwd)
     topic_id = load_store(root)["topic_id"]
@@ -136,6 +150,7 @@ def list_workspace(
                 "invalid_kind",
                 f"unsupported Entry kind: {kind} (allowed: {allowed})",
             )
+    _validate_scope(workstream)
     boundary = _parse_since(since) if since is not None else None
     items, warnings = _scan_entries(root, topic_id=topic_id)
     superseded = _superseded_ids(items)
@@ -148,13 +163,20 @@ def list_workspace(
             warnings.append(_warning(root, path, "invalid_timestamp", f"unparseable created_at: {raw}"))
             if boundary is not None:
                 continue
-        if kind is None or frontmatter["kind"] == kind:
-            if boundary is None or parsed >= boundary:
-                selected.append(item)
+        if kind is not None and frontmatter["kind"] != kind:
+            continue
+        if not _in_scope(frontmatter, workstream):
+            continue
+        if boundary is None or parsed >= boundary:
+            selected.append(item)
     selected.sort(key=lambda item: _descending_key(item[0].get("created_at", ""), item[0]["id"]), reverse=True)
     entries = [_projection(root, item, superseded) for item in selected]
-    return {"schema": "aitp/list-0.1", "root": str(root), "count": len(entries),
-            "entries": entries, "warnings": warnings}
+    payload = {"schema": "aitp/list-0.1", "root": str(root), "count": len(entries),
+               "entries": entries, "warnings": warnings}
+    if workstream is not None:
+        payload["schema"] = "aitp/list-0.2"
+        payload["workstream"] = workstream
+    return payload
 
 
 def show_entry(cwd: str | Path, entry_id: str) -> dict[str, Any]:

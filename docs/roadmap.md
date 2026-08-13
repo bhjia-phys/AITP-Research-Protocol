@@ -9,8 +9,12 @@ deferred** — the 2026-08-12 reviewed freeze revision
 (`docs/archive/m1b-adjudication.md`) selected the read-side slice M1b-R1
 (`aitp check` v0.1-only + compact `enter` text), implemented per
 `docs/archive/m1b-r1-spec.md`, deterministic gate passed (evidence in
-`docs/archive/m1b-r1-stage-notes.md`). M2/M3/M4 remain blocked design
-options. Completed specs, adjudications, and stage notes are frozen in
+`docs/archive/m1b-r1-stage-notes.md`). **M1c (Topic workstreams):
+done; deterministic gate passed** — frozen
+implementation spec `docs/archive/m1c-workstreams-spec.md` (2026-08-13);
+independent of the frozen M1b roster and of M3; the gate evidence is recorded
+in `docs/m1c-stage-notes.md`. M2/M3/M4 remain blocked
+design options. Completed specs, adjudications, and stage notes are frozen in
 `docs/archive/` and take no part in any sync discipline. Earlier revisions
 of this file are Git history, not duplicated changelog entries.
 
@@ -341,6 +345,7 @@ started early; a predecessor gate never authorizes later scope automatically.
 | M0.6 — Adopt & bootstrap | **implementation closed; original empirical gate not passed** — item 1 (`init --adopt`) and item 2 deterministic inventory implementation are complete; item 3 is an anchored, unexecuted FROZEN v6 packet. Specs: item 1 `docs/archive/m0.6-init-adopt.md`, item 2 `docs/archive/m0.6-bootstrap.md`, item 3 `docs/archive/m0.6-suite.md` | The approved narrowed gate review closes M0.6. Original bootstrap Notes/decisions, recall/false-import/human-time, held-out S3, paired S1/S2, cold-start, conformance, causal, and treatment-advantage evidence is not measured; deferred; not counted, and does not block M1a |
 | M1a — Memory that restores | **done; deterministic gate passed** (`docs/archive/m1a-spec.md`, evidence in `docs/archive/m1a-stage-notes.md`) | Versioned read projections: `list`, `show`, and `enter` v2; closeout-first handoff; Note-age structural signal; generated goldens; deterministic S1/S2 regression; read-only GW_librpa acceptance; all tests and performance/line caps. This is not a behavioral or treatment-superiority gate |
 | M1b — Open items & pilot | **M1b-R1 done; remaining M1b candidates deferred** — 2026-08-12 reviewed freeze revision recorded in `docs/archive/m1b-adjudication.md`; the selected read-side slice M1b-R1 is implemented per `docs/archive/m1b-r1-spec.md` and its deterministic gate passed (evidence in `docs/archive/m1b-r1-stage-notes.md`). B, C–E, Followup 2 (`lineage`), and Followup 6 (structured prepare) remain deferred; F → M4; G independent Skill track; H dropped | The R1 gate is closed. Deferred/dropped rows produce no implementation spec and may return only through a new reviewed freeze revision; M2/M3 require their own natural-demand evidence. This is not a behavioral or treatment-superiority gate |
+| M1c — Topic workstreams | **done; deterministic gate passed** — frozen implementation spec `docs/archive/m1c-workstreams-spec.md` (2026-08-13); independent of the frozen M1b roster (§0.1 dispositions unchanged) and of M3. Slice: optional explicit `workstreams` membership (unscoped legacy visible only in the global view, explicit multi-membership, empty lists invalid), repeatable `--workstream` prepare flag (duplicates rejected), single-slug scoped `enter`/`list` (`aitp/enter-0.3`/`aitp/list-0.2`, additive top-level singular `workstream` key; no flag ⇒ old schemas byte-unchanged), global relations computed first with strictly scoped projections including handoff, global warnings, no registry. Budget: target ≤ 1,550 / cap ≤ 1,600 nonblank lines; modules < 400 | Deterministic gate passed 2026-08-13: new `tests/ledger/test_workstreams.py` (22 tests) plus the unchanged ledger suite (85 tests) — **107 passed**; benchmark final PASS (module/plugin `--help` < 250 ms; 1,000-Entry `enter`/`list` < 1 s); cumulative runtime **1,519** nonblank lines within the 1,550 target and the 1,600 cap, max module `records.py` 348 (< 400); version sync 0.4.0 on all four surfaces; read-only byte-identical real-store acceptance with no-flag old-runtime parity; `git diff --check` clean. Evidence in `docs/m1c-stage-notes.md`. Not a behavioral or treatment-superiority gate |
 | M2 — Reviewed artifacts | design option; blocked | M1b selected-slice gate, if any; natural workflow must show Entries/Notes are inadequate before scheduling, then real reviewed material in the dogfood Topics |
 | M3 — Cross-topic links | design option (`docs/archive/cross-topic-links.md`); blocked | M2 gate, ≥ 3 real Topics, and a natural cross-Topic failure of `rg` plus ordinary citations before scheduling |
 | M4 — Collaborator protocol | blocked design option (`docs/archive/collaborator-design.md`); Skill-only, +0 runtime lines | If a reviewed freeze revision selects F in M1b, its separately reviewed selected-slice spec and pilot evidence; otherwise M4's own natural-demand and prospective-evidence adjudication against the plain-files baseline. The dormant FROZEN v6 suite is not a dependency |
@@ -568,6 +573,61 @@ selected collaborator protocol requires typed `prediction`/`question` records,
 C or an explicitly reviewed equivalent contract must first be selected and
 shipped under a separately reviewed selected-slice spec. G and H stay outside
 M1b runtime/schema/gate scope. v0.1 records and GW_librpa remain untouched.
+
+### M1c — Topic workstreams (done; deterministic gate passed; end ≤ 1,600)
+
+M1c is a **separate stage slice, independent of the frozen M1b roster** in
+`docs/m1b-spec.md` §0.1 (it changes no disposition, re-selects no deferred
+candidate, and does not grow M1b scope) **and of M3** (workstreams live
+inside one Topic store; the M3 cross-topic design option, its gates, and the
+`catalog`/`link` absence are untouched). Its natural-demand evidence is the
+2026-08-13 workstreams feedback
+(`feedback/2026-08-13-gw-librpa-workstreams-natural-use-feedback.md`): one
+GW_librpa store sharing source/build/provenance across three research lines
+(crpa, magnetic-symmetry, qsgw-semiconductor) with no membership field in
+the records and global handoff/failure/Note recovery costs already recorded
+by the 2026-08-11/2026-08-13 GW feedback chain. The frozen implementation
+spec is `docs/archive/m1c-workstreams-spec.md` (2026-08-13).
+
+The slice:
+
+- optional explicit `workstreams` frontmatter list on Entries and Notes
+  (file schemas unchanged; absence = **unscoped legacy**, visible only in
+  the unfiltered global view and excluded from every scoped view; a present
+  field must be a non-empty no-duplicate slug list, slugs reuse the Topic
+  slug rule `[a-z0-9][a-z0-9-]{0,62}`; membership explicit and multi-valued,
+  never inferred — cross-line records list all their workstreams);
+- repeatable `--workstream <slug>` flag on `record prepare`/`note prepare`
+  seeding the draft's list in flag order (a repeated identical slug is
+  rejected as a duplicate — no silent dedup; envelopes unchanged);
+- single-slug scoped read projections: `enter --workstream <slug>` ⇒
+  **`aitp/enter-0.3`**, `list --workstream <slug>` ⇒ **`aitp/list-0.2`** —
+  old payload plus one additive top-level singular `workstream` key,
+  entries/notes/counts filtered to strict exact membership; the flag is
+  single-occurrence on both read commands (a repeated flag is
+  parser-rejected misuse); **relations run on the whole store first**
+  (superseded status and the resolved set are global, so a cross-line
+  resolver/superseder still closes/replaces its target) and then the
+  projections (`recent_entries`, `unresolved_failures`, `next_action`
+  handoff, `recent_notes`, `latest_working_note`, Note age,
+  active/superseded/omitted counts) are **strictly scoped** — an
+  out-of-scope handoff is never shown; `warnings`, `counts.malformed`,
+  `memory_status`, and `check` are global (`check` has no scope flag);
+- **no flag ⇒ byte-identical old schemas** (`aitp/enter-0.2`,
+  `aitp/list-0.1`); **no registry** (no new file or command); `show` and
+  `check` contracts unchanged.
+
+Status: **done; deterministic gate passed** (2026-08-13) per the frozen
+spec; the gate evidence is recorded in `docs/m1c-stage-notes.md`: new tests
+`tests/ledger/test_workstreams.py` (22) plus the **unchanged** ledger suite
+(85) — **107 passed**; benchmark thresholds unchanged with the pass
+condition including `list` (final PASS); per-module < 400 and cumulative
+**1,519** nonblank lines (target ≤ 1,550 / hard cap ≤ 1,600); version sync
+0.4.0 on all four surfaces; read-only byte-identical real-store acceptance
+with no-flag old-runtime parity; `git diff --check` clean. Budget: target
+≤ 1,550, hard cap ≤ 1,600 cumulative nonblank lines; actual at gate time
+**1,519** (headroom +31 target / +81 cap). The passed M1c gate does not flip
+M2/M3/M4 and does not reopen M1b.
 
 ### M2 — Reviewed artifacts (design option; ~3–4 weeks; end ≤ 1,700)
 

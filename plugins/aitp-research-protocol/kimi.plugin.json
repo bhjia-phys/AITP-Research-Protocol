@@ -1,6 +1,6 @@
 {
   "name": "aitp-research-protocol",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Local-first, evidence-grounded research protocol for theoretical physics",
   "skills": "./skills/",
   "skillInstructions": "This plugin is platform-neutral: the bundled CLI is scripts/aitp.py and needs Python 3.11 or newer. On Kimi Code, invoke the entrypoint with /skill:aitp; any '$aitp' mention in the skills refers to that invocation. There is no MCP server, hook, or daemon by design.",

@@ -13,7 +13,7 @@ The module runner's subprocess env carries the vendor directory on
 recorded per measurement (median/min/max in ms).  A single JSON object is
 printed with the interpreter, platform, machine, fixture sizes, every
 measurement, and PASS/FAIL against the thresholds (``--help`` < 250 ms;
-1,000-Entry ``enter`` < 1 s).
+1,000-Entry ``enter`` and ``list`` < 1 s).
 
 Usage:
     uv run --python 3.12 python tests/ledger/benchmark.py
@@ -170,6 +170,8 @@ def main() -> int:
             and measurements["plugin_help"]["median_ms"] < HELP_THRESHOLD_MS
             and measurements["module_enter_1000"]["median_ms"] < ENTER_1000_THRESHOLD_MS
             and measurements["plugin_enter_1000"]["median_ms"] < ENTER_1000_THRESHOLD_MS
+            and measurements["module_list_1000"]["median_ms"] < ENTER_1000_THRESHOLD_MS
+            and measurements["plugin_list_1000"]["median_ms"] < ENTER_1000_THRESHOLD_MS
         )
         report = {
             "result": "PASS" if passed else "FAIL",

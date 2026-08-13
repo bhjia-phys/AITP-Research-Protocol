@@ -10,7 +10,17 @@ pause is complete; the 2026-08-12 reviewed freeze revision
 slice **M1b-R1** — `aitp check` (v0.1-only) is implemented per
 [`docs/archive/m1b-r1-spec.md`](archive/m1b-r1-spec.md) and its deterministic gate **passed**
 (evidence in [`docs/archive/m1b-r1-stage-notes.md`](archive/m1b-r1-stage-notes.md));
-`lineage` is a deferred candidate. M2/M3 remain design options.
+`lineage` is a deferred candidate. **M1c (Topic workstreams) is
+done; deterministic gate passed** — frozen
+implementation spec [`docs/archive/m1c-workstreams-spec.md`](archive/m1c-workstreams-spec.md):
+optional `workstreams` membership (unscoped legacy visible only in the global
+view), repeatable `--workstream` prepare flag (duplicates rejected),
+single-slug scoped `aitp/enter-0.3`/`aitp/list-0.2` (no flag ⇒ old schemas
+byte-unchanged), global relations computed first with strictly scoped
+projections including handoff, global warnings, no
+registry. The deterministic gate passed (evidence in
+[`docs/m1c-stage-notes.md`](m1c-stage-notes.md)).
+M2/M3 remain design options.
 
 ## Purpose
 
@@ -77,9 +87,9 @@ stores; it is not part of the routine session flow.
 
 ### `aitp enter`
 
-`aitp enter [--recent N] [--json]` reads the Topic, valid Entries, and Notes;
-`--recent` defaults to 20, the window is a projection, and `omitted_active`
-reports what it leaves out. Return:
+`aitp enter [--recent N] [--workstream <slug>] [--json]` reads the Topic,
+valid Entries, and Notes; `--recent` defaults to 20, the window is a
+projection, and `omitted_active` reports what it leaves out. Return:
 
 - memory status;
 - recent active Entries with exact source paths;
@@ -93,11 +103,16 @@ The output must distinguish recorded state from scientific truth and expose miss
 ### `aitp record prepare/save`
 
 `aitp record prepare --kind <kind> --authority <level> --created-by <id>
-[--idempotency-key <key>]` prepares exactly one draft from the selected
+[--idempotency-key <key>] [--workstream <slug>]...` prepares exactly one
+draft from the selected
 kind-specific template. `--created-by` is required for `authority: agent`
 (missing provenance is `missing_provenance`); `aitp record save <draft>`
 saves only after fast structural, relation, evidence-pin, and
-prompt-completion checks.
+prompt-completion checks. The M1c `--workstream` flag (shipped;
+deterministic gate passed) is repeatable and seeds the draft's optional
+`workstreams` list in flag order; a repeated identical slug is rejected as a
+duplicate (no silent dedup); without the flag the draft is byte-identical to
+today.
 
 Kinds:
 
@@ -118,8 +133,8 @@ Logical retries use one idempotency key and must not create duplicates.
 
 ### `aitp note prepare/save`
 
-`aitp note prepare --mode working|theory --title "<title>" --created-by <id>`
-prepares either:
+`aitp note prepare --mode working|theory --title "<title>" --created-by <id>
+[--workstream <slug>]...` prepares either:
 
 - `working`: current research line, evidence map, uncertainty, and next actions;
 - `theory`: assumptions, conventions, derivation, checks, gaps, and implications.
@@ -138,10 +153,15 @@ confirmation of a Note's content is expressed outside the Note schema — by a
 
 ### `aitp list`
 
-`aitp list [--kind KIND] [--since DATE] [--json]` is the M1a read-only
+`aitp list [--kind KIND] [--since DATE] [--workstream <slug>] [--json]` is the M1a read-only
 projection over canonical Entries. Its JSON payload is `aitp/list-0.1`; it
 supports kind and inclusive timestamp filters, preserves superseded records,
-and writes no cursor, cache, lock, or local state.
+and writes no cursor, cache, lock, or local state. With the M1c
+single-occurrence `--workstream` flag (shipped; deterministic gate passed)
+the payload is `aitp/list-0.2`: the `aitp/list-0.1` fields plus one
+additive top-level singular `workstream` key, entries and count filtered to
+strict exact membership (unscoped records are excluded); without the flag the
+`aitp/list-0.1` payload is byte-unchanged.
 
 ### `aitp show`
 
@@ -164,7 +184,9 @@ findings sorted by `(path, code, message)`; exit 0 clean / 1 findings /
 zero-write (no lock, cache, index, repair, or migration) with frozen
 no-crash mappings (invalid UTF-8 records and refs become findings; no path
 raises a traceback). Finding codes produced today: structural/validation
-codes from the save path plus `duplicate_id`; relation codes
+codes from the save path plus `duplicate_id`; M1c adds `invalid_workstreams`
+(not-a-list, empty list, empty element, invalid slug, or duplicate element
+in a `workstreams` list, on save and in `check`); relation codes
 `invalid_relation`/`missing_relation` apply to Entry `resolves`/`supersedes`
 targets and Note `supersedes` targets (no `invalid_supersession` — the
 2026-08-12 stability revision removed the `created_at` ordering rule);
@@ -179,6 +201,45 @@ its deterministic gate passed (evidence in
 candidate (Followup 2, re-deferred at the 2026-08-12 budget
 reconciliation). `enter`'s text rendering is compact in R1 with two frozen
 M1a safety lines; its `aitp/enter-0.2` JSON contract is unchanged.
+
+### Topic workstreams (M1c; done, deterministic gate passed)
+
+The frozen implementation-level contract is
+[`docs/archive/m1c-workstreams-spec.md`](archive/m1c-workstreams-spec.md). Summary:
+
+- Entries and Notes may carry an **optional `workstreams` list** in
+  frontmatter (file schemas `aitp/lite-entry-0.1`/`aitp/lite-note-0.1`
+  unchanged). Absence means **unscoped legacy**: valid and visible only in
+  the unfiltered global view — unscoped records are excluded from every
+  scoped view. A present field must be a **non-empty, no-duplicate** list.
+  Membership is **explicit and multi-valued**, never inferred; cross-line
+  records list all their workstreams. Slugs reuse the Topic slug rule
+  `[a-z0-9][a-z0-9-]{0,62}`; violations (including an empty list) are
+  `invalid_workstreams` on save and in `check`.
+- `record prepare`/`note prepare` accept a **repeatable `--workstream`**
+  flag that seeds the draft's list in flag order; a repeated identical slug
+  is rejected as a duplicate (no silent dedup); prepare/save envelopes are
+  unchanged.
+- `enter --workstream <slug>` emits **`aitp/enter-0.3`** and
+  `list --workstream <slug>` emits **`aitp/list-0.2`**: the old payload plus
+  one additive top-level **singular `workstream`** key, with entries/notes/
+  counts filtered to strict exact membership. The flag is **single-occurrence**
+  on both read commands (a repeated flag is parser-rejected misuse).
+  **Relations run on the whole store first** — the superseded set, the
+  resolved set, and their effect on `unresolved_failures`/superseded status
+  are global, so a cross-line resolver/superseder still closes/replaces its
+  target; then the projections (`recent_entries`, `unresolved_failures`,
+  `next_action` handoff, `recent_notes`, `latest_working_note`, Note age,
+  active/superseded/omitted counts) are **strictly scoped** — an out-of-scope
+  handoff is never shown. `warnings`,
+  `counts.malformed`, `memory_status`, and `check` are **global** — scoping
+  never hides validation state; `check` has no scope flag.
+- **No flag ⇒ byte-identical old schemas** (`aitp/enter-0.2`,
+  `aitp/list-0.1`). No registry: no new file or command; membership lives
+  only in record frontmatter. `show` and `check` are unchanged
+  (`aitp/show-0.1`, `aitp/check-report-0.1`).
+- Deterministic gate **passed** (2026-08-13) — evidence recorded in
+  `docs/m1c-stage-notes.md`.
 
 ## Evidence pins
 

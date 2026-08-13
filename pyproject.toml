@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aitp-research-protocol"
-version = "0.3.0"
+version = "0.4.0"
 description = "Local-first research protocol for theoretical physics"
 requires-python = ">=3.11"
 dependencies = ["PyYAML>=5.4"]

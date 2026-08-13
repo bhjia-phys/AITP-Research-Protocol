@@ -40,6 +40,23 @@ ENTRY_ID_RE = re.compile(r"^entry-[0-9a-f]{32}$")
 ENTRY_REQUIRED = frozenset(
     "schema id topic created_at created_by kind authority summary refs limitations resolves supersedes next_action".split()
 )
+# Same grammar as the Topic slug rule (`_safe_slug` in workspace.py).
+WORKSTREAM_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
+
+
+def _validate_workstreams(values: Any) -> None:
+    if not isinstance(values, list):
+        raise AITPError("invalid_workstreams", "invalid workstreams: not a list")
+    if not values:
+        raise AITPError("invalid_workstreams", "invalid workstreams: empty list")
+    seen: set[str] = set()
+    for slug in values:
+        if not isinstance(slug, str) or not WORKSTREAM_RE.fullmatch(slug):
+            detail = "empty element" if slug == "" else f"invalid slug: {slug!r}"
+            raise AITPError("invalid_workstreams", f"invalid workstreams: {detail}")
+        if slug in seen:
+            raise AITPError("invalid_workstreams", f"invalid workstreams: duplicate workstream: {slug}")
+        seen.add(slug)
 
 
 def _drafts(root: Path) -> Iterable[Path]:
@@ -70,6 +87,7 @@ def prepare_entry(
     *,
     created_by: str = "agent:unknown",
     idempotency_key: str | None = None,
+    workstreams: list[str] | None = None,
 ) -> dict[str, Any]:
     root = resolve_root(cwd)
     store = load_store(root)
@@ -79,6 +97,11 @@ def prepare_entry(
         raise AITPError("invalid_authority", f"unsupported authority: {authority}")
     if authority == "agent" and created_by == "agent:unknown":
         raise AITPError("missing_provenance", "created_by is required for agent authority")
+    # Validate workstreams before the idempotency short-circuit: an invalid
+    # value must error even when the key already exists, and the raw value is
+    # passed uncoerced so a bare string/int is rejected, not silently unpacked.
+    if workstreams is not None:
+        _validate_workstreams(workstreams)
     if idempotency_key:
         existing = _find_idempotency(root, idempotency_key)
         if existing:
@@ -105,6 +128,9 @@ def prepare_entry(
     }
     if idempotency_key:
         frontmatter["idempotency_key"] = idempotency_key
+    if workstreams:
+        # validated above; write a copy of the caller's list
+        frontmatter["workstreams"] = list(workstreams)
     body = _template(f"record/{kind.replace('_', '-')}.md")
     path = root / ".aitp" / "local" / "drafts" / f"{entry_id}.md"
     atomic_write(path, render_markdown(frontmatter, body))
@@ -297,6 +323,8 @@ def validate_entry(
     if not isinstance(frontmatter["created_at"], str):
         raise AITPError("invalid_timestamp", "Entry created_at must be a string")
     validate_string_fields(frontmatter, ("created_by", "next_action"), "Entry")
+    if "workstreams" in frontmatter:
+        _validate_workstreams(frontmatter["workstreams"])
     kind = frontmatter["kind"]
     if not isinstance(kind, str) or kind not in ENTRY_KINDS:
         raise AITPError("invalid_kind", f"unsupported Entry kind: {kind}")

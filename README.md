@@ -67,6 +67,7 @@ checkpoint synchronized with it.
 | M0.6 — Adopt & bootstrap | **implementation closed; original empirical gate not passed** | Deterministic `init --adopt`/`inventory` implementation and anchored, unexecuted FROZEN v6 packet; no bootstrap-validation or plain-files advantage claim | Narrowed gate review accepted; original bootstrap Notes/decisions, recall/false-import/human-time, held-out S3, paired S1/S2, cold-start, conformance, causal, and treatment-advantage evidence is not measured; deferred; not counted |
 | M1a — Memory that restores | **done; deterministic gate passed** | Versioned `list`, `show`, closeout-first `enter` v2, Note-age structural signal, generated public-schema goldens, deterministic S1/S2 regression, read-only GW_librpa acceptance | Deterministic gate passed; this is not a behavioral or treatment-superiority gate. Evidence: [`docs/archive/m1a-stage-notes.md`](docs/archive/m1a-stage-notes.md) |
 | M1b — Open items & behavior pilot | **M1b-R1 done; remaining M1b candidates deferred** | Authoritative A–H + Followup roster in `docs/m1b-spec.md` §0.1 and the adjudication in `docs/archive/m1b-adjudication.md`: A and Followups 1/3/4/5 selected in M1b-R1 (`check` v0.1-only + compact `enter` text), implemented per `docs/archive/m1b-r1-spec.md`; B, C–E, Followup 2 (`lineage`), Followup 6 (structured prepare) deferred; F moved to M4 Skill-only; G independent; H dropped | R1 deterministic gate passed (independent review with no S0/S1/S2 blockers; 78 tests; benchmark final PASS; 1,423-line runtime within the 1,425 target and 1,450 cap; goldens; S1/S2 regression; read-only byte-identical real-store acceptance; same-day precision-fix amendment superseding the pre-amendment 77-test/1,421-line run) — evidence in [`docs/archive/m1b-r1-stage-notes.md`](docs/archive/m1b-r1-stage-notes.md). Not a behavioral or treatment-superiority gate; `lineage` is a deferred candidate |
+| M1c — Topic workstreams | **done; deterministic gate passed** | Optional explicit `workstreams` membership on Entries/Notes (unscoped legacy visible only in the global view, explicit multi-membership, no registry); repeatable `--workstream` prepare flag (duplicates rejected); single-slug scoped `enter`/`list` (`aitp/enter-0.3`/`aitp/list-0.2` with one additive top-level singular `workstream` key) with global relations computed first and strictly scoped projections including handoff; global warnings/malformed; no flag ⇒ old schemas byte-unchanged; budget target ≤ 1,550 / cap ≤ 1,600 nonblank lines, modules < 400 | Deterministic gate passed 2026-08-13: 107 tests (85 unchanged + 22 new workstream tests); benchmark final PASS (module/plugin help < 250 ms; 1,000-Entry enter/list < 1 s); runtime 1,519 nonblank lines within target/cap; real-store no-flag old-runtime parity and zero-write tree. Evidence: [`docs/m1c-stage-notes.md`](docs/m1c-stage-notes.md); frozen spec [`docs/archive/m1c-workstreams-spec.md`](docs/archive/m1c-workstreams-spec.md). Not a behavioral or treatment-superiority gate |
 | M2 — Reviewed artifacts | design option; blocked | No pre-design: triggers on natural-demand evidence that Entries/Notes are inadequate for recurring synthesis; until then, synthesis files + `authority: human` decision Entries | A no-runtime M1b decision does not authorize M2; its own natural-demand review must show Entries/Notes are inadequate first |
 | M3 — Cross-topic links | design option; blocked | No pre-design: triggers on ≥ 3 real Topics and a real cross-Topic `rg`/citation failure; until then, ordinary citations, no `catalog`/`link` runtime | Natural cross-Topic use shows `rg` plus ordinary citations are inadequate, then human-confirmed links answer a real question with provenance |
 | M4 — Collaborator protocol | blocked design option; Skill-only | Long-horizon question → hypothesis → prediction → test loop | M1b pilot evidence only if that pilot is selected; otherwise M4's own natural-demand and prospective-evidence adjudication against the plain-files baseline. It does not depend on the dormant FROZEN v6 suite |
@@ -81,7 +82,9 @@ remain not measured, deferred, and not counted.
 
 ### Current checkpoint
 
-M1a is done; M1b-R1 is done (remaining M1b candidates deferred). The
+M1a is done; M1b-R1 is done (remaining M1b candidates deferred); M1c
+(Topic workstreams) is **done; deterministic gate passed**
+(see item 6 below). The
 two-session ordinary natural-use pause is **complete**, the
 M1b reviewed freeze revision is recorded, and the selected M1b-R1 read-side
 slice is implemented per [`docs/archive/m1b-r1-spec.md`](docs/archive/m1b-r1-spec.md) with
@@ -133,6 +136,20 @@ its **deterministic gate passed** (evidence in
    The reviewed freeze revision and dispositions are in
    [`docs/archive/m1b-adjudication.md`](docs/archive/m1b-adjudication.md). Neither session is a
    controlled experiment.
+6. M1c (Topic workstreams) is **done; deterministic gate passed**: the
+   2026-08-13 natural-use feedback
+   ([`feedback/2026-08-13-gw-librpa-workstreams-natural-use-feedback.md`](feedback/2026-08-13-gw-librpa-workstreams-natural-use-feedback.md))
+   records observable facts from a GW_librpa store that shares
+   source/build/provenance across three research lines (crpa,
+   magnetic-symmetry, qsgw-semiconductor); the frozen implementation spec
+   is [`docs/archive/m1c-workstreams-spec.md`](docs/archive/m1c-workstreams-spec.md)
+   (optional `workstreams` list, unscoped legacy visible only in the global
+   view, explicit multi-membership, repeatable `--workstream` prepare flag,
+   single-slug scoped `aitp/enter-0.3`/`aitp/list-0.2` with global relations
+   computed first and strictly scoped projections including handoff, global
+   warnings, no registry). M1c is independent of the frozen M1b roster (§0.1
+   dispositions unchanged) and of M3; its deterministic gate **passed** and
+   the evidence is recorded in [`docs/m1c-stage-notes.md`](docs/m1c-stage-notes.md).
 
 ### Simplicity ratchet and implementation order
 
@@ -210,22 +227,36 @@ gate passed — auditable evidence in
 that this selected slice completed; all other roster rows keep their
 dispositions (B, C–E, Followup 2 `lineage`, Followup 6 deferred; F → M4;
 G independent; H dropped).
+M1c (Topic workstreams) is **done; deterministic gate passed** per the
+frozen spec
+[`docs/archive/m1c-workstreams-spec.md`](docs/archive/m1c-workstreams-spec.md):
+optional explicit `workstreams` membership on Entries/Notes (unscoped legacy
+visible only in the global view), repeatable `--workstream` prepare flag
+(duplicates rejected), and single-slug scoped
+`enter`/`list` (`aitp/enter-0.3`/`aitp/list-0.2`, no flag ⇒ old schemas
+byte-unchanged) with global relations computed first and strictly scoped
+projections including handoff; global warnings; no
+registry. The deterministic gate passed and the evidence is recorded in
+[`docs/m1c-stage-notes.md`](docs/m1c-stage-notes.md).
 
 Implemented command groups (the complete current CLI surface):
 
 ```text
 aitp init [--adopt]
-aitp enter
+aitp enter [--workstream <slug>]          # M1c: scoped enter-0.3 with flag
 aitp inventory <path> --name <name>
-aitp record prepare|save
-aitp note prepare|save
-aitp list
+aitp record prepare ... [--workstream <slug>]... -> aitp record save <draft>   # M1c: repeatable prepare flag
+aitp note prepare ... [--workstream <slug>]... -> aitp note save <draft>       # M1c: repeatable prepare flag
+aitp list [--workstream <slug>]           # M1c: scoped list-0.2 with flag
 aitp show <entry-id>
 aitp check            # M1b-R1: shipped; deterministic gate passed
 ```
 
 `enter`, `list`, and `show` expose the versioned read contracts
-`aitp/enter-0.2`, `aitp/list-0.1`, and `aitp/show-0.1`. `check` is the
+`aitp/enter-0.2`, `aitp/list-0.1`, and `aitp/show-0.1`; the M1c scoped
+variants `aitp/enter-0.3` and `aitp/list-0.2` are emitted **only when the
+single-occurrence `--workstream <slug>` flag is passed** (shipped;
+deterministic gate passed). `check` is the
 M1b-R1 read-only store-health command (schema `aitp/check-report-0.1`,
 exit 0 clean / 1 findings / 2 cannot run; read-only, zero-write), shipped
 per `docs/archive/m1b-r1-spec.md` with its deterministic gate passed (evidence in

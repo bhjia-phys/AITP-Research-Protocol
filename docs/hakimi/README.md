@@ -37,6 +37,21 @@ schema status changes.
   deferred candidate.
   `enter` stays at `aitp/enter-0.2`; its text rendering is now
   compact, and that text is human-facing only — never feature-detected.
+- 2026-08-13 M1c sync: **M1c (Topic workstreams) done; deterministic gate
+  passed** per the frozen implementation spec
+  `docs/archive/m1c-workstreams-spec.md` (gate evidence in
+  `docs/m1c-stage-notes.md`). Optional explicit `workstreams`
+  membership (unscoped legacy visible only in the global view), a repeatable
+  `--workstream` prepare flag (duplicates rejected), and single-slug scoped
+  read projections: with the single-occurrence `--workstream <slug>`, `enter`
+  emits `aitp/enter-0.3` and `list` emits `aitp/list-0.2` (old payload plus
+  one additive top-level singular `workstream` key; strict exact membership
+  — unscoped records are excluded; relations computed on the whole store
+  first, then strictly scoped projections including handoff; warnings and
+  `check` stay global). **Without the flag the
+  payloads stay `aitp/enter-0.2`/`aitp/list-0.1`, byte-unchanged.** No
+  registry; `show`/`check` contracts unchanged. Hakimi may now feature-detect
+  and integrate the scoped contracts (H3).
 - Future evaluation-harness integration: Hakimi may consume or host an adapter
   for the separate project, but AITP does not assign harness ownership to
   Hakimi. No H0, H1, or H2 capability depends on harness implementation; see
@@ -73,6 +88,7 @@ adapter-revision rule in [`compatibility-matrix.md` §3](compatibility-matrix.md
 | H0 | now (no gate) | Launcher adapter (argv-only, Python ≥ 3.11 probe), strict shape validation of unversioned envelopes, capability detection from `--help`, `enter` lifecycle, prepare→fill→save flow, graceful degradation on `not_initialized`, tree-hash zero-write tests |
 | H1 | M1a done; deterministic gate passed | Read-only feature detection and schema dispatch for `aitp/enter-0.2`, `aitp/list-0.1`, and `aitp/show-0.1`; closeout-first handoff; Note-age signal; generated-golden compatibility tests; plugin version `0.2.0` |
 | H2 | M1b-R1 selected 2026-08-12; implemented per `docs/archive/m1b-r1-spec.md`; deterministic gate passed 2026-08-12 | Integrate only capabilities actually shipped by the R1 gate: `aitp check` (parse `aitp/check-report-0.1` on exits 0 and 1; exit 2 is the error envelope), and consume the compact `enter` text only as human-facing output (never parse it; machine output is the versioned JSON). Persisted `based_on`/`used_by`, pointer bundles, quick-run, and `lineage` are **not** in R1 and must not be scheduled for H2 |
+| H3 | M1c done; deterministic gate passed 2026-08-13 (evidence in `docs/m1c-stage-notes.md`; frozen spec `docs/archive/m1c-workstreams-spec.md`) | Integrate the scoped read contracts **only when passing the single-occurrence `--workstream <slug>`**: feature-detect `aitp/enter-0.3`/`aitp/list-0.2` (old payload plus one additive top-level singular `workstream` key), scope strictly by exact membership (unscoped records are **not** in scope), and keep warnings/malformed global; relations are computed on the whole store first, then projections including the handoff are strictly scoped. Without the flag, keep consuming `aitp/enter-0.2`/`aitp/list-0.1`; never parse the scoped `workstream:` text line. The repeatable `--workstream` prepare flag seeds draft frontmatter only (duplicates rejected) — prepare/save envelopes are unchanged |
 | Formal Hakimi contract | after M4 | Versioned `--json` + extended golden fixtures as the pass gate for any agent integration |
 
 Hakimi's research-loop capabilities (web, PDF, reasoning, session UX, private
@@ -92,14 +108,17 @@ Update this directory **in the same change** as any of the following:
 
 The flip of a roadmap row happens through the gate review; this directory only
 records the consequence. Never edit `docs/roadmap.md` stage statuses from
-here. M1a has landed; the synchronized version metadata is `0.3.0` and the
+here. M1a has landed; the synchronized version metadata is `0.4.0` and the
 read contracts are available. Keep the frozen `suite/adapters/cli.md`
 unchanged until a separately reviewed suite refreeze. Hakimi H1 may now
 feature-detect the three versioned read schemas; `check` is shipped and
 gated (M1b-R1 per `docs/archive/m1b-r1-spec.md`; gate evidence in
 `docs/archive/m1b-r1-stage-notes.md`) and may be feature-detected now;
 `lineage`
-is a deferred candidate.
+is a deferred candidate. M1c (Topic workstreams) is **done; deterministic
+gate passed** (2026-08-13) per `docs/archive/m1c-workstreams-spec.md`; the
+gate evidence is in `docs/m1c-stage-notes.md`, and H3 may now integrate the
+scoped contracts.
 
 ## Reading order
 
