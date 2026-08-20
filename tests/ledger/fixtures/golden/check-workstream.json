@@ -1,0 +1,40 @@
+{
+  "schema": "aitp/check-report-0.2",
+  "status": "findings",
+  "root": "<golden-store>",
+  "counts": {
+    "entries": 2,
+    "notes": 0,
+    "errors": 1,
+    "warnings": 1,
+    "by_code": {
+      "hash_mismatch": {
+        "errors": 1,
+        "warnings": 0
+      },
+      "invalid_timestamp": {
+        "errors": 0,
+        "warnings": 1
+      }
+    },
+    "outside_scope": {
+      "errors": 3,
+      "warnings": 1
+    }
+  },
+  "findings": [
+    {
+      "level": "error",
+      "code": "hash_mismatch",
+      "path": ".aitp/topic/entries/entry-11111111111111111111111111111111.md",
+      "message": "sha256 mismatch: theory/check.md: expected 0000000000000000000000000000000000000000000000000000000000000000, actual bdcf4c994585af6dd6cb1cfbff78bcc73ab27dc30a299db5bb83766ca05b5de4"
+    },
+    {
+      "level": "warning",
+      "code": "invalid_timestamp",
+      "path": ".aitp/topic/entries/entry-22222222222222222222222222222222.md",
+      "message": "unparseable created_at: banana"
+    }
+  ],
+  "workstream": "crpa"
+}

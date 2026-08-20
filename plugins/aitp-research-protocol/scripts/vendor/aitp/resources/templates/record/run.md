@@ -8,4 +8,4 @@
 
 ## Outputs, Result, And Status
 
-<!-- aitp: Give output refs, observed result, checks, and run status. -->
+<!-- aitp: Give output refs as frontmatter maps with required keys target and at (e.g. at: sha256:<digest>; never pin:), observed result, checks, and run status. -->

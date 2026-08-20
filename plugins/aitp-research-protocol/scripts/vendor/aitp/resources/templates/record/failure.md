@@ -8,4 +8,4 @@
 
 ## Evidence And Next Diagnostic
 
-<!-- aitp: Give exact refs and the next discriminating check. -->
+<!-- aitp: Give exact refs as frontmatter maps with required keys target and at (e.g. at: sha256:<digest>; never pin:) and the next discriminating check. -->

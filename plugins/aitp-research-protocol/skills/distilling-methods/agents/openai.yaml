@@ -1,0 +1,6 @@
+interface:
+  display_name: "Distill Methods"
+  short_description: "Distill stable repeated research methods into local method cards"
+  default_prompt: "Use $distilling-methods when a research method has proven stable across sessions and deserves a local method card."
+policy:
+  allow_implicit_invocation: true

@@ -4,7 +4,7 @@
 
 ## Change And Revision
 
-<!-- aitp: Give changed files and the pinned revision. -->
+<!-- aitp: Give changed files and the pinned revision; put each file in frontmatter refs as a map with required keys target and at (e.g. at: git:<revision>; never pin:). -->
 
 ## Verification And Scientific Effect
 

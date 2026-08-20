@@ -217,12 +217,43 @@ def validate_string_fields(values: dict[str, Any], fields: tuple[str, ...], labe
     if invalid: raise AITPError("invalid_type", f"{label} {invalid} must be a string")
 
 
-def _verify_refs(root: Path, refs: Any) -> list[tuple[str, str, str]]:
+def _verify_refs(
+    root: Path, refs: Any, *, save: bool = False
+) -> list[tuple[str, str, str]]:
     failures: list[tuple[str, str, str]] = []
     for ref in refs:
         target, pin = ref["target"], ref["at"]
         scheme, value = pin.split(":", 1)
         external = target.startswith(("http://", "https://", "arxiv:", "doi:"))
+        if scheme == "sha256-once":
+            if external:
+                failures.append(("invalid_sha256_once_ref", f"sha256-once requires a local target: {target}", "error"))
+                continue
+            try:
+                path = _inside(root, target)
+            except AITPError as exc:
+                code = "missing_ref" if save else "historical_ref_missing"
+                grade = "error" if save else "warning"
+                failures.append((code, str(exc), grade))
+                continue
+            if not path.is_file():
+                code = "unreadable_ref" if save else "historical_ref_missing"
+                grade = "error" if save else "warning"
+                failures.append((code, f"reference target is not a file: {target}", grade))
+                continue
+            try:
+                digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            except OSError as exc:
+                code = "unreadable_ref" if save else "historical_ref_missing"
+                grade = "error" if save else "warning"
+                failures.append((code, f"reference target is unreadable: {target}: {exc}", grade))
+                continue
+            if digest != value.lower():
+                if save:
+                    failures.append(("hash_mismatch", f"sha256-once mismatch: {target}: expected {value}, actual {digest}", "error"))
+                else:
+                    failures.append(("historical_pin_drift", f"sha256-once drift: {target}: recorded {value}, current {digest}", "warning"))
+            continue
         if scheme == "git":
             if external:
                 failures.append(("invalid_git_ref", f"Git ref does not contain target: {target}@{value}", "error")); continue
@@ -267,7 +298,7 @@ def _verify_refs(root: Path, refs: Any) -> list[tuple[str, str, str]]:
 
 def validate_refs(root: Path, refs: Any) -> None:
     validate_ref_shapes(refs)
-    for code, message, _ in _verify_refs(root, refs):
+    for code, message, _ in _verify_refs(root, refs, save=True):
         raise AITPError(code, message)
 
 

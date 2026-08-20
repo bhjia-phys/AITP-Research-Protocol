@@ -1,6 +1,6 @@
 interface:
   display_name: "Using AITP"
-  short_description: "Ground and preserve theoretical-physics research state"
-  default_prompt: "Use $using-aitp to recover this project state and record durable research progress."
+  short_description: "Maintain grounded research state at session boundaries and record durable progress"
+  default_prompt: "Use $using-aitp to recover this project state, record durable research progress, and keep the ledger current automatically at session start and end (enter/check, evidence review, method-card retrieval, closeout and working-note maintenance)."
 policy:
   allow_implicit_invocation: true

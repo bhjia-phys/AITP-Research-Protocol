@@ -45,6 +45,7 @@ def test_skill_command_map_covers_implemented_commands() -> None:
         "init",
         "enter",
         "inventory",
+        "backfill",
         "record",
         "note",
         "list",
@@ -68,6 +69,7 @@ def test_cli_help_lists_all_commands(capsys) -> None:
         "show",
         "check",
         "inventory",
+        "backfill",
         "record",
         "note",
     ):

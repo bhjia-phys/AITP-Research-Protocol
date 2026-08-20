@@ -13,7 +13,36 @@ deferred** — the 2026-08-12 reviewed freeze revision
 done; deterministic gate passed** — frozen
 implementation spec `docs/archive/m1c-workstreams-spec.md` (2026-08-13);
 independent of the frozen M1b roster and of M3; the gate evidence is recorded
-in `docs/m1c-stage-notes.md`. M2/M3/M4 remain blocked
+in `docs/m1c-stage-notes.md`. **M1d (Workstream health, scoped `check`):
+done; deterministic gate passed** (2026-08-14) — frozen implementation spec
+`docs/archive/m1d-workstream-health-spec.md`; `aitp check --workstream
+<slug>` single-occurrence emits the scoped `aitp/check-report-0.2` (additive
+top-level singular `workstream` key; `counts` keys `entries, notes, errors,
+warnings, by_code, outside_scope`; strict admitted explicit membership;
+global scan and global relations first, then path projection; exactly four
+scoped text lines; empty scope legal; without the flag
+`aitp/check-report-0.1` JSON/text/exit/zero-write byte-unchanged); version
+0.5.0; runtime **1,543** nonblank lines (target ≤ 1,550 / cap ≤ 1,600),
+**126 tests passed** (107 pre-M1d incl. the one pre-declared M1c-era
+assertion amendment + 19 new M1d tests), benchmark PASS. M1d replaces the M1c "`check` has no
+scope flag" rule for the flag variant only (frozen M1c history unchanged);
+scoped `clean` is not a whole-store health certificate, `by_code` is a
+tally, not a drift/damage classification, and M1d flips no M2/M3/M4
+disposition. **0.6.0 (2026-08-15, reviewed Skill-only use-driven change;
+not a stage):** automatic session-boundary current-state maintenance
+(`using-aitp`) and method-card distillation (`distilling-methods`);
+no behavioral runtime/CLI/schema change; version strings synchronized;
+runtime stays 1,543 nonblank, no M1b disposition change, no M1c/M1d
+frozen-contract change, no M2/M3/M4 flip — see §Methodology skill library
+and `docs/method-cards-and-distillation.md`. **M1e (Evidence lifecycle +
+reviewed workstream backfill): done; deterministic gate passed**
+(2026-08-15) — frozen implementation spec
+`docs/archive/m1e-evidence-lifecycle-backfill-spec.md`; `sha256-once:`
+save-strict/check-historical pins, optional `.aitp/local/check-policy.json`
+reviewed mutable-path policy, and dry-run-first `aitp backfill workstreams`
+with a human-decision mapping anchor; version 0.7.0; runtime **1,793**
+nonblank lines (target ≤ 1,800 / cap ≤ 1,850), **154 tests passed**.
+M2/M3/M4 remain blocked
 design options. Completed specs, adjudications, and stage notes are frozen in
 `docs/archive/` and take no part in any sync discipline. Earlier revisions
 of this file are Git history, not duplicated changelog entries.
@@ -117,8 +146,12 @@ With writes going through the CLI and an intact Git history, the following
 are checkable:
 
 - Append-oriented history. Content is plain Markdown, so post-hoc edits are
-  visible in Git. The shipped M1b-R1 `aitp check` (v0.1-only, read-only,
-  zero-write) re-validates the whole store — schema, pins, relation targets,
+  visible in Git. The shipped `aitp check` is read-only and zero-write in
+  two transports — `aitp/check-report-0.1` no-flag (the M1b-R1 whole-store
+  diagnostic) and `aitp/check-report-0.2` scoped via the single-occurrence
+  `--workstream <slug>` flag (M1d), both diagnosing the same shipped v0.1
+  file schemas (`aitp/lite-entry-0.1`/`aitp/lite-note-0.1`) — it
+  re-validates the whole store — schema, pins, relation targets,
   closure rules — and surfaces inconsistency in the final state; it does not
   reconstruct history and never repairs. Prior to M1b-R1 no such whole-store
   diagnostic was a current command.
@@ -184,18 +217,25 @@ transitions are human-gated.
 
 Python's current implementation boundary has exactly five verbs:
 **validate**, **persist** (atomic, idempotent), **project** (`enter`/`show`/`list`),
-**diagnose** (`check`), **benchmark**. `check` is the shipped M1b-R1
-read-only whole-store diagnostic (v0.1-only, schema `aitp/check-report-0.1`).
+**diagnose** (`check`), **benchmark**. `check` is the shipped read-only
+diagnostic with two transports — `aitp/check-report-0.1` no-flag
+(whole-store, from M1b-R1) and `aitp/check-report-0.2` scoped via the
+single-occurrence `--workstream <slug>` flag (M1d); both diagnose the same
+shipped v0.1 file schemas (`aitp/lite-entry-0.1`/`aitp/lite-note-0.1`).
 
 Deterministic constraints belong in the gate, not in Skills: target-existence
 and closure validation at save, relation existence, pin verification, template
-completion, and — as shipped in M1b-R1 — whole-store re-validation via
-`check`. Review↔hash binding remains a deterministic check where the
+completion, and — as shipped — whole-store re-validation via
+`check` (the scoped M1d variant still scans the whole store and validates
+relations globally before projecting findings per workstream). Review↔hash
+binding remains a deterministic check where the
 relevant reviewed-artifact capability is selected.
 
 The shipped `aitp check` is read-only diagnostics over the whole
-store: no cache, no repair, no migration, no new canonical files. It cannot
-detect missed records, forged first-write attribution, or whether an agent saw
+store in both modes: no cache, no repair, no migration, no new canonical files.
+A scoped run reports only findings attributable to records that explicitly
+list the workstream; the no-flag run remains the whole-store instrument. It
+cannot detect missed records, forged first-write attribution, or whether an agent saw
 a result early — those remain suite- and Git-visible concerns.
 
 - Cumulative runtime budget: stage-end caps below, counted as **nonblank
@@ -345,11 +385,28 @@ started early; a predecessor gate never authorizes later scope automatically.
 | M0.6 — Adopt & bootstrap | **implementation closed; original empirical gate not passed** — item 1 (`init --adopt`) and item 2 deterministic inventory implementation are complete; item 3 is an anchored, unexecuted FROZEN v6 packet. Specs: item 1 `docs/archive/m0.6-init-adopt.md`, item 2 `docs/archive/m0.6-bootstrap.md`, item 3 `docs/archive/m0.6-suite.md` | The approved narrowed gate review closes M0.6. Original bootstrap Notes/decisions, recall/false-import/human-time, held-out S3, paired S1/S2, cold-start, conformance, causal, and treatment-advantage evidence is not measured; deferred; not counted, and does not block M1a |
 | M1a — Memory that restores | **done; deterministic gate passed** (`docs/archive/m1a-spec.md`, evidence in `docs/archive/m1a-stage-notes.md`) | Versioned read projections: `list`, `show`, and `enter` v2; closeout-first handoff; Note-age structural signal; generated goldens; deterministic S1/S2 regression; read-only GW_librpa acceptance; all tests and performance/line caps. This is not a behavioral or treatment-superiority gate |
 | M1b — Open items & pilot | **M1b-R1 done; remaining M1b candidates deferred** — 2026-08-12 reviewed freeze revision recorded in `docs/archive/m1b-adjudication.md`; the selected read-side slice M1b-R1 is implemented per `docs/archive/m1b-r1-spec.md` and its deterministic gate passed (evidence in `docs/archive/m1b-r1-stage-notes.md`). B, C–E, Followup 2 (`lineage`), and Followup 6 (structured prepare) remain deferred; F → M4; G independent Skill track; H dropped | The R1 gate is closed. Deferred/dropped rows produce no implementation spec and may return only through a new reviewed freeze revision; M2/M3 require their own natural-demand evidence. This is not a behavioral or treatment-superiority gate |
-| M1c — Topic workstreams | **done; deterministic gate passed** — frozen implementation spec `docs/archive/m1c-workstreams-spec.md` (2026-08-13); independent of the frozen M1b roster (§0.1 dispositions unchanged) and of M3. Slice: optional explicit `workstreams` membership (unscoped legacy visible only in the global view, explicit multi-membership, empty lists invalid), repeatable `--workstream` prepare flag (duplicates rejected), single-slug scoped `enter`/`list` (`aitp/enter-0.3`/`aitp/list-0.2`, additive top-level singular `workstream` key; no flag ⇒ old schemas byte-unchanged), global relations computed first with strictly scoped projections including handoff, global warnings, no registry. Budget: target ≤ 1,550 / cap ≤ 1,600 nonblank lines; modules < 400 | Deterministic gate passed 2026-08-13: new `tests/ledger/test_workstreams.py` (22 tests) plus the unchanged ledger suite (85 tests) — **107 passed**; benchmark final PASS (module/plugin `--help` < 250 ms; 1,000-Entry `enter`/`list` < 1 s); cumulative runtime **1,519** nonblank lines within the 1,550 target and the 1,600 cap, max module `records.py` 348 (< 400); version sync 0.4.0 on all four surfaces; read-only byte-identical real-store acceptance with no-flag old-runtime parity; `git diff --check` clean. Evidence in `docs/m1c-stage-notes.md`. Not a behavioral or treatment-superiority gate |
+| M1c — Topic workstreams | **done; deterministic gate passed** — frozen implementation spec `docs/archive/m1c-workstreams-spec.md` (2026-08-13); independent of the frozen M1b roster (§0.1 dispositions unchanged) and of M3. Slice: optional explicit `workstreams` membership (unscoped legacy visible only in the global view, explicit multi-membership, empty lists invalid), repeatable `--workstream` prepare flag (duplicates rejected), single-slug scoped `enter`/`list` (`aitp/enter-0.3`/`aitp/list-0.2`, additive top-level singular `workstream` key; no flag ⇒ old schemas byte-unchanged), global relations computed first with strictly scoped projections including handoff, global warnings, no registry (`check` had no scope flag in M1c; M1d additively supersedes that sentence for the scoped flag variant — M1d row below). Budget: target ≤ 1,550 / cap ≤ 1,600 nonblank lines; modules < 400 | Deterministic gate passed 2026-08-13: new `tests/ledger/test_workstreams.py` (22 tests) plus the unchanged ledger suite (85 tests) — **107 passed**; benchmark final PASS (module/plugin `--help` < 250 ms; 1,000-Entry `enter`/`list` < 1 s); cumulative runtime **1,519** nonblank lines within the 1,550 target and the 1,600 cap, max module `records.py` 348 (< 400); version sync 0.4.0 on all four surfaces; read-only byte-identical real-store acceptance with no-flag old-runtime parity; `git diff --check` clean. Evidence in `docs/m1c-stage-notes.md`. Not a behavioral or treatment-superiority gate |
+| M1e — Evidence lifecycle + reviewed backfill | **done; deterministic gate passed** — frozen implementation spec `docs/archive/m1e-evidence-lifecycle-backfill-spec.md` (2026-08-15); independent of the frozen M1b roster and additive to M1c/M1d. Slice: `sha256-once:` mutable-observation pins (save-strict; check drift/missing are `historical_pin_drift`/`historical_ref_missing` warnings); optional `.aitp/local/check-policy.json` reviewed store policy (`mutable` patterns downgrade legacy strict `hash_mismatch`/`missing_ref` to historical warnings; `immutable`/unmatched stay errors; no policy ⇒ check byte-unchanged); `aitp backfill workstreams --mapping … --decision <human-entry> [--apply]` dry-run-first explicit backfill that only adds/merges `workstreams`, requires a human decision pinning the mapping, and never infers membership. Budget: target ≤ 1,800 / cap ≤ 1,850 nonblank lines; modules < 400 | Deterministic gate passed 2026-08-15: **154 tests passed** (pre-M1e ledger suite + new evidence-lifecycle and backfill tests); cumulative runtime **1,793** nonblank lines within target/cap, max module `records.py` 379 (< 400); version sync 0.7.0 on all four surfaces; no-policy check parity, policy grading, backfill dry-run/apply/idempotence and human-anchor rejection asserted on synthetic fixtures; `git diff --check` clean. Evidence in `docs/m1e-stage-notes.md`. Not a behavioral or treatment-superiority gate; policy executes reviewed configuration, never semantic drift/damage inference |
+| M1d — Workstream health | **done; deterministic gate passed** — frozen implementation spec `docs/archive/m1d-workstream-health-spec.md` (2026-08-14); additive to the frozen M1c contract (replaces only the "`check` has no scope flag" rule for the flag variant; frozen M1c history unchanged), independent of the frozen M1b roster (§0.1 dispositions unchanged) and of M3. Slice: single-occurrence `--workstream <slug>` on `check` ⇒ scoped **`aitp/check-report-0.2`** (additive top-level singular `workstream` key; `counts` keys `entries, notes, errors, warnings, by_code, outside_scope`; scoped `entries`/`notes` are admitted in-scope counts), strict attributed explicit membership (malformed/duplicate/unscoped/out-of-scope/TOPIC findings never scoped), global scan and global relations first then path projection, `outside_scope` a pure global−scoped level delta, exactly four scoped text lines, empty scope legal; no flag ⇒ `aitp/check-report-0.1` JSON/text/exit 0/1/2/zero-write byte-unchanged. Budget: target ≤ 1,550 / cap ≤ 1,600 nonblank lines; modules < 400 | Deterministic gate passed 2026-08-14: new `tests/ledger/test_check_workstream.py` (19 tests) plus the pre-M1d ledger suite (107, incl. the one pre-declared amendment of the M1c-era misuse assertion in `test_workstreams.py`) — **126 passed**; benchmark final PASS (module/plugin `--help` < 250 ms; 1,000-Entry `enter`/`list` < 1 s); cumulative runtime **1,543** nonblank lines within the 1,550 target and the 1,600 cap, max module `records.py` 348 (< 400); version sync 0.5.0 on all four surfaces; no-flag byte parity, legacy empty-scope, and zero-write asserted in-suite on synthetic fixtures (the live external stores sit outside this repo — real-store acceptance **not measured, not claimed**); `git diff --check` clean. Evidence in `docs/m1d-stage-notes.md`. Not a behavioral or treatment-superiority gate; a scoped `clean` is not a whole-store health certificate and `by_code` is a tally, not a drift/damage classification |
 | M2 — Reviewed artifacts | design option; blocked | M1b selected-slice gate, if any; natural workflow must show Entries/Notes are inadequate before scheduling, then real reviewed material in the dogfood Topics |
 | M3 — Cross-topic links | design option (`docs/archive/cross-topic-links.md`); blocked | M2 gate, ≥ 3 real Topics, and a natural cross-Topic failure of `rg` plus ordinary citations before scheduling |
 | M4 — Collaborator protocol | blocked design option (`docs/archive/collaborator-design.md`); Skill-only, +0 runtime lines | If a reviewed freeze revision selects F in M1b, its separately reviewed selected-slice spec and pilot evidence; otherwise M4's own natural-demand and prospective-evidence adjudication against the plain-files baseline. The dormant FROZEN v6 suite is not a dependency |
 | Hakimi contract | not an AITP stage | after M4 |
+
+**0.6.0 (2026-08-15) is not a roadmap stage** and adds no row above: it is a
+reviewed Skill-only change (automatic session-boundary current-state
+maintenance in `using-aitp`; method-card distillation in `distilling-methods`)
+that makes no behavioral runtime/CLI/schema change; version strings
+synchronized; no transport or exit-code change; no stage-disposition flip;
+its version is a **version-only sync** — 0.6.0 on all four
+surfaces (`kimi.plugin.json` `"0.6.0"`, `.codex-plugin/plugin.json`
+`"0.6.0+codex.<stamp>"`, `pyproject.toml` `version = "0.6.0"`,
+`scripts/vendor/aitp/__init__.py` `__version__ = "0.6.0"`, all asserted equal
+by `test_release_sync.py`), a bump over the historical M1d 0.5.0 (which the
+M1d row above keeps). Its natural-use evidence, quantum.harness lessons, the
+card/Skill/tool three layers, and the human publication gate are recorded
+concisely in §Methodology skill library and in detail in
+`docs/method-cards-and-distillation.md`.
 
 ### M0.5 — Slim core (end ≤ 1,000)
 
@@ -612,10 +669,12 @@ The slice:
   handoff, `recent_notes`, `latest_working_note`, Note age,
   active/superseded/omitted counts) are **strictly scoped** — an
   out-of-scope handoff is never shown; `warnings`, `counts.malformed`,
-  `memory_status`, and `check` are global (`check` has no scope flag);
+  `memory_status`, and `check` are global (`check` had no scope flag in
+  M1c; M1d additively supersedes that sentence for the scoped flag variant —
+  §M1d below);
 - **no flag ⇒ byte-identical old schemas** (`aitp/enter-0.2`,
-  `aitp/list-0.1`); **no registry** (no new file or command); `show` and
-  `check` contracts unchanged.
+  `aitp/list-0.1`); **no registry** (no new file or command); `show`
+  unchanged; `check` unchanged except the M1d-additive scoped flag variant.
 
 Status: **done; deterministic gate passed** (2026-08-13) per the frozen
 spec; the gate evidence is recorded in `docs/m1c-stage-notes.md`: new tests
@@ -628,6 +687,136 @@ with no-flag old-runtime parity; `git diff --check` clean. Budget: target
 ≤ 1,550, hard cap ≤ 1,600 cumulative nonblank lines; actual at gate time
 **1,519** (headroom +31 target / +81 cap). The passed M1c gate does not flip
 M2/M3/M4 and does not reopen M1b.
+
+### M1d — Workstream health: scoped `check` (done; deterministic gate passed; end ≤ 1,600)
+
+M1d is a **separate stage slice, additive to the frozen M1c contract** and
+independent of the frozen M1b roster in `docs/m1b-spec.md` §0.1 (it selects
+no M1b candidate; dispositions unchanged) **and of M3**. It **replaces the
+M1c "`check` has no scope flag" rule for the flag variant only**; every
+other M1c clause — the `workstreams` field semantics (explicit
+multi-membership, unscoped legacy, no inference), the repeatable prepare
+flags, `aitp/enter-0.3`/`aitp/list-0.2`, no-registry, and the no-flag
+byte-identity of `enter`/`list` — remains fully in force, and the frozen
+M1c artifacts are never edited. Its natural-demand evidence is the
+2026-08-14 feedback chain — three ordinary real-Topic sessions, none of
+them an AITP gate or a controlled experiment
+(`feedback/2026-08-14-gw-librpa-natural-use.md`,
+`feedback/2026-08-14-gw-librpa-qsgw-semiconductor-natural-use.md`,
+`feedback/2026-08-14-yangian-power-law-heisenberg-chain-natural-use.md`):
+a 201-error/2-warning global wall mixes missing files with SHA mismatches
+on legitimately regenerated files, scoped `enter` says
+`memory_status=available` beside a failing global `check`, and a ≈ 54 KB
+JSON report truncates in the terminal. The frozen implementation spec is
+`docs/archive/m1d-workstream-health-spec.md` (2026-08-14).
+
+The slice:
+
+- single-occurrence `--workstream <slug>` flag on `aitp check` (a repeated
+  flag is parser-rejected misuse; slug validation reuses the M1c rule);
+  with the flag, `check --json` emits **`aitp/check-report-0.2`**: the
+  complete 0.1 payload plus one additive top-level singular `workstream`
+  key, and `counts` gains **`by_code`** (code → `{"errors": n, "warnings":
+  m}`, per-level buckets over the scoped findings, always present, keys
+  sorted lexicographically) and **`outside_scope`** (`{"errors": n,
+  "warnings": m}`, the derived global−scoped level totals — a pure level
+  delta: no paths, no codes, never a finding, never affects
+  `status`/exit);
+- **strict attributed explicit membership**: a finding is scoped only when
+  its record was **admitted** (parse and structure passed, ID unique)
+  **and** its frontmatter `workstreams` list explicitly contains the slug —
+  unscoped, out-of-scope, malformed, duplicate-ID, and TOPIC.md findings
+  are never scoped; scoped `counts.entries`/`notes` are admitted in-scope
+  counts, deliberately different from the global count-every-file rule;
+- **global scan and global relations first**: every run, scoped or not,
+  computes the complete global report (relations validated against the
+  global `entry_map`, so an in-scope resolver/superseder still closes its
+  target anywhere in the store), and the scoped report is exactly the
+  global report restricted to attributable in-scope findings — same
+  findings, levels, codes, messages, `(path, code, message)` order;
+- scoped text is **exactly four human-only lines** (workstream / check
+  totals / compact `by_code` JSON / `outside_scope` with a pointer to the
+  whole-store run) — always, including a clean scope; details live in
+  `--json` only;
+- scoped `status`/exit follow the scoped findings (0 clean / 1 findings /
+  2 cannot run or misuse); `outside_scope` never affects `status`/exit; a
+  well-formed slug with no admitted in-scope records is a **valid empty
+  scope** (exit 0) — on an all-unscoped legacy store every scope is empty
+  and the empty scope is the signal, not a health certificate;
+- **no flag ⇒ byte-identical `aitp/check-report-0.1`** JSON and text, exit
+  0/1/2, zero-write; **no registry**, no repair, no new command, no
+  `malformed` key.
+
+Status: **done; deterministic gate passed** (2026-08-14) per the frozen
+spec; the gate evidence is recorded in `docs/m1d-stage-notes.md`: new tests
+`tests/ledger/test_check_workstream.py` (19) plus the pre-M1d ledger suite
+(**107**, including the one pre-declared amendment replacing the M1c-era
+`check --workstream` misuse assertion in `test_workstreams.py`) — **126
+passed**; benchmark thresholds unchanged with final PASS (module/plugin
+`--help` < 250 ms; 1,000-Entry `enter`/`list` < 1 s); per-module < 400 and
+cumulative **1,543** nonblank lines (target ≤ 1,550 / hard cap ≤ 1,600;
+headroom +7 target / +57 cap); version sync 0.5.0 on all four surfaces; in-suite evidence — no-flag
+byte parity against the `check.json` golden, legacy empty-scope (test 16),
+zero-write (test 13); **real-store acceptance not measured, not claimed** —
+the live external stores sit outside this repository and the 2026-08-14
+feedback files are natural-demand evidence only; `git diff --check` clean.
+Budget:
+target ≤ 1,550, hard cap ≤ 1,600 cumulative nonblank lines; actual at gate
+time **1,543**. The passed M1d gate does not flip M2/M3/M4, does not reopen
+M1b or M1c, and does not modify any frozen artifact.
+
+Boundaries (M1d claims only deterministic implementation and read-only
+compatibility): a scoped `clean`/exit 0 is **not** a whole-store health
+certificate — it claims only "no attributable findings for this
+workstream"; the no-flag run remains the whole-store instrument and
+`outside_scope` surfaces, never classifies, the remainder. **`by_code` is
+not a drift-vs-damage classification** — it is a deterministic per-code,
+per-level tally; whether a `hash_mismatch` is expected historical-pin drift
+or current evidence damage stays a human judgment, and the runtime never
+makes that call. A baseline/delta report comparison, handoff staleness, and
+write friction are **deferred** (manual `diff`/`rg` over saved
+deterministic JSONs is the query path). No behavioral,
+treatment/control, causal, or treatment-advantage evidence is claimed.
+
+### M1e — Evidence lifecycle + reviewed workstream backfill (done; deterministic gate passed; end ≤ 1,850)
+
+Natural-demand evidence: the 2026-08-15 real-store audits found 218 check
+errors on GW_librpa and 175 on Power_Law_Heisenberg_Chain dominated by
+historical strict `sha256:` pins on mutable canonical paths; GW_librpa had
+only 58 of 332 records explicitly carrying `workstreams`. The frozen spec is
+`docs/archive/m1e-evidence-lifecycle-backfill-spec.md` (2026-08-15).
+
+The slice:
+
+- **`sha256-once:`** records a save-time observation of a mutable target.
+  Save verifies exactly like `sha256:`; later check drift is
+  `historical_pin_drift` warning and a missing target is
+  `historical_ref_missing` warning.
+- **`.aitp/local/check-policy.json`** (schema `aitp/check-policy-0.1`) is
+  optional reviewed store policy with `mutable` and `immutable` path-pattern
+  lists. A mutable match downgrades legacy strict `hash_mismatch` /
+  `missing_ref` to the historical warning codes; immutable matches and
+  unmatched paths stay errors. No policy ⇒ check is byte-unchanged.
+- **`aitp backfill workstreams --mapping … --decision <human-entry>
+  [--apply]`** is dry-run by default. The mapping explicitly lists slugs and
+  Entry/Note IDs; the human decision must sha256-pin the mapping file; apply
+  only adds/merges the frontmatter `workstreams` block and preserves body and
+  other fields. It never infers workstreams.
+
+Status: **done; deterministic gate passed** (2026-08-15) per the frozen
+spec; gate evidence is recorded in `docs/m1e-stage-notes.md`: **154 tests
+passed** (the pre-M1e suite plus new `test_evidence_lifecycle.py` and
+`test_backfill.py`); benchmark final PASS (module/plugin `--help` < 250 ms;
+1,000-Entry `enter`/`list` < 1 s); runtime **1,793** nonblank lines within
+target ≤ 1,800 / cap ≤ 1,850; max module `records.py` 379 (< 400); version
+sync 0.7.0 on all four surfaces; no-policy no-flag check parity, policy
+grading, backfill dry-run/apply/idempotence, and human-anchor rejection
+asserted in-suite on synthetic fixtures; real-store acceptance not measured
+on the live external stores by this gate; `git diff --check` clean.
+
+Budget: target ≤ 1,800, hard cap ≤ 1,850 cumulative nonblank lines; actual
+at gate time **1,793**. The passed M1e gate does not flip M2/M3/M4, does not
+reopen M1b/M1c/M1d, and does not modify any frozen artifact.
 
 ### M2 — Reviewed artifacts (design option; ~3–4 weeks; end ≤ 1,700)
 
@@ -717,7 +906,8 @@ protocol → method → record protocol → compare protocol → stop conditions
 
 | Skill | Stage | Responsibility |
 |---|---|---|
-| `using-aitp` | M0→M1a | session lifecycle: when to read, durable-event judgment, closeout |
+| `using-aitp` | M0→M1a (0.6.0 Skill-only; M1e evidence/backfill) | session lifecycle: when to read, durable-event judgment, closeout; since 0.6.0 also automatic session-boundary current-state maintenance; since M1e also `sha256-once`/check-policy pin selection and reviewed `backfill workstreams` protocol |
+| `distilling-methods` | 0.6.0 (2026-08-15; Skill-only, not a stage) | capture stable repeated procedures as method-card theory Notes; draft automatically on trigger only, trial Entries pin the exact card, revisions supersede, two pinned trials ⇒ publication proposal, human `decision` Entry approval + explicit human publish request gates (never auto-publish) |
 | `surveying-literature` | G: independent use-driven Skill track | literature need → search → triage → reading notes + source Entries; lands only after real use separately justifies it and its reviewed Skill change |
 | `analyzing-a-source` | G: independent use-driven Skill track | deep-read one source: reproduce, bounded claims, assumptions, killers; lands only after real use separately justifies it and its reviewed Skill change |
 | `comparing-with-memory` | M2 (design option) | check failures/conventions before proposing; contradictions after results — lands only if M2 is authorized on natural demand |
@@ -725,6 +915,43 @@ protocol → method → record protocol → compare protocol → stop conditions
 | `writing-it-up` | post-M2 | assemble notes/manuscripts from reviewed material; reflow new claims |
 | `aitp-catalog` | M3 (design option) | cross-topic discovery and link proposals — lands only if M3 is authorized on natural demand |
 | `aitp-collaborator` | F: moved to M4 | separate Skill-only behavior track for the long-horizon question→hypothesis→prediction→test loop; not an M1b runtime/schema/gate dependency |
+
+**2026-08-15 reviewed Skill-only change (0.6.0).** The natural-use feedback
+(`feedback/2026-08-15-multi-topic-automatic-organization-and-method-distillation-natural-use.md`)
+records a two-workspace session: two-store handoff tidying cost, the
+researcher's refusal of future manual tidying, and the request to study the
+`quantum.harness` reference repo (no controlled comparison, no superiority
+claim). Lessons from that survey (36 curated `METHOD.md` cards, fixed card
+shape, M1–M14 axis tables, CI without tests) were adjudicated into AITP as:
+**adopt** three-layer separation (card informs / Skill routes / tool
+executes), fixed card shape, completeness and verification anchors,
+ratification; **adapt** to the existing `mode: theory` Note profile with
+marker-based `rg` retrieval and automatic drafting; **reject** enumerated
+dispatchers, Ion/symlink tooling, bulk card zoos, duplicated facts,
+prose-only provenance, and tests-not-in-CI. The reference repo's cards are
+predominantly human-curated, not auto-distilled. Method cards are a **Skill
+profile**, not a schema/mode/review state: title `Method card: <slug>`, body
+first line `> method-card: <slug>`, the six fixed theory headings. The
+distillation state chain is draft → trial (Entry pins the exact card) →
+revision (new Note supersedes) → proposal (only after two pinned trials) →
+**human approval** (a `decision` Entry with `authority: human` pinning the
+card) → **explicit human publish request** before any plugin Skill. The
+`using-aitp` maintenance additions (enter/check, evidence review,
+method-card marker retrieval at start; closeout/working-Note upkeep with
+no-delta zero-write and pre/post verification at end) are Skill judgment,
+never runtime rules. Full record: `docs/method-cards-and-distillation.md`.
+
+A same-day follow-up from
+`feedback/2026-08-15-gw-librpa-natural-use.md` (one continued GW/LibRPA
+session; not a gate) adds no runtime/CLI/schema: the bundled
+`record`/`note` prepare templates now show the required `target`/`at` ref
+shape (the key is `at`, never `pin`), and `using-aitp` teaches
+evidence-lifecycle pin choice (immutable snapshot → `sha256:`, evolving
+tracked source → `git:`, mutable canonical files → snapshot or revision,
+remote run → immutable local pointer manifest), pointer-file immutability,
+expected-drift vs. damage interpretation of old-pin `hash_mismatch`
+findings, `malformed`-vs-field-warning terminology, and session-start
+handoff/goal structural checks.
 
 ## Non-goals
 

@@ -68,6 +68,8 @@ checkpoint synchronized with it.
 | M1a — Memory that restores | **done; deterministic gate passed** | Versioned `list`, `show`, closeout-first `enter` v2, Note-age structural signal, generated public-schema goldens, deterministic S1/S2 regression, read-only GW_librpa acceptance | Deterministic gate passed; this is not a behavioral or treatment-superiority gate. Evidence: [`docs/archive/m1a-stage-notes.md`](docs/archive/m1a-stage-notes.md) |
 | M1b — Open items & behavior pilot | **M1b-R1 done; remaining M1b candidates deferred** | Authoritative A–H + Followup roster in `docs/m1b-spec.md` §0.1 and the adjudication in `docs/archive/m1b-adjudication.md`: A and Followups 1/3/4/5 selected in M1b-R1 (`check` v0.1-only + compact `enter` text), implemented per `docs/archive/m1b-r1-spec.md`; B, C–E, Followup 2 (`lineage`), Followup 6 (structured prepare) deferred; F moved to M4 Skill-only; G independent; H dropped | R1 deterministic gate passed (independent review with no S0/S1/S2 blockers; 78 tests; benchmark final PASS; 1,423-line runtime within the 1,425 target and 1,450 cap; goldens; S1/S2 regression; read-only byte-identical real-store acceptance; same-day precision-fix amendment superseding the pre-amendment 77-test/1,421-line run) — evidence in [`docs/archive/m1b-r1-stage-notes.md`](docs/archive/m1b-r1-stage-notes.md). Not a behavioral or treatment-superiority gate; `lineage` is a deferred candidate |
 | M1c — Topic workstreams | **done; deterministic gate passed** | Optional explicit `workstreams` membership on Entries/Notes (unscoped legacy visible only in the global view, explicit multi-membership, no registry); repeatable `--workstream` prepare flag (duplicates rejected); single-slug scoped `enter`/`list` (`aitp/enter-0.3`/`aitp/list-0.2` with one additive top-level singular `workstream` key) with global relations computed first and strictly scoped projections including handoff; global warnings/malformed; no flag ⇒ old schemas byte-unchanged; budget target ≤ 1,550 / cap ≤ 1,600 nonblank lines, modules < 400 | Deterministic gate passed 2026-08-13: 107 tests (85 unchanged + 22 new workstream tests); benchmark final PASS (module/plugin help < 250 ms; 1,000-Entry enter/list < 1 s); runtime 1,519 nonblank lines within target/cap; real-store no-flag old-runtime parity and zero-write tree. Evidence: [`docs/m1c-stage-notes.md`](docs/m1c-stage-notes.md); frozen spec [`docs/archive/m1c-workstreams-spec.md`](docs/archive/m1c-workstreams-spec.md). Not a behavioral or treatment-superiority gate |
+| M1e — Evidence lifecycle + reviewed backfill | **done; deterministic gate passed** | `sha256-once:` save-strict / check-historical pin scheme; optional `.aitp/local/check-policy.json` reviewed mutable-path policy (legacy strict drift/missing downgraded only on mutable matches; immutable/unmatched stay errors; no policy ⇒ byte-unchanged); new `aitp backfill workstreams --mapping … --decision <human-entry> [--apply]` dry-run-first, idempotent, explicit-only workstream backfill that adds/merges frontmatter membership and preserves body/other fields; budget target ≤ 1,800 / cap ≤ 1,850 nonblank lines, modules < 400 | Deterministic gate passed 2026-08-15: 154 tests passed; runtime 1,793 nonblank lines within target/cap (max module `records.py` 379); no-policy check parity asserted; backfill dry-run/apply/idempotence and human-anchor rejection asserted; `git diff --check` clean. Evidence: [`docs/m1e-stage-notes.md`](docs/m1e-stage-notes.md); frozen spec [`docs/archive/m1e-evidence-lifecycle-backfill-spec.md`](docs/archive/m1e-evidence-lifecycle-backfill-spec.md). Not a behavioral or treatment-superiority gate |
+| M1d — Scoped `check` workstream health | **done; deterministic gate passed** | Single-occurrence `--workstream <slug>` on `check` (repeated flags parser-rejected) emitting the scoped `aitp/check-report-0.2`: strict admitted explicit-membership attribution (malformed, duplicate-ID, unscoped, out-of-scope, and `TOPIC.md` findings never scoped), whole-store scan and global relations computed first with the scoped report a strict subset projection (same findings, levels, codes, `(path, code, message)` order), scoped counts `entries, notes, errors, warnings, by_code, outside_scope` (per-level `by_code` buckets; `outside_scope` a pure global−scoped level delta that never affects `status`/exit), exactly four human-only scoped text lines, empty scope legal (exit 0); no flag ⇒ `aitp/check-report-0.1` byte-unchanged (JSON, text, exit, zero-write); budget target ≤ 1,550 / cap ≤ 1,600 nonblank lines, modules < 400 | Deterministic gate passed 2026-08-14: 126 tests (107 unchanged + 19 new scoped-check tests); benchmark final PASS (module/plugin `--help` < 250 ms; 1,000-Entry `enter`/`list` < 1 s); runtime 1,543 nonblank lines within target/cap (max module `records.py` 348); `git diff --check` clean. Evidence: [`docs/m1d-stage-notes.md`](docs/m1d-stage-notes.md); frozen spec [`docs/archive/m1d-workstream-health-spec.md`](docs/archive/m1d-workstream-health-spec.md). Not a behavioral or treatment-superiority gate |
 | M2 — Reviewed artifacts | design option; blocked | No pre-design: triggers on natural-demand evidence that Entries/Notes are inadequate for recurring synthesis; until then, synthesis files + `authority: human` decision Entries | A no-runtime M1b decision does not authorize M2; its own natural-demand review must show Entries/Notes are inadequate first |
 | M3 — Cross-topic links | design option; blocked | No pre-design: triggers on ≥ 3 real Topics and a real cross-Topic `rg`/citation failure; until then, ordinary citations, no `catalog`/`link` runtime | Natural cross-Topic use shows `rg` plus ordinary citations are inadequate, then human-confirmed links answer a real question with provenance |
 | M4 — Collaborator protocol | blocked design option; Skill-only | Long-horizon question → hypothesis → prediction → test loop | M1b pilot evidence only if that pilot is selected; otherwise M4's own natural-demand and prospective-evidence adjudication against the plain-files baseline. It does not depend on the dormant FROZEN v6 suite |
@@ -80,11 +82,37 @@ passed**; see [`docs/archive/m1a-stage-notes.md`](docs/archive/m1a-stage-notes.m
 behavioral or treatment-superiority gate. The original empirical M0.6 conditions
 remain not measured, deferred, and not counted.
 
+The 2026-08-15 reviewed Skill-only change ships as **0.6.0**: automatic
+session-boundary current-state maintenance (enter/check, evidence review,
+method-card retrieval at session start; agent-authority closeout/working-Note
+upkeep at session end, superseding stale records, with **no-delta zero-write**
+and pre/post verification) and method-card distillation — stable repeated
+procedures become **method-card theory Notes** (the existing `mode: theory`
+Note profile, body-first-line marker `> method-card: <slug>`, fixed six
+headings), drafted automatically on trigger but gated through pinned trials,
+a human `decision` Entry approval, and an explicit human publish request.
+It is not a roadmap stage: **no behavioral runtime/CLI/schema change; version
+strings synchronized** (runtime stays 1,543 nonblank lines) and no M2/M3/M4 flip. The natural-use
+feedback is [`feedback/2026-08-15-multi-topic-automatic-organization-and-method-distillation-natural-use.md`](feedback/2026-08-15-multi-topic-automatic-organization-and-method-distillation-natural-use.md);
+the design record is [`docs/method-cards-and-distillation.md`](docs/method-cards-and-distillation.md).
+The same-day GW/LibRPA feedback
+([`feedback/2026-08-15-gw-librpa-natural-use.md`](feedback/2026-08-15-gw-librpa-natural-use.md))
+is folded in as template/Skill guidance only: `record`/`note` prepare
+prompts now show the required `target`/`at` ref shape (the key is `at`,
+never `pin`), and `using-aitp` teaches evidence-lifecycle pin choice,
+immutable pointer manifests, old-pin drift interpretation,
+`malformed`-vs-warning terminology, and session-start handoff/goal checks. No CLI flag, schema, exit code, or runtime line changed.
+
 ### Current checkpoint
 
 M1a is done; M1b-R1 is done (remaining M1b candidates deferred); M1c
 (Topic workstreams) is **done; deterministic gate passed**
-(see item 6 below). The
+(see item 6 below), M1d (scoped `check` workstream health) is
+**done; deterministic gate passed** (see item 7 below), M1e
+(evidence lifecycle + reviewed backfill) is **done; deterministic gate passed**
+(see item 9 below), and the 2026-08-15 reviewed Skill-only **0.6.0** slice
+(automatic session-boundary maintenance + method-card distillation) is
+shipped (see item 8 below). The
 two-session ordinary natural-use pause is **complete**, the
 M1b reviewed freeze revision is recorded, and the selected M1b-R1 read-side
 slice is implemented per [`docs/archive/m1b-r1-spec.md`](docs/archive/m1b-r1-spec.md) with
@@ -118,10 +146,14 @@ its **deterministic gate passed** (evidence in
    evidence is in [`docs/archive/m1a-stage-notes.md`](docs/archive/m1a-stage-notes.md). The
    current CLI is `init`, `enter`, `inventory`, `record`, `note`, `list`,
    `show`, and `check`; `enter` uses `aitp/enter-0.2`, `list` uses
-   `aitp/list-0.1`, `show` uses `aitp/show-0.1`, and `check` (schema
-   `aitp/check-report-0.1`) is shipped and gated per
-   [`docs/archive/m1b-r1-spec.md`](docs/archive/m1b-r1-spec.md) with its deterministic gate
-   **passed** (evidence in [`docs/archive/m1b-r1-stage-notes.md`](docs/archive/m1b-r1-stage-notes.md)).
+   `aitp/list-0.1`, `show` uses `aitp/show-0.1`, and `check` is shipped and
+   gated with two read-only transports: the no-flag `aitp/check-report-0.1`
+   per [`docs/archive/m1b-r1-spec.md`](docs/archive/m1b-r1-spec.md) with its deterministic
+   gate **passed** (evidence in [`docs/archive/m1b-r1-stage-notes.md`](docs/archive/m1b-r1-stage-notes.md)),
+   and the M1d scoped `aitp/check-report-0.2` (`--workstream <slug>`) per
+   [`docs/archive/m1d-workstream-health-spec.md`](docs/archive/m1d-workstream-health-spec.md)
+   with its deterministic gate **passed** (evidence in
+   [`docs/m1d-stage-notes.md`](docs/m1d-stage-notes.md)).
    [`docs/m1b-spec.md`](docs/m1b-spec.md)
    records the 2026-08-12 reviewed freeze revision; the natural-use pause is
    complete and the M1b-R1 read-side slice is implemented and gated.
@@ -151,6 +183,78 @@ its **deterministic gate passed** (evidence in
    dispositions unchanged) and of M3; its deterministic gate **passed** and
    the evidence is recorded in [`docs/m1c-stage-notes.md`](docs/m1c-stage-notes.md).
 
+7. M1d (scoped `check` workstream health) is **done; deterministic gate
+   passed**: the 2026-08-14 feedback chain — three ordinary real-Topic
+   sessions, none of them an AITP gate or a controlled experiment
+   ([`feedback/2026-08-14-gw-librpa-natural-use.md`](feedback/2026-08-14-gw-librpa-natural-use.md),
+   [`feedback/2026-08-14-gw-librpa-qsgw-semiconductor-natural-use.md`](feedback/2026-08-14-gw-librpa-qsgw-semiconductor-natural-use.md),
+   [`feedback/2026-08-14-yangian-power-law-heisenberg-chain-natural-use.md`](feedback/2026-08-14-yangian-power-law-heisenberg-chain-natural-use.md))
+   drove the frozen implementation spec
+   [`docs/archive/m1d-workstream-health-spec.md`](docs/archive/m1d-workstream-health-spec.md)
+   (single-occurrence `--workstream <slug>` on `check`; scoped
+   `aitp/check-report-0.2` with strict admitted explicit-membership
+   attribution, global scan and relations computed first with the scoped
+   report a strict subset projection, scoped counts with per-level
+   `by_code` and the derived `outside_scope` level delta, exactly four
+   human-only scoped text lines, empty scope legal; no flag ⇒
+   `aitp/check-report-0.1` byte-unchanged). M1d additively supersedes the
+   M1c "`check` has no scope flag" clause for the flag variant only; every
+   other M1c clause and all M1b dispositions (§0.1) are unchanged, and M1d
+   selects no M1b candidate. Its deterministic gate **passed** and the
+   evidence is recorded in [`docs/m1d-stage-notes.md`](docs/m1d-stage-notes.md).
+   The same change ships the `using-aitp` Skill guidance (pin/ref
+   lifecycle, fail-closed exit-code handling, reviewed manual backfill,
+   working-note judgment) and the bundled natural-use feedback template
+   (`plugins/aitp-research-protocol/skills/using-aitp/natural-use-session-template.md`).
+
+8. The 2026-08-15 reviewed Skill-only slice ships as **0.6.0** — no behavioral
+   runtime/CLI/schema change; version strings synchronized (runtime stays at
+   1,543 nonblank lines; every M1b/M1c/M1d contract is unchanged). The natural-use
+   feedback ([`feedback/2026-08-15-multi-topic-automatic-organization-and-method-distillation-natural-use.md`](feedback/2026-08-15-multi-topic-automatic-organization-and-method-distillation-natural-use.md))
+   records observable facts from a two-workspace session: the two-store
+   handoff tidying cost, the researcher's refusal of future manual tidying,
+   and the request to study the `quantum.harness` reference repo — no
+   controlled comparison, no superiority claim. The slice adds:
+   automatic **session-boundary current-state maintenance** in `using-aitp`
+   (session start: `enter`/`check`, evidence review, method-card retrieval
+   via the generic marker search `rg "^> method-card:"`; session end:
+   agent-authority closeout/working-Note upkeep superseding stale records,
+   **no-delta zero-write**, pre/post `check`/`enter` verification — the agent
+   maintains, never the researcher); a new implicit meta-Skill
+   **`distilling-methods`** (draft a method-card theory Note automatically
+   only on trigger — explicit request, or a stable procedure across ≥ 2
+   sessions, or the same failure twice with the same workaround; trial
+   Entries pin the exact card; revisions supersede; **two pinned trials**
+   then a publication **proposal**; a human `decision` Entry pinning the
+   card is the approval gate; an explicit later human publish request is the
+   publication gate — never auto-publish, never cross-Topic propagate, never
+   infer workstreams, never resolve failures on a card's authority, no
+   Python summarization). Method cards reuse the existing `mode: theory`
+   Note profile (title `Method card: <slug>`, body-first-line marker
+   `> method-card: <slug>`, fixed six theory headings) — no new schema,
+   mode, or review state; cards inform, Skills route, and there is no card
+   registry or INDEX. The design record is
+   [`docs/method-cards-and-distillation.md`](docs/method-cards-and-distillation.md)
+   (quantum.harness scale and adopt/adapt/reject evidence; the reference
+   repo's cards are predominantly human-curated, not auto-distilled).
+   A same-day follow-up from
+   [`feedback/2026-08-15-gw-librpa-natural-use.md`](feedback/2026-08-15-gw-librpa-natural-use.md)
+   stays Skill/template-only: `record`/`note` prepare prompts show the
+   required `target`/`at` ref shape, and `using-aitp` adds
+   evidence-lifecycle pin choice, pointer-manifest immutability, old-pin
+   drift interpretation, `malformed`-vs-warning terminology, and
+   session-start handoff/goal checks. No runtime/CLI/schema changed.
+
+9. **M1e (evidence lifecycle + reviewed backfill)** ships as **0.7.0** and
+   is a runtime stage slice, not a Skill-only change. It adds
+   `sha256-once:` mutable-observation pins; optional
+   `.aitp/local/check-policy.json` reviewed mutable-path policy for legacy
+   strict pins; and `aitp backfill workstreams` with a dry-run default and a
+   mandatory human decision Entry that sha256-pins the mapping. No policy
+   file means check remains byte-unchanged. The frozen spec is
+   [`docs/archive/m1e-evidence-lifecycle-backfill-spec.md`](docs/archive/m1e-evidence-lifecycle-backfill-spec.md)
+   and gate evidence is [`docs/m1e-stage-notes.md`](docs/m1e-stage-notes.md).
+
 ### Simplicity ratchet and implementation order
 
 The binding evidence-before-complexity ratchet, gate order, fixed-cap rule,
@@ -163,7 +267,12 @@ ordinary natural-use pause is complete (2026-08-11 GW session chain +
 revision selected the read-side slice M1b-R1 (`aitp check` v0.1-only +
 compact `enter` text), implemented per `docs/archive/m1b-r1-spec.md` with its
 deterministic gate passed (evidence in `docs/archive/m1b-r1-stage-notes.md`).
-M2/M3 remain design options.
+M1c (Topic workstreams) and M1d (scoped `check`) are done with their
+deterministic gates passed. The 2026-08-15 reviewed Skill-only slice (0.6.0:
+automatic session-boundary maintenance + method-card distillation) is shipped
+with **no behavioral runtime/CLI/schema change; version strings synchronized**
+— no new stage, no stage flip. M2/M3 remain
+design options.
 
 ### README maintenance contract
 
@@ -238,6 +347,35 @@ byte-unchanged) with global relations computed first and strictly scoped
 projections including handoff; global warnings; no
 registry. The deterministic gate passed and the evidence is recorded in
 [`docs/m1c-stage-notes.md`](docs/m1c-stage-notes.md).
+M1d (scoped `check` workstream health) is **done; deterministic gate
+passed** per the frozen spec
+[`docs/archive/m1d-workstream-health-spec.md`](docs/archive/m1d-workstream-health-spec.md):
+the single-occurrence `--workstream <slug>` flag on `check` emits the
+scoped `aitp/check-report-0.2` — strict admitted explicit-membership
+attribution (malformed, duplicate-ID, unscoped, out-of-scope, and `TOPIC.md`
+findings are never scoped), whole-store scan and global relations computed
+first with the scoped report a strict subset projection, scoped counts with
+per-level `by_code` and the derived `outside_scope` level delta (never a
+finding, never affecting `status`/exit), exactly four human-only scoped
+text lines, and empty scope legal (exit 0). Without the flag every `check`
+surface is byte-unchanged `aitp/check-report-0.1`. The deterministic gate
+passed and the evidence is recorded in
+[`docs/m1d-stage-notes.md`](docs/m1d-stage-notes.md).
+The 2026-08-15 **0.6.0** release is a Skill/template slice, not a roadmap stage:
+it adds automatic session-boundary current-state maintenance and method-card
+distillation through Skills and documentation only, and the same-day
+GW/LibRPA feedback adds prepare-template ref hints plus pin-lifecycle and
+pointer-immutability guidance. It changes **no** CLI
+command, flag, file schema, transport schema, exit code, or runtime line —
+the installed skills drive the same `init`/`enter`/`record`/`note`/`list`/
+`show`/`check` surface. Session start runs `enter`/`check`, reviews the
+evidence, and retrieves method cards by marker; session end keeps the ledger
+current automatically (agent-authority closeout/working Note, superseding
+stale records; **no-delta zero-write**; post-save verification), and stable
+repeated procedures may be distilled into method-card theory Notes through
+the human-gated chain in `distilling-methods` (draft → trial → revision →
+proposal → human approval → explicit publication). See
+[`docs/method-cards-and-distillation.md`](docs/method-cards-and-distillation.md).
 
 Implemented command groups (the complete current CLI surface):
 
@@ -249,7 +387,8 @@ aitp record prepare ... [--workstream <slug>]... -> aitp record save <draft>   #
 aitp note prepare ... [--workstream <slug>]... -> aitp note save <draft>       # M1c: repeatable prepare flag
 aitp list [--workstream <slug>]           # M1c: scoped list-0.2 with flag
 aitp show <entry-id>
-aitp check            # M1b-R1: shipped; deterministic gate passed
+aitp check [--workstream <slug>]  # M1d: scoped check-report-0.2 with flag; no flag ⇒ 0.1 byte-unchanged
+aitp backfill workstreams --mapping <path> --decision <entry-id> [--apply]  # M1e
 ```
 
 `enter`, `list`, and `show` expose the versioned read contracts
@@ -257,22 +396,119 @@ aitp check            # M1b-R1: shipped; deterministic gate passed
 variants `aitp/enter-0.3` and `aitp/list-0.2` are emitted **only when the
 single-occurrence `--workstream <slug>` flag is passed** (shipped;
 deterministic gate passed). `check` is the
-M1b-R1 read-only store-health command (schema `aitp/check-report-0.1`,
-exit 0 clean / 1 findings / 2 cannot run; read-only, zero-write), shipped
-per `docs/archive/m1b-r1-spec.md` with its deterministic gate passed (evidence in
-`docs/archive/m1b-r1-stage-notes.md`); `lineage` is a deferred candidate and is
-absent from the CLI — it may return only through a new reviewed freeze
-revision.
+read-only store-health command with two read-only transports — the no-flag
+`aitp/check-report-0.1` (byte-unchanged; the M1b-R1 baseline, shipped
+per `docs/archive/m1b-r1-spec.md` with its deterministic gate passed,
+evidence in `docs/archive/m1b-r1-stage-notes.md`) and the M1d single-slug
+scoped `aitp/check-report-0.2` (`--workstream <slug>`, shipped;
+deterministic gate passed, evidence in `docs/m1d-stage-notes.md`) — while
+the diagnosed file schemas remain the shipped v0.1 ones
+(`aitp/lite-entry-0.1`/`aitp/lite-note-0.1`). Both modes: exit 0 clean /
+1 findings / 2 cannot run or misuse; read-only, zero-write. `lineage` is a
+deferred candidate and is absent from the CLI — it may return only through
+a new reviewed freeze revision.
+
+### Scoped health checks (`check --workstream`)
+
+`check` always scans the whole store once and computes the global report
+exactly as a no-flag run; the flag restricts only the report. A finding is
+scoped only when its path is an **admitted** record (parse and structure
+passed, and the ID was unique) whose frontmatter `workstreams` explicitly
+lists the slug — strict exact membership, never inferred: malformed,
+duplicate-ID, unscoped, out-of-scope, and `TOPIC.md` findings are never
+attributed to any scope. Relations validate against the global `entry_map`
+first, so an in-scope resolver may target an out-of-scope record without a
+finding, and the scoped `findings` list is the globally sorted list
+restricted to in-scope paths — same levels, codes, messages, and order.
+
+```text
+# whole store (no flag): `aitp/check-report-0.1`; one line per finding, then the summary
+aitp check
+warning[empty_topic_goal]: .aitp/topic/TOPIC.md: Research Goal is not established
+check: 0 error(s), 1 warning(s)
+
+# scoped: exactly four text lines, always — details live in --json
+aitp check --workstream crpa
+workstream: crpa
+check: 1 error(s), 1 warning(s)
+by_code: {"hash_mismatch": {"errors": 1, "warnings": 0}, "invalid_timestamp": {"errors": 0, "warnings": 1}}
+outside_scope: 3 error(s), 1 warning(s) (run "aitp check" for the whole store)
+
+# empty scope: a legacy store whose records carry no `workstreams` is in no scope
+aitp check --workstream crpa
+workstream: crpa
+check: 0 error(s), 0 warning(s)
+by_code: {}
+outside_scope: 0 error(s), 1 warning(s) (run "aitp check" for the whole store)
+```
+
+`aitp check --workstream <slug> --json` emits `aitp/check-report-0.2`: the
+complete 0.1 payload plus one additive top-level `workstream` key and two
+additive `counts` keys — `by_code` (per-level tally `code → {"errors": n,
+"warnings": m}` over the scoped findings, keys sorted by code, always
+present) and `outside_scope` (global totals minus scoped totals, per level;
+a pure level delta that never appears in `findings` and never affects
+`status` or the exit code). Scoped `counts.entries`/`counts.notes` count
+**admitted in-scope** records. Without the flag every surface is
+byte-unchanged `aitp/check-report-0.1`.
+
+Read the empty scope correctly: a well-formed slug with no admitted
+in-scope records is a valid scope — counts 0, `by_code: {}`, status
+`clean`, exit 0. Records without a `workstreams` field are in **no** scope,
+so on a legacy store every scoped run is empty and a scoped `clean`/exit 0
+means **nothing is attributable, not health**; scoped health is meaningful
+only once records explicitly carry `workstreams` (new scoped records, or a
+reviewed manual backfill — the runtime never backfills). A scoped `clean`
+is never a whole-store health certificate: the no-flag run remains the
+whole-store instrument, and `outside_scope` keeps the global remainder
+visible. In scripts, exit 2 means the store state is unknown — capture the
+exit code and fail closed (the `using-aitp` Skill shows the pattern).
 
 The Hakimi integration handoff baseline (compatibility matrix, versioned
 envelope decisions, red lines, phased H0/H1/H2 plan) lives in
 [`docs/hakimi/`](docs/hakimi/README.md).
 
+### Cross-harness adapter sync (Hakimi + DeepSeek Harness)
+
+AITP owns the CLI, Skills, and the machine-readable adapter surface
+`plugins/aitp-research-protocol/aitp.contract.json`; Hakimi and the dsh
+AITP mode consume that surface and must not fork AITP semantics. Before
+closing any AITP development change that alters the CLI surface, a
+transport schema, a model-facing tool description, or a Skill surface,
+confirm the two external adapters in the same change:
+
+1. Update `aitp.contract.json` and run
+   `pytest tests/ledger/test_adapter_contract.py`; an out-of-date contract
+   must fail CI, never be repaired later.
+2. Hakimi: update `docs/hakimi/` (README and compatibility matrix) and
+   confirm its adapter loads the new contract version or fails closed on an
+   unknown schema — never silently falls back to an old command surface.
+3. DeepSeek Harness: confirm the dsh AITP mode (the external
+   `anchored-aitp` preset, see [`docs/dsh-adapters.md`](docs/dsh-adapters.md))
+   still builds its `aitp_*` tools from `aitp.contract.json`, reads Skills
+   from the AITP checkout, and passes its preflight (`contractSchema`,
+   `contractSha256`, launcher hash) and smoke tests.
+4. Record the exact AITP commit, contract sha256, launcher sha256, and
+   delivered Skill hashes with the run; a run may not silently mix an old
+   adapter with a new AITP surface.
+
+Additive, contract-described changes propagate to both adapters on their
+next load. Breaking or semantic changes require an explicitly reviewed
+adapter revision in the same change, per the Hakimi compatibility matrix
+and the external evaluation-harness contract.
+
+
 Properties:
 
 - Markdown and filesystem are canonical;
 - no database, vector service, MCP server, hook, or daemon is required;
-- the Codex plugin bundles `$aitp` and `$using-aitp`;
+- the Codex plugin bundles `$aitp`, `$using-aitp` (pin/ref/exit-code,
+  evidence-lifecycle and pointer-immutability guidance, `sha256-once` and
+  check-policy rules, reviewed `backfill workstreams`, automatic
+  session-boundary maintenance, session-start handoff/goal checks, and the
+  bundled natural-use feedback template), and the implicit
+  `$distilling-methods` meta-Skill (method-card distillation with human
+  publication gates);
 - the M0 ledger contracts have been exercised against a real theoretical-physics workspace;
 - all current tests pass.
 
@@ -297,6 +533,7 @@ Feature branches should be short-lived. Stable milestones land on `main`; perman
 .agents/plugins/                                        local Codex marketplace
 docs/                                                   concise active designs
 plugins/aitp-research-protocol/                         installable Codex plugin
+plugins/aitp-research-protocol/aitp.contract.json       machine-readable Hakimi/dsh adapter surface
 plugins/aitp-research-protocol/scripts/vendor/aitp/     canonical single runtime
 tests/ledger/                                           ledger and plugin contracts
 ```
@@ -333,6 +570,14 @@ Install the same bundle in Kimi Code:
 
 Kimi Code runs from its managed copy (`~/.kimi-code/plugins/managed/`), so
 re-run the install after the bundle changes. Invoke with `/skill:aitp`.
+
+Since 0.6.0 the installed Skills maintain the ledger automatically at session
+boundaries (enter/check + evidence review + method-card retrieval at start;
+closeout/working-Note upkeep with no-delta zero-write at end) and may draft
+method-card theory Notes for stable repeated procedures. No extra commands are
+needed — every write goes through the existing `record`/`note` prepare/save
+path, publication stays human-gated, and nothing runs in the background
+(no daemon, hook, or MCP).
 
 For standalone development:
 

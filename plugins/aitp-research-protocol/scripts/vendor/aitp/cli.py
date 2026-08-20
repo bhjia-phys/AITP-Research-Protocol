@@ -7,6 +7,7 @@ from typing import Any
 
 from .core import (
     AITPError,
+    backfill_workspace,
     adopt_workspace,
     build_inventory,
     check_workspace,
@@ -81,8 +82,26 @@ def _emit_show(payload: dict[str, Any], as_json: bool) -> None:
     print(payload["body"], end="")
 
 
+def _emit_backfill(payload: dict[str, Any], as_json: bool) -> None:
+    if as_json: return _emit(payload, True)
+    print(f"status: {payload['status']}")
+    print(f"mapping: {payload['mapping']}")
+    print(f"decision: {payload['decision']}")
+    for item in payload["changed"]:
+        print(f"changed: {item['path']} workstreams: {json.dumps(item['workstreams'], ensure_ascii=False)}")
+    for record_id in payload["unchanged"]:
+        print(f"unchanged: {record_id}")
+
+
 def _emit_check(payload: dict[str, Any], as_json: bool) -> None:
     if as_json: return _emit(payload, True)
+    if payload.get("workstream"):
+        counts = payload["counts"]
+        print(f"workstream: {payload['workstream']}")
+        print(f"check: {counts['errors']} error(s), {counts['warnings']} warning(s)")
+        print(f"by_code: {json.dumps(counts['by_code'], ensure_ascii=False)}")
+        print(f"outside_scope: {counts['outside_scope']['errors']} error(s), {counts['outside_scope']['warnings']} warning(s) (run \"aitp check\" for the whole store)")
+        return
     for finding in payload["findings"]:
         print(f"{finding['level']}[{finding['code']}]: {finding['path']}: {finding['message']}")
     print(f"check: {payload['counts']['errors']} error(s), {payload['counts']['warnings']} warning(s)")
@@ -159,6 +178,16 @@ def build_parser() -> argparse.ArgumentParser:
     show.add_argument("entry_id")
 
     check = commands.add_parser("check", help="validate the whole store read-only and report findings (exit 0 clean, 1 findings, 2 cannot run)")
+    check.add_argument("--workstream", action=_SingleValue, help="only findings on records that explicitly list this workstream (single slug)")
+
+    backfill = commands.add_parser("backfill", help="reviewed explicit workstream backfill for legacy records")
+    backfill_commands = backfill.add_subparsers(dest="backfill_command", required=True)
+    backfill_workstreams = backfill_commands.add_parser(
+        "workstreams", help="add explicit workstreams memberships from a reviewed mapping (dry-run by default)"
+    )
+    backfill_workstreams.add_argument("--mapping", required=True)
+    backfill_workstreams.add_argument("--decision", required=True)
+    backfill_workstreams.add_argument("--apply", action="store_true")
 
     inventory = commands.add_parser("inventory", help="scan a legacy tree and write a hash manifest")
     inventory.add_argument("path")
@@ -192,7 +221,7 @@ def build_parser() -> argparse.ArgumentParser:
         "save", help="validate and save a prepared Note draft"
     )
     note_save.add_argument("draft")
-    for command_parser in (init, enter, listing, show, check, inventory, record_prepare, record_save, note_prepare, note_save):
+    for command_parser in (init, enter, listing, show, check, inventory, record_prepare, record_save, note_prepare, note_save, backfill_workstreams):
         _add_common_options(command_parser)
     return parser
 
@@ -216,7 +245,11 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "show":
             payload = show_entry(args.cwd, args.entry_id)
         elif args.command == "check":
-            payload = check_workspace(args.cwd)
+            payload = check_workspace(args.cwd, workstream=args.workstream)
+        elif args.command == "backfill" and args.backfill_command == "workstreams":
+            payload = backfill_workspace(
+                args.cwd, mapping=args.mapping, decision=args.decision, apply=args.apply
+            )
         elif args.command == "inventory":
             payload = build_inventory(args.cwd, args.path, args.name)
         elif args.command == "record" and args.record_command == "prepare":
@@ -242,7 +275,7 @@ def main(argv: list[str] | None = None) -> int:
             payload = save_note(args.cwd, args.draft)
         as_json = getattr(args, "json", False)
         renderer = {"list": _emit_list, "show": _emit_show, "enter": _emit_enter,
-                    "check": _emit_check}.get(args.command, _emit)
+                    "check": _emit_check, "backfill": _emit_backfill}.get(args.command, _emit)
         renderer(payload, as_json)
         if args.command == "check" and payload["status"] == "findings":
             return 1

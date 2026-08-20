@@ -30,9 +30,10 @@ Contract under test (per the frozen implementation spec
   age, and the active/superseded/omitted counts are strictly scoped; an
   out-of-scope handoff is never shown. ``warnings`` and ``counts.malformed``
   stay global.
-- ``check`` gains no scope flag and keeps ``aitp/check-report-0.1``; the
-  validator reports invalid ``workstreams`` as error findings. ``show`` is
-  unchanged.
+- ``check`` gains the M1d single-slug ``--workstream`` flag variant
+  (``aitp/check-report-0.2``; without the flag ``aitp/check-report-0.1`` is
+  byte-unchanged); the validator reports invalid ``workstreams`` as error
+  findings. ``show`` is unchanged.
 """
 
 from __future__ import annotations
@@ -607,9 +608,19 @@ def test_check_workstreams_finding_and_global(tmp_path: Path) -> None:
     run_cli(root, "enter", "--workstream", "crpa", "--json")
     run_cli(root, "list", "--workstream", "crpa", "--json")
     assert run_cli(root, "check", "--json").stdout == before
-    misuse = run_cli(root, "check", "--workstream", "crpa", "--json")
-    assert misuse.returncode == 2
-    assert "usage:" in misuse.stderr
+    scoped = run_cli(root, "check", "--workstream", "crpa", "--json")
+    assert scoped.returncode == 0
+    payload = json.loads(scoped.stdout)
+    assert payload["schema"] == "aitp/check-report-0.2"
+    assert payload["workstream"] == "crpa"
+    assert payload["status"] == "clean"
+    assert payload["findings"] == []
+    assert payload["counts"]["entries"] == 0
+    assert payload["counts"]["notes"] == 0
+    assert payload["counts"]["by_code"] == {}
+    # the store's only record has an invalid workstreams field: unattributable,
+    # so the global invalid_workstreams error is carried by the derived delta
+    assert payload["counts"]["outside_scope"] == {"errors": 1, "warnings": 0}
 
 
 def test_cli_misuse_bad_slug(tmp_path: Path) -> None:

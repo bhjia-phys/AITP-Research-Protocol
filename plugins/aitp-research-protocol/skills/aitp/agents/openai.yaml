@@ -1,6 +1,6 @@
 interface:
   display_name: "AITP"
   short_description: "Explicit entrypoint for AITP Research Protocol"
-  default_prompt: "Use $aitp to enter this research workspace and manage its grounded research state."
+  default_prompt: "Use $aitp to enter this research workspace, manage its grounded research state, and run automatic session-boundary maintenance and method-card harvest per $using-aitp."
 policy:
   allow_implicit_invocation: false

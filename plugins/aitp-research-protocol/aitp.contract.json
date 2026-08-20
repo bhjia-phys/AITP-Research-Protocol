@@ -1,0 +1,384 @@
+{
+  "schema": "aitp/adapter-contract-0.1",
+  "plugin": {
+    "name": "aitp-research-protocol",
+    "version": "0.7.0"
+  },
+  "python": {
+    "min_minor": 11,
+    "launcher": "scripts/aitp.py",
+    "skills_dir": "skills/"
+  },
+  "commands": {
+    "enter": {
+      "tool": "aitp_enter",
+      "description": "Enter this AITP research workspace and return its grounded recorded state projection: recent entries, unresolved failures, next action, recent notes, counts, and warnings. Use at the start of a research session and before ending one, and before relying on any recorded project state.",
+      "argv": [
+        "enter"
+      ],
+      "parameters": [
+        {
+          "name": "recent",
+          "type": "integer",
+          "required": false,
+          "positive": true,
+          "description": "Number of recent active entries to project (default 20; must be positive).",
+          "flag": "--recent"
+        },
+        {
+          "name": "workstream",
+          "type": "string",
+          "required": false,
+          "description": "Optional workstream slug to scope the projection.",
+          "flag": "--workstream"
+        }
+      ],
+      "json_schemas": [
+        "aitp/enter-0.2",
+        "aitp/enter-0.3"
+      ],
+      "exit_codes": {
+        "0": "success",
+        "1": "not used",
+        "2": "AITPError JSON envelope"
+      }
+    },
+    "list": {
+      "tool": "aitp_list",
+      "description": "List canonical AITP ledger entries with optional kind, recorded-time, and workstream filters. Superseded entries remain visible. Use aitp_show for one complete entry and grep over .aitp/topic/ for full-text search.",
+      "argv": [
+        "list"
+      ],
+      "parameters": [
+        {
+          "name": "kind",
+          "type": "enum",
+          "values": [
+            "observation",
+            "result",
+            "failure",
+            "decision",
+            "source",
+            "code_change",
+            "run",
+            "closeout"
+          ],
+          "required": false,
+          "description": "Only entries of this durable-event kind.",
+          "flag": "--kind"
+        },
+        {
+          "name": "since",
+          "type": "string",
+          "required": false,
+          "description": "Only entries recorded at or after this ISO date/timestamp (inclusive).",
+          "flag": "--since"
+        },
+        {
+          "name": "workstream",
+          "type": "string",
+          "required": false,
+          "description": "Only entries explicitly in this workstream.",
+          "flag": "--workstream"
+        }
+      ],
+      "json_schemas": [
+        "aitp/list-0.1",
+        "aitp/list-0.2"
+      ],
+      "exit_codes": {
+        "0": "success",
+        "1": "not used",
+        "2": "AITPError JSON envelope"
+      }
+    },
+    "show": {
+      "tool": "aitp_show",
+      "description": "Open one exact AITP ledger entry by ID and return its complete frontmatter and body.",
+      "argv": [
+        "show"
+      ],
+      "parameters": [
+        {
+          "name": "entry_id",
+          "type": "string",
+          "required": true,
+          "nonempty": true,
+          "description": "Exact entry ID (for example entry-<32 hex>.md basename without .md).",
+          "position": 0
+        }
+      ],
+      "json_schemas": [
+        "aitp/show-0.1"
+      ],
+      "exit_codes": {
+        "0": "success",
+        "1": "not used",
+        "2": "AITPError JSON envelope"
+      }
+    },
+    "check": {
+      "tool": "aitp_check",
+      "description": "Validate the whole AITP store read-only and report findings. Exit code 1 means findings were reported (warnings or errors), NOT a failed tool call; read the JSON payload and investigate errors before continuing.",
+      "argv": [
+        "check"
+      ],
+      "parameters": [
+        {
+          "name": "workstream",
+          "type": "string",
+          "required": false,
+          "description": "Scope findings to records that explicitly list this workstream.",
+          "flag": "--workstream"
+        }
+      ],
+      "json_schemas": [
+        "aitp/check-report-0.1",
+        "aitp/check-report-0.2"
+      ],
+      "exit_codes": {
+        "0": "clean",
+        "1": "findings",
+        "2": "AITPError JSON envelope or argparse misuse"
+      }
+    },
+    "backfill workstreams": {
+      "tool": "aitp_backfill_workstreams",
+      "description": "Reviewed explicit workstream backfill for legacy AITP records. Dry-run by default. Requires a mapping JSON file and a human decision Entry whose refs sha256-pin the mapping. Apply only adds/merges frontmatter workstreams and never infers membership.",
+      "argv": [
+        "backfill",
+        "workstreams"
+      ],
+      "parameters": [
+        {
+          "name": "mapping",
+          "type": "string",
+          "required": true,
+          "nonempty": true,
+          "description": "Workspace-contained mapping file (schema aitp/backfill-workstreams-0.1).",
+          "flag": "--mapping"
+        },
+        {
+          "name": "decision",
+          "type": "string",
+          "required": true,
+          "nonempty": true,
+          "description": "Human decision Entry ID that sha256-pins the mapping file.",
+          "flag": "--decision"
+        },
+        {
+          "name": "apply",
+          "type": "boolean",
+          "required": false,
+          "description": "Write the reviewed backfill; without this flag the command is dry-run only.",
+          "flag": "--apply"
+        }
+      ],
+      "json_schemas": [
+        "aitp/backfill-0.1"
+      ],
+      "exit_codes": {
+        "0": "dry_run or applied",
+        "2": "AITPError JSON envelope"
+      }
+    },
+    "record prepare": {
+      "tool": "aitp_record_prepare",
+      "description": "Prepare a new AITP durable-event Entry draft. The result is a draft path only: read the draft, replace every template prompt with real content, then call aitp_record_save. Kinds: observation, result, failure, decision, source, code_change, run, closeout. Use authority \"agent\" for agent-authored records; created_by is required for agent authority.",
+      "argv": [
+        "record",
+        "prepare"
+      ],
+      "parameters": [
+        {
+          "name": "kind",
+          "type": "enum",
+          "values": [
+            "observation",
+            "result",
+            "failure",
+            "decision",
+            "source",
+            "code_change",
+            "run",
+            "closeout"
+          ],
+          "required": true,
+          "description": "One durable-event kind; choose exactly one per event.",
+          "flag": "--kind"
+        },
+        {
+          "name": "authority",
+          "type": "enum",
+          "values": [
+            "human",
+            "agent",
+            "source",
+            "tool"
+          ],
+          "required": false,
+          "description": "Recording authority (default \"agent\").",
+          "flag": "--authority",
+          "default": "agent"
+        },
+        {
+          "name": "created_by",
+          "type": "string",
+          "required": false,
+          "description": "Provenance id (required when authority is \"agent\"); use agent:<name> or tool:<name>.",
+          "flag": "--created-by"
+        },
+        {
+          "name": "idempotency_key",
+          "type": "string",
+          "required": false,
+          "description": "Optional retry key; reusing it avoids duplicate drafts for the same logical write.",
+          "flag": "--idempotency-key"
+        },
+        {
+          "name": "workstreams",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "required": false,
+          "description": "Optional workstream slugs assigned to this entry.",
+          "flag": "--workstream",
+          "repeat": true
+        }
+      ],
+      "json_schemas": [],
+      "exit_codes": {
+        "0": "prepared or existing",
+        "2": "AITPError JSON envelope"
+      }
+    },
+    "record save": {
+      "tool": "aitp_record_save",
+      "description": "Validate and save a prepared AITP Entry draft into the canonical ledger. The draft must already be filled in.",
+      "argv": [
+        "record",
+        "save"
+      ],
+      "parameters": [
+        {
+          "name": "draft",
+          "type": "string",
+          "required": true,
+          "nonempty": true,
+          "description": "Draft path returned by aitp_record_prepare (for example .aitp/local/drafts/entry-<id>.md).",
+          "position": 0
+        }
+      ],
+      "json_schemas": [],
+      "exit_codes": {
+        "0": "saved",
+        "2": "AITPError JSON envelope"
+      }
+    },
+    "note prepare": {
+      "tool": "aitp_note_prepare",
+      "description": "Prepare a new AITP Note draft (working or theory). The result is a draft path only: read the draft, fill every section and pinned basis_refs, then call aitp_note_save. Use a working note when several durable entries form a conclusion chain a returning session would reconstruct.",
+      "argv": [
+        "note",
+        "prepare"
+      ],
+      "parameters": [
+        {
+          "name": "mode",
+          "type": "enum",
+          "values": [
+            "working",
+            "theory"
+          ],
+          "required": true,
+          "description": "working or theory note mode.",
+          "flag": "--mode"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": true,
+          "nonempty": true,
+          "description": "Short note title.",
+          "flag": "--title"
+        },
+        {
+          "name": "created_by",
+          "type": "string",
+          "required": true,
+          "nonempty": true,
+          "description": "Provenance id; use agent:<name> for agent-authored notes.",
+          "flag": "--created-by"
+        },
+        {
+          "name": "workstreams",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "required": false,
+          "description": "Optional workstream slugs assigned to this note.",
+          "flag": "--workstream",
+          "repeat": true
+        }
+      ],
+      "json_schemas": [],
+      "exit_codes": {
+        "0": "prepared",
+        "2": "AITPError JSON envelope"
+      }
+    },
+    "note save": {
+      "tool": "aitp_note_save",
+      "description": "Validate and save a prepared AITP Note draft into the canonical ledger.",
+      "argv": [
+        "note",
+        "save"
+      ],
+      "parameters": [
+        {
+          "name": "draft",
+          "type": "string",
+          "required": true,
+          "nonempty": true,
+          "description": "Draft path returned by aitp_note_prepare (for example .aitp/local/drafts/note-<id>.md).",
+          "position": 0
+        }
+      ],
+      "json_schemas": [],
+      "exit_codes": {
+        "0": "saved",
+        "2": "AITPError JSON envelope"
+      }
+    }
+  },
+  "operator_only": [
+    {
+      "command": "init",
+      "reason": "blank-tree creation is a human operator decision"
+    },
+    {
+      "command": "inventory",
+      "reason": "legacy bootstrap writes an inventory file and is operator-only"
+    }
+  ],
+  "skills": [
+    {
+      "name": "aitp",
+      "path": "skills/aitp/SKILL.md"
+    },
+    {
+      "name": "using-aitp",
+      "path": "skills/using-aitp/SKILL.md"
+    },
+    {
+      "name": "distilling-methods",
+      "path": "skills/distilling-methods/SKILL.md"
+    }
+  ],
+  "semantic_policy_files": [
+    "suite/policy.md"
+  ],
+  "sync_rule": "This file is the machine-readable adapter surface. AITP CLI, transport-schema, or Skill-surface changes must update it in the same change; consumers may fail closed when its sha256 or version is unknown."
+}

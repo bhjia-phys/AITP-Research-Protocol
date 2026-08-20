@@ -8,4 +8,4 @@
 
 ## Reason, Scope, And Revisit Condition
 
-<!-- aitp: State why, where it applies, and what would trigger reconsideration. -->
+<!-- aitp: State why, where it applies, and what would trigger reconsideration; cite optional evidence refs in frontmatter as maps with required keys target and at (e.g. at: sha256:<digest>). -->

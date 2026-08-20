@@ -8,4 +8,4 @@
 
 ## Locator And Uncertainty
 
-<!-- aitp: Give exact refs, measurement or locator, and uncertainty. -->
+<!-- aitp: Give exact refs as frontmatter maps with required keys target and at (e.g. at: sha256:<digest>; never pin:), then measurement or locator, and uncertainty. -->

@@ -8,4 +8,4 @@
 
 ## Exact Locator And Claim Boundary
 
-<!-- aitp: Cite pages/equations and state what the source does not establish. -->
+<!-- aitp: Cite pages/equations as frontmatter refs maps with required keys target and at (e.g. at: retrieved:<time> for an HTTP source), and state what the source does not establish. -->

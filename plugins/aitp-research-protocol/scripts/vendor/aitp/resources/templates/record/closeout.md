@@ -8,4 +8,4 @@
 
 ## Next Action And Resume Refs
 
-<!-- aitp: Give one concrete next action and exact resume refs. -->
+<!-- aitp: Give one concrete next action and exact resume refs as frontmatter maps with required keys target and at (e.g. at: sha256:<digest>; never pin:). -->

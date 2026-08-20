@@ -4,7 +4,7 @@
 
 ## Setup And Assumptions
 
-<!-- aitp: Define the setup, conventions, domain, and assumptions. -->
+<!-- aitp: Define the setup, conventions, domain, and assumptions; put cited sources in frontmatter basis_refs maps with required keys target and at (e.g. at: sha256:<digest>; never pin:). -->
 
 ## Central Construction Or Argument
 

@@ -4,7 +4,7 @@
 
 ## Scope And Basis
 
-<!-- aitp: State included records, exclusions, and coverage. -->
+<!-- aitp: State included records, exclusions, and coverage; put cited records/evidence in frontmatter basis_refs maps with required keys target and at (e.g. at: sha256:<digest>; never pin:). -->
 
 ## Synthesis
 

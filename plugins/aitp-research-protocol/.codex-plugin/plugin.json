@@ -1,6 +1,6 @@
 {
   "name": "aitp-research-protocol",
-  "version": "0.4.0+codex.20260813145756",
+  "version": "0.7.0+codex.20260815210000",
   "description": "Local-first, evidence-grounded research protocol for theoretical physics",
   "author": {
     "name": "Bohan Jia",
@@ -19,7 +19,7 @@
   "interface": {
     "displayName": "AITP Research Protocol",
     "shortDescription": "Grounded research continuity for theoretical physics.",
-    "longDescription": "Initialize a research workspace, recover source-linked project state, record durable results and failures, and evolve them into graph, knowledge, Skill, Insight, and collaborator layers.",
+    "longDescription": "Initialize a research workspace, recover source-linked project state, record durable results and failures, and evolve them into graph, knowledge, Skill, Insight, and collaborator layers. Since 0.6.0: maintain current state automatically at session boundaries (enter/check, evidence review, closeout/working-note upkeep, zero writes when nothing durable changed) distill stable repeated methods into local method cards with a human-gated publication path, and since 0.7.0 use evidence-lifecycle pins (sha256-once/check-policy) plus reviewed workstream backfill.",
     "developerName": "bhjia-phys",
     "category": "Productivity",
     "capabilities": [
@@ -29,7 +29,10 @@
     "defaultPrompt": [
       "Enter this AITP workspace and summarize its grounded research state.",
       "Record the durable research progress from this conversation.",
-      "Write a theory note from the existing AITP records."
+      "Write a theory note from the existing AITP records.",
+      "Maintain the ledger at session boundaries: enter/check, review evidence, and keep the closeout or working note current (zero writes when nothing durable changed).",
+      "Distill a stable repeated research method into a local method card, subject to human approval and an explicit publish request.",
+      "Backfill legacy workstream membership only from a reviewed mapping anchored by a human decision (dry-run by default)."
     ],
     "brandColor": "#315C8A"
   }

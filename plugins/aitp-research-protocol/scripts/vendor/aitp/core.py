@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from .backfill import backfill_workspace
 from .md import AITPError, atomic_write, parse_markdown, render_markdown
 from .notes import prepare_note, save_note
 from .diagnostics import check_workspace
@@ -16,6 +17,7 @@ __all__ = [
     "AITPError",
     "adopt_workspace",
     "atomic_write",
+    "backfill_workspace",
     "build_inventory",
     "check_workspace",
     "enter_workspace",
