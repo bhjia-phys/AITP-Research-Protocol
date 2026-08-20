@@ -1,0 +1,15 @@
+# GW/LibRPA 自然使用反馈（2026-08-14）
+
+- **Topic / 日期**：`/home/bhjia/physics/GW_librpa`，2026-08-14；这是同一长周期真实课题的继续使用，不是 AITP gate、spec 或独立对照实验。
+- **健康检查的信噪比**：`aitp check --json` 在 293 Entries / 3 Notes 上产生 201 errors / 2 warnings（203 findings）；旧 Entry 对后来继续更新的 `PROJECT_MEMORY.md`、论文和脚本所保存的历史 SHA，会与真正缺失文件一起报为 error，恢复时难以区分“历史快照已变化”和“当前证据损坏”。
+- **命令组合的摩擦**：`check` 在存在 findings 时按设计返回 exit 1；放进常见的 `set -e` 恢复脚本会在 `enter` 前停止，本轮再次实际触发，必须显式捕获返回码后另跑 `enter`。
+- **恢复投影的尺度问题**：`enter --recent 20` 当前有 246 active、226 omitted、30 unresolved failures；最新 closeout 仍指向已被后续 r16/r17 修复工作取代的 Fe r15 jobs 3007504/3008152/3008153/3008393，说明结构化 handoff 不会自动跟随新的结论链，机器端仍需人工筛选并补写 closeout。
+- **结论链综合仍靠人工**：当前 campaign 包含 producer→RPA→G0W0→finalizer、48/192-rank 和 gauge-aware gate；CLI 能 `list/show` 单条记录，但 3 个 Notes 中没有 working Note，依赖链和“哪些失败已被哪条新证据取代”仍需结合全文检索与本地报告重建。
+- **远端证据重复录入**：每个可接受 Slurm 结果仍需维护 immutable remote run、local pointer/manifest、submission/result report、AITP Entry、`PROJECT_MEMORY.md` 和论文；job、binary/input SHA、边界说明被多次搬运，而现有 CLI 不生成 pointer manifest，也不提供显式依赖/谱系投影。
+- **Draft 对引用模式提示不足**：`record prepare` 生成的模板只有 `refs: []`，没有展示必填键 `at`；Skill 文本又用自然语言“pin”描述引用。本轮按 `pin:` 填写后，`record save` 才以 `error[invalid_ref]: refs[0].at is required` 失败，必须再打开旧 Entry 才能恢复正确格式。模板若带一个注释示例，或 `prepare` 支持结构化 `--ref target@sha256`，可消除这次真实往返。
+- **Goal 状态存在双重事实源**：当前宿主 runtime 明确有 active goal，且已累计 183 个 continuation turns；但同一时刻 `aitp enter` 仍报告 `goal_status: not_established`。长期自主课题恢复时，AITP 无法区分“没有研究目标”和“宿主目标尚未镜像进 AITP”。建议支持从宿主导入只读 goal snapshot，或至少允许 Entry/Note 绑定外部 goal ID 与 completion criterion。
+- **异步 Slurm 生命周期缺少一等建模**：本轮同时存在 producer、RPA、G0W0、finalizer 依赖链和两个后台 watcher。AITP 只能分别记录 submission、failure、repair、result，不能表达 `pending/running/dependency/terminal` 状态、Slurm job dependency、同一 validation entity 的资源拓扑，导致每次恢复都要再查 scheduler 和本地 pointer。建议增加 `campaign/run` 实体及 `depends_on`、`supersedes`、`terminal_state`、`scheduler_job_id`、`validation_entity` 字段，并从 terminal result 自动关闭 submission。
+- **失败被修复后仍长期占据 unresolved 列表**：`aitp enter` 当前显示 31 条 unresolved failures，其中多条已被 r16--r19 的新 binary 和 fresh jobs 语义取代；但“新结果引用旧 failure”不会自动形成 resolve 边。建议提供显式 `aitp resolve <failure> --by <entry>`、批量 lineage resolution，以及在 handoff 中区分 `open`、`superseded`、`resolved-with-regression`。
+- **Working Note 与事件流会自然脱节**：本轮最新 working Note 后已有 6 条 active Entries，`enter` 虽提示 `active_newer: 6`，但 `next_action` 仍来自更早 r15 状态。建议 `enter` 默认生成一个不可写的 synthesized-current projection：以最新 terminal result、未完成 run 和 supersession 边重算 next action，而不是直接复用旧 Note 文本；人工 Note 仍保留为可审计叙事层。
+- **跨 workspace 反馈无法被原课题 Entry 引用**：按用户要求，反馈写入独立 AITP 仓库 `/home/bhjia/physics/repo/AITP-Research-Protocol/feedback/`；随后在 GW/LibRPA Entry 中以绝对路径和 SHA256 引用，`record save` 实际返回 `error[ref_escape]: reference escapes workspace`。路径边界本身是合理的安全默认，但自然的“课题现场→工具仓库反馈”工作流无法建立可验证引用。建议支持显式声明的只读 external evidence root、跨 topic URI，或提供 `aitp import-ref` 在当前 workspace 自动生成带源路径与 hash 的 pointer，而不是要求复制正文。
+- **自然使用中的最小改进优先级**：优先实现（1）`resolve/supersede` 边，（2）异步 run/dependency 实体，（3）基于最新事件自动合成 handoff，（4）mutable-ref 与 immutable-evidence 分级检查，（5）受控 external-ref pointer。它们比增加更多 Entry 类型更能降低当前 GW/LibRPA 课题的重复记账和错误恢复风险。
