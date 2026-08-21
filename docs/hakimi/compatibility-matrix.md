@@ -9,8 +9,11 @@ canonical runtime. The 2026-08-10 decision changes stage authorization only;
 the subsequent M1a implementation and the M1b-R1, M1c, and M1d deterministic
 gates are recorded in the amendments below, including current CLI and schema
 availability, plus the 2026-08-15 0.6.0 Skill-only amendment (no CLI or
-schema change), and the 2026-08-15 M1e runtime slice (evidence lifecycle +
-reviewed backfill; plugin 0.7.0). If the runtime or plugin manifests change again after this
+schema change), the 2026-08-15 M1e runtime slice (evidence lifecycle +
+reviewed backfill; plugin 0.7.0), and the 2026-08-21 0.8.0 Skill-only
+amendment (method-observation markers, two-step human decisions, platform
+tool/card/Skill boundary, best-effort fallback; plugin 0.8.0; no CLI or
+schema change). If the runtime or plugin manifests change again after this
 audited HEAD, rerun the CLI/payload/zero-write checks and refresh this matrix.
 
 ## 0. Machine-readable adapter surface (current)
@@ -84,6 +87,26 @@ Hakimi. Hakimi must not direct-write canonical files, auto-run `inventory`,
 auto-backfill `workstreams`, or auto-publish method cards (red lines 2 and
 4 remain in force). The design record is
 `docs/method-cards-and-distillation.md`.
+
+**2026-08-21 0.8.0 amendment (Skill-only):** 0.8.0 is a further Skill-only
+release, not a stage — method-observation markers (`> method-observation:
+<slug>` on eligible durable Entries; low-trust candidate, not proof; runtime
+never validates), conservative candidate review, post-card exact trials,
+two-step human decisions (card `Approve`/`Defer`/`Reject` then separate
+`Publish now`/`Keep local`; both saved as independent human `decision`
+Entries by the main agent; main-agent-only; no hardcoded model/preset), the
+platform tool/card/Skill three-layer boundary (tool executes, card records,
+Skill routes; bare `host:path` never accepted as evidence; host Goal never
+auto-imported), and a best-effort fallback lifecycle (no runtime hook, no
+exactly-once; native host coordinator planned but not implemented). It
+changes **no** CLI command, flag, file schema, transport schema, exit code,
+or zero-write property: every command-matrix row, schema row, and red line
+stays exactly as M1e/0.6.0 left it, and feature detection is unchanged.
+Plugin version moves to 0.8.0 on all four surfaces. A future Hakimi native
+C6/H6 Feature would own session/turn checkpoint, deduplication, recovery,
+question interaction, and adapter state for method distillation — but is not
+implemented; until then the Skill fallback is independently usable. The
+design record is `docs/method-cards-and-distillation.md`.
 
 ## 2. Schema existence (current amendment)
 
@@ -186,7 +209,7 @@ contract is H4 scope, and Hakimi may integrate it now.
 
 | # | Assumption | Result | Evidence |
 |---|---|---|---|
-| 1 | Manifest discovers `skills/` relative to plugin root | PASS | `kimi.plugin.json` and `.codex-plugin/plugin.json` manifests declare `"skills": "./skills/"`; both carry a `version` field (`0.7.0` / `0.7.0+codex.20260815210000`, current M1e manifests; 0.6.0 was the Skill-only bump and 0.7.0 adds the M1e CLI/pin-scheme slice) |
+| 1 | Manifest discovers `skills/` relative to plugin root | PASS | `kimi.plugin.json` and `.codex-plugin/plugin.json` manifests declare `"skills": "./skills/"`; both carry a `version` field (`0.8.0` / `0.8.0+codex.20260821075852`, current 0.8.0 Skill-only manifests; 0.7.0 was the M1e CLI/pin-scheme slice, 0.6.0 was the preceding Skill-only bump) |
 | 2 | Launcher probed as `python3.13 → 3.12 → 3.11 → python3`, verified ≥ 3.11 | PASS | `using-aitp` Skill launcher instructions (exact order); `scripts/aitp.py` launcher version guard. Verified live: system `python3` = 3.10.12 is rejected with `AITP requires Python 3.11 or newer.` on stderr, exit 2 |
 | 3 | `--cwd` semantics | PASS (two caveats) | default `.`, relative/absolute ok (`cli.py` command handling); `workspace.py` `resolve_root` chooses the nearest ancestor with `.aitp/STORE.toml`, else git root, else cwd. Verified live from a subdirectory. Caveat 1: ancestor-store priority ⇒ a nested second store inside a workspace cannot be opened (known design item on the M1a pre-list). Caveat 2: in a directory without a store, a parent Git root becomes the workspace root |
 | 4 | Exit codes 0/2; `check` 0/1/2 | PASS | success 0; `AITPError` and argparse handling in `cli.py`; `check` exit mapping per `docs/archive/m1b-r1-spec.md` §Exit codes, with the M1d scoped variant evaluated on the **scoped** report (`docs/archive/m1d-workstream-health-spec.md` §7: a scoped clean with global-only findings exits 0; exit 2 unchanged for not-a-workspace/store errors/CLI misuse incl. repeated `--workstream` and `invalid_workstreams`); verified live |
@@ -324,8 +347,9 @@ AITP side (by gate):
    `counts.entries`/`counts.notes` are **admitted in-scope** counts — not
    directly comparable with `aitp/check-report-0.1`; a scoped `clean` is
    not a whole-store health certificate (`outside_scope` and the no-flag
-   run carry the remainder); empty scope is valid. Plugin version 0.7.0
-   (2026-08-15 M1e runtime slice; 0.6.0 was the preceding Skill-only release).
+   run carry the remainder); empty scope is valid. Plugin version 0.8.0
+   (2026-08-21 0.8.0 Skill-only amendment; 0.7.0 was the preceding M1e
+   runtime slice; 0.6.0 was the preceding Skill-only release).
 6. M1e (Evidence lifecycle + reviewed backfill) is **done; deterministic gate
    passed** (2026-08-15) per
    `docs/archive/m1e-evidence-lifecycle-backfill-spec.md`; gate evidence in
@@ -348,13 +372,14 @@ contract after M4. The 2026-08-15 **0.6.0** Skill-only amendment (automatic
 session-boundary maintenance + method-card distillation) is not a gate and
 adds no Hakimi capability — it only reorganizes how Hakimi may already call
 the existing H0/H3/H4 commands at session boundaries; plugin manifests move
-to 0.6.0 (a version-only bump; §4 row 1); M1e later moves manifests to 0.7.0 with the CLI/pin-scheme slice.
+to 0.6.0 (a version-only bump; §4 row 1); M1e later moves manifests to 0.7.0 with the CLI/pin-scheme slice;
+0.8.0 moves manifests to 0.8.0 with the Skill-only method-observation/two-step-decision amendment (no CLI or schema change).
 Research-loop capabilities remain independent of AITP gates.
 
 Blocking chain: M1a done → natural-use pause complete → M1b freeze revision
 (2026-08-12) → M1b-R1 implementation and gate (passed 2026-08-12; evidence
 in `docs/archive/m1b-r1-stage-notes.md`) → M1c gate (passed 2026-08-13) →
-M1d gate (passed 2026-08-14; evidence in `docs/m1d-stage-notes.md`) → M1e gate (passed 2026-08-15; evidence in `docs/m1e-stage-notes.md`). The
+M1d gate (passed 2026-08-14; evidence in `docs/m1d-stage-notes.md`) → M1e gate (passed 2026-08-15; evidence in `docs/m1e-stage-notes.md`) → 0.8.0 Skill-only amendment (2026-08-21; no gate, no CLI/schema change). The
 M1c/M1d completions do
 not authorize M2; M2/M3 require their own evidence. Hakimi H0 and the research
 loop have zero dependencies on this chain.
@@ -382,8 +407,9 @@ pytest, benchmark, runtime-budget, generated-golden, S1/S2, and
 byte-identical GW_librpa evidence. The amendment supersedes neither the
 historical audit observations nor the frozen suite inputs; it records the
 current implementation and stage status alongside them.
-Later amendments: the M1b-R1 (2026-08-12), M1c (2026-08-13), and M1d
-(2026-08-14) gates, and the 2026-08-15 0.6.0 Skill-only amendment, are
+Later amendments: the M1b-R1 (2026-08-12), M1c (2026-08-13), M1d
+(2026-08-14), and M1e (2026-08-15) gates, the 2026-08-15 0.6.0 Skill-only
+amendment, and the 2026-08-21 0.8.0 Skill-only amendment, are
 recorded in the rows above, with their evidence in
-`docs/archive/m1b-r1-stage-notes.md`, `docs/m1c-stage-notes.md`, and
-`docs/m1d-stage-notes.md` respectively.
+`docs/archive/m1b-r1-stage-notes.md`, `docs/m1c-stage-notes.md`,
+`docs/m1d-stage-notes.md`, and `docs/m1e-stage-notes.md` respectively.

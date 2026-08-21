@@ -44,6 +44,15 @@ and changes **no behavioral runtime, CLI, schema, transport, or exit code** —
 only the version strings (all four surfaces) were bumped from M1d's 0.5.0 to
 0.6.0; the historical M1d 0.5.0 gate record stands unchanged.
 Gate evidence in [`docs/m1d-stage-notes.md`](m1d-stage-notes.md).
+The **2026-08-21 0.8.0 amendment** is a further Skill-only change
+(method-observation markers, conservative candidate review, post-card exact
+trials, two-step human decisions, the fallback/native lifecycle boundary,
+and the platform tool/card/Skill three-layer relationship; design record in
+[`docs/method-cards-and-distillation.md`](method-cards-and-distillation.md))
+and changes **no behavioral runtime, CLI, schema, transport, or exit code** —
+only the version strings (all four surfaces) move from 0.7.0 to 0.8.0; the
+canonical runtime stays at 1,793 nonblank lines and no M1b/M1c/M1d/M1e
+disposition or M2/M3/M4 status changes.
 M2/M3 remain design options.
 
 ## Purpose

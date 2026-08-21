@@ -818,6 +818,42 @@ Budget: target ≤ 1,800, hard cap ≤ 1,850 cumulative nonblank lines; actual
 at gate time **1,793**. The passed M1e gate does not flip M2/M3/M4, does not
 reopen M1b/M1c/M1d, and does not modify any frozen artifact.
 
+### 0.8.0 — Skill-only method-observation and two-step human decision (2026-08-21; not a stage)
+
+The 2026-08-21 **0.8.0** amendment is a reviewed user-requested Skill-only
+design change, not a roadmap stage, natural-use gate, or behavioral
+evaluation result. It extends the `distilling-methods` Skill (single rule
+source) and the `using-aitp` fallback routing with:
+
+- **Method-observation markers** — `> method-observation: <slug>` as an
+  eligible durable Entry body first line; a low-trust candidate tag, not
+  proof of repetition or independence; the runtime never validates marker
+  grammar, slug, position, or uniqueness (Skill completeness checks only).
+- **Conservative candidate review** — `rg` discovery + `aitp show` canonical
+  read; exit 2 fail closed; distinct logical execution judgment; no
+  auto-draft by marker count; pre-card Entries are `basis_refs` only.
+- **Post-card exact trial** — post-card trials must be created after the
+  card Note was saved and must exact-`sha256:` pin that exact saved card
+  file at creation; contradictory trial stops; no auto-resolve, no silent
+  edit; two qualifying trials trigger a proposal only.
+- **Two-step human decision** — card `Approve`/`Defer`/`Reject`, then a
+  separate `Publish now`/`Keep local`; both saved as independent human
+  `decision` Entries by the main agent; main-agent-only; no hardcoded
+  model/preset; `Publish now` authorizes a normal code-change flow, not
+  direct plugin mutation.
+- **Platform tool/card/Skill three-layer boundary** — tool executes, card
+  records, Skill routes; bare `host:path` never accepted as evidence; host
+  Goal never auto-imported.
+- **Best-effort fallback lifecycle** — no runtime hook, no exactly-once;
+  native host coordinator planned but not implemented.
+
+It changes **no** CLI command, flag, file schema, transport schema, exit
+code, or runtime line; version strings synchronized to 0.8.0 on all four
+surfaces; canonical runtime stays at 1,793 nonblank lines; the
+`aitp/adapter-contract-0.1` schema, commands, flags, transport schemas,
+and Skill paths are unchanged. No M1b/M1c/M1d/M1e disposition change; no
+M2/M3/M4 flip. Design record: `docs/method-cards-and-distillation.md`.
+
 ### M2 — Reviewed artifacts (design option; ~3–4 weeks; end ≤ 1,700)
 
 M2 is not a promised stage. A no-runtime M1b result — or the completion of

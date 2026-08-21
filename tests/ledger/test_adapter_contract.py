@@ -56,7 +56,7 @@ def test_contract_identity_matches_plugin(contract: dict[str, object]):
     assert contract["schema"] == "aitp/adapter-contract-0.1"
     assert contract["plugin"] == {
         "name": "aitp-research-protocol",
-        "version": "0.7.0",
+        "version": "0.8.0",
     }
     kimi_manifest = json.loads(
         (PLUGIN_ROOT / "kimi.plugin.json").read_text(encoding="utf-8")

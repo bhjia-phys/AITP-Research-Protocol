@@ -1,13 +1,13 @@
 {
   "name": "aitp-research-protocol",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Local-first, evidence-grounded research protocol for theoretical physics",
   "skills": "./skills/",
   "skillInstructions": "This plugin is platform-neutral: the bundled CLI is scripts/aitp.py and needs Python 3.11 or newer. On Kimi Code, invoke the entrypoint with /skill:aitp; any '$aitp' mention in the skills refers to that invocation. There is no MCP server, hook, or daemon by design.",
   "interface": {
     "displayName": "AITP Research Protocol",
     "shortDescription": "Grounded research continuity for theoretical physics.",
-    "longDescription": "Initialize a research workspace, recover source-linked project state, record durable results and failures with pinned evidence, write grounded notes, maintain current state automatically at session boundaries (enter/check, evidence review, closeout/working-note upkeep, zero writes when nothing durable changed), and distill stable repeated methods into local method cards with a human-gated publication path, and since 0.7.0 use evidence-lifecycle pins and reviewed workstream backfill.",
+    "longDescription": "Initialize a research workspace, recover source-linked project state, record durable results and failures with pinned evidence, write grounded notes, maintain current state automatically at session boundaries (enter/check, evidence review, closeout/working-note upkeep, zero writes when nothing durable changed), distill stable repeated methods into local method cards with a human-gated publication path, since 0.7.0 use evidence-lifecycle pins and reviewed workstream backfill, and since 0.8.0 observe eligible procedures with low-trust method-observation markers and route through two-step human decisions (card approval then publication choice).",
     "developerName": "bhjia-phys"
   }
 }

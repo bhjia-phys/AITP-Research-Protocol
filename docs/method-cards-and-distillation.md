@@ -1,4 +1,4 @@
-# Method cards and distillation (2026-08-15 reviewed Skill-only change)
+# Method cards and distillation (2026-08-15 reviewed Skill-only change; 2026-08-21 0.8.0 amendment)
 
 This document records the 2026-08-15 reviewed Skill-only change (AITP 0.6.0):
 automatic session-boundary current-state maintenance in `using-aitp` and the
@@ -8,6 +8,15 @@ generic marker, a human-gated publication path, and **no behavioral
 runtime/CLI/schema change; version strings synchronized**. The natural-use
 evidence is
 [`feedback/2026-08-15-multi-topic-automatic-organization-and-method-distillation-natural-use.md`](../feedback/2026-08-15-multi-topic-automatic-organization-and-method-distillation-natural-use.md).
+
+The **2026-08-21 0.8.0 amendment** (below) is a further Skill-only change:
+method-observation markers, conservative candidate review, post-card exact
+trials, two-step human decisions (card approval then publication choice),
+the fallback/native lifecycle boundary, and the platform tool/card/Skill
+three-layer relationship. It changes **no** runtime, CLI, schema, transport,
+or exit code — only Skill text, manifest descriptions, and version strings
+(all four surfaces → 0.8.0). It is a reviewed user-requested design change,
+not a roadmap stage, natural-use gate, or behavioral evaluation result.
 
 ## quantum.harness — scale and adopt/adapt/reject evidence
 
@@ -167,3 +176,110 @@ nonblank lines** (target ≤ 1,550 / cap ≤ 1,600, modules < 400); M1b
 dispositions, M1c, and M1d frozen contracts are unchanged; M2/M3/M4
 statuses are unchanged; no daemon, hook, MCP server, or vector service
 is added.
+
+## 0.8.0 amendment (2026-08-21; Skill-only)
+
+The 0.8.0 amendment extends the distillation rule surface without any
+runtime, CLI, schema, transport, or exit-code change. The canonical runtime
+stays at **1,793 nonblank lines**; plugin version moves to **0.8.0** across
+the four release surfaces (`pyproject.toml`, `__init__.py`,
+`kimi.plugin.json`, and `.codex-plugin/plugin.json`) and the separate
+`aitp.contract.json` adapter surface. The
+`aitp/adapter-contract-0.1` schema, commands, flags, transport schemas,
+and Skill paths are unchanged. No M1b/M1c/M1d/M1e disposition changes; no
+M2/M3/M4 flip. It is a reviewed user-requested design change, not a
+natural-use gate or behavioral evaluation result.
+
+### Method-observation marker (candidate, not proof)
+
+A `> method-observation: <slug>` marker in an eligible durable Entry body's
+first line is a **low-trust candidate tag** — it signals "worth reviewing as
+a method-card candidate" and nothing more. It does not prove the procedure
+ran twice, does not prove independent sessions/chains, does not prove a
+card/trial/approval exists, and does not allocate a workstream. The runtime
+does not validate marker grammar, slug, position, or uniqueness — these are
+Skill completeness checks. Detailed grammar, eligible kinds, and the
+candidate-review protocol are defined solely in the `distilling-methods`
+Skill; this document points at them and does not duplicate the rules.
+
+### Pre-card basis vs post-card exact trial
+
+Pre-card execution Entries can only enter a card's `basis_refs`; they are
+never backfilled with a card pin and never counted as trials. A post-card
+trial must be created after the card Note was saved and must exact-`sha256:`
+pin that exact saved card file at creation. Two qualifying trials of the
+same exact revision represent two distinct logical executions — not
+automatically independent sessions, independent reproductions, or scientific
+correctness. A contradictory trial stops the review; the card never
+auto-resolves a failure and is never silent-edited.
+
+### Two-step human decision
+
+The 0.6.0 single approval + publication gate is refined into **two separate
+human `decision` Entries**, both recorded by the agent (the researcher does
+not run commands or fill YAML):
+
+1. **Card decision** — after two qualifying trials, the main agent assembles
+   a proposal packet and offers `Approve` / `Defer` / `Reject`. Only an
+   unambiguous answer continues; `Other`, dismiss, timeout, or no answer
+   means zero-write. `Defer` and `Reject` are also recorded as human
+   decisions (to avoid repeated prompting) but neither constitutes approval.
+2. **Publication choice** — only after the approval decision is saved and
+   verified, the agent offers `Publish now` / `Keep local` as a separate
+   question, saved as an independent human `decision` Entry with a separate
+   idempotency key. `Publish now` authorizes the main agent to proceed
+   through the normal code-change flow in the AITP repository — it does not
+   authorize any agent or runtime to mutate the installed plugin directly.
+
+Both questions are **main-agent-only**: subagents may return candidate or
+review results but must not ask or answer approval/publication questions.
+No model or preset is hardcoded for distillation.
+
+### Fallback and native lifecycle
+
+The AITP 0.8 lifecycle is a **model/Skill-driven best-effort fallback**, not
+a runtime callback, post-save hook, or exactly-once guarantee. `using-aitp`
+performs best-effort harvest at session start (observation-marker search
+after existing enter/check/card retrieval), at durable Entry creation
+(low-noise eligibility judgment), and at session end (review new
+observations, cards, and trials). A proposal may be re-raised after an
+interrupted/recovered session — no exactly-once claim.
+
+A native host (Hakimi future Feature, planned but not implemented) would
+own session/turn checkpoint, deduplication, recovery, question interaction,
+and adapter state — but still cannot guarantee procedure-semantic judgment,
+scientific correctness, or behavior superior to plain files. AITP always
+owns the ledger, evidence, method-card, trial, revision, approval, and
+publication semantics; Hakimi always owns agent orchestration, platform
+tool invocation, session interaction, and degraded UX. The detailed native
+lifecycle, owner scope, and implementation gate are planned for future
+Hakimi C6/H6 work; before that, Hakimi docs write planned/unavailable only,
+and the 0.8 Skill fallback is independently usable.
+
+### Platform tool, method card, and Skill — three-layer boundary
+
+- **Tool/adapter executes**: Hakimi or an external platform adapter handles
+  SSH, Slurm, rsync, job polling, argv, secure cwd/env, timeout, remote
+  status, and error classification; AITP Python never implements these.
+- **Method card records a stable procedure**: the AITP card summarizes
+  dependency order, preconditions, resource limits, verification anchors,
+  stop conditions, and the failure map from recorded execution evidence; a
+  card never dispatches tools.
+- **Skill routes**: a published Skill decides when to use the procedure and
+  calls existing deterministic tools/adapters; a Skill never copies
+  scheduler/SSH/rsync implementations.
+- Remote evidence is expressed through local immutable pointer/report files
+  + pins; a bare `host:path` is never accepted as locally verified evidence.
+- Host/session Goal belongs to Hakimi's Goal/Research Frame; AITP never
+  auto-imports or overrides a Topic Research Goal.
+
+### Harness adjudication boundary (unchanged)
+
+The 2026-08-15 Harness adjudication boundary remains in force: adopt the
+card/Skill/tool three-layer separation, fixed card shape, completeness
+tests, stop-on-mismatch with verification anchors, and human ratification;
+reject enumerated dispatchers/registries/INDEX, Ion/symlink tooling, bulk
+card zoos, duplicated facts, prose-only provenance, and tests-not-in-CI.
+Never claim behavior superiority over plain files. The 0.8 amendment adds
+the two-step decision and the fallback/native boundary within this frame;
+it does not relax any existing rule.

@@ -1,6 +1,6 @@
 interface:
   display_name: "Using AITP"
   short_description: "Maintain grounded research state at session boundaries and record durable progress"
-  default_prompt: "Use $using-aitp to recover this project state, record durable research progress, and keep the ledger current automatically at session start and end (enter/check, evidence review, method-card retrieval, closeout and working-note maintenance)."
+  default_prompt: "Use $using-aitp to recover this project state, record durable research progress, and keep the ledger current automatically at session start and end (enter/check, evidence review, method-card and observation-marker retrieval, closeout and working-note maintenance). Method-card harvest is best-effort fallback: no runtime hook or exactly-once guarantee; a native host coordinator, if present, owns scheduling."
 policy:
   allow_implicit_invocation: true

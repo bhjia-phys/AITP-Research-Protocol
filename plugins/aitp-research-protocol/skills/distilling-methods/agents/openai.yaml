@@ -1,6 +1,6 @@
 interface:
   display_name: "Distill Methods"
   short_description: "Distill stable repeated research methods into local method cards"
-  default_prompt: "Use $distilling-methods when a research method has proven stable across sessions and deserves a local method card."
+  default_prompt: "Use $distilling-methods when a research method has proven stable across sessions and deserves a local method card. The Skill defines method-observation markers, conservative candidate review, post-card exact trials, two-step human decisions (Approve/Defer/Reject then Publish now/Keep local), and the platform tool/card/Skill three-layer boundary."
 policy:
   allow_implicit_invocation: true

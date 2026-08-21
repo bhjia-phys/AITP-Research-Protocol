@@ -2,7 +2,7 @@
   "schema": "aitp/adapter-contract-0.1",
   "plugin": {
     "name": "aitp-research-protocol",
-    "version": "0.7.0"
+    "version": "0.8.0"
   },
   "python": {
     "min_minor": 11,

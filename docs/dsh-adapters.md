@@ -15,6 +15,14 @@ status changes (the same discipline as the
   `c6d815dd4c0abba98b2354da6653e0db9156a455197610c4212c3ca448f229b1`),
   launcher sha256
   `d6fca2789be428faa1c81eb532a9072ea99a4a5ae69029687f2a37d9ab7124f9`.
+  **Pending re-sync**: the 2026-08-21 0.8.0 Skill-only amendment changed
+  plugin version to 0.8.0 and updated Skill text and manifest descriptions
+  (method-observation markers, two-step human decisions, platform
+  tool/card/Skill boundary, best-effort fallback) but changed **no** CLI
+  command, flag, transport schema, or `aitp/adapter-contract-0.1` schema —
+  only the `plugin.version` field and Skill/manifest text. The external dsh
+  repo must run `sync:aitp` on its next change to pick up the new version
+  and Skill hashes; no adapter code change is required.
 - Status: **draft adapter; deterministic tests pass; no AITP gate evidence**.
   This adapter is a consumption surface, not AITP evidence. It does not
   revise or refreeze FROZEN v6 and makes no treatment-superiority claim.

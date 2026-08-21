@@ -117,7 +117,10 @@ two-session ordinary natural-use pause is **complete**, the
 M1b reviewed freeze revision is recorded, and the selected M1b-R1 read-side
 slice is implemented per [`docs/archive/m1b-r1-spec.md`](docs/archive/m1b-r1-spec.md) with
 its **deterministic gate passed** (evidence in
-[`docs/archive/m1b-r1-stage-notes.md`](docs/archive/m1b-r1-stage-notes.md)):
+[`docs/archive/m1b-r1-stage-notes.md`](docs/archive/m1b-r1-stage-notes.md)). Current
+natural-use triage — the active queue plus a path-stable logical archive — is
+maintained in [`feedback/README.md`](feedback/README.md); dated observations
+retain their original evidence paths:
 
 1. `aitp init --adopt` is implemented and tested, and has been exercised on
    real trees; preserved operator before/after hash evidence is incomplete per
@@ -255,6 +258,30 @@ its **deterministic gate passed** (evidence in
    [`docs/archive/m1e-evidence-lifecycle-backfill-spec.md`](docs/archive/m1e-evidence-lifecycle-backfill-spec.md)
    and gate evidence is [`docs/m1e-stage-notes.md`](docs/m1e-stage-notes.md).
 
+10. The **2026-08-21 0.8.0 amendment** is a reviewed Skill-only design
+    change, not a stage, natural-use gate, or behavioral evaluation result.
+    It extends the `distilling-methods` Skill (the single rule source) and
+    the `using-aitp` fallback routing with: a low-trust `> method-observation:
+    <slug>` marker on eligible durable Entries (candidate, not proof — the
+    runtime never validates it); conservative candidate review (`rg`
+    discovery + `show` canonical read, exit 2 fail closed, distinct logical
+    execution judgment, no auto-draft by marker count); pre-card basis vs
+    post-card exact trial (pre-card Entries are `basis_refs` only; post-card
+    trials must exact-`sha256:` pin the saved card at creation;
+    contradictory trial stops); a **two-step human decision** (card
+    `Approve`/`Defer`/`Reject`, then a separate `Publish now`/`Keep local`,
+    both saved as independent human `decision` Entries by the main agent;
+    main-agent-only; no hardcoded model/preset); the **platform
+    tool/card/Skill three-layer boundary** (tool executes, card records,
+    Skill routes; bare `host:path` never accepted as evidence; host Goal
+    never auto-imported); and a **best-effort fallback lifecycle** (no
+    runtime hook, no exactly-once; native host coordinator planned but not
+    implemented). It changes **no** CLI command, flag, file schema,
+    transport schema, exit code, or runtime line — version strings
+    synchronized to 0.8.0; runtime stays 1,793 nonblank lines; no
+    M1b/M1c/M1d/M1e disposition change; no M2/M3/M4 flip. The design record
+    is [`docs/method-cards-and-distillation.md`](docs/method-cards-and-distillation.md).
+
 ### Simplicity ratchet and implementation order
 
 The binding evidence-before-complexity ratchet, gate order, fixed-cap rule,
@@ -375,6 +402,15 @@ stale records; **no-delta zero-write**; post-save verification), and stable
 repeated procedures may be distilled into method-card theory Notes through
 the human-gated chain in `distilling-methods` (draft → trial → revision →
 proposal → human approval → explicit publication). See
+[`docs/method-cards-and-distillation.md`](docs/method-cards-and-distillation.md).
+
+The 2026-08-21 **0.8.0** amendment is a further Skill-only design change:
+method-observation markers, conservative candidate review, post-card exact
+trials, two-step human decisions, the platform tool/card/Skill three-layer
+boundary, and the best-effort fallback lifecycle — all in Skill text and
+manifest descriptions only. It changes **no** CLI command, flag, file
+schema, transport schema, exit code, or runtime line; version strings
+synchronized to 0.8.0; runtime stays 1,793 nonblank lines. See
 [`docs/method-cards-and-distillation.md`](docs/method-cards-and-distillation.md).
 
 Implemented command groups (the complete current CLI surface):
@@ -505,10 +541,12 @@ Properties:
 - the Codex plugin bundles `$aitp`, `$using-aitp` (pin/ref/exit-code,
   evidence-lifecycle and pointer-immutability guidance, `sha256-once` and
   check-policy rules, reviewed `backfill workstreams`, automatic
-  session-boundary maintenance, session-start handoff/goal checks, and the
+  session-boundary maintenance, session-start handoff/goal checks,
+  method-observation markers and best-effort fallback harvest, and the
   bundled natural-use feedback template), and the implicit
-  `$distilling-methods` meta-Skill (method-card distillation with human
-  publication gates);
+  `$distilling-methods` meta-Skill (method-observation markers, conservative
+  candidate review, post-card exact trials, two-step human decisions, and
+  the platform tool/card/Skill three-layer boundary);
 - the M0 ledger contracts have been exercised against a real theoretical-physics workspace;
 - all current tests pass.
 
@@ -574,7 +612,10 @@ re-run the install after the bundle changes. Invoke with `/skill:aitp`.
 Since 0.6.0 the installed Skills maintain the ledger automatically at session
 boundaries (enter/check + evidence review + method-card retrieval at start;
 closeout/working-Note upkeep with no-delta zero-write at end) and may draft
-method-card theory Notes for stable repeated procedures. No extra commands are
+method-card theory Notes for stable repeated procedures. Since 0.8.0 the
+Skills also tag eligible durable Entries with low-trust method-observation
+markers and route through two-step human decisions (card approval then
+publication choice). No extra commands are
 needed — every write goes through the existing `record`/`note` prepare/save
 path, publication stays human-gated, and nothing runs in the background
 (no daemon, hook, or MCP).

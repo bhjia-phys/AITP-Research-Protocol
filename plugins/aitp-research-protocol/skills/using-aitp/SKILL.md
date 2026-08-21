@@ -1,6 +1,6 @@
 ---
 name: using-aitp
-description: "Use AITP Research Protocol to recover and preserve grounded research state while working in a theoretical-physics repository. Trigger when entering or resuming a project, after a durable result, failure, decision, source assessment, code change, reproducible run, or closeout, when writing a working or theory note from recorded evidence, and when a stable workflow recurs — retrieve Method cards by their generic marker and, if the distillation triggers hold, follow the distilling-methods Skill. Maintain current state automatically at session start and end: enter/check, evidence review, method-card retrieval, and closeout/working-note maintenance when the state fell behind."
+description: "Use AITP Research Protocol to recover and preserve grounded research state while working in a theoretical-physics repository. Trigger when entering or resuming a project, after a durable result, failure, decision, source assessment, code change, reproducible run, or closeout, when writing a working or theory note from recorded evidence, and when a stable workflow recurs — retrieve Method cards by their generic marker, tag eligible durable Entries with a low-trust method-observation marker, and, if the distillation triggers hold, follow the distilling-methods Skill. Maintain current state automatically at session start and end: enter/check, evidence review, method-card and observation-marker retrieval, and closeout/working-note maintenance when the state fell behind. Best-effort fallback only — no runtime hook or exactly-once guarantee; a native host coordinator, if present, owns scheduling."
 ---
 
 # Using AITP
@@ -387,6 +387,11 @@ never writes, so it is safe anywhere in a script.
    `.aitp/topic/notes/<note-id>.md` — `list`/`show` project Entries only
    and never open Notes. Cards inform, never dispatch, and there is no card
    registry or INDEX to enumerate — the marker search is the query path.
+7. Search for candidate method observations with
+   `rg "^> method-observation:" .aitp/topic/entries/`. If candidates exist,
+   load `../distilling-methods/SKILL.md` for a bounded candidate review
+   (§Candidate review in that Skill); if no candidates exist, skip
+   silently.
 
 After `enter`, treat `next_action` and `handoff_status` as structural.
 `handoff_status: review` only means a newer unresolved failure exists than
@@ -464,6 +469,18 @@ aitp record save <draft-path>
 The CLI template is the schema. Keep claims small, state limitations, and distinguish evidence from interpretation. The generated frontmatter starts with `refs: []` (Notes: `basis_refs: []`) — that is a schema placeholder, not a valid evidence list. The draft prompts show the required shape; replace the list with maps containing `target` and `at`. The pin key is `at`, never `pin:`.
 
 - Before preparing a record, check that the ledger does not already contain the same logical event. A restatement, confirmation, or re-verification of an already-recorded convention, decision, or claim is not a durable event: cite the existing record and write nothing new. Never re-issue with `agent` authority a decision the ledger already records as `human`.
+- When the Entry directly records one actual execution of a non-trivial,
+  reusable procedure (preferred kinds `run`, `result`, `observation`;
+  `code_change` only with its own execution evidence; `failure` only when it
+  records a workaround execution), and no existing card covers it, consider
+  adding a `> method-observation: <slug>` marker as the Entry body's first
+  line. This is a low-noise, low-trust candidate tag — not a trial, not
+  proof of repetition, and not a workstream assignment. The detailed
+  eligibility rules and the full distillation chain live in
+  [`../distilling-methods/SKILL.md`](../distilling-methods/SKILL.md); do not
+  duplicate them here. If an applicable card already exists, create the
+  Entry as a post-card trial that exact-`sha256:` pins that card instead of
+  writing an observation marker.
 - Record a verification only when it changes a live claim or surfaces auditable evidence the ledger lacks; do not wrap an ordinary re-read or an un-triggered check as a durable event.
 - Use `resolves` only when this Entry's own evidence directly closes an active failure — first check the failure's state and its `supersedes`/`resolves` chain, and confirm no existing record already settles the failure's subject. A projected counter (such as `unresolved_failures`) is ledger state, not an instruction: do not change a failure's status unless the records support the change.
 - Use `supersedes` only when replacing an older Entry; never silently rewrite history.
@@ -609,7 +626,13 @@ verified until the post-run confirms it.
 **Method-card harvest.** When a stable workflow recurred this session (see
 Start or resume work), read `../distilling-methods/SKILL.md` and follow its
 triggers before ending; the distillation rules live there only and are never
-copied into this Skill.
+copied into this Skill. At session end also review new observation markers,
+new cards, and new post-card trials from this session. This is best-effort
+fallback: no runtime hook fires after every save, and a proposal may be
+re-raised after an interrupted/recovered session — no exactly-once claim.
+If a native host has explicitly provided a current-session AITP distillation
+coordinator, follow its scheduling/disclosure to avoid duplicate questions;
+all semantic gates remain as defined in `distilling-methods`.
 
 Reviewed wrap-up checks on the re-run `enter`:
 

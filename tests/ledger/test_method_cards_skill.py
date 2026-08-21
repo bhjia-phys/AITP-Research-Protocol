@@ -1,4 +1,4 @@
-"""Method-card distillation contract (AITP 0.6.0, Skill-only change).
+"""Method-card distillation contract (AITP 0.8.0, Skill-only change).
 
 Test-only file: it pins the ``distilling-methods`` Skill's contract against
 the canonical runtime and CLI without touching the implementation. Under
@@ -36,6 +36,26 @@ test:
   revisions inherit no trials or approval, each revision restarts the
   two-trials + human decision + publish request chain, placeholder/slug
   completion is a Skill check, never a runtime gate).
+
+0.8.0 additions (Skill-only, no runtime/CLI/schema change):
+
+- method-observation markers as ordinary Entry body first lines are
+  compatible with the existing save gate and ``check`` — the runtime never
+  validates marker grammar, slug, position, or uniqueness;
+- pre-card execution Entries can be pinned as a card's ``basis_refs`` while
+  the card stays ``agent_draft`` and the pre-card Entries never carry a
+  card pin;
+- two post-card Entries exact-``sha256:``-pinning the same card revision
+  are ordinary clean records — the test does not fake a runtime trial
+  counter or proposal state;
+- a second human ``decision`` Entry (the publication choice) saves clean
+  with the same pin shape and does not change the Note ``review_state`` or
+  create a Skill;
+- the static Skill text covers the full 0.8 rule surface: marker
+  grammar/candidate/trigger, pre-card basis vs post-card exact trial,
+  two-step human decision (Approve/Defer/Reject then Publish now/Keep
+  local), main-agent-only, fallback/native boundary, and the platform
+  tool/card/Skill three-layer relationship.
 """
 
 from __future__ import annotations
@@ -122,6 +142,36 @@ Adopt the pinned card; no alternative procedure was selected.
 ## Reason, Scope, And Revisit Condition
 
 Revisit when a trial contradicts the card's stated outputs.
+"""
+
+PUBLISH_BODY = """\
+## Durable Summary
+
+A human requests publication of the pinned method card into the plugin Skill.
+
+## Decision And Alternatives
+
+Publish now; the card has been approved and two qualifying trials are recorded.
+
+## Reason, Scope, And Revisit Condition
+
+Revisit only if a new revision is created or the researcher explicitly reopens.
+"""
+
+OBSERVATION_RUN_BODY = """\
+> method-observation: shell-fit
+
+## Durable Summary
+
+The shell-fitting procedure ran once end to end on the small-q setup.
+
+## Question, Command, And Inputs
+
+Run the pinned procedure with the standard convergence parameters.
+
+## Outputs, Result, And Status
+
+Outputs matched expectations; status completed.
 """
 
 
@@ -692,3 +742,513 @@ def test_distilling_text_trial_revision_approval_contract() -> None:
         "it never checks the title, the marker line, or leftover placeholder text",
     ):
         assert phrase in distilling, phrase
+
+
+# ---------------------------------------------------------------------------
+# 0.8.0 runtime-compatibility tests: observation marker, pre-card basis,
+# post-card exact trials, second human publication-choice decision.
+# These prove only that the existing runtime accepts these ordinary
+# Entry/Note/decision records; they never fake runtime trial counters,
+# proposal state, or auto-discovery behavior.
+# ---------------------------------------------------------------------------
+
+
+def _save_run_entry(
+    root: Path,
+    *,
+    summary: str,
+    refs: list[dict[str, str]],
+    limitations: list[str],
+    body: str,
+    idempotency_key: str | None = None,
+) -> dict[str, str]:
+    """CLI ``record prepare --kind run`` -> fill -> ``record save``; returns
+    the prepared payload."""
+    args = [
+        "record", "prepare", "--kind", "run",
+        "--authority", "agent", "--created-by", "agent:test", "--json",
+    ]
+    if idempotency_key is not None:
+        args += ["--idempotency-key", idempotency_key]
+    prepared = run_cli(root, *args)
+    assert prepared.returncode == 0, prepared.stderr
+    payload = json.loads(prepared.stdout)
+    fill_entry(root, payload, summary=summary, refs=refs, limitations=limitations, body=body)
+    saved = run_cli(root, "record", "save", payload["path"], "--json")
+    assert saved.returncode == 0, saved.stderr
+    assert json.loads(saved.stdout)["status"] == "saved"
+    return payload
+
+
+def _save_decision_entry(
+    root: Path,
+    *,
+    summary: str,
+    refs: list[dict[str, str]],
+    body: str,
+    idempotency_key: str,
+) -> dict[str, str]:
+    """CLI ``record prepare --kind decision --authority human`` -> fill ->
+    ``record save``; returns the prepared payload."""
+    prepared = run_cli(
+        root,
+        "record", "prepare", "--kind", "decision",
+        "--authority", "human", "--created-by", "researcher",
+        "--idempotency-key", idempotency_key,
+        "--json",
+    )
+    assert prepared.returncode == 0, prepared.stderr
+    payload = json.loads(prepared.stdout)
+    fill_entry(root, payload, summary=summary, refs=refs, limitations=[], body=body)
+    saved = run_cli(root, "record", "save", payload["path"], "--json")
+    assert saved.returncode == 0, saved.stderr
+    assert json.loads(saved.stdout)["status"] == "saved"
+    return payload
+
+
+def test_observation_marker_compatible_with_runtime(tmp_path: Path) -> None:
+    """An Entry whose body first line is a ``> method-observation:`` marker
+    is a perfectly ordinary Entry: the runtime treats it as body text and
+    ``check`` is clean.  The runtime never validates marker grammar, slug,
+    position, or uniqueness — these are Skill completeness checks."""
+    root = initialized(tmp_path)
+    fill_goal(root)
+    basis = pinned_file(root, "theory/obs-evidence.md")
+    payload = _save_run_entry(
+        root,
+        summary="The shell-fitting procedure ran once end to end.",
+        refs=[basis],
+        limitations=["One run; single setup."],
+        body=OBSERVATION_RUN_BODY,
+    )
+
+    # the marker is literally the body's first line
+    entry_path = root / ".aitp" / "topic" / "entries" / f"{payload['id']}.md"
+    _, body, _ = parse_markdown(entry_path)
+    assert body.splitlines()[0] == "> method-observation: shell-fit"
+
+    # check is clean — the marker is ordinary body text to the runtime
+    report = run_cli(root, "check", "--json")
+    assert report.returncode == 0, report.stdout
+    assert json.loads(report.stdout)["status"] == "clean"
+
+
+def test_pre_card_entries_as_basis_refs(tmp_path: Path) -> None:
+    """Pre-card execution Entries are pinned as the card's ``basis_refs``.
+    The card stays ``agent_draft`` and the pre-card Entries never carry a
+    card pin — they are basis, not trials."""
+    root = initialized(tmp_path)
+    fill_goal(root)
+    basis_file = pinned_file(root, "theory/pre-card-basis.md")
+
+    # two pre-card execution Entries
+    pre1 = _save_run_entry(
+        root,
+        summary="First execution of the procedure.",
+        refs=[basis_file],
+        limitations=["Single setup."],
+        body=RUN_BODY,
+        idempotency_key="pre-card-run-1",
+    )
+    pre2 = _save_run_entry(
+        root,
+        summary="Second execution of the procedure.",
+        refs=[basis_file],
+        limitations=["Single setup."],
+        body=RUN_BODY,
+        idempotency_key="pre-card-run-2",
+    )
+
+    # pin both pre-card Entries as the card's basis_refs
+    pre1_path = root / ".aitp" / "topic" / "entries" / f"{pre1['id']}.md"
+    pre2_path = root / ".aitp" / "topic" / "entries" / f"{pre2['id']}.md"
+    pre1_pin = {
+        "target": f".aitp/topic/entries/{pre1['id']}.md",
+        "at": f"sha256:{hashlib.sha256(pre1_path.read_bytes()).hexdigest()}",
+        "locator": "whole file",
+    }
+    pre2_pin = {
+        "target": f".aitp/topic/entries/{pre2['id']}.md",
+        "at": f"sha256:{hashlib.sha256(pre2_path.read_bytes()).hexdigest()}",
+        "locator": "whole file",
+    }
+
+    # create the card with both pre-card Entries as basis
+    prepared = run_cli(
+        root, "note", "prepare", "--mode", "theory",
+        "--title", "Method card: shell-fit", "--created-by", "agent:test", "--json",
+    )
+    assert prepared.returncode == 0, prepared.stderr
+    card_payload = json.loads(prepared.stdout)
+    fill_note(
+        root, card_payload,
+        summary="Card generalizing two pre-card executions.",
+        basis_refs=[pre1_pin, pre2_pin],
+        body=card_body("shell-fit"),
+    )
+    saved = run_cli(root, "note", "save", card_payload["path"], "--json")
+    assert saved.returncode == 0, saved.stderr
+
+    # the card is agent_draft
+    card_fm, card_body_text, _ = parse_markdown(
+        root / ".aitp" / "topic" / "notes" / f"{card_payload['id']}.md"
+    )
+    assert card_fm["review_state"] == "agent_draft"
+    assert card_body_text.splitlines()[0] == "> method-card: shell-fit"
+
+    # the pre-card Entries do NOT carry a card pin (they are basis, not trials)
+    for pre_id in (pre1["id"], pre2["id"]):
+        pre_fm, _, _ = parse_markdown(
+            root / ".aitp" / "topic" / "entries" / f"{pre_id}.md"
+        )
+        for ref in pre_fm.get("refs", []):
+            assert "notes" not in ref["target"], (
+                "pre-card Entry must not carry a card pin"
+            )
+
+    report = run_cli(root, "check", "--json")
+    assert report.returncode == 0, report.stdout
+    assert json.loads(report.stdout)["status"] == "clean"
+
+
+def test_two_post_card_trials_pin_same_revision(tmp_path: Path) -> None:
+    """Two post-card Entries that exact-``sha256:``-pin the same card
+    revision are ordinary clean records.  The test does not fake a runtime
+    trial counter or proposal state — it only proves the pins verify and
+    ``check`` is clean."""
+    root = initialized(tmp_path)
+    fill_goal(root)
+
+    # save the card first
+    card = save_card(root, "shell-fit", basis=pinned_file(root, "theory/basis.md"))
+    pin = card_pin(root, card["id"])
+
+    # two post-card trial Entries pinning the exact same card revision
+    trial1 = _save_run_entry(
+        root,
+        summary="Post-card trial one.",
+        refs=[pin],
+        limitations=["One run."],
+        body=RUN_BODY,
+        idempotency_key="post-card-trial-1",
+    )
+    trial2 = _save_run_entry(
+        root,
+        summary="Post-card trial two.",
+        refs=[pin],
+        limitations=["One run."],
+        body=RUN_BODY,
+        idempotency_key="post-card-trial-2",
+    )
+
+    # both trials pin the same card Note with the same sha256
+    for trial_id in (trial1["id"], trial2["id"]):
+        trial_fm, _, _ = parse_markdown(
+            root / ".aitp" / "topic" / "entries" / f"{trial_id}.md"
+        )
+        assert trial_fm["refs"] == [pin]
+
+    report = run_cli(root, "check", "--json")
+    assert report.returncode == 0, report.stdout
+    assert json.loads(report.stdout)["status"] == "clean"
+
+    # the card remains agent_draft — the runtime never auto-approves or
+    # creates a proposal state
+    card_fm, _, _ = parse_markdown(
+        root / ".aitp" / "topic" / "notes" / f"{card['id']}.md"
+    )
+    assert card_fm["review_state"] == "agent_draft"
+
+
+def test_second_human_publication_decision_saves_clean(tmp_path: Path) -> None:
+    """A second human ``decision`` Entry (the publication choice) saves clean
+    with the same pin shape.  It does not change the Note ``review_state``
+    or create a Skill — the runtime has no publication state machine."""
+    root = initialized(tmp_path)
+    fill_goal(root)
+    card = save_card(root, "shell-fit", basis=pinned_file(root, "theory/basis.md"))
+    pin = card_pin(root, card["id"])
+
+    # first decision: approval
+    approval = _save_decision_entry(
+        root,
+        summary="A human approves the pinned method card.",
+        refs=[pin],
+        body=DECISION_BODY,
+        idempotency_key="shell-fit-approve",
+    )
+
+    # second decision: publication choice
+    publish = _save_decision_entry(
+        root,
+        summary="A human requests publication of the pinned method card.",
+        refs=[pin],
+        body=PUBLISH_BODY,
+        idempotency_key="shell-fit-publish",
+    )
+
+    # both decisions are separate Entries with human authority
+    for dec_id in (approval["id"], publish["id"]):
+        fm, _, _ = parse_markdown(
+            root / ".aitp" / "topic" / "entries" / f"{dec_id}.md"
+        )
+        assert fm["kind"] == "decision"
+        assert fm["authority"] == "human"
+        assert fm["refs"] == [pin]
+
+    # the card stays agent_draft — no runtime publication state
+    card_fm, _, _ = parse_markdown(
+        root / ".aitp" / "topic" / "notes" / f"{card['id']}.md"
+    )
+    assert card_fm["review_state"] == "agent_draft"
+
+    report = run_cli(root, "check", "--json")
+    assert report.returncode == 0, report.stdout
+    assert json.loads(report.stdout)["status"] == "clean"
+
+
+# ---------------------------------------------------------------------------
+# 0.8.0 static Skill/manifest contract tests: the full rule surface.
+# ---------------------------------------------------------------------------
+
+
+def test_distilling_text_0_8_marker_and_candidate_rules() -> None:
+    distilling = re.sub(
+        r"\s+", " ",
+        (PLUGIN / "skills" / "distilling-methods" / "SKILL.md").read_text(encoding="utf-8"),
+    )
+
+    # marker grammar: first line, blank next line, single marker, slug rule
+    for phrase in (
+        "> method-observation: <slug>",
+        "must be the Entry body's first line",
+        "at most one marker per Entry",
+        "[a-z0-9][a-z0-9-]{0,62}",
+        "The runtime does not validate the marker",
+    ):
+        assert phrase in distilling, phrase
+
+    # candidate-not-proof: marker does not prove repetition or independence
+    for phrase in (
+        "does not prove the procedure ran twice",
+        "does not prove independent sessions",
+        "Never auto-draft by marker count",
+    ):
+        assert phrase in distilling, phrase
+
+    # eligible kinds and non-eligible kinds
+    for phrase in (
+        "`run`, `result`, `observation` are preferred kinds",
+        "`failure` alone is not a successful workaround occurrence",
+        "`source`, `decision`, `closeout` are not eligible",
+        "never backfill or rewrite an old Entry",
+    ):
+        assert phrase in distilling, phrase
+
+    # rg discovery + show canonical review + exit 2 fail closed
+    for phrase in (
+        'rg "^> method-observation:" .aitp/topic/entries/',
+        "read the canonical record with",
+        "`aitp show <entry-id> --json`",
+        "fail closed immediately",
+    ):
+        assert phrase in distilling, phrase
+
+    # distinct logical execution and independence unknown boundary
+    for phrase in (
+        "two distinct logical execution roots",
+        "when the current schema cannot prove it",
+        "no-op or ask the researcher",
+    ):
+        assert phrase in distilling, phrase
+
+    # pre-card basis: never count as trials
+    for phrase in (
+        "do not count them as trials",
+        "Pre-card Entries can only enter the card's `basis_refs`",
+        "never retroactively reinterpreted as post-card trials",
+    ):
+        assert phrase in distilling, phrase
+
+
+def test_distilling_text_0_8_post_card_trial_rules() -> None:
+    distilling = re.sub(
+        r"\s+", " ",
+        (PLUGIN / "skills" / "distilling-methods" / "SKILL.md").read_text(encoding="utf-8"),
+    )
+
+    # post-card trial: card must exist first, exact pin at creation
+    for phrase in (
+        "`run`/`result` are the preferred trial kinds",
+        "count only when the Entry body itself directly records one card execution",
+        "do not automatically equal independent sessions",
+        "different Note ID, a different hash",
+        "Entries with a different Note ID",
+        "old-revision trials, and backfill pins do not count",
+    ):
+        assert phrase in distilling, phrase
+
+    # contradictory trial stops; no auto-resolve; no silent edit
+    for phrase in (
+        "contradictory trial is recorded as an ordinary `failure`",
+        "the card never auto-resolves a failure",
+        "never silent-edited",
+    ):
+        assert phrase in distilling, phrase
+
+    # auto-drafted card stays agent_draft; two trials = proposal only
+    for phrase in (
+        "An auto-drafted card always stays `review_state: agent_draft`",
+        "without at least one qualifying post-card trial",
+        "Two qualifying trials trigger a publication proposal only",
+    ):
+        assert phrase in distilling, phrase
+
+
+def test_distilling_text_0_8_two_step_human_decision() -> None:
+    distilling = re.sub(
+        r"\s+", " ",
+        (PLUGIN / "skills" / "distilling-methods" / "SKILL.md").read_text(encoding="utf-8"),
+    )
+
+    # proposal packet contents
+    for phrase in (
+        "assembles a proposal packet",
+        "exact card Note ID, path, and SHA",
+        "two qualifying trial IDs and their exact pins",
+        "proposed Skill routing boundary",
+    ):
+        assert phrase in distilling, phrase
+
+    # first question: Approve / Defer / Reject
+    for phrase in (
+        "`Approve` / `Defer` / `Reject`",
+        "only an unambiguous mapping to one outcome continues",
+        "`Other`, dismiss, timeout, or no answer means zero-write",
+        "--idempotency-key <card-revision-approval-outcome>",
+        "The researcher does not run commands, edit drafts, or fill YAML",
+    ):
+        assert phrase in distilling, phrase
+
+    # Defer and Reject recorded as decisions; re-prompt conditions
+    for phrase in (
+        "`Defer` and `Reject` are also recorded as human `decision` Entries",
+        "`Defer` re-prompts only on new qualifying evidence",
+        "`Reject` re-prompts only on a new revision",
+    ):
+        assert phrase in distilling, phrase
+
+    # second question: Publish now / Keep local, separate, independent
+    for phrase in (
+        "`Publish now` / `Keep local`",
+        "separate second question",
+        "independent human `decision` Entry with a separate stable idempotency key",
+        "`Keep local` records the choice and stops",
+        "`Publish now` is a durable, recoverable explicit human publish request",
+        "does not authorize Hakimi runtime or any agent to mutate the installed plugin",
+    ):
+        assert phrase in distilling, phrase
+
+    # main-agent-only; no hardcoded model/preset
+    for phrase in (
+        "initiated by the main agent only",
+        "must not ask the researcher approval/publication questions",
+        "must not answer on the researcher's behalf",
+        "hardcodes no model or new preset",
+    ):
+        assert phrase in distilling, phrase
+
+
+def test_distilling_text_0_8_platform_and_fallback_boundary() -> None:
+    distilling = re.sub(
+        r"\s+", " ",
+        (PLUGIN / "skills" / "distilling-methods" / "SKILL.md").read_text(encoding="utf-8"),
+    )
+
+    # platform tool/card/Skill three-layer boundary
+    for phrase in (
+        "Tool/adapter executes",
+        "Method card records a stable procedure",
+        "Skill routes",
+        "AITP Python never implements these platform mechanisms",
+        "a card never dispatches tools",
+        "a Skill never copies scheduler/SSH/rsync implementations",
+        "bare `host:path` is never accepted as locally verified evidence",
+        "Host/session Goal belongs to Hakimi",
+    ):
+        assert phrase in distilling, phrase
+
+    # fallback best-effort, not runtime hook or exactly-once
+    for phrase in (
+        "model/Skill-driven best-effort fallback",
+        "not a runtime callback, post-save hook, or exactly-once guarantee",
+        "no exactly-once claim is made",
+        "native host (Hakimi future Feature, planned but not implemented)",
+        "Hakimi never copies the AITP parser/validator",
+        "never writes `.aitp` canonical files directly",
+    ):
+        assert phrase in distilling, phrase
+
+
+def test_distilling_text_0_8_extended_never_list() -> None:
+    distilling = re.sub(
+        r"\s+", " ",
+        (PLUGIN / "skills" / "distilling-methods" / "SKILL.md").read_text(encoding="utf-8"),
+    )
+
+    for phrase in (
+        "auto-draft a card by marker count alone",
+        "count a pre-card Entry as a post-card trial",
+        "let a subagent ask or answer approval/publication questions",
+        "hardcode a model or preset for distillation",
+        "accept a bare `host:path` as locally verified evidence",
+        "claim exactly-once, runtime auto-discovery, scientific correctness",
+    ):
+        assert phrase in distilling, phrase
+
+
+def test_using_aitp_text_0_8_observation_and_fallback() -> None:
+    using = re.sub(
+        r"\s+", " ",
+        (PLUGIN / "skills" / "using-aitp" / "SKILL.md").read_text(encoding="utf-8"),
+    )
+
+    # session start: search observation markers after card retrieval
+    for phrase in (
+        'rg "^> method-observation:" .aitp/topic/entries/',
+        "load `../distilling-methods/SKILL.md` for a bounded candidate review",
+    ):
+        assert phrase in using, phrase
+
+    # durable Entry creation: observation marker or post-card trial pin
+    for phrase in (
+        "> method-observation: <slug>",
+        "low-trust candidate tag",
+        "create the Entry as a post-card trial that exact-`sha256:` pins that card",
+    ):
+        assert phrase in using, phrase
+
+    # session end: review observations, cards, trials; best-effort fallback
+    for phrase in (
+        "review new observation markers",
+        "best-effort fallback",
+        "no runtime hook fires after every save",
+        "no exactly-once claim",
+        "native host has explicitly provided a current-session AITP distillation coordinator",
+    ):
+        assert phrase in using, phrase
+
+
+def test_openai_yaml_manifests_0_8_descriptions() -> None:
+    """The two ``agents/openai.yaml`` files carry updated descriptions that
+    mention the 0.8 rule surface without fabricating runtime behavior."""
+    distilling_yaml = (PLUGIN / "skills" / "distilling-methods" / "agents" / "openai.yaml").read_text(encoding="utf-8")
+    using_yaml = (PLUGIN / "skills" / "using-aitp" / "agents" / "openai.yaml").read_text(encoding="utf-8")
+
+    assert "method-observation markers" in distilling_yaml
+    assert "two-step human decisions" in distilling_yaml
+    assert "platform tool/card/Skill three-layer boundary" in distilling_yaml
+
+    assert "observation-marker retrieval" in using_yaml
+    assert "best-effort fallback" in using_yaml
+    assert "no runtime hook or exactly-once guarantee" in using_yaml
