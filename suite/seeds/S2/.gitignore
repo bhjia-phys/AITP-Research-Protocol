@@ -1,6 +1,0 @@
-.aitp/local/
-**/__pycache__/
-**/.pytest_cache/
-**/build/
-**/.venv/
-

@@ -1,3 +1,0 @@
-# Conventions
-
-Not established yet.

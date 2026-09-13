@@ -1,0 +1,27 @@
+{
+  "name": "aitp",
+  "version": "1.1.0+codex.20260913142300",
+  "description": "Article-centred research memory, physics writing and reusable workflows, using ordinary documents and Skills.",
+  "author": {
+    "name": "Bohan Jia"
+  },
+  "license": "MIT",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "AITP",
+    "shortDescription": "Develop a coherent research note across sessions.",
+    "longDescription": "Maintain the whole research argument in editable Markdown with linked derivations, literature and calculations. Includes research guidance, writing for formal and numerical physics, and direct method-to-Skill distillation. No ledger runtime or automatic maintenance hook.",
+    "developerName": "Bohan Jia",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Read the whole research note and recover this topic.",
+      "Integrate this result into the topic's argument.",
+      "Use aitp-writing to revise this physics explanation or manuscript.",
+      "Distill this demonstrated method into a focused Skill."
+    ]
+  }
+}

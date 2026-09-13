@@ -1,0 +1,11 @@
+{
+  "name": "aitp",
+  "version": "1.1.0",
+  "description": "Article-centred research memory, physics writing and research guidance, and direct Skill distillation.",
+  "skills": "./skills/",
+  "systemPrompt": "For a research topic using AITP, load aitp-memory and understand the complete research.md before substantive revision. The README explains established material locations; the main argument links detailed research notes and their assets. Reuse those locations when saving work. Use aitp-writing for substantial explanation or manuscript work, with formal or computational guidance as relevant. Use ordinary document tools and linked sources. This plugin has no ledger CLI or session hook.",
+  "interface": {
+    "displayName": "AITP",
+    "shortDescription": "Develop a coherent research note across sessions."
+  }
+}

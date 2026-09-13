@@ -1,14 +1,14 @@
 {
   "name": "aitp-protocol",
   "interface": {
-    "displayName": "AITP Research Protocol"
+    "displayName": "Aitp Protocol"
   },
   "plugins": [
     {
-      "name": "aitp-research-protocol",
+      "name": "aitp",
       "source": {
         "source": "local",
-        "path": "./plugins/aitp-research-protocol"
+        "path": "./plugins/aitp"
       },
       "policy": {
         "installation": "AVAILABLE",
