@@ -4,6 +4,21 @@ Version 1.1.0: article-centred research memory, research and writing guidance,
 and direct Skill distillation. The bundle contains instructions, examples and
 optional manuscript assets, with no runtime.
 
+Install the versioned release in **Hakimi** with:
+
+```text
+/plugins install https://github.com/bhjia-phys/AITP-Research-Protocol/releases/download/v1.1.0/aitp-1.1.0.zip
+```
+
+For **Codex**, use the repository marketplace:
+
+```sh
+codex plugin marketplace add bhjia-phys/AITP-Research-Protocol --ref v1.1.0
+codex plugin add aitp@aitp-protocol
+```
+
+Start a new host thread after installation.
+
 - [aitp-memory](skills/aitp-memory/SKILL.md) reads the complete research question
   and integrates meaningful changes into its note and linked assets.
 - [aitp-research](skills/aitp-research/SKILL.md) guides physical reasoning,
@@ -23,4 +38,5 @@ The [teaching example](examples/README.md) is a self-contained oscillator exerci
 [Asset guidance](skills/aitp-memory/references/local-assets.md) explains how the
 README locates material and the main argument links detailed notes and their
 assets. Reuse established locations; no directory template is prescribed.
-See the [repository README](../../README.md) for installation and usage.
+See the [repository README](https://github.com/bhjia-phys/AITP-Research-Protocol/tree/v1.1.0)
+for further usage guidance.

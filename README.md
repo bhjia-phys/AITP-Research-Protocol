@@ -42,18 +42,34 @@ not certify its scientific correctness or authorize its recorded next action.
 
 ## Use and installation
 
-The installable bundle is [plugins/aitp](plugins/aitp). Codex and Hakimi manifests
-expose the same four Skills. Without installation, give an agent the memory
-Skill and the topic's main note. With this repository's local Codex marketplace:
+Install [AITP 1.1.0](https://github.com/bhjia-phys/AITP-Research-Protocol/releases/tag/v1.1.0).
+Codex and Hakimi expose the same four core Skills and one small teaching example.
+
+For **Codex**, run in a terminal:
 
 ```sh
-codex plugin marketplace add /path/to/AITP-Research-Protocol
+codex plugin marketplace add bhjia-phys/AITP-Research-Protocol --ref v1.1.0
 codex plugin add aitp@aitp-protocol
 ```
 
+For **Hakimi**, run inside a session:
+
+```text
+/plugins install https://github.com/bhjia-phys/AITP-Research-Protocol/releases/download/v1.1.0/aitp-1.1.0.zip
+```
+
+Start a new host thread after installation. The attached
+[plugin ZIP](https://github.com/bhjia-phys/AITP-Research-Protocol/releases/download/v1.1.0/aitp-1.1.0.zip)
+contains an `aitp/` folder with its manifests, Skills, example and license.
+Hakimi uses this ZIP; GitHub's automatic source archives contain the full
+repository, where the plugin is nested under `plugins/aitp`.
+
+For local development, add this checkout as the Codex marketplace source and
+install `aitp@aitp-protocol`, or give Hakimi the absolute path to `plugins/aitp`.
+Without installation, an agent can read the memory Skill and the topic's main note.
+
 The repository and marketplace keep their historical names; the product and
-plugin are **AITP**, with plugin identifier `aitp`. Start a new host thread after
-replacing the installed plugin so its Skill catalog refreshes. AITP does not
+plugin are **AITP**, with plugin identifier `aitp`. AITP does not
 provide the legacy `aitp` command or native ledger tools. Hosts that implemented
 the old adapter must explicitly retire that integration; this is a major-version
 replacement, not adapter-contract compatibility.

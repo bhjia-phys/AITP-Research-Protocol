@@ -30,3 +30,14 @@ and are not part of the public teaching example. This release makes no controlle
 comparison with ordinary notes or another memory tool. Further evaluation should
 use a separate task and evidence rather than interrupt ordinary research with
 mandatory self-assessment.
+
+## Installable release
+
+The versioned plugin ZIP was installed through Hakimi's native URL download,
+archive extraction and manifest-discovery path in an isolated installation,
+using a temporary local HTTP server. It discovered four enabled core Skills
+without diagnostics. All local Markdown links in the extracted plugin resolve
+inside it. The package includes both host manifests and the repository license.
+The Codex installation command was checked against CLI 0.154.0; it selects the
+repository marketplace at the release tag. These are installation checks,
+separate from scientific or independent-session behavior evaluation.
