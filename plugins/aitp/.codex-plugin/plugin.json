@@ -1,7 +1,7 @@
 {
   "name": "aitp",
-  "version": "1.1.0",
-  "description": "Article-centred research memory, physics writing and reusable workflows, using ordinary documents and Skills.",
+  "version": "1.1.0+codex.20260914182315",
+  "description": "Begin physics research topics with aitp-memory; develop a concise research.md through research, writing and method distillation.",
   "author": {
     "name": "Bohan Jia"
   },
@@ -10,7 +10,7 @@
   "interface": {
     "displayName": "AITP",
     "shortDescription": "Develop a coherent research note across sessions.",
-    "longDescription": "Maintain the whole research argument in editable Markdown with linked derivations, literature and calculations. Includes research guidance, writing for formal and numerical physics, and direct method-to-Skill distillation. No ledger runtime or automatic maintenance hook.",
+    "longDescription": "Use aitp-memory first to locate or establish the main note, recover context and determine the current task. Research, writing and domain methods develop one concise argument with linked evidence, useful failures and explicit uncertainty. For learning, expand source passages at the reader's needed depth; main notes synthesize the question and supporting notes develop usable results. Retain meaningful changes and distill reusable procedures. Produce or revise a LaTeX paper only when requested. No ledger runtime or automatic maintenance hook.",
     "developerName": "Bohan Jia",
     "category": "Productivity",
     "capabilities": [
@@ -18,6 +18,7 @@
       "Write"
     ],
     "defaultPrompt": [
+      "Use aitp-memory first for this research topic: locate or establish research.md, recover its context and clarify this session's task.",
       "Read the whole research note and recover this topic.",
       "Integrate this result into the topic's argument.",
       "Use aitp-writing to revise this physics explanation or manuscript.",

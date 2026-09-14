@@ -5,6 +5,113 @@ location, or carrying out a requested move. Start with the existing README and
 nearby related work. Reuse a useful established location; directory names and
 physical separation do not determine the structure of the scientific argument.
 
+## Browse nearby topics and shared knowledge
+
+When another topic may contain useful work, a branch may already have a home,
+or a shared explanation is needed, first locate the relevant topic family or
+knowledge collection through workspace instructions and README links. If no
+entry is known, briefly inspect the current and nearby parent directories
+before asking for a location or inventing a new home.
+
+For an unfamiliar location, start with directory names, shallow Markdown filenames,
+README entries and candidate note titles and scope descriptions. For example,
+use `rg --files --max-depth 2 -g '*.md'`
+within a located root, or the host's directory-listing tool, then inspect a
+promising subdirectory. A title search on selected Markdown files can expose
+relevant notes whose filenames are generic. Keep raw runs, code vendors and
+unrelated archives out of this pass; narrow the directory if the listing is large.
+Follow a known useful link directly; these are discovery options, not compulsory
+levels to traverse. A clearly scoped entry can identify a promising note or an
+apparent coverage gap before the full explanation is opened.
+
+Use names, aliases and related terms to search candidate filenames, headings
+and then text as needed. Open the plausible notes and compare their questions,
+assumptions and qualifications before reuse. A title or index entry locates
+material; it neither proves coverage nor validates a claim. One unmatched term
+does not establish that the work is absent. Follow the
+[shared-knowledge guidance](shared-knowledge.md) when comparing concept or
+theorem explanations.
+
+Stop once the relevant location and context are found. Reuse them within the
+current task rather than listing every directory again at each turn. If this
+nearby discovery still leaves a consequential location unknown, ask. A newly
+established topic or collection entry belongs in the existing README once;
+ordinary browsing needs no note, search log or new index.
+
+## Write entries that help choose the next read
+
+Where a title alone is ambiguous, give its link a short description of the question
+the note helps answer and the setting actually treated. Add a limitation when it
+changes the choice: "Flux integrality for a line bundle on a sphere, proved using
+two patches; Hall response is a separate derivation." Useful aliases can help
+find it, but need not share a column or sentence with the scope. This is a prose
+convention, not a required table or metadata schema.
+
+Keep detailed entries in the nearest useful index; a parent index can describe
+and link the collection without copying all its entries. Maintain an entry when
+its location or usable scope changes, including a correction that makes the old
+description misleading. Routine body edits and unchanged reads need no index
+update. Derive the description from the note, not from a planned extension; a
+stale or missing description is a reason to inspect a plausible candidate, not
+to declare the needed work absent. Group entries when scanning becomes difficult.
+
+Entries guide selection; the note supplies the argument and qualifications.
+For substantive topic recovery or main-note revision, understand the complete
+main argument as described in [aitp-memory](../SKILL.md); do not substitute an
+index blurb for that context. Focused recall and shared-note reuse can read the
+relevant passages and follow only the links the question needs.
+
+## Optional layouts for a new home
+
+For a new independent topic, keep its material together in the designated folder.
+The code repository itself may be that folder; an extra workspace layer is not
+needed. This is a menu of useful locations, not a tree to generate in advance:
+
+```text
+topic/
+  README.md                 Question entrypoint and actual material locations
+  research.md               Developing main argument
+  notes/                    Detailed derivations, concepts and reading notes
+  references/               Papers, bibliography and source documents
+  code/                     Reusable code owned by this topic
+  calculations/             Experiments with their inputs, outputs and analysis
+  manuscripts/              TeX sources, publication drafts and compiled PDFs
+  skills/<method>/SKILL.md   A demonstrated reusable procedure
+```
+
+Initially the two Markdown files may be enough. Create other locations only as
+needed. Keep a figure with the analysis that produces it; a separate `figures/`
+is useful when the existing manuscript or analysis workflow needs it. Formal
+work may need only notes and references, while numerical work adds calculations.
+Mixed work follows the connections between the theory and its tests.
+
+A [shared theoretical collection](shared-knowledge.md) can live outside individual
+topics, for example in a sibling `knowledge/` directory. Its README provides
+useful entry routes, while topic notes link the concepts and theorems they use.
+This is optional ordinary Markdown, with no graph database or required taxonomy.
+
+For code changes, builds, numerical tests and run outputs, consult
+[numerical development and experiment locations](numerical-assets.md) when more
+detail is needed. Reusable general methods can be included in
+[AITP's domain method library](../../aitp-research/references/method-library.md);
+the optional local `skills/` directory remains useful for unreviewed work.
+
+When independent questions really need shared development, a family can use:
+
+```text
+family/
+  README.md                 Links to each question and explains shared assets
+  question-a/research.md    One question, with its own supporting material
+  question-b/research.md    Another independent question
+  workspace/                The actual shared code or calculation workspace
+```
+
+Keep topic-specific assets beside their question unless the working code requires
+another location. Describe that relationship in the family README. Do not create
+a shared workspace merely because this example includes one; shared concept notes
+or methods likewise need only one primary home when real reuse appears. Existing
+projects retain useful layouts and names. These suggestions never require a move.
+
 ## README explains where the material is
 
 Once relevant assets and their working locations are established, explain the

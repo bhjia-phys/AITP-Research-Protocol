@@ -4,6 +4,11 @@ Use this when the answer rests on a construction, identity, proof, or an
 obstruction to one. The reader needs to see what the objects are, why a step
 is licensed, and exactly which statement has been established.
 
+For graduate-level concept and theorem explanations shared across questions, use
+[shared theoretical knowledge](../../aitp-memory/references/shared-knowledge.md).
+Retain the definitions and decisive implication in the topic's main argument;
+a link to a background page cannot replace the step the reader needs here.
+
 ## Give the argument a mathematical setting
 
 Introduce the space, fields or operators and their relevant equivalence
@@ -48,6 +53,12 @@ One fully explained representative calculation can license exact mechanical
 repetition. A new zero mode, branch choice, global condition or limit requires
 its own explanation. The appropriate detail is set by the reader and the
 conceptual difficulty, not a fixed number of intermediate equations.
+
+For a learner, calibrate that detail through
+[a concrete learning target](learning.md#set-a-useful-learning-target): which
+operations can be assumed, which calculation should be reproducible, and which
+theorems remain explicitly imported. Reading a correct expert derivation is not
+the same test as reconstructing it from those prerequisites.
 
 ## Let an example reveal why a definition is needed
 

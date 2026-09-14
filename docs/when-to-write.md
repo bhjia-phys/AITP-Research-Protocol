@@ -6,10 +6,23 @@ argument, not a ritual at the end of every turn.
 
 | Situation | Appropriate action |
 | --- | --- |
-| Start or resume a topic | Read the whole main note once, then the evidence needed for the request. |
+| Enter a new or unfamiliar topic with an unresolved scope decision | Inspect available material and ask early, before dependent drafting; continue independent source reading while waiting. |
+| Start a topic with an established question and working home | Write a small coherent first note; label proposed routes and open questions without inventing results. |
+| Organize existing scattered work | Establish the requested scope, recover its branches and useful failures, and link existing assets; organization alone does not authorize relocation. |
+| Resume a known topic | Read the whole main note once, then the evidence needed for the request; reuse the current reading within the session. |
+| Begin a derivation, code change or analysis within a research topic | Use memory first to recover the question and establish the current task, even when no recording was requested; reuse already current context. |
 | Ask for an explanation already supported by the current note | Answer from the note and relevant detail; do not create another record. |
+| Related work may exist, but its topic or shared-library location is unfamiliar | Follow README links and inspect nearby directories, shallow Markdown filenames and titles; search likely terms and read candidates selectively. Browsing alone needs no write. |
+| Choose a substantial side investigation or discover a prerequisite that redirects the work | Retain its question, motivation, primary working note and connection to the originating question, including a paused continuation when relevant; results are not required. Reuse an existing topic or supporting note. |
+| Mention a possible detour without choosing or developing it | No new branch file is needed. If the researcher asks to retain the idea, add a short proposed direction without inventing completed work. |
+| Complete, pause or abandon a consequential branch | Keep its result or obstruction, evidence and useful next step; update only the affected parent claims. A prerequisite's success does not mean the dependent calculation succeeded. |
+| A derivation proceeds with concepts already understood | Continue the research; no shared-knowledge search or maintenance just because a theoretical term occurs. |
+| Theory learning or derivation encounters a conceptual obstacle, uncertain assumption or remembered prior treatment | Consult the relevant explanation as needed, including theory within a numerical project; reuse alone requires no write. |
+| Prepare to save a standalone concept or theorem explanation | Check the entry and relevant notes using names and related terms; compare scope before reusing, extending or creating a note. Retain useful changes and necessary discovery links at a natural pause. |
+| Adjust code, submit a job or plot data without a conceptual issue | Use the ordinary research workflow; do not activate shared-theory maintenance. |
 | Poll a job whose state and scientific implications are unchanged | Report the poll if requested; no note change. |
 | Obtain a result that changes a conclusion or removes a live obstruction | Revise the affected argument and its conclusion; link the supporting artifact. |
+| Add useful detail while the main argument remains accurate | Update the supporting note or artifact; change the main text only if its explanation or evidence link needs adjustment. |
 | Find that an assumption or interpretation was wrong | Explain the correction where it matters and revise dependent claims and next steps. |
 | A failed attempt reveals a reusable restriction | Keep the reason and conditions, usually in the relevant passage or linked analysis. |
 | An incidental command fails and is immediately corrected | Normally no research memory; retain it only if the failure explains a recurring research obstacle. |
@@ -23,6 +36,12 @@ A meaningful update need not make the document longer. A resolved objection can
 replace a provisional paragraph and remove an obsolete next step. Keep the
 reason for a consequential reversal, not every intermediate attempt.
 
+At task completion or handoff, make this write decision without requiring a new
+file, end-of-session form or successful result. Preserve a fragile insight earlier
+when needed. For substantive main-note edits, use the
+[writing guide](../plugins/aitp/skills/aitp-writing/references/research-note.md)
+to shorten or expand the argument without losing conditions or useful source links.
+
 Read the complete main note before substantive edits, including its opening and
 conclusion. Within a continuous session, reuse that whole-note understanding
 until external edits or lost context make it stale. Do not load every linked
@@ -33,10 +52,12 @@ The [memory Skill](../plugins/aitp/skills/aitp-memory/SKILL.md) carries the
 operational guidance. This page explains it for the researcher; it is not a
 second runtime policy or a requirement for more files in each topic.
 
-## A small teaching walkthrough
+For example, explaining a Hamiltonian-mixing formula already supported by the
+note requires no write. Discovering that a comparison used an old executable
+requires correcting the affected validation claim and preserving the actual
+evidence. Adding another worked matrix without changing the argument can stay
+in its supporting note. None of these actions requests a LaTeX paper.
 
-The [oscillator example](../plugins/aitp/examples/README.md) shows the README,
-main argument, detailed derivation and supporting calculation in one small topic.
-Its README describes an ordinary recall with no write, a consequential correction
-to the argument, and reuse of an established calculation location. These are
-authored use cases, not independent-session evidence for automatic behavior.
+Historical authored walkthroughs and current check boundaries are described in
+[validation](validation.md). They are not independent-session evidence for
+automatic Skill selection.

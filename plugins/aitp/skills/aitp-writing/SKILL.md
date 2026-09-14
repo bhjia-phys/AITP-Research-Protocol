@@ -1,6 +1,6 @@
 ---
 name: aitp-writing
-description: Draft, explain, restructure or revise physics research notes and manuscripts with complete central reasoning. Use for formal theory, computational methods and benchmarks, theory with numerical tests, and pedagogical exposition; preserve the requested audience and document format.
+description: Write and revise physics research notes, expand lecture derivations for a learner, and develop clear arguments with linked evidence. First use aitp-memory for research.md. Produce or revise a LaTeX manuscript only when requested.
 ---
 
 # Write the scientific argument
@@ -15,6 +15,16 @@ settings and benchmark exposition; neither former Skill is a dependency.
 
 ## Choose the task and the reader
 
+Choose the purpose before the format: a research synthesis, a learning explanation,
+or a paper for a specialist audience. During research, write or revise the working
+note and its supporting explanations. For learning or expanding a lecture, use
+[learning from sources](references/learning.md) to set the reader's starting point
+and the calculation or concept to understand. For user-requested TeX/PDF or paper
+work, also use [manuscript handling](references/manuscripts.md). A JHEP layout does
+not change a teaching document into an expert paper. A meaningful note update or
+completed result does not itself request manuscript production; keep that guide
+unloaded during ordinary note work.
+
 Use the requested artifact and existing project conventions. A conceptual
 conversation needs an explanation of the disputed step, not a new manuscript.
 A research note can remain exploratory or end with a useful obstruction.
@@ -22,17 +32,40 @@ A paper needs a coherent supported result, which may itself be negative or
 conditional. A teaching note should distinguish reviewed material from new work.
 Do not create an outline, file, or full rewrite for an ordinary follow-up answer.
 
-For a substantive AITP main-note revision, use
-[aitp-memory](../aitp-memory/SKILL.md) to understand its complete argument.
-Reuse that understanding when it is current; do not restart the reading cycle.
+For a first AITP main note or a substantive revision, first use
+[aitp-memory](../aitp-memory/SKILL.md) to locate the note, clarify the current
+task and understand its complete argument. Reuse that understanding when current;
+do not restart the reading cycle. Apply [main-note writing](references/research-note.md)
+with a suitable Markdown starting file: [compact argument](assets/research-letter.md),
+[formal theory or learning](assets/research-theory.md), or
+[computational and mixed work](assets/research-computational.md). Write an article's
+question, abstract, reasoning and discussion, preserving useful failures,
+uncertainty and links to detailed evidence. Adapt the headings to the whole
+question and remove unused prompts; do not turn the note into a source inventory
+or test-status report. Memory and writing act on the same
+document; do not make a second narrative for the session.
 For another manuscript, identify the intended source and read enough surrounding
 argument to understand what the change affects. Preserve the requested language,
 notation, audience and venue. Infer routine choices from the existing material.
 
-Unless a compact expert account is requested, make the central reasoning
-accessible to an advanced student who knows the stated prerequisites. Depth
-means explaining the conceptual steps the reader would otherwise have to invent.
-It does not mean expanding every arithmetic simplification.
+The main note must let its reader explain the question, supported answer, decisive
+reasoning and remaining gap. A supporting note must let its reader follow and use
+one result from stated prerequisites. Put substantial detail there while retaining
+the central implication in the main note. For teaching, distinguish understanding
+an argument, reproducing a calculation and proving its imported theorems; choose
+depth for the actual task. A graduate-level label alone does not establish what
+the reader knows. Depth means explaining conceptual steps, not every arithmetic
+simplification.
+
+For a detailed concept, source reading, proof, method, experiment or exploratory
+branch, use [supporting-note writing](references/supporting-notes.md). For equation
+numbers and links across files, use [citation conventions](references/citations.md).
+Before creating a standalone concept or theorem note, use
+[shared knowledge](../aitp-memory/references/shared-knowledge.md) to find and
+compare existing explanations. Reuse a current search result; a prose clarification
+does not require another search. Writing an answer does not itself require a
+durable knowledge page. Load these guides when that task arises, not for every
+prose edit.
 
 ## Organize by what establishes the answer
 
@@ -103,7 +136,7 @@ to cite Witten. The retained [source analysis](references/witten-corpus-analysis
 and [reading census](references/witten-2011-2026-corpus.md) are optional historical
 background, not material to load for every writing task.
 
-For TeX or PDF delivery, use [manuscript handling](references/manuscripts.md).
+For requested TeX or PDF delivery, use [manuscript handling](references/manuscripts.md).
 Keep an established format; Markdown is the usual AITP main note. Templates
 are optional starting files, not a demand to convert the research into LaTeX.
 
@@ -113,9 +146,15 @@ When a conclusion changes, check its appearance in the opening, assumptions,
 dependent derivations, abstract, captions and ending. Repair the affected
 passages together. A later disclaimer cannot repair an earlier unconditional
 claim. Keep a substantive correction where its scientific consequence belongs.
+For changed dependencies or a supporting note removed from the main argument,
+use [corrections and retained notes](references/supporting-notes.md#correct-claims-and-keep-earlier-routes-findable).
 
 Read the revised passage as a reader: is the purpose of each object apparent,
 is the central step justified, and does the conclusion follow at the stated
-generality? Check affected equations, links and figure definitions. Report
+generality? For a learning passage, try its target calculation using only the
+stated prerequisites and earlier explanations; identify the first unsupported
+step instead of supplying it silently from expert knowledge. Such a review can
+expose gaps but cannot establish that the learner has understood. Check affected
+equations, links and figure definitions. Report
 what was edited and what was actually checked. Routine editing requires no
 separate research log, and polishing does not certify the underlying science.

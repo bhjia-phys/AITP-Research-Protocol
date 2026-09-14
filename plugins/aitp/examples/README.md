@@ -1,24 +1,12 @@
-# A small teaching topic: a variational oscillator
+# Research examples
 
-This self-contained textbook exercise illustrates AITP's memory, writing and
-method distillation. It is an authored demonstration, not a new research result
-or an independent evaluation of AITP. All supporting material is included.
+The active examples are being redesigned around LibRPA development and use,
+and learning topological phases and quantum anomalies. Their proposed structure
+and notes are prepared outside this public tree for the researcher's review.
+Only approved portions will be included in a later publication of AITP.
 
-Start with [the main note](research.md). The [derivation](notes/gaussian-energy.md)
-explains the energy and a failed shortcut; its [calculation table](calculations/width-check.md)
-contains the supporting values. A small [width-checking Skill](skills/check-gaussian-width/SKILL.md)
-extracts the reusable procedure. These locations describe this example only.
-
-During use:
-
-- Asking why the optimal width is one can be answered from the existing notes;
-  no file needs to change.
-- In a working copy with the provisional claim "narrower always lowers energy",
-  the full-energy derivation requires correcting the opening, explanation and
-  conclusion together. Keep the reason the shortcut failed in the detailed note.
-- Another calculation in the existing calculation location needs a relevant
-  evidence link, not another README inventory. Explain a new location here only
-  when the navigation actually changes.
-
-The supplied main note already contains the corrected argument. The teaching
-Skill is linked for optional use; it is not an additional installed core Skill.
+The former oscillator exercise is retired from this development tree. Its
+[1.1.0 snapshot](https://github.com/bhjia-phys/AITP-Research-Protocol/tree/v1.1.0/plugins/aitp/examples)
+and historical validation observations remain available; it is not the example
+used for the current design work. The core Skills do not require any local
+research project or private example to operate.

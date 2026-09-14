@@ -9,6 +9,13 @@ Extract a procedure that helps another session perform a task. Work directly
 from the actual derivation, code, result, failure analysis or research note.
 There is no intermediate knowledge-card format, trial ledger or hash protocol.
 
+When distilling from a research topic, first use
+[aitp-memory](../aitp-memory/SKILL.md) to recover its question and the requested
+scope, reusing current context. Use `research.md` to find the relevant method,
+then follow its links to the derivation, code and evidence needed to teach it.
+A compressed conclusion alone may omit decisive conditions. A standalone worked
+example needs no new research topic merely to support distillation.
+
 ## Decide what is reusable
 
 Look for a non-obvious choice, a useful diagnostic ordering, a method that
@@ -23,9 +30,11 @@ Inspect relevant existing Skills before duplicating a capability; revise the
 matching Skill when its scope really is the same.
 
 The default learning loop is use, notice a reusable choice, write or revise one
-Skill, and check it on a concrete use. Prefer `topic/skills/<method>/SKILL.md`
-for a topic-specific method and a shared family location when several questions
-use it. Discover local Skills from the topic's links or an ordinary file search;
+Skill, and check it on a concrete use. General shareable methods belong under
+`aitp-research/methods/<domain>/<method>/SKILL.md` when inclusion in AITP is within
+the task's scope. Topic-specific or unreviewed methods can stay in
+`topic/skills/<method>/SKILL.md` or the established shared family location. Follow
+[method placement and discovery](../aitp-research/references/method-library.md);
 there is no central registry to maintain. Record a meaningful validation limit
 beside the example: preparing inputs for another system does not establish a
 successful calculation. When use contradicts the method, narrow or repair its instructions

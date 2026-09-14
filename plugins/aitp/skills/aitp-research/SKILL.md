@@ -1,15 +1,18 @@
 ---
 name: aitp-research
-description: Investigate theoretical and computational physics with question-driven derivation, numerical discrimination and clear explanation. Use for sustained research or a substantial conceptual obstacle; consult literature, writing or Slurm guidance only when the task needs it.
+description: Investigate theoretical and computational physics through derivations and discriminating calculations. For work on a research topic, first use aitp-memory to establish context and the current task; consult literature, writing or Slurm detail when needed.
 ---
 
 # Research toward a clear answer
 
 Start from the unresolved physical or mathematical question and the researcher's
-purpose. For a topic using article-centred memory, first apply
-[aitp-memory](../aitp-memory/SKILL.md) to understand its whole argument. Keep the
-present step connected to that question. An exploratory topic may need a useful
-question before a hypothesis; do not invent a thesis to satisfy an outline.
+purpose. For work on a research topic, first apply
+[aitp-memory](../aitp-memory/SKILL.md): locate or establish its main note, recover
+the argument and determine this session's task from the user's request. Reuse
+that context when it is already current. A standalone explanation needs no new
+topic files. Keep the present step connected to the question. An exploratory topic
+may need a useful question before a hypothesis; do not invent a thesis to satisfy
+an outline.
 
 Choose a derivation, example, numerical comparison or source check that could
 actually change the current judgment. State the pertinent assumptions and what
@@ -44,8 +47,13 @@ discriminating question call for revisiting the method, not a larger scan.
 - [Literature](references/literature.md): uncertain imported assumptions,
   theoretical background, related work, references or novelty claims.
 - [Slurm work](references/slurm.md): prepare, observe or diagnose a batch job.
+- [Developing LibRPA](methods/librpa/developing-librpa/SKILL.md): tracing a formula
+  through LibRPA source or its self-consistency loop, as well as changing code
+  and validating a numerical implementation.
+- [Method placement and discovery](references/method-library.md): find or retain
+  a focused procedure under its research domain.
 
-These resources are options; loading this Skill does not require all three.
+Read only the resources needed for the current task.
 Keep machine-specific setup in the project's environment instructions. A known
 operation needs no new tutorial or repeated method search.
 
@@ -56,6 +64,41 @@ when a location is unclear or a move is requested. Keep the main argument linked
 to the detailed work, with its analysis, data and figures connected where they
 support a claim. Explain newly established locations in the README; reuse known
 ones without another inventory or a copy for each note.
+
+## Learn formal theory through a question
+
+For a learning topic, agree on a physical question and the researcher's current
+background. Introduce each consequential definition at its first use, then work
+through a faithful example and the step that makes the claim nontrivial. Return
+to the question after the calculation: what did it establish, and what extra
+input would connect it to the intended physics? A list of references or a sequence
+of named concepts is not yet that explanation.
+
+Distinguish a derivation performed here from a theorem imported from a source and
+from a conjectured application. If an objection reveals a missing prerequisite,
+resolve that step before extending the argument. Retain substantial background
+when it adds lasting understanding, using an existing explanation where suitable;
+the main note retains the line of reasoning.
+Distill a Skill only when the work teaches a reusable operation, such as checking
+an anomaly under stated assumptions, rather than a summary of a theorem.
+
+## Consult shared theory only when it helps
+
+During theoretical derivation or learning, including the theoretical part of a
+numerical project, consult shared explanations for a conceptual obstacle, a
+questioned assumption, or a useful previous treatment. Continue a fluent
+derivation with the context already available. A theoretical term alone does not
+trigger a search; routine coding, job handling and plotting do not trigger this
+concept workflow. Their normal research-memory and source checks still apply.
+
+Use memory's [shared-knowledge guidance](../aitp-memory/references/shared-knowledge.md)
+to locate and compare explanations when needed. Check for an existing treatment
+before creating a standalone concept or theorem note, not before every reasoning
+step. Read-only reuse needs no update. At a natural pause, retain a useful new
+explanation, correction or reusable connection; preserve fragile reasoning sooner
+if necessary. Use writing for that revision. In learning, understanding is itself
+the task; in research, develop background to the depth needed by the current
+argument. Do not expand either task into routine library maintenance.
 
 ## Collaborate at consequential choices
 
@@ -71,5 +114,8 @@ an unproductive line when the agreed stopping evidence is present. Preserve the
 reason in the argument where it helps future research.
 
 Explain the supported conclusion, decisive evidence, limits and useful next
-step. Update the relevant research text after meaningful progress. Do not create
-a companion record, report or Skill unless it adds a distinct useful function.
+step. At task completion or handoff, apply memory's write decision: no change,
+supporting detail only, or a revision of the main argument. Preserve fragile
+progress earlier when needed. Use writing for substantive note changes, and
+distillation only for a demonstrated reusable method. No companion report is
+needed when the existing research text and assets already carry the result.
