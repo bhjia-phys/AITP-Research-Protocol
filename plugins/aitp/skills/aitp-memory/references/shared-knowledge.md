@@ -2,9 +2,11 @@
 
 Use this during theoretical derivation or learning when an explanation resolves
 a conceptual obstacle, checks an uncertain assumption, or recovers useful prior
-work. This includes theory within a numerical project. Also use it before saving
-a standalone concept or theorem note. A familiar term, smooth derivation, code
-edit, job operation or plot does not by itself trigger shared-library search.
+work. This includes theory within a numerical project. Also use it when work
+produces a theoretical explanation or correction with independent reuse, and
+before saving a standalone concept or theorem note. A familiar term, smooth
+derivation, code edit, job operation or plot does not by itself trigger
+shared-library search.
 Keep the main topic note as its coherent research argument; primary-source checks
 and ordinary research-memory decisions remain applicable independently.
 
@@ -111,10 +113,20 @@ missing step locally rather than adding another compulsory hop.
 
 ## Grow and correct the knowledge when it matters
 
-A useful explanation can start in the topic and move to the shared collection
-when it has independent reuse. Preserve convention differences at the application
-site. Repeated derivations in independent sources can strengthen understanding;
-duplicate Markdown copies are not independent evidence.
+At a natural pause after useful theoretical work, identify whether it supplied
+an explanation, derivation, correction or connection another question could use.
+Do this even when the derivation was fluent and needed no shared-library lookup.
+Within the authorized research scope, extend the relevant explanation or create
+one after checking existing coverage; do not wait for a separate recording request.
+Retain assumptions, conventions, decisive reasoning, sources and actual limits.
+A topic-specific conjecture or unfinished application stays with its question.
+
+A complete explanation can remain in its topic and be linked from the shared
+collection's discovery entry; move it only when that improves its primary home.
+If the existing explanation already covers the understanding, reuse it without
+an edit. Preserve convention differences at the application site. Repeated
+derivations in independent sources can strengthen understanding; duplicate
+Markdown copies are not independent evidence.
 
 Read-only reuse needs no edit. Save a useful new explanation, correction, failed
 argument or reusable connection at a natural pause in the work; preserve a fragile

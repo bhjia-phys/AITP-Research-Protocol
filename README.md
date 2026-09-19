@@ -49,9 +49,14 @@ revise the relevant passages together. Keep useful failed routes and unresolved
 objections. An ordinary question or unchanged job poll needs no memory write.
 
 [Side investigations](plugins/aitp/skills/aitp-writing/references/supporting-notes.md#follow-a-side-investigation)
-retain their origin, local question, evidence and route back to the larger work.
-They can reuse other topics and shared code through links; each detour does not
-require a new main note or nested directory tree.
+retain their origin, agreed objective and approach, evidence and route back to
+the larger work. Before an independent branch or a material change of stage
+objective or research route, `aitp-research` discusses the choice and obtains
+agreement; work inside an existing agreement continues without repeated
+confirmation. `aitp-memory` preserves the agreement and its reasons in the
+branch's primary note, and `aitp-writing` develops the account with links to
+plans, implementation and results. A short plan can stay in that note. Branches
+can reuse other topics and shared code through links without nested directories.
 
 The README briefly explains established material locations. The main note
 develops the argument through linked research notes; those notes connect the
@@ -162,8 +167,11 @@ may live outside individual topics. Consult it when theoretical derivation or
 learning needs an explanation; a theoretical term or routine numerical operation
 does not trigger a search. Before creating a standalone concept or theorem note,
 check the existing entry and relevant notes using names and related terms. Reuse
-needs no write. Retain useful new understanding at a natural pause, updating a
-short README discovery entry when needed. No database or recursive loading is required.
+needs no write. Independently of whether a lookup was needed, retain a new
+explanation, derivation or correction with reusable scope at a natural pause,
+updating the relevant primary note and discovery entry. A complete explanation
+can remain in its topic with a shared entry link. No database or recursive
+loading is required.
 
 Research notes keep useful links to working assets. Only an explicit manuscript
 request activates the [Note-to-LaTeX guidance](plugins/aitp/skills/aitp-writing/references/manuscripts.md),
@@ -185,6 +193,14 @@ numerical validation when executing a change. Follow the
 local and shared methods; no knowledge-card layer is needed. Numerical projects
 can use the [asset recommendations](plugins/aitp/skills/aitp-memory/references/numerical-assets.md)
 to explain code, builds, tests and run locations in their README.
+
+After consequential work, notice transferable choices, diagnostic sequences,
+failure-prevention methods and corrections to existing procedures. Use
+`aitp-distill` to create or revise a local Skill within the authorized scope.
+One worked case can support a narrow method with explicit evidence and limits;
+an explicit distillation request or repeated failure is not required. Concepts
+and theorems remain explanations. No new learning means no additional write;
+retaining a local method does not install or publish it.
 
 Proposed LibRPA and topological-phase/anomaly notes are being prepared outside
 the public tree for author review. They may be published in part after that

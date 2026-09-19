@@ -1,5 +1,32 @@
 # Validation and its limits
 
+## Branch agreements and reusable learning, 2026-09-20
+
+An authored synthetic walkthrough applied the revised source Skills to a
+two-state basis-change investigation. A proposed branch first retained its
+question without executing the calculation. A supplied synthetic agreement
+then settled its objective, method and stopping boundary; routine preparation,
+calculation and note updates proceeded within that scope. A later proposed
+interacting-chain extension remained pending instead of becoming an automatic
+next action. This was a manual application by the instruction author, not an
+independent agent session or a test of implicit Skill selection.
+
+The executed control kept an operator unchanged while transforming its state.
+Its spectrum agreed, but its action and expectation did not. The consistent
+transformation passed those checks; a different two-state example reproduced
+the distinction. The branch linked its script and raw output, and its parent
+retained both the result and the untested larger target. The same evidence
+extended an existing shared explanation and corrected an existing local Skill,
+without a duplicate note or method. Retention did not depend on encountering a
+conceptual obstacle during the calculation. An unchanged recall made no edits.
+
+The fixture and authored observations remain outside the published tree.
+Checks cover affected Skill frontmatter, local link targets and heading anchors,
+host manifest names and paths, and preservation of unrelated pre-existing edits.
+They do not establish autonomous agreement handling, reliable learning triggers,
+scientific productivity or behavior of an already installed plugin cache. No
+runtime, hook or evaluation framework was added.
+
 ## Corrections and detached supporting notes, 2026-09-14
 
 An authored synthetic walkthrough started with a main note that no longer cited

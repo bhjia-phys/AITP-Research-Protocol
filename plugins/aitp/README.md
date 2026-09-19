@@ -46,9 +46,13 @@ what was adapted from PRL, PRX, JHEP and PRB. These are article structures, with
 flexible headings and no prescribed length. Memory and writing edit the same account.
 
 [Side investigations](skills/aitp-writing/references/supporting-notes.md#follow-a-side-investigation)
-keep their motivation and connection to the originating question, even before
-results exist. Reuse an existing topic or supporting note and link dependencies;
-keep one primary account rather than nesting or duplicating every branch.
+keep their motivation, agreed objective and approach, and connection to the
+originating question, even before results exist. Research guides discussion and
+agreement before independent branches or material changes of stage objective or
+route; work within an existing agreement continues without repeated confirmation.
+Memory retains the agreement in one primary branch note. Writing connects the
+plan, derivations, implementation and results there, splitting detail only when
+useful. Reuse existing notes and asset locations through links.
 
 Use [supporting-note writing](skills/aitp-writing/references/supporting-notes.md)
 for detailed explanations and [citation conventions](skills/aitp-writing/references/citations.md)
@@ -57,8 +61,10 @@ optional [shared collection outside topics](skills/aitp-memory/references/shared
 Consult it for an actual need during theoretical derivation or learning, including
 theory within numerical work. Check for an existing explanation before creating
 a standalone concept or theorem note. A short README entry with related terms
-helps another topic find it. Reuse needs no write; retain useful new understanding
-at a natural pause. Link prerequisites, related ideas and applications in ordinary
+helps another topic find it. Reuse needs no write; retain useful new explanations
+or corrections at a natural pause even if the work needed no library lookup.
+A complete topic explanation can gain a shared entry link without relocation.
+Link prerequisites, related ideas and applications in ordinary
 prose, following only what the current argument needs.
 
 For learning, use [learning from sources](skills/aitp-writing/references/learning.md).
@@ -117,5 +123,10 @@ list nested method Skills directly; Hakimi exposes the four containing bundles.
 The four core roles therefore need not equal the host's total selectable count.
 Research examples and unpublished evidence follow the author's publication
 permissions; adding a general method does not publish its originating project.
+After consequential work reveals a transferable choice, diagnostic sequence,
+failure-prevention method or correction to a procedure, use `aitp-distill` to
+create or revise a local Skill within scope. One worked case can support a
+narrow method with explicit limits; do not wait for a separate request or
+repeat failure. Insufficiently supported candidates stay in research notes.
 See the [repository README](https://github.com/bhjia-phys/AITP-Research-Protocol/tree/v1.1.0)
 for further usage guidance.

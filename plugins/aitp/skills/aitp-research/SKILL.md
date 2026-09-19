@@ -1,6 +1,6 @@
 ---
 name: aitp-research
-description: Investigate theoretical and computational physics through derivations and discriminating calculations. For work on a research topic, first use aitp-memory to establish context and the current task; consult literature, writing or Slurm detail when needed.
+description: Investigate theoretical and computational physics through derivations and discriminating calculations. Start topic work with aitp-memory; agree on independent branches and material changes of objective or route, then continue within that agreement.
 ---
 
 # Research toward a clear answer
@@ -13,6 +13,32 @@ that context when it is already current. A standalone explanation needs no new
 topic files. Keep the present step connected to the question. An exploratory topic
 may need a useful question before a hypothesis; do not invent a thesis to satisfy
 an outline.
+
+## Agree on consequential research choices
+
+Before starting an independent side investigation, or materially changing a
+stage objective or research route, discuss the choice with the researcher.
+Explain how it serves the originating question, what this stage should resolve
+or produce, the proposed approach and its assumptions, and what evidence would
+justify stopping, continuing or changing direction. Clarify the researcher's
+purpose where these choices depend on it; knowing how to perform a calculation
+does not establish that it answers the intended question.
+
+Obtain agreement before work that depends on those choices. A current request
+or earlier agreement that already settles them is sufficient: continue within
+that scope without asking again at each step or stage boundary. An option raised
+in discussion is not agreement to execute it. While a
+choice is pending, inspect the material needed to make the proposal concrete
+and continue independent authorized work.
+
+Routine derivations, diagnostics and implementation choices serving the agreed
+objective can proceed. Return to the researcher when the objective or route
+changes materially, essential assumptions conflict with evidence, or resources
+or scope would exceed the agreement. Stages are local research goals, with
+revisable criteria; exploratory work may aim to identify an obstruction or a
+better question. Stop when the agreed stopping evidence is present.
+Use memory to retain the agreement and its reasons in the
+[branch's primary account](../aitp-writing/references/supporting-notes.md#follow-a-side-investigation).
 
 Choose a derivation, example, numerical comparison or source check that could
 actually change the current judgment. State the pertinent assumptions and what
@@ -94,28 +120,23 @@ concept workflow. Their normal research-memory and source checks still apply.
 Use memory's [shared-knowledge guidance](../aitp-memory/references/shared-knowledge.md)
 to locate and compare explanations when needed. Check for an existing treatment
 before creating a standalone concept or theorem note, not before every reasoning
-step. Read-only reuse needs no update. At a natural pause, retain a useful new
-explanation, correction or reusable connection; preserve fragile reasoning sooner
-if necessary. Use writing for that revision. In learning, understanding is itself
+step. Read-only reuse needs no update. Separately, when work produces a useful
+new explanation, correction or reusable connection, retain it at a natural
+pause even if no library lookup or conceptual obstacle occurred. Use memory to
+choose its primary home and writing for the revision; preserve fragile reasoning
+sooner if necessary. In learning, understanding is itself
 the task; in research, develop background to the depth needed by the current
 argument. Do not expand either task into routine library maintenance.
 
-## Collaborate at consequential choices
-
-Ask when a missing physical choice changes the problem, evidence conflicts with
-an essential user assumption, or the next action exceeds the agreed resources
-or scope. Explain the actual choice and its consequences. Reuse decisions and
-permissions already made; do not repeatedly ask about routine low-cost work.
-Independent authorized work may continue while a dependent choice is pending.
-
-If a result supports a different question, show why and discuss the direction
-change instead of silently rewriting the project's purpose. Conversely, stop
-an unproductive line when the agreed stopping evidence is present. Preserve the
-reason in the argument where it helps future research.
+## Retain the result and reusable learning
 
 Explain the supported conclusion, decisive evidence, limits and useful next
-step. At task completion or handoff, apply memory's write decision: no change,
-supporting detail only, or a revision of the main argument. Preserve fragile
-progress earlier when needed. Use writing for substantive note changes, and
-distillation only for a demonstrated reusable method. No companion report is
-needed when the existing research text and assets already carry the result.
+step. At a natural pause or handoff after consequential work, apply memory's
+[write decision](../aitp-memory/SKILL.md#timing-and-recovery) to both the research
+argument and any transferable learning. Notice a demonstrated non-obvious
+choice, diagnostic sequence, failure-prevention method or correction to an
+existing procedure; use [aitp-distill](../aitp-distill/SKILL.md) when it teaches
+a reusable operation. Do not wait for an explicit distillation request or repeat
+failure. Use writing for substantive note changes. An unchanged query needs no
+learning review, and the existing research text and assets can carry the result
+without a companion report.

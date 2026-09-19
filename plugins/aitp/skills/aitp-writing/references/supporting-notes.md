@@ -22,23 +22,35 @@ accounts, even if they share code or background.
 ## Follow a side investigation
 
 A converging main argument may depend on unfinished side work. When the
-researcher chooses a substantial detour, or useful work has already begun,
-retain its question and motivation before that context is lost. Do not wait
-for success. A passing idea need not create a file; an explicit request to
-remember it can be satisfied by a short proposed direction in the existing note.
+researcher chooses an independent branch, retain its question and agreement
+before that context is lost. Use
+[research's collaboration guidance](../../aitp-research/SKILL.md#agree-on-consequential-research-choices)
+to settle its purpose, stage objective and approach before dependent work.
+An agreed branch needs a primary Markdown account even before results exist;
+reuse a suitable existing note. A passing idea can remain a proposed direction
+in the existing text without a new file or implied execution agreement. If work
+has already begun without a clear agreement, preserve what was done honestly and
+resolve the consequential choice before extending it.
 
 Give the branch one primary account near the question or method it develops.
 Check relevant existing notes before creating another; use
 [nearby directories and note titles](../../aitp-memory/references/local-assets.md#browse-nearby-topics-and-shared-knowledge)
-when their location or scope is unfamiliar. A short detour can remain
-a paragraph; a substantial derivation, experiment or development effort can use
-a supporting note. A long-lived independent research question may later need
+when their location or scope is unfamiliar. A short diagnostic within the
+agreed work can remain a paragraph; an independent branch or substantial
+derivation, experiment or development effort uses a supporting note. A
+long-lived independent research question may later need
 its own `research.md`. Neither duration alone nor the word "branch" requires a
 new topic, directory hierarchy or set of templates.
 
-Explain in ordinary prose what prompted the branch, what it should resolve,
-what has actually been established, the evidence and useful failures, and the
-next action needed to resume it. Keep unresolved choices visible. In the
+Explain in ordinary prose what prompted the branch, the agreed stage objective,
+approach and scope, what evidence would settle it or call for reconsideration,
+what has actually been established, and the next action needed to resume it.
+Keep proposed alternatives and unresolved choices distinct from agreed work.
+A short plan can live in this note; link a longer plan, derivation, implementation
+account, scripts, inputs and results when they have their own useful homes.
+These are content needs, not a required set of documents. Preserve useful
+failures and the reasons for material changes of plan; replace obsolete next
+steps while retaining the evidence. In the
 originating note, link it beside the question it supports and explain whether
 it is a prerequisite, alternative or related exploration. Do not invent that
 relationship if it is undecided. The branch links back to the relevant question.
@@ -54,6 +66,9 @@ restart account and one code workspace; another material should reuse them.
 Read the current branch and the relevant upstream context when switching work,
 reusing context already understood. Read a main note's complete argument before
 substantively changing it, not every ancestor or sibling for a local branch task.
+Resume from the retained agreement and current request. A proposed next stage
+is not automatically agreed; ordinary work inside a confirmed objective can
+continue without another planning exchange.
 
 When pausing, leave the unresolved step and useful assets findable. On completion
 or a consequential failure, update the branch and the affected originating

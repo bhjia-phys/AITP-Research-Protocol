@@ -1,6 +1,6 @@
 ---
 name: aitp-distill
-description: Turn a demonstrated, useful research procedure directly into a focused Skill, or revise it from new use. Use on an explicit request or a recurring method with concrete evidence; keep topic conclusions and conceptual exposition in research notes.
+description: Turn demonstrated research procedures into focused Skills, or revise them from use. Apply when work reveals a transferable non-obvious choice, diagnostic sequence, failure-prevention method or correction to an existing procedure, or when explicitly requested. Concepts and conclusions stay in notes.
 ---
 
 # Distill a usable research method
@@ -20,14 +20,20 @@ example needs no new research topic merely to support distillation.
 
 Look for a non-obvious choice, a useful diagnostic ordering, a method that
 avoids a demonstrated failure, or a stable way of obtaining and checking a
-result. An explicit request can justify a narrow first Skill from one example;
-describe that evidence honestly. Repetition alone does not make a procedure good.
+result. One worked case can justify a narrow Skill when its decisive choice,
+check and limits can be taught from the evidence. This can be a successful method
+or an informative failure with a demonstrated way to detect or avoid it; do not
+wait for another failure or an explicit request. Repetition alone does not make
+a procedure good. If the useful operation or its evidence is still unclear,
+retain the candidate and missing check in the research note instead of presenting
+an untested idea as a demonstrated method.
 
 A physical conclusion, a reference summary or a theorem's exposition normally
 belongs in a linked note. A method for applying a theorem under particular
 conditions may be a Skill. Do not turn every interesting paragraph into one.
 Inspect relevant existing Skills before duplicating a capability; revise the
-matching Skill when its scope really is the same.
+matching Skill when its scope really is the same. Repairing an existing method's
+assumptions, checks or stopping conditions is distillation too.
 
 The default learning loop is use, notice a reusable choice, write or revise one
 Skill, and check it on a concrete use. General shareable methods belong under
@@ -39,6 +45,9 @@ there is no central registry to maintain. Record a meaningful validation limit
 beside the example: preparing inputs for another system does not establish a
 successful calculation. When use contradicts the method, narrow or repair its instructions
 and explain the consequential correction in the relevant research note.
+Draft or revise in the established local home within the research task's
+authorization; routine retention does not require another request to distill.
+Publishing or installing the result remains a separate action with its own scope.
 
 ## Write directly for the next use
 

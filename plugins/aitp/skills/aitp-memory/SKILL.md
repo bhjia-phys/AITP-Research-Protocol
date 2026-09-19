@@ -35,8 +35,13 @@ task. A historical next step is context, not a substitute for today's request.
 No separate goal file, host Goal object or fixed research stage is required.
 
 When work turns to a useful side investigation, retain why it arose, its working
-home and how it relates to the originating question. An agreed
-change of research direction is itself worth recording before results exist.
+home and how it relates to the originating question. Use
+[research's agreement boundary](../aitp-research/SKILL.md#agree-on-consequential-research-choices)
+for independent branches and material changes of stage objective or route.
+Retain the agreed objective, approach, stopping or reconsideration criteria and
+unresolved choices in the branch's primary note; distinguish proposals from
+decisions actually agreed with the researcher. An agreed direction change is
+worth recording before results exist, including why the earlier route changed.
 Use [following a side investigation](../aitp-writing/references/supporting-notes.md#follow-a-side-investigation)
 to reuse an existing topic or supporting note, preserve a continuation point,
 and keep nested branches connected without making a new topic for every task.
@@ -194,8 +199,7 @@ end-of-turn write:
 Remove obsolete next steps and redundant detail from the live account, but retain
 the reason and source for a consequential reversal. When shortening, leave a
 working link to unique useful material moved elsewhere. Use the writing guide to
-check both the argument and the affected links. Distill a reusable procedure only
-when it has a distinct use; completing a session does not require a new Skill.
+check both the argument and the affected links.
 
 Update when understanding, a central assumption, a useful result, or the next
 research decision meaningfully changes. Capture a fragile insight or the intent
@@ -208,6 +212,21 @@ them; do not synchronize the two or mistake a source example for current state.
 After resumption, verify time-sensitive jobs and files only when the task relies
 on them. Reading a historical permission is not new authorization.
 
-When a demonstrated procedure is useful beyond this result, use
-[aitp-distill](../aitp-distill/SKILL.md). Concepts and theorems remain linked
-research knowledge unless there is an actual reusable task to teach.
+After consequential work, also retain transferable learning where it belongs:
+
+- A useful theoretical explanation, derivation, correction or connection with
+  independent reuse: extend the relevant primary explanation using
+  [shared knowledge](references/shared-knowledge.md#grow-and-correct-the-knowledge-when-it-matters),
+  or create one after checking existing coverage. A complete topic note can
+  remain in place and gain a shared discovery link. This decision does not depend
+  on having needed a library search during the work.
+- A demonstrated reusable operation or correction to one: use
+  [aitp-distill](../aitp-distill/SKILL.md) to create or revise the appropriate
+  local Skill within the authorized scope, without waiting for another request.
+  Keep insufficiently supported candidates in the research note with their limits.
+
+The same work can support both an explanation and a procedure when each has a
+distinct use; link their primary accounts rather than duplicating them. Reuse
+the current assessment at handoff. No durable learning means no additional write.
+When something is retained, give its location and relevant limitation alongside
+the result so the researcher can find it; no separate learning report is needed.

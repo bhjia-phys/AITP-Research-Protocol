@@ -13,12 +13,15 @@ argument, not a ritual at the end of every turn.
 | Begin a derivation, code change or analysis within a research topic | Use memory first to recover the question and establish the current task, even when no recording was requested; reuse already current context. |
 | Ask for an explanation already supported by the current note | Answer from the note and relevant detail; do not create another record. |
 | Related work may exist, but its topic or shared-library location is unfamiliar | Follow README links and inspect nearby directories, shallow Markdown filenames and titles; search likely terms and read candidates selectively. Browsing alone needs no write. |
-| Choose a substantial side investigation or discover a prerequisite that redirects the work | Retain its question, motivation, primary working note and connection to the originating question, including a paused continuation when relevant; results are not required. Reuse an existing topic or supporting note. |
+| Propose an independent branch or materially change a stage objective or research route | Discuss its purpose, objective, approach and stopping or reconsideration criteria; obtain agreement before dependent work. A request or earlier agreement that already settles the choice is sufficient. |
+| Agree on a substantial side investigation or a prerequisite that redirects the work | Retain the agreement, reasons, unresolved choices and connection to the originating question in a primary branch note before results exist. Reuse a suitable note; keep a short plan there or link longer planning and implementation documents and actual assets. |
+| Continue a derivation, diagnostic or implementation within the agreed objective and route | Proceed without another confirmation; update the note only for a durable change. A stage boundary alone does not require asking again. |
 | Mention a possible detour without choosing or developing it | No new branch file is needed. If the researcher asks to retain the idea, add a short proposed direction without inventing completed work. |
 | Complete, pause or abandon a consequential branch | Keep its result or obstruction, evidence and useful next step; update only the affected parent claims. A prerequisite's success does not mean the dependent calculation succeeded. |
-| A derivation proceeds with concepts already understood | Continue the research; no shared-knowledge search or maintenance just because a theoretical term occurs. |
+| A derivation proceeds with concepts already understood | Continue without a library lookup just because a theoretical term occurs; assess any useful new explanation at a natural pause. |
 | Theory learning or derivation encounters a conceptual obstacle, uncertain assumption or remembered prior treatment | Consult the relevant explanation as needed, including theory within a numerical project; reuse alone requires no write. |
 | Prepare to save a standalone concept or theorem explanation | Check the entry and relevant notes using names and related terms; compare scope before reusing, extending or creating a note. Retain useful changes and necessary discovery links at a natural pause. |
+| Produce a theoretical explanation, correction or connection with independent reuse | Extend the relevant primary explanation or create one after checking coverage, even if the work needed no lookup. A complete topic note can gain a shared discovery link; model-specific conjectures stay in the topic. |
 | Adjust code, submit a job or plot data without a conceptual issue | Use the ordinary research workflow; do not activate shared-theory maintenance. |
 | Poll a job whose state and scientific implications are unchanged | Report the poll if requested; no note change. |
 | Obtain a result that changes a conclusion or removes a live obstruction | Revise the affected argument and its conclusion; link the supporting artifact. |
@@ -27,7 +30,9 @@ argument, not a ritual at the end of every turn.
 | A failed attempt reveals a reusable restriction | Keep the reason and conditions, usually in the relevant passage or linked analysis. |
 | An incidental command fails and is immediately corrected | Normally no research memory; retain it only if the failure explains a recurring research obstacle. |
 | A valuable derivation or expensive experiment is about to be interrupted | Preserve the fragile reasoning or experimental intent and a precise continuation point. |
-| Repeated task yields a transferable procedure | Consider direct Skill distillation, supported by an actual worked example. |
+| Work reveals a transferable non-obvious choice, diagnostic sequence or way to detect or avoid a failure | Use direct Skill distillation within the authorized local scope; a narrow method can rest on one worked case with explicit checks and limits. No separate request or repeat failure is needed. |
+| Actual use corrects an existing procedure | Revise the matching Skill's assumptions, checks or limits and retain the supporting evidence; do not create a duplicate method. |
+| A possible reusable method lacks a demonstrated operation or check | Keep the candidate and missing evidence in its research note; do not claim a validated Skill. |
 | Establish, correct or change a material location needed for continuing work | Explain it briefly in the existing README and repair affected links. |
 | Add an asset within an already described working location | Link it from the relevant research passage when useful; no additional README inventory. |
 | Only wording, ordering or typography changes | Edit the text; no additional session summary or change record. |
