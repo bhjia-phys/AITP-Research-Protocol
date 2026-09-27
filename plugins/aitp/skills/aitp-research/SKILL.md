@@ -16,27 +16,20 @@ an outline.
 
 ## Agree on consequential research choices
 
-Before starting an independent side investigation, or materially changing a
-stage objective or research route, discuss the choice with the researcher.
-Explain how it serves the originating question, what this stage should resolve
-or produce, the proposed approach and its assumptions, and what evidence would
-justify stopping, continuing or changing direction. Clarify the researcher's
-purpose where these choices depend on it; knowing how to perform a calculation
-does not establish that it answers the intended question.
+Use [aitp-human-brainstorming](../aitp-human-brainstorming/SKILL.md) for explicit
+brainstorming or unresolved choices of purpose, independent branch scope,
+consequential assumptions or success criteria. Before an independent investigation
+or a material change of objective or route, resolve choices not already settled
+by the current request or earlier agreement. Knowing how to do a calculation
+does not establish that it answers the intended question. The interaction Skill
+guides what to ask and when; research supplies the evidence and scientific options.
 
-Obtain agreement before work that depends on those choices. A current request
-or earlier agreement that already settles them is sufficient: continue within
-that scope without asking again at each step or stage boundary. An option raised
-in discussion is not agreement to execute it. While a
-choice is pending, inspect the material needed to make the proposal concrete
-and continue independent authorized work.
-
-Routine derivations, diagnostics and implementation choices serving the agreed
-objective can proceed. Return to the researcher when the objective or route
-changes materially, essential assumptions conflict with evidence, or resources
-or scope would exceed the agreement. Stages are local research goals, with
-revisable criteria; exploratory work may aim to identify an obstruction or a
-better question. Stop when the agreed stopping evidence is present.
+Continue routine derivations, diagnostics and implementation within the agreement.
+Return to the researcher when the objective or route changes materially, essential
+assumptions conflict with evidence, or resources or scope would exceed it. Resolve
+scientific uncertainty by derivation, source checks or discriminating tests, not
+by asking the researcher to select a truth. Exploratory work may aim to identify
+an obstruction or a better question. Stop when the agreed stopping evidence is present.
 Use memory to retain the agreement and its reasons in the
 [branch's primary account](../aitp-writing/references/supporting-notes.md#follow-a-side-investigation).
 
@@ -46,6 +39,15 @@ different outcomes would mean. Use the smallest informative case before an
 expensive expansion, while recognizing when a small case removes the very
 obstruction being studied. Do not turn this into fixed phases or require a host
 Goal, Research Mode or Action for ordinary work.
+
+During a sustained branch, especially when prerequisites multiply, ask what
+perfect success of the next step would establish about the original question.
+Separate an error that refinement can control from a missing physical or model
+relation that greater precision cannot supply. If that relation remains untouched,
+retain the useful result and limitation, then reconsider the next inference or
+discuss a material route change. Exploration can still reveal a mechanism or
+sharpen a question; state that purpose and when to reassess it. Persistence keeps
+the original objective alive, not every unfinished diagnostic on the critical path.
 
 ## Reason and respond to objections
 
@@ -93,8 +95,11 @@ ones without another inventory or a copy for each note.
 
 ## Learn formal theory through a question
 
-For a learning topic, agree on a physical question and the researcher's current
-background. Introduce each consequential definition at its first use, then work
+For interactive learning or a conceptual difficulty, use
+[aitp-human-learning](../aitp-human-learning/SKILL.md) to adapt to the researcher's
+question and background, reusing what is already known. It is conditional, not
+a prerequisite interview for every theory task. Introduce each consequential
+definition at its first use, then work
 through a faithful example and the step that makes the claim nontrivial. Return
 to the question after the calculation: what did it establish, and what extra
 input would connect it to the intended physics? A list of references or a sequence

@@ -6,6 +6,12 @@ answer, and the live uncertainty without opening every supporting file. Follow
 the user's language and format. The starting files below make this structure
 concrete; they are adaptable drafts, not forms to fill mechanically.
 
+The note also directs continuation: explain why the current main line is worth
+following, how its branches contribute, and which next inference could change
+the answer. Keep these reasons in the scientific prose, not a second action
+plan or mandatory status table. A branch can remain useful without remaining a
+prerequisite, and a completed question needs no invented next task.
+
 ## Choose a starting point for the whole question
 
 | Kind of argument | Markdown starting file |
@@ -57,6 +63,12 @@ partial understanding. Rename a results section to describe a proposed approach,
 or omit it, when there are no results. Delete empty headings and template prompts.
 Do not manufacture a successful ending, measurements, proof or novelty.
 
+Make the opening explain how imported inputs and work developed here support the
+answer, and which connecting inference remains unestablished. Their provenance
+and logical status are separate: a project derivation can remain conditional,
+and a rederivation need not be a publication novelty. A section itinerary or a
+list of completed checks does not express those relationships.
+
 A main note whose opening is a source inventory, followed by test coverage,
 execution status and a task list, is still an operational report even if short.
 Put those details in a linked working note. Explain instead what the model or
@@ -103,10 +115,17 @@ figure; show a figure in the main note when it carries the central comparison.
 The README continues to explain locations, not duplicate the scientific account.
 
 Keep useful side investigations visible through their relationship to the main
-question, even before they produce results. A short linked passage can say why
-the branch matters and what remains to return to; its detailed account can live
-in another existing topic. Use [side-investigation guidance](supporting-notes.md#follow-a-side-investigation)
-instead of forcing every dependency into the main article or a nested folder tree.
+question, even before they produce results. For an agreed independent branch,
+link its `research.md` beside the question it serves and say whether it is a
+prerequisite, an alternative or an independent spin-off, and what result would
+matter to the main argument. Its main note links back. The nearest README maps
+the branch folder; detailed derivations stay with their own question. Use
+[side-investigation guidance](supporting-notes.md#follow-a-side-investigation)
+without forcing every short diagnostic into a new research question.
+Keep one primary account of each branch's detailed argument. The parent retains
+its implication and limiting condition, and the child explains its purpose and
+dependencies. Directory nesting describes a working home, not every scientific
+relationship; a branch may depend on a sibling topic through an ordinary link.
 
 For formal work, keep the hypotheses and central construction or obstruction
 visible; distinguish a proved statement from a candidate physical interpretation.
@@ -155,3 +174,46 @@ one tied to the current uncertainty; it need not reproduce this session's task
 list. Read the shortened note on its own: can the researcher explain what follows,
 why it follows, under what conditions, and where to inspect the evidence? Then
 check affected links and make sure no useful branch vanished during compression.
+
+## Adapt an existing note during use
+
+For memory's [on-use repair](../../aitp-memory/SKILL.md#repair-an-outdated-main-note-during-use),
+identify what a reader cannot reconstruct from the current account. Different
+headings, an old date or a newer Skill are not by themselves a defect. Retain the
+established language, scope, format and asset locations. Start from the complete
+argument and its evidence, not an empty template.
+
+Make the smallest coherent revision that restores the question, supported answer,
+decisive conditions, relationships and continuation. A larger rewrite is appropriate
+when local patches would leave contradictory claims or an update queue. Reconcile
+the opening and ending with the actual current evidence. Keep why an earlier route
+changed and what remains usable; do not replace the only complete derivation with
+a summary. If substantial detail needs another home, preserve it there and repair
+its links before shortening the main text. Original outputs and historical editions
+remain evidence of their original setting.
+
+When a completed stage replaces an active plan, inspect its nearby heading,
+future-tense instructions, status table and later next-step passages together.
+Time-scope useful execution rules as historical conditions and replace completed
+prerequisites with the actual remaining inference. A new heading alone does not
+repair an old instruction to run the finished stage. If a linked artifact is
+unavailable only in a reduced copy or the current access scope, keep the durable
+note's original link and explain the verification limit in the reply; change the
+note only after establishing that the authoritative asset or claim has changed.
+Check the linked supporting notes whose live conclusion or next-step wording
+depends on this changed stage. Correct those maintained passages without turning
+a dated report into a current-status page or recursively auditing every file.
+If the repair renames a heading, preserve its old fragment as an explicit anchor
+beside the new heading unless a topic-wide Markdown search confirms that every
+incoming link, including links in archived run records, has been updated. A
+search limited to the main note or the first-level README cannot establish this.
+
+State missing reasoning as missing, and old job states as dated observations.
+Reorganization cannot create a proof, a new execution, learner understanding or
+physical validation. Correct only affected maintained uses within the task's scope;
+separate manuscripts and lectures keep their existing update boundaries.
+
+Read the revised argument on its own and follow affected links. If it now carries
+the needed meaning, stop: a repeated request with unchanged evidence should not
+produce another rewrite, parallel summary or compliance record. Explain the useful
+repair alongside the requested result and link the note without adding a new log.

@@ -38,8 +38,11 @@ queue/resource limits, input errors, implementation failures, numerical failure
 and physical disagreement. A successful exit does not establish convergence.
 Do not lower a meaningful tolerance merely to obtain a pass.
 
-An unchanged poll requires no memory edit. A failure that changes the diagnosis
-or a completed informative result belongs in the relevant research argument,
-with a link to its analysis. Inspect an existing job after lost observation
-before considering another submission. Apply cancellation only to the specifically
+An unchanged poll requires no memory edit when the account remains usable.
+A failure that changes the diagnosis or a first consequential result belongs in
+the relevant research argument, even while the job is unfinished. Link its evidence
+and retain the observation time, provisional scope and remaining checks; under
+read-only scope, identify the pending integration without editing. Inspect an
+existing job after lost observation before considering another submission.
+Apply cancellation only to the specifically
 authorized jobs. No cluster commands were executed to author this guide.

@@ -1,0 +1,5 @@
+Calculation: arithmetic mean of the two batch means
+Batch A mean: 2
+Batch B mean: 10
+Combined mean: 6
+Range check: passed

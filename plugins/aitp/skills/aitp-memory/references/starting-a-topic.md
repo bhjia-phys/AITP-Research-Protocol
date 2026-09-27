@@ -12,7 +12,10 @@ the complete main note if present, and enough relevant source material to orient
 the discussion. Identify the physical or mathematical setting, intended question,
 learning or research purpose, and whether several independent questions are being
 mixed together. Infer language, audience and paths from explicit preferences and
-usable local conventions; ask when a consequential choice remains unresolved.
+usable local conventions. Use
+[aitp-human-brainstorming](../../aitp-human-brainstorming/SKILL.md) when a
+consequential choice remains unresolved; do not repeat its interaction as a
+separate intake phase here.
 
 State your understanding briefly in conversation, with the specific uncertainty
 and why it matters. Ask early, before committing that uncertainty to the main
@@ -36,8 +39,9 @@ start without another confirmation round.
 Use the designated working folder; if none is established, suggest a home near
 related work and resolve ambiguity before saving there. The
 [optional asset layouts](local-assets.md#optional-layouts-for-a-new-home) provide
-a starting point. Create `research.md` and a short README explaining actual
-locations when useful; add other files as material develops, not as empty scaffolds.
+a starting point. Create `research.md` and explain the new folder in the nearest
+suitable README; add a local README when its own material locations need explanation.
+Add other files as material develops, not as empty scaffolds.
 
 Write the smallest coherent account supported so far: what is being asked and
 why, the setting and relevant known background, a proposed route and its assumptions,
@@ -69,12 +73,16 @@ general claim. If conflicting versions cannot be reconciled, expose the conflict
 and ask about missing context before adopting one as the main account. Identify
 unexamined or unavailable material; do not call a selective synthesis complete.
 
-Independent questions normally get separate main notes, even when they share code.
-Supporting routes to the same question can remain linked sections or detailed
-notes; [a side investigation](../../aitp-writing/references/supporting-notes.md#follow-a-side-investigation)
+Independent questions normally get separate folders and main notes, even when
+they share code. An agreed independent branch follows the same rule; reuse an
+established folder and main note if they already cover it. Supporting routes to
+the same question can remain linked sections or detailed notes;
+[a side investigation](../../aitp-writing/references/supporting-notes.md#follow-a-side-investigation)
 can also reuse another established topic while retaining its originating question.
-If that separation depends on the researcher's intended scope, discuss it
-before consolidating. Preserve established filenames, PDF and TeX sources, scripts,
+Within authorized organization, implement a separation clearly supported by the
+existing questions without another confirmation. If competing groupings change
+the scientific scope or priority, resolve that choice before consolidating.
+Preserve established filenames, PDF and TeX sources, scripts,
 data and figures. Explain their useful locations in the README and connect the
 argument to precise sources. Follow the asset guide's recovery checks only when
 full migration or archive readiness is requested.

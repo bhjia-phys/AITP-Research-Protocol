@@ -44,6 +44,12 @@ operational run history and speculative future routes in the research memory
 unless they serve the paper's argument. A conjecture included in a paper remains
 a conjecture. Do not fill a missing proof or result to complete the manuscript.
 
+Read the opening as a new reader: can it explain the physical question, imported
+inputs, work established here, decisive conditions and remaining inference?
+Synthesize how the results change the answer rather than listing sections.
+Distinguish project provenance from publication novelty and from logical status;
+an exact candidate-model result may still lack its physical identification.
+
 Translate Markdown source links into the appropriate scientific references,
 equation/section references, figures or supplementary material. Inspect linked
 derivations before using their results, and preserve attribution and reproducibility

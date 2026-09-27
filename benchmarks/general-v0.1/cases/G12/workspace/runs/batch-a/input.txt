@@ -1,0 +1,2 @@
+setting = fixed-a
+planned_samples = 256

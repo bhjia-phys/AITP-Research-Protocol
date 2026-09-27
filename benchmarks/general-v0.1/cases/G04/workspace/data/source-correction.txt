@@ -1,0 +1,6 @@
+Correction to the input source
+The source previously supplied as B0 omitted a diagonal contribution.
+Use this full source for the current problem:
+epsilon = 1/10
+B1 = [[epsilon, 1], [-1, 0]]
+H0 is unchanged: H0 = [[0, 0], [0, 1]].

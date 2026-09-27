@@ -63,13 +63,16 @@ relevant passages and follow only the links the question needs.
 
 ## Optional layouts for a new home
 
-For a new independent topic, keep its material together in the designated folder.
+For a new independent topic or an agreed independent research branch, keep its
+material together in a designated folder with a `research.md`. Reuse an existing
+folder and main note when they already serve that question. A proposed direction
+or short diagnostic does not establish a new branch folder.
 The code repository itself may be that folder; an extra workspace layer is not
 needed. This is a menu of useful locations, not a tree to generate in advance:
 
 ```text
 topic/
-  README.md                 Question entrypoint and actual material locations
+  README.md                 Folder map and actual material locations, if needed
   research.md               Developing main argument
   notes/                    Detailed derivations, concepts and reading notes
   references/               Papers, bibliography and source documents
@@ -79,10 +82,11 @@ topic/
   skills/<method>/SKILL.md   A demonstrated reusable procedure
 ```
 
-Initially the two Markdown files may be enough. Create other locations only as
-needed. Keep a figure with the analysis that produces it; a separate `figures/`
-is useful when the existing manuscript or analysis workflow needs it. Formal
-work may need only notes and references, while numerical work adds calculations.
+The `research.md` may be enough when a parent README already explains this folder.
+Create other locations only as needed. Keep a figure with the analysis that
+produces it; a separate `figures/` is useful when the existing manuscript or
+analysis workflow needs it. Formal work may need only notes and references,
+while numerical work adds calculations.
 Mixed work follows the connections between the theory and its tests.
 
 A [shared theoretical collection](shared-knowledge.md) can live outside individual
@@ -112,12 +116,14 @@ a shared workspace merely because this example includes one; shared concept note
 or methods likewise need only one primary home when real reuse appears. Existing
 projects retain useful layouts and names. These suggestions never require a move.
 
-## README explains where the material is
+## README explains the folder architecture
 
-Once relevant assets and their working locations are established, explain the
-locations briefly in the existing topic or project README. Link the main note
-and the places needed to continue the work, such as detailed notes, code,
-calculations and literature. Say which question they serve and which are shared.
+Use the nearest suitable README as the map of the actual folder structure. When
+a branch folder is established, link its `research.md` from the parent or family
+README and say which question the folder serves, how it relates to the other
+question folders, and where shared work lives. Also explain established locations
+needed to continue the work, such as detailed notes, code, calculations and
+literature. Say which question they serve and which are shared.
 Only include categories that exist and are useful. Distinguish active working
 locations, historical material and remote-only data when that affects their use.
 
@@ -127,9 +133,9 @@ it in a README for every subdirectory. Create a README only when there is no
 suitable existing one and a location explanation is needed. It is not a second
 research summary, exhaustive asset catalog or status log.
 
-Update this explanation when a relevant location is established, corrected or
-changed. Saving another figure in an already described analysis location does
-not require another README entry. A known location needs no repeated discovery
+Update this explanation when a relevant folder or location is established,
+corrected or changed. Saving another figure in an already described analysis
+location does not require another README entry. A known location needs no repeated discovery
 scan or per-turn README review.
 
 ## Let the argument connect the evidence

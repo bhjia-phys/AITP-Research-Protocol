@@ -1,6 +1,6 @@
 {
   "name": "aitp",
-  "version": "1.1.0+codex.20260919190843",
+  "version": "1.1.0+codex.20260927155546",
   "description": "Begin physics research topics with aitp-memory; develop a concise research.md through research, writing and method distillation.",
   "author": {
     "name": "Bohan Jia"
@@ -10,7 +10,7 @@
   "interface": {
     "displayName": "AITP",
     "shortDescription": "Develop a coherent research note across sessions.",
-    "longDescription": "Use aitp-memory first to locate or establish the main note, recover context and determine the current task. Research, writing and domain methods develop one concise argument with linked evidence, useful failures and explicit uncertainty. For learning, expand source passages at the reader's needed depth; main notes synthesize the question and supporting notes develop usable results. Retain meaningful changes and distill reusable procedures. Produce or revise a LaTeX paper only when requested. No ledger runtime or automatic maintenance hook.",
+    "longDescription": "Use aitp-memory first to locate or establish the main note, recover context and determine the current task. Research, writing and domain methods develop one concise argument with linked evidence, useful failures and explicit uncertainty. For learning, expand source passages at the reader's needed depth; main notes synthesize the question and supporting notes develop usable results. Retain meaningful changes and distill reusable procedures. During use, repair materially outdated main notes within the current editing scope, preserving evidence and useful history; a usable note needs no rewrite. Produce or revise a LaTeX paper only when requested. No ledger runtime or automatic maintenance hook. Use aitp-human-brainstorming for unresolved research choices and aitp-human-learning for interactive conceptual learning. Reuse settled decisions; neither requires a separate phase or document. Main and branch notes explain which next inference advances the question.",
     "developerName": "Bohan Jia",
     "category": "Productivity",
     "capabilities": [

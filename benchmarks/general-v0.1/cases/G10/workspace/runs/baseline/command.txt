@@ -1,0 +1,4 @@
+Working directory: topic root
+Command: python3 runs/baseline/normalize.py data/records.csv runs/baseline/output.csv
+Outcome: process completed; output.csv saved
+Arithmetic mean of converted values: 8

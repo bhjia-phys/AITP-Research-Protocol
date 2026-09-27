@@ -17,9 +17,11 @@ settings and benchmark exposition; neither former Skill is a dependency.
 
 Choose the purpose before the format: a research synthesis, a learning explanation,
 or a paper for a specialist audience. During research, write or revise the working
-note and its supporting explanations. For learning or expanding a lecture, use
-[learning from sources](references/learning.md) to set the reader's starting point
-and the calculation or concept to understand. For user-requested TeX/PDF or paper
+note and its supporting explanations. Use
+[aitp-human-learning](../aitp-human-learning/SKILL.md) when learning needs interaction
+or adaptation to a conceptual difficulty; [learning from sources](references/learning.md)
+guides the explanation itself. Reuse the stated audience and deliver a requested
+complete artifact without a compulsory interview. For user-requested TeX/PDF or paper
 work, also use [manuscript handling](references/manuscripts.md). A JHEP layout does
 not change a teaching document into an expert paper. A meaningful note update or
 completed result does not itself request manuscript production; keep that guide
@@ -30,13 +32,18 @@ conversation needs an explanation of the disputed step, not a new manuscript.
 A research note can remain exploratory or end with a useful obstruction.
 A paper needs a coherent supported result, which may itself be negative or
 conditional. A teaching note should distinguish reviewed material from new work.
-Do not create an outline, file, or full rewrite for an ordinary follow-up answer.
+An ordinary follow-up needs no new outline or full rewrite when the existing
+account is usable. If use exposes a material gap, follow memory's
+[on-use repair](../aitp-memory/SKILL.md#repair-an-outdated-main-note-during-use)
+within the current editing scope; no separate rewrite request is needed.
+Use [adapting an existing note](references/research-note.md#adapt-an-existing-note-during-use)
+for that revision, including when the scientific results themselves are unchanged.
 
 For a first AITP main note or a substantive revision, first use
 [aitp-memory](../aitp-memory/SKILL.md) to locate the note, clarify the current
 task and understand its complete argument. Reuse that understanding when current;
-do not restart the reading cycle. Apply [main-note writing](references/research-note.md)
-with a suitable Markdown starting file: [compact argument](assets/research-letter.md),
+do not restart the reading cycle. Apply [main-note writing](references/research-note.md).
+For a new note, optional Markdown starting files are [compact argument](assets/research-letter.md),
 [formal theory or learning](assets/research-theory.md), or
 [computational and mixed work](assets/research-computational.md). Write an article's
 question, abstract, reasoning and discussion, preserving useful failures,
@@ -49,7 +56,9 @@ argument to understand what the change affects. Preserve the requested language,
 notation, audience and venue. Infer routine choices from the existing material.
 
 The main note must let its reader explain the question, supported answer, decisive
-reasoning and remaining gap. A supporting note must let its reader follow and use
+reasoning and remaining gap, and choose a next inference that serves the question.
+Explain which branch supplies which part of that argument; a list of links alone
+does not do this. A supporting note must let its reader follow and use
 one result from stated prerequisites. Put substantial detail there while retaining
 the central implication in the main note. For teaching, distinguish understanding
 an argument, reproducing a calculation and proving its imported theorems; choose
@@ -58,7 +67,9 @@ the reader knows. Depth means explaining conceptual steps, not every arithmetic
 simplification.
 
 For a detailed concept, source reading, proof, method, experiment or exploratory
-branch, use [supporting-note writing](references/supporting-notes.md). For equation
+route within one question, use [supporting-note writing](references/supporting-notes.md).
+An agreed independent research branch has its own folder and `research.md`;
+the same guide explains how to connect it to the originating question. For equation
 numbers and links across files, use [citation conventions](references/citations.md).
 Before creating a standalone concept or theorem note, use
 [shared knowledge](../aitp-memory/references/shared-knowledge.md) to find and

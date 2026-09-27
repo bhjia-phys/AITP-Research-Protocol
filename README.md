@@ -11,7 +11,14 @@ AITP currently has three parts:
 | --- | --- |
 | [Memory](plugins/aitp/skills/aitp-memory/SKILL.md) | Enter the topic first, locate or establish its main note, recover the argument and current task, and retain consequential changes. |
 | Research skills | [aitp-research](plugins/aitp/skills/aitp-research/SKILL.md) guides physical reasoning, literature use and computation; [aitp-writing](plugins/aitp/skills/aitp-writing/SKILL.md) develops explanations and manuscripts for formal, computational and mixed work. |
-| [Learning](plugins/aitp/skills/aitp-distill/SKILL.md) | Extract a demonstrated reusable procedure directly into a Skill; test and improve it through use. |
+| [Method distillation](plugins/aitp/skills/aitp-distill/SKILL.md) | Extract a demonstrated reusable procedure directly into a Skill; test and improve it through use. |
+
+Two conditional interaction Skills work across these parts:
+[aitp-human-brainstorming](plugins/aitp/skills/aitp-human-brainstorming/SKILL.md)
+helps resolve research intent and consequential choices;
+[aitp-human-learning](plugins/aitp/skills/aitp-human-learning/SKILL.md)
+adapts explanations to the researcher's conceptual needs and feedback. Neither
+adds a mandatory interview, phase or document.
 
 A separate **AITP taste** component and further extensions remain to be designed.
 The dedicated writing Skill replaces the former `witten-style-theory-note`
@@ -22,7 +29,8 @@ Writing and research guidance do not constitute the future taste component.
 
 Begin research-topic work with `aitp-memory`, including derivation, coding and
 analysis requests that do not explicitly mention memory. First locate the main
-note. If it exists, read its complete argument; if not, establish the question
+note. If it exists, recover the context needed by the request and understand its
+complete argument before substantive revision; if not, establish the question
 and working home, then draft a small `research.md`. Existing TeX main notes count,
 and scattered research material is not an empty project. Determine the current
 session's task from this context and the user's request. Reuse current context
@@ -39,14 +47,25 @@ Use `aitp-research` for the scientific work. At task completion or handoff,
 `aitp-memory` decides whether nothing needs recording, only supporting detail
 needs updating, or the main argument has changed. `aitp-writing` shapes the first
 note and substantive revisions; `aitp-distill` teaches demonstrated reusable
-methods from the note and its evidence. These are four roles around one main
-account, not four documents or mandatory phases.
+methods from the note and its evidence. The two human interaction Skills help
+when a consequential choice or learning need arises. All six roles work around
+one main account, without requiring six documents or mandatory phases.
 
 Read the whole `research.md` (or established TeX main note) before a substantive
 revision. Follow supporting links as needed.
 When a result changes the answer, assumptions or next scientific decision,
 revise the relevant passages together. Keep useful failed routes and unresolved
-objections. An ordinary question or unchanged job poll needs no memory write.
+objections. An ordinary question or unchanged job poll needs no memory write
+when the relevant account is already usable.
+
+When use exposes a material gap in an older main note, memory and writing
+[repair it in place](plugins/aitp/skills/aitp-memory/SKILL.md#repair-an-outdated-main-note-during-use)
+within the current editing scope, without a separate maintenance request.
+This can improve the retained argument even without a new scientific result.
+Preserve complete useful reasoning, evidence and history. Judge actual meaning,
+not exact template headings or a Skill version; a usable note and an unchanged
+revisit need no rewrite. Explicit read-only scope still applies. The upgrade
+happens while the topic is used, not when the plugin is installed or in the background.
 
 [Side investigations](plugins/aitp/skills/aitp-writing/references/supporting-notes.md#follow-a-side-investigation)
 retain their origin, agreed objective and approach, evidence and route back to
@@ -54,17 +73,26 @@ the larger work. Before an independent branch or a material change of stage
 objective or research route, `aitp-research` discusses the choice and obtains
 agreement; work inside an existing agreement continues without repeated
 confirmation. `aitp-memory` preserves the agreement and its reasons in the
-branch's primary note, and `aitp-writing` develops the account with links to
-plans, implementation and results. A short plan can stay in that note. Branches
-can reuse other topics and shared code through links without nested directories.
+branch's `research.md`, and `aitp-writing` develops the account with links to
+plans, implementation and results. An agreed independent research branch gets
+its own folder and main note unless a suitable home already exists; a short
+diagnostic can stay in the current account. Branches can reuse other topics and
+shared code through links without forcing nested directories.
 
-The README briefly explains established material locations. The main note
+The README maps the established folder architecture, including branch folders
+and shared working locations. The originating and branch main notes link each
+other and explain whether the branch is a prerequisite, alternative or independent
+spin-off, and what its result means for the larger question. The main note
 develops the argument through linked research notes; those notes connect the
 relevant derivations, literature, code, data and figures. Direct asset links
 remain useful. Independent questions can share code and data in one primary
 location. Reuse existing working locations, and update the README when that
 navigation changes. New topics have optional layout suggestions; existing work
-does not need a prescribed tree or a file inventory.
+does not need a prescribed tree or a file inventory. Within authorized organization,
+the agent can infer clear branch relationships and create or reuse their folders
+and notes. It asks only when unresolved human intent would change that structure
+or scientific scope. The main note should explain which branch advances which
+part of the question, and what next inference could change the answer.
 When related work or shared knowledge is needed, first browse the relevant
 directories, README entries and note titles, then read likely candidates. Short
 scope descriptions help choose a note; known useful links can be followed directly.
@@ -81,11 +109,11 @@ not certify its scientific correctness or authorize its recorded next action.
 Install [AITP 1.1.0](https://github.com/bhjia-phys/AITP-Research-Protocol/releases/tag/v1.1.0).
 Memory-first entry, main and supporting note standards, source-based learning,
 domain methods and numerical layouts in
-this development tree are newer than that release. Codex and Hakimi expose the
-same four core Skills. The release contains the former teaching exercise;
+this development tree are newer than that release. This development tree exposes
+six core Skills to both hosts; the published release has four. The release contains the former teaching exercise;
 the current research examples are pending review.
 Codex can additionally list nested domain methods as selectable Skills; Hakimi
-discovers the four containing bundles. The linked method library works in both.
+discovers the containing bundles. The linked method library works in both.
 
 For **Codex**, run in a terminal:
 
@@ -208,3 +236,18 @@ review. The former oscillator exercise is retired from the current example set;
 its release snapshot and observations remain historical evidence. See
 [example status](plugins/aitp/examples/README.md), [validation](docs/validation.md)
 and [the transition](docs/transition.md).
+
+[Research-use feedback](docs/feedback.md) records observed workflow failures,
+recovery and proposed improvements separately from validated behavior changes.
+
+The [general research-work benchmark](benchmarks/general-v0.1/README.md) provides
+12 small synthetic tasks with separate evaluator expectations for recall,
+argument revision, research choices, method learning and evidence handling.
+It is a static development and regression set, outside the installed plugin;
+actual runs and private research evaluations are kept outside the published tree.
+The separate [on-use revision exercise](benchmarks/on-use-v0.1/README.md) checks
+automatic repair of an outdated main note, an unchanged revisit and read-only scope.
+The [human-interaction cases](benchmarks/human-interaction-v0.1/README.md) check
+authorized branch organization, an unresolved research choice, complete teaching
+delivery and a learner's valid objection. Each has explicit behavioral expectations;
+none establishes actual human understanding or automatic Skill activation.

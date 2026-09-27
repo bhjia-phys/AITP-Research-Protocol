@@ -1,6 +1,6 @@
 ---
 name: aitp-memory
-description: Start here when beginning or resuming work on a physics research topic, even without a note or an explicit memory request. Locate or establish research.md, recover the argument, set the current task and retain meaningful changes. Reuse current context for follow-ups.
+description: Start physics topic work here. Locate or establish research.md, recover the context needed by the task, retain meaningful changes and repair materially outdated main notes during use. Reuse current context for follow-ups.
 ---
 
 # Research memory as a developing article
@@ -9,6 +9,9 @@ Help the researcher make the whole topic clear. The main note should converge
 toward a coherent account of a question, its reasoning, evidence and remaining
 obstruction. Convergence can be a qualified result, a precise failure, or a
 better question; do not force success or erase uncertainty to make a neat paper.
+This account should help a returning agent choose the next useful inference:
+what the main question needs, which branch can supply it, and which completed or
+failed route no longer needs repeating. It is not a queue of all unfinished work.
 
 ## Locate the main note, then establish the current task
 
@@ -22,7 +25,9 @@ First check for the designated `research.md`, or the established main note in
 another format. Use the working folder and README links to locate it; do not
 assume an unfamiliar subdirectory or missing literal filename means no note exists.
 
-- If a main note exists, understand its complete argument as described below.
+- If a main note exists, recover the context needed by the request as described
+  below. Apply [on-use repair](#repair-an-outdated-main-note-during-use) when the
+  encountered account has a material gap; substantive revision needs the whole argument.
 - If none exists, use [starting or organizing a topic](references/starting-a-topic.md).
   Distinguish an empty project from existing research without a synthesis. Suggest
   the [optional layout](references/local-assets.md#optional-layouts-for-a-new-home)
@@ -39,18 +44,23 @@ home and how it relates to the originating question. Use
 [research's agreement boundary](../aitp-research/SKILL.md#agree-on-consequential-research-choices)
 for independent branches and material changes of stage objective or route.
 Retain the agreed objective, approach, stopping or reconsideration criteria and
-unresolved choices in the branch's primary note; distinguish proposals from
+unresolved choices in the branch's `research.md`; distinguish proposals from
 decisions actually agreed with the researcher. An agreed direction change is
 worth recording before results exist, including why the earlier route changed.
 Use [following a side investigation](../aitp-writing/references/supporting-notes.md#follow-a-side-investigation)
-to reuse an existing topic or supporting note, preserve a continuation point,
-and keep nested branches connected without making a new topic for every task.
+to give an agreed independent research branch its own folder and `research.md`,
+unless a suitable branch home already exists. Connect its main note and the
+originating argument in both directions, and map the folder in the nearest README.
+Keep shorter diagnostics in the existing question rather than making a new topic
+for every task.
 
-Ask as soon as a missing decision changes the problem, branch grouping, intended
-document or working home, before dependent drafting. Reuse earlier answers and
-source material instead of repeating intake questions. While waiting, continue
-independent reading but not work that assumes the answer. An unresolved proof or
-unknown result may remain an open question in an agreed exploratory note.
+Use [aitp-human-brainstorming](../aitp-human-brainstorming/SKILL.md) when a missing
+decision changes the problem, branch scope or intended document. It resolves
+human choices before dependent work, without repeating settled questions or
+treating missing evidence as missing intent. Within authorized organization,
+infer clear main/branch relationships from the material and establish or reuse
+their folders and notes; ordinary placement does not need another approval.
+Making an existing branch legible does not authorize starting a new investigation.
 
 Then use [aitp-research](../aitp-research/SKILL.md) for the scientific work and
 [aitp-writing](../aitp-writing/SKILL.md) when drafting or revising the argument.
@@ -60,17 +70,24 @@ Reuse this established context when those Skills refer back here.
 
 Locate the user-designated main note, normally `research.md`. Several independent
 questions may share a code workspace; choose the relevant note rather than
-forcing them into one paper. At first entry or
-after losing context, read its complete text, including its conclusion and open
-questions. If it exceeds one read, read successive sections until the whole
-note is understood. A title, recent tail, abstract or keyword hit is insufficient
-context for substantive revision. Reuse a complete, known-current reading within
-the same work interval; ordinary turns do not require reading it again.
+forcing them into one paper. Focused recall reads the relevant passages and
+qualifications; branch work also needs its relationship to the originating question.
+Before a substantive revision, read the complete main argument, including its
+conclusion and open questions. If it exceeds one read, read successive sections
+until it is understood. A title, recent tail, abstract or keyword hit is insufficient
+for that revision. Reuse a complete, known-current reading within the same work
+interval; ordinary turns do not require reading it again.
 
-Privately recover the central question, physical or mathematical setting,
-operative assumptions, job of each section, strongest established result and
-most consequential gap. This is comprehension, not another file or mandatory
-visible table. Reconcile the user's current request with that whole-topic view.
+For whole-topic recovery or substantive revision, privately recover the central
+question, physical or mathematical setting, operative assumptions, job of each
+section, strongest established result and most consequential gap. This is
+comprehension, not another file or mandatory visible table. Reconcile the user's
+current request with that whole-topic view. Recover why the relevant branch
+matters and what result could change the main answer, rather than selecting
+the most recent unfinished task automatically.
+When a related main note owns a later scope decision, consult that decision
+before recommending continuation across topics. Retaining an older experiment
+does not restore its former priority or override the researcher's chosen route.
 For a broad exploratory topic, understand the candidate questions and why they
 are being compared; do not invent a settled hypothesis or final result.
 
@@ -84,11 +101,46 @@ notes may explain concepts, complete derivations, or identify code and runs.
 Do not recursively load every linked file. A historical next action is not
 today's scientific state or execution permission.
 
+When asked why a route changed, follow the specific retained comparison or
+decision: explain the reason, what the earlier result still supports and what
+it no longer establishes. If a choice's reason was not recorded, say so rather
+than reconstructing a historical fact from a plausible present-day rationale.
+
 If the note changed externally, re-establish its complete current argument
 before editing. If it is missing, establish the scope as above and use the
 researcher's material to start a small coherent note; identify unexamined
 material without manufacturing conclusions.
 Do not initialize a ledger or reconstruct all archived sessions merely to begin.
+
+## Repair an outdated main note during use
+
+As a topic is used, assess the encountered account against the applicable current
+[main-note guidance](../aitp-writing/references/research-note.md). If its organization
+obscures the supported answer, decisive conditions, evidence, consequential history
+or continuation, repair it within the current topic-editing authorization without
+waiting for a separate maintenance request. Examples include a dated update queue
+whose opening still promotes a superseded claim, or completed work still presented
+as the next prerequisite. A durable improvement in recovering the argument warrants
+an edit even when no new scientific result has been obtained.
+
+First understand the complete current argument and inspect the evidence needed to
+resolve the defect, then use writing's [adaptation guidance](../aitp-writing/references/research-note.md#adapt-an-existing-note-during-use).
+Integrate the repair into the current work before handoff, preferably alongside
+other warranted edits. Preserve the researcher's question, complete useful reasoning,
+original observations and reasons for earlier routes. Missing scientific evidence
+or historical reasons remain unknown; better organization does not establish them.
+
+Judge the content, not a stored Skill version or exact template. A usable note
+with different headings needs no rewrite, and a Skill update alone needs no edit.
+Ordinary recall does not require a whole-library conformity audit. This is upkeep
+of the active topic during use, not an installation-time migration or background
+writer. Explicit read-only or restricted scope takes precedence: name the affected
+claim and pending repair without editing outside that scope.
+
+After repairing the material gap, an unchanged revisit should make no further
+write. No compatibility stamp, repeated backup, new summary or migration registry
+is required. Briefly link the repaired note when handing back the task; when no
+repair is needed, there is no additional maintenance report.
 
 ## Integrate changes into the argument
 
@@ -112,6 +164,8 @@ discoverable and correct known errors where a future reader will encounter them,
 following [corrections and retained notes](../aitp-writing/references/supporting-notes.md#correct-claims-and-keep-earlier-routes-findable).
 This is work performed during the task, not background synchronization.
 
+Use [aitp-human-learning](../aitp-human-learning/SKILL.md) for interactive study
+or a conceptual difficulty; it decides how to use feedback, not what is true.
 For a learning topic, retain the primary reading thread and a consequential
 conceptual obstacle or explanation when useful for continuation. Keep a source
 passage's location near its supporting derivation. The main note integrates the
@@ -152,7 +206,8 @@ then search and read promising candidates. This is a bounded discovery step
 when needed, not a whole-library read or a repeated check on every turn.
 Once the main note and relevant asset locations are established,
 explain them there briefly if that navigation is missing or has changed. The
-README locates the work; the main note carries its scientific argument through
+README maps the actual folder architecture, including established branch folders
+and shared locations; the main note carries its scientific argument through
 links to detailed research notes, whose relevant passages connect to derivations,
 code, inputs, results, papers and figures. Keep the decisive result and conditions
 in the main note. Direct asset links are useful too; do not create an intermediate
@@ -187,14 +242,28 @@ an unrelated whole-store integrity audit or hash scan for ordinary note work.
 ## Timing and recovery
 
 When finishing the requested task or handing it back, decide whether its outcome
-changes durable understanding. This is an editorial decision, not an automatic
-end-of-turn write:
+changes durable understanding or repairs a material gap in the retained argument.
+This is an editorial decision, not an automatic end-of-turn write:
 
-- No durable change: answer the user without editing memory.
+- No new durable understanding and no material defect in the retained account:
+  answer the user without editing memory.
 - Useful supporting detail with the main account still accurate: update or create
   the relevant detailed note or artifact; adjust a main-note link only if needed.
-- Changed conclusion, assumption, failed route or next research decision: revise
-  the affected main-note passages together and link the supporting evidence.
+- First consequential result, changed conclusion, assumption, failed route or
+  next research decision: revise the affected main-note passages together and
+  link the supporting evidence, including when the result is still provisional.
+- An encountered main note materially fails the current guidance: perform the
+  [on-use repair](#repair-an-outdated-main-note-during-use), even without new results.
+
+Before handing back consequential work, check whether the main note itself
+states the current model, newest supported result and remaining question.
+If it does not, integrate them within the existing authorization; saving a
+supporting report or adding a link does not complete that work. Replace stale
+claims and merge repeated status paragraphs instead of appending another update.
+When editing the main note, link it in the handoff so the researcher can find
+the integrated argument. If an explicit read-only or restricted scope prevents
+the edit, identify the affected claim and pending integration without implying
+that the supporting artifact has already updated the main account.
 
 Remove obsolete next steps and redundant detail from the live account, but retain
 the reason and source for a consequential reversal. When shortening, leave a
@@ -204,15 +273,23 @@ check both the argument and the affected links.
 Update when understanding, a central assumption, a useful result, or the next
 research decision meaningfully changes. Capture a fragile insight or the intent
 of an expensive experiment before losing it. At an interruption, leave a precise
-continuation point if the note is behind the work. An unchanged query or job poll
-requires no write; do not polish every paragraph after every small calculation.
+continuation point if the note is behind the work. Classify a query by what it
+reveals: a first material result or new failure discovered during a job poll can
+change the main account even while the job is running. An unchanged query or
+job poll requires no write when the relevant account remains usable; do not
+polish every paragraph after every small calculation. Background collectors
+preserve evidence, not its scientific
+interpretation; integrate consequential evidence when the research task next
+examines it, within the authorized scope.
 
 Prepared examples are dated snapshots. Live topic documents may develop beyond
 them; do not synchronize the two or mistake a source example for current state.
 After resumption, verify time-sensitive jobs and files only when the task relies
 on them. Reading a historical permission is not new authorization.
 
-After consequential work, also retain transferable learning where it belongs:
+After consequential work, also retain transferable learning where it belongs.
+Reorganizing an existing argument alone does not produce a new theory explanation
+or demonstrated procedure; reuse what is already retained:
 
 - A useful theoretical explanation, derivation, correction or connection with
   independent reuse: extend the relevant primary explanation using

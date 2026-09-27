@@ -7,12 +7,11 @@ and publication prose have different jobs even when they share a PDF format.
 
 ## Set a useful learning target
 
-Recover the reader's actual prerequisites, the question they want answered and
-what they should be able to explain or calculate after this passage. Reuse
-earlier answers. Ask when an unknown prerequisite or competing reading route
-would materially change the explanation; otherwise start with a concrete example
-and adjust from the reader's questions. No intake form or learning-status file is
-required. A field-standard method may still be new to a graduate student.
+Use the reader's stated prerequisites, question and intended outcome. For
+interactive calibration and conceptual feedback, use
+[aitp-human-learning](../../aitp-human-learning/SKILL.md); do not add a separate
+intake or assessment here. A field-standard method may still be new to a graduate
+student. This guide concerns the explanation's content and structure.
 
 Choose the needed depth for the passage; different parts can have different jobs:
 
@@ -75,16 +74,9 @@ explanation, including its captions and exercises.
 
 ## Use feedback and review to improve the next passage
 
-During interactive study, finish a coherent small passage, invite a question or
-a check of its central step, and adapt the next explanation to the response.
-Do not interrupt each formula with a comprehension question. If the user asks
-for a complete artifact, deliver the agreed scope; optional feedback is not a
-new approval gate or a reason to stop after an outline.
-
-Retain a consequential reader question or explanation that resolved it when it
-will help resume the topic. An authored derivation and the learner's confirmed
-understanding are different observations. Do not mark a topic mastered because
-the agent wrote an answer, and do not infer understanding from silence.
+Use [aitp-human-learning](../../aitp-human-learning/SKILL.md) for dialogue and
+interpretation of learner feedback. Deliver the agreed artifact and distinguish
+an authored explanation from understanding demonstrated by the learner.
 
 Read the passage in order using the declared prerequisites. Try to reconstruct
 its target calculation and identify the earliest missing definition, premise,

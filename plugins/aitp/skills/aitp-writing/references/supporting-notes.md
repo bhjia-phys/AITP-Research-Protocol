@@ -26,21 +26,23 @@ researcher chooses an independent branch, retain its question and agreement
 before that context is lost. Use
 [research's collaboration guidance](../../aitp-research/SKILL.md#agree-on-consequential-research-choices)
 to settle its purpose, stage objective and approach before dependent work.
-An agreed branch needs a primary Markdown account even before results exist;
-reuse a suitable existing note. A passing idea can remain a proposed direction
+An agreed independent research branch needs its own folder and `research.md`
+even before results exist; reuse a suitable existing branch folder and main note
+when they already cover its question. A passing idea can remain a proposed direction
 in the existing text without a new file or implied execution agreement. If work
 has already begun without a clear agreement, preserve what was done honestly and
 resolve the consequential choice before extending it.
 
-Give the branch one primary account near the question or method it develops.
-Check relevant existing notes before creating another; use
+Place the branch folder near the originating question or in an established topic
+family, following the actual working location. Check relevant existing notes
+before creating another; use
 [nearby directories and note titles](../../aitp-memory/references/local-assets.md#browse-nearby-topics-and-shared-knowledge)
 when their location or scope is unfamiliar. A short diagnostic within the
-agreed work can remain a paragraph; an independent branch or substantial
-derivation, experiment or development effort uses a supporting note. A
-long-lived independent research question may later need
-its own `research.md`. Neither duration alone nor the word "branch" requires a
-new topic, directory hierarchy or set of templates.
+agreed work can remain a paragraph; a substantial derivation, experiment or
+development effort serving the same question can use a supporting note. The
+folder and `research.md` decision follows an agreed independent research question,
+not the duration of work or a casual use of the word "branch". Do not create
+empty note, code or results directories alongside it.
 
 Explain in ordinary prose what prompted the branch, the agreed stage objective,
 approach and scope, what evidence would settle it or call for reconsideration,
@@ -50,13 +52,18 @@ A short plan can live in this note; link a longer plan, derivation, implementati
 account, scripts, inputs and results when they have their own useful homes.
 These are content needs, not a required set of documents. Preserve useful
 failures and the reasons for material changes of plan; replace obsolete next
-steps while retaining the evidence. In the
-originating note, link it beside the question it supports and explain whether
-it is a prerequisite, alternative or related exploration. Do not invent that
-relationship if it is undecided. The branch links back to the relevant question.
+steps while retaining the evidence. In the originating main note, link the
+branch `research.md` beside the question it supports and explain whether it is
+a prerequisite, alternative or related exploration. Do not invent that
+relationship if it is undecided. The branch main note links back to the
+relevant question.
 For a dependency, say what result would let that work continue; an independent
 spin-off can retain its origin without blocking the earlier question. These are
 scientific connections, not mandatory fields or a second status report.
+Explain the branch folder and any shared working locations in the nearest suitable
+README; the README maps folders, while the two main notes explain the scientific
+relationship. A branch-specific README is useful only if its own material locations
+need explanation.
 
 A branch may lead to another branch or be reused by several topics. Follow those
 dependencies through links, not necessarily nested folders. For example, a

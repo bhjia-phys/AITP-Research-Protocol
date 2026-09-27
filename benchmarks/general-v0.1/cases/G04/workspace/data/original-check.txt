@@ -1,0 +1,6 @@
+Original input and direct algebra check
+H0 = [[0, 0], [0, 1]]
+B0 = [[0, 1], [-1, 0]]
+X0 = [[0, -1], [-1, 0]]
+H0*X0 - X0*H0 = [[0, 1], [-1, 0]]
+Residual relative to B0 = [[0, 0], [0, 0]]

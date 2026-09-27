@@ -1,0 +1,5 @@
+observed_at = 2026-09-20T10:00:00Z
+completed_samples = 32
+sample_mean = 1.84
+standard_error = 0.12
+final_summary = unavailable

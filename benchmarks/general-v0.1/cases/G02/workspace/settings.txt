@@ -1,0 +1,3 @@
+nodes = midpoint
+weights = uniform
+tolerance = 1e-8

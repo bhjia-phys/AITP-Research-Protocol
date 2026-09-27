@@ -1,5 +1,154 @@
 # Validation and its limits
 
+## Conditional human interaction, 2026-09-27
+
+Two new Skills separate consequential research choices from interactive learning,
+with conditional links from memory, research and writing. Main-note guidance now
+also asks whether a returning agent can select a useful next inference and recover
+the relationship and current scope of its branches. This adds no runtime, mandatory
+interview or interaction ledger.
+
+Four fresh-context subagent sessions explicitly read the source Skills and executed
+the [generic interaction cases](../benchmarks/human-interaction-v0.1/README.md).
+The organization case created a branch main note and reciprocal links, preserved
+the original diagnostic and returned to the unanswered comparison without another
+approval. The research-choice case recommended a direction and asked one focused
+target question without recording the proposal as agreed. The teaching case
+delivered a complete two-level calculation without an intake or quiz gate. The
+objection case verified the learner's counterexample and retracted the assistant's
+overstrong claim rather than diagnosing the learner as confused. Review of the
+actual outputs found the intended boundaries in all four cases.
+
+These are small authored development tasks with explicit Skill loading, not a
+blind benchmark, implicit-routing test or observation of a real learner. They do
+not demonstrate that the new instructions caused an improvement over the prior
+Skills. A separate real-topic application, version comparisons, intermediate
+failures and subsequent recovery checks are retained outside the public tree;
+they do not enter a public aggregate score. No physics calculation was rerun.
+
+All seven source Skills, including the nested domain method, passed frontmatter
+validation. Plugin validation and affected local link/heading checks passed.
+Packaging checks establish valid files and references, not scientific correctness
+or better research decisions. Installed-cache equality is checked separately
+when reinstalling; a fresh host thread is needed to load the revision.
+
+## Independent branch folders, 2026-09-26
+
+The source guidance now makes an agreed independent research branch a question
+folder with its own `research.md`, while the nearest README maps that folder and
+the two main notes explain their relationship through reciprocal links. Proposed
+directions and short diagnostics do not trigger a new folder; existing suitable
+branch homes are reused. An authored temporary oscillator/damping-limit
+walkthrough checked the folder map, reciprocal relative links and absence of a
+redundant child README. Both affected Skills passed frontmatter validation;
+manifest names, local link targets and `git diff --check` passed. This was a
+manual walkthrough of file roles and links, not an independent agent session or
+evidence that a host will reliably activate the Skills. The local Codex plugin
+was reinstalled at `1.1.0+codex.20260926080826`; the installed copies of the
+affected memory and branch guidance match this source. A new host thread is
+needed to pick up the installed revision.
+
+## Complete general regression and fresh continuation, 2026-09-22
+
+All twelve [general-v0.1 cases](../benchmarks/general-v0.1/README.md) were run
+from clean fixture copies in separate Codex CLI sessions against one frozen,
+dirty source snapshot. The source now also clarifies sustained route relevance,
+opening synthesis and provenance, early provisional results in job guidance,
+and the surviving use of a result when recalling why a route changed. Distill's
+existing method-versus-concept rules were tested without adding new obligations.
+
+All twelve completed cases received 2/2 under the published semantic rubric.
+G01/G02 made no writes; G03 added supporting detail; G04 preserved a valid
+projected result while correcting the full equation; G05 separated imported,
+derived and conditional contributions. G06 retained the missing target relation
+despite one bounded numerical refinement, while G07 resolved its defined target
+with a controlled bound. G08 repaired the existing method, G09 retained a concept
+without a new Skill, and G10 reprocessed records without rewriting its baseline.
+G11 integrated its first provisional result; G12 left the workspace byte-identical
+and identified the pending correction. Original inputs and historical outputs
+survived; G06/G07 appended new grid rows while preserving the old rows.
+
+A fresh G04 continuation received the actual first session's files without its
+chat or an evaluator repair. It recovered the changed premise, incompatibility
+and surviving old result, and made no writes. A separate artifact/trace review
+confirmed the G01, G06 and G08 scores, including their acceptable alternatives.
+One G04 attempt was interrupted by model-service capacity before completion;
+its trace and unchanged workspace were retained, followed by a clean successful
+retry. This infrastructure interruption is separate from a scientific score.
+
+All scored CLI runs used gpt-6-astra with xhigh reasoning and explicitly loaded
+the same Skill snapshot. User config, memory injection, automatic plugins, apps,
+hooks, multi-agent spawning and host Skill discovery were disabled. Tasks,
+commands, JSONL events, final answers, before/after files and usage were retained
+outside the published tree. The twelve completed runs used 124 command executions
+and 2,130 seconds of summed session time; runs overlapped. Reported usage totals
+were 1,955,412 input tokens, including 1,578,240 cached tokens, and 46,768 output
+tokens. Input usage includes repeated context across calls. These counts exclude
+the interruption, continuation and preliminary pilots; they are not a cost saving.
+
+Four earlier new-context subagent pilots remain separate evidence under different
+host conditions. Their G02 answer omitted the old comparison's surviving use
+(1/2); the later source clarified historical recovery. No controlled old-versus-new
+or ordinary-note comparison was executed, so the later success does not establish
+causal improvement or superiority. This authored development set is not an unseen
+physics test, an implicit-activation measurement or general reliability evidence.
+Source validation passed; the installed plugin cache was not updated.
+
+## On-use revision of an outdated main note, 2026-09-22
+
+The [on-use revision exercise](../benchmarks/on-use-v0.1/README.md) supplies a
+chronological note whose opening drops a normalization condition and whose next
+test is already complete. Correct derivations and raw observations are present.
+The ordinary research-continuation prompt does not request a rewrite. This is
+a separate development case; the existing general-v0.1 suite remains unchanged.
+
+Three fresh-context subagent sessions explicitly loaded a snapshot of the updated
+AITP source. The first integrated the supported answer, valid conditional proof,
+reason for the earlier mistake and actual continuation into the main note. Only
+research.md changed; supporting derivations and raw observations were preserved.
+A fresh second session received that actual output without the first conversation
+or new findings. It recovered the recorded conclusions and left all files
+byte-identical. A separate read-only session started from the original fixture,
+reported the correct answer and pending main-note correction, and also left all
+files unchanged. Artifact and response inspection gave 2/2 for each of the three
+checks under the published rubric.
+
+Actors received neither the authoring conversation nor evaluator material.
+Host-injected instructions and catalog metadata were not independently filtered;
+complete per-tool traces and token/time costs were not separately archived.
+These observations cover one synthetic task, not implicit Skill activation,
+an old-versus-new comparison, a background upgrade or general research quality.
+Source snapshots, before/after files, actor deliveries and assessment records stay
+outside the published tree. Affected frontmatter, plugin manifests, local links
+and heading anchors passed validation. The installed plugin was not updated.
+
+## General research-work benchmark, 2026-09-22
+
+The [v0.1 general benchmark](../benchmarks/general-v0.1/README.md) contains 12
+small synthetic tasks, copyable workspaces and separate evaluator expectations.
+Its materials exercise recall, correction, exposition, route selection, method
+learning, provenance and scoped handoff. It adds no runner or runtime to AITP.
+The corpus is an openly authored development/regression set, not unseen tasks.
+
+Checks covered required case files, relative links, Python syntax, supplied
+arithmetic and the intentional differences in paired fixtures. Three new-context
+subagent pilots explicitly used a copied current AITP source bundle: G07 completed
+a justified numerical refinement and integrated the result; G08 repaired an
+existing averaging method and retained the original records/output; G12 provided
+a read-only provisional-result handoff with no workspace changes. The evaluator
+inspected the resulting files and before/after differences. These observations
+support task readiness, not a general performance or automatic-activation claim.
+
+The pilots did not inherit the authoring conversation or receive evaluator files.
+However, complete isolation of host-injected instructions, memory descriptions
+and the installed Skill catalog was not established. Full per-tool traces and
+token/time costs were not separately archived. Rubric consistency was refined
+during authoring, so these are not a preregistered comparative baseline. Exact
+source/fixture copies, actor deliveries and artifact observations are retained
+outside the published tree. At that point nine cases remained unrun; those pilots
+did not test cross-session continuation, an ordinary-note control or an
+optimized-version comparison.
+
 ## Branch agreements and reusable learning, 2026-09-20
 
 An authored synthetic walkthrough applied the revised source Skills to a
