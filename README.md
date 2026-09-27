@@ -110,10 +110,11 @@ Install [AITP 1.1.0](https://github.com/bhjia-phys/AITP-Research-Protocol/releas
 Memory-first entry, main and supporting note standards, source-based learning,
 domain methods and numerical layouts in
 this development tree are newer than that release. This development tree exposes
-six core Skills to both hosts; the published release has four. The release contains the former teaching exercise;
-the current research examples are pending review.
-Codex can additionally list nested domain methods as selectable Skills; Hakimi
-discovers the containing bundles. The linked method library works in both.
+six core Skills to Codex, Claude Code and Hakimi; the published release has four.
+The release contains the former teaching exercise; the current research examples
+are pending review. Codex and Claude Code additionally expose the LibRPA domain
+method as a selectable Skill; Hakimi discovers the containing bundles. The linked
+method library works in all three.
 
 For **Codex**, run in a terminal:
 
@@ -128,6 +129,17 @@ For **Hakimi**, run inside a session:
 /plugins install https://github.com/bhjia-phys/AITP-Research-Protocol/releases/download/v1.1.0/aitp-1.1.0.zip
 ```
 
+For **Claude Code**, install this development checkout from its repository root:
+
+```sh
+claude plugin marketplace add .
+claude plugin install aitp@aitp-protocol --scope user
+```
+
+Claude support is in this checkout, not the published `v1.1.0` release.
+The [Claude Code guide](docs/claude-code.md) explains the shared Skill layout,
+natural-language use, verification and updates.
+
 Start a new host thread after installation. The attached
 [plugin ZIP](https://github.com/bhjia-phys/AITP-Research-Protocol/releases/download/v1.1.0/aitp-1.1.0.zip)
 contains an `aitp/` folder with its manifests, Skills, example and license.
@@ -135,7 +147,8 @@ Hakimi uses this ZIP; GitHub's automatic source archives contain the full
 repository, where the plugin is nested under `plugins/aitp`.
 
 For local development, add this checkout as the Codex marketplace source and
-install `aitp@aitp-protocol`, or give Hakimi the absolute path to `plugins/aitp`.
+install `aitp@aitp-protocol`, use the Claude Code commands above, or give Hakimi
+the absolute path to `plugins/aitp`.
 Without installation, an agent can read the memory Skill and the topic's main note.
 
 The repository and marketplace keep their historical names; the product and

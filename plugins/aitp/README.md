@@ -20,6 +20,21 @@ codex plugin marketplace add bhjia-phys/AITP-Research-Protocol --ref v1.1.0
 codex plugin add aitp@aitp-protocol
 ```
 
+For **Claude Code**, run from the development repository root:
+
+```sh
+claude plugin marketplace add .
+claude plugin install aitp@aitp-protocol --scope user
+```
+
+Claude support is newer than the published `v1.1.0` release. Its native manifest
+is `.claude-plugin/plugin.json`; the six core Skills load from `skills/`, and
+the manifest additionally exposes the nested LibRPA method. The Skill files and
+their relative reference links are shared with Codex and Hakimi. Check the
+loaded inventory with `claude plugin details aitp`. In a new session, ordinary
+research requests can activate relevant Skills; `/aitp:aitp-memory` is also
+available as an explicit entry point. Installation does not rewrite research notes.
+
 Start a new host thread after installation.
 
 - [aitp-memory](skills/aitp-memory/SKILL.md) is the first step for research-topic
@@ -117,7 +132,7 @@ execution and publication. Skills guide behavior; they cannot guarantee activati
 crash recovery or scientific correctness.
 
 For a persistent workspace instruction, a researcher may put the following in
-its existing `AGENTS.md`, or state it in the conversation:
+its existing `AGENTS.md` (`CLAUDE.md` for Claude Code), or state it in the conversation:
 
 > For work on a research topic, first use aitp-memory to locate or establish the
 > main note and determine the current task. Reuse that context for follow-ups.
@@ -149,7 +164,8 @@ runs. General procedures live in the research Skill's
 [developing LibRPA](skills/aitp-research/methods/librpa/developing-librpa/SKILL.md)
 for source analysis and numerical development.
 They are linked for reading on demand, without another registry. Codex can also
-list nested method Skills directly; Hakimi exposes the six containing bundles.
+list nested method Skills directly; Claude Code explicitly exposes the LibRPA
+method in its manifest, and Hakimi exposes the six containing bundles.
 The six core roles therefore need not equal the host's total selectable count.
 Research examples and unpublished evidence follow the author's publication
 permissions; adding a general method does not publish its originating project.

@@ -1,0 +1,14 @@
+{
+  "name": "aitp-protocol",
+  "description": "AITP research skills for Claude Code.",
+  "owner": {
+    "name": "Bohan Jia"
+  },
+  "plugins": [
+    {
+      "name": "aitp",
+      "source": "./plugins/aitp",
+      "description": "Physics research memory, reasoning, writing, human collaboration and method distillation."
+    }
+  ]
+}

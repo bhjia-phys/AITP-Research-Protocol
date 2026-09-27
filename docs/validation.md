@@ -1,5 +1,37 @@
 # Validation and its limits
 
+## Claude Code installation, 2026-09-27
+
+The development plugin gained a native Claude manifest and repository marketplace,
+sharing the existing Skill files with Codex and Hakimi. Claude Code 2.1.283
+installed `aitp@aitp-protocol` at user scope, enabled, with version
+`1.1.0+claude.20260927`. Strict plugin and marketplace validation passed. The
+inventory contained six core Skills and the explicitly exposed nested LibRPA
+method, with no agents, hooks, MCP or LSP servers. All seven Skill frontmatters
+validated, and the installer's 38-file cache matched the source.
+
+Two fresh CLI sessions, reporting model `claude-opus-5-5`, then received ordinary
+Chinese questions without Skill names or loading instructions. A copy of G01's
+workspace tested recall: Claude invoked `aitp:aitp-memory`, read the main and
+supporting notes, and separated agreement of two implementations from controlled
+integration error. A standalone two-dimensional unitary/projection question
+invoked `aitp:aitp-human-learning` and explained why a norm-preserving operator
+can have zero compression to a subspace. The requested explanations completed;
+workspace contents stayed unchanged. These trials exposed only Skill, Read,
+Glob and Grep tools, disabled automatic memory and external MCP configuration,
+and did not test autonomous writing or numerical execution.
+
+Session initialization identified the active plugin path as the local source
+checkout, although `plugin list --json` recorded a cache path. The
+[Claude guide](claude-code.md) distinguishes active loading from installation
+metadata. User configuration changes were limited to registering and enabling
+the plugin; other settings were preserved. Prompts, events, answers and setting
+backups remain outside this repository.
+
+This verifies packaging and two bounded natural-trigger cases. It does not
+establish all Skill transitions, general scientific reliability, superiority
+over another host, or fixes for earlier complex-topic trigger failures.
+
 ## Installed-plugin discovery, 2026-09-27
 
 After source commit `f393c1cd` was pushed, eight ordinary requests were run in
