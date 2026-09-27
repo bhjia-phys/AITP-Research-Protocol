@@ -250,4 +250,6 @@ automatic repair of an outdated main note, an unchanged revisit and read-only sc
 The [human-interaction cases](benchmarks/human-interaction-v0.1/README.md) check
 authorized branch organization, an unresolved research choice, complete teaching
 delivery and a learner's valid objection. Each has explicit behavioral expectations;
-none establishes actual human understanding or automatic Skill activation.
+[validation](docs/validation.md#installed-plugin-discovery-2026-09-27) distinguishes
+explicit-loading trials from installed-plugin discovery observations. These small
+tests establish neither actual human understanding nor general activation reliability.

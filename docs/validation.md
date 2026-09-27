@@ -1,5 +1,49 @@
 # Validation and its limits
 
+## Installed-plugin discovery, 2026-09-27
+
+After source commit `f393c1cd` was pushed, eight ordinary requests were run in
+fresh Codex CLI sessions using the installed plugin
+`1.1.0+codex.20260927155546`. Prompts named no AITP Skill and gave no loading
+instructions. The sessions retained normal user configuration and plugin/Skill
+discovery, with historical memory disabled and a workspace-write sandbox. All
+used CLI 0.157.1, gpt-6-astra and xhigh reasoning. Initial-context inspection
+confirmed the new plugin catalog without the historical memory summary or
+evaluator material; command traces record actual installed-Skill reads.
+
+The tasks reused general G01/G04/G08 and human-interaction H01–H04, plus a
+nonresearch README-title edit. Recall recovered the evidence boundary without
+writes; the source correction revised the argument while retaining the valid
+projected result and original inputs; method repair corrected the existing
+Skill and preserved its earlier output. Teaching delivered the requested complete
+artifact, and the objection case verified the counterexample and retracted the
+overclaim. Authorized organization established a branch folder and reciprocal
+main-note links without another approval. The nonresearch edit loaded no AITP
+Skill and changed only the requested title. Artifact review found the intended
+behaviors in these seven cases.
+
+The remaining case, H02, exposed an ambiguity in its expectation of a required
+question: its actual request tells the agent to choose a direction. The session
+read brainstorming, attributed its selection to that delegated choice, and
+wrote a main line without inventing a separate researcher confirmation or new
+results. It did not satisfy the rubric's question requirement, but that alone
+does not establish an authorization failure. The original observation and
+expectation were retained. A ninth, separately identified follow-up used the
+same starting note and a request whose research target remained undecided. It
+offered a conditional recommendation, kept the route unselected, and asked one
+question about the value of a mechanism result without material prediction.
+No Skill changed between these runs.
+
+All six core Skills were read in relevant sessions; no case had to load all six.
+All nine sessions completed. Five recovered from an unavailable `python` command
+by using `python3`; these errors remain in the traces. This is one execution per
+authored case, with an adaptive follow-up and coordinator review, not a blind
+evaluation, an activation-rate estimate or a controlled improvement comparison.
+Skill reads alone are not proof of correct behavior. Task snapshots, commands,
+complete traces, outputs and assessments remain outside the published tree.
+The plugin's 37 installed files matched the committed source; frontmatter,
+manifest and link checks establish packaging validity only.
+
 ## Conditional human interaction, 2026-09-27
 
 Two new Skills separate consequential research choices from interactive learning,
