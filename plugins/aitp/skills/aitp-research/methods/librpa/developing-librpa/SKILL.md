@@ -1,100 +1,168 @@
 ---
 name: developing-librpa
-description: Trace formulas and iteration state through LibRPA source, or modify and validate its numerical implementation. Use for source analysis and code review or development, not merely to launch an existing calculation.
+description: Review, simplify, or extend LibRPA numerical code by tracing its active GW/RPA paths, API and driver boundaries, matrix ownership, and relevant regressions. Use for LibRPA source development and PR review, not merely to launch an existing calculation.
 ---
 
-# Develop LibRPA against a physical and numerical claim
+# Develop LibRPA through its existing numerical path
 
-For research-topic work, first use
-[aitp-memory](../../../../aitp-memory/SKILL.md), reusing context already current.
-Identify the quantity or approximation being investigated and a small comparison
-that could distinguish the competing interpretations. Inspect the actual source
-and callers before interpreting a result or choosing an edit; do not infer today's
-interface from a historical run or another checkout.
+For research-topic work, use
+[aitp-memory](../../../../aitp-memory/SKILL.md), reusing current context.
+Establish the requested behavior and the quantity that should change or remain
+invariant. A source explanation, implementation cleanup, new feature, and change
+of physical approximation need different evidence.
 
-## Establish the working code and executable
+## Find the active implementation
 
-Read the project's instructions, Git status and relevant changes. Preserve dirty
-work and determine which checkout is intended. Use an isolated worktree only when
-the change needs it; remember that a new worktree does not contain uncommitted
-edits. Never describe a test there as validating the dirty source elsewhere.
+Identify the intended checkout, branch, local edits, upstream target, and, when
+running calculations, executable and build configuration. For a PR review,
+inspect the complete change against its actual base; comparison with the remote
+PR head answers only what the next update adds. Preserve unrelated work.
 
-When executing a numerical check, inspect the build cache, configuration and
-executable path. Use the
-checkout's current CMake options and local environment guidance instead of copied
-compiler paths or remembered flags. If needed, create a separate build directory
-for this configuration. Establish that the executable being tested was built from
-the intended source, including relevant local edits. Compilation alone does not
-validate a numerical claim.
-For a source-only analysis, establish what the selected code implements and what
-remains unexecuted; no build is needed to complete that task.
+Read applicable repository instructions and Minye's developer guidance in
+`docs/develop/develop_tips.md`. Use `driver/CMakeLists.txt` and
+`src/CMakeLists.txt` to check which files execute: `driver/tasks/g0w0.cpp` and
+`driver/tasks/qsgw.cpp` are distinct from older `driver/task_*.cpp` drafts.
+Follow the existing GW/RPA/EXX caller before introducing a parallel mechanism.
 
-## Keep the numerical change intelligible
+For an unfamiliar subsystem, API change, runtime option, or build decision,
+read the relevant section of the [architecture and change guide](references/architecture.md).
+Resolve its source pointers against the current checkout; branch layouts evolve.
 
-Follow the relevant data through its callers. Check the conventions implicated
-by the change: units, spin factors, k-point identity and weights, basis ordering,
-matrix dimensions and storage order, conjugation, and MPI distribution or thread
-settings. Select the ones that matter rather than turning this into a checklist
-for every edit.
+## Keep the change within its purpose
 
-For a self-consistent response, follow one update through its callers: which
-spectrum, occupations, eigenvectors and operator matrix elements each term uses,
-what a cache retains, and when data are rebuilt or transformed. Match frequency
-values as well as array lengths. Holding operator entries fixed differs from
-holding an operator fixed in a changing eigenbasis. When comparing branches,
-establish that they construct the same mathematical object; a shared helper or
-an option name does not establish the selected driver's behavior.
+Include changes that implement the requested behavior, preserve required
+compatibility, or provide its necessary validation/documentation. Judge scope
+by dependencies and behavior, not file count: synchronizing a shared option
+across C and Fortran is necessary work even when it touches several files.
+Earlier explicit decisions, including accepted shared defaults, remain in scope.
 
-For new boundaries, prefer task-specific file handling in the driver, numerical
-APIs that accept numerical data rather than filenames, and reusable readers in
-the existing I/O layer. Inspect the current layout; this preference does not
-authorize moving unrelated code or claim the existing tree already follows it.
+Leave unrelated refactoring, renaming, formatting, logging redesign, new
+frameworks, and changes of physical approximation out of a focused fix or
+cleanup. An improvement that can stand alone and is not needed for the requested
+result normally belongs in separate work. Note a consequential unrelated issue
+without silently fixing it. Continue the authorized task; ask for clarification
+only when an unresolved scope choice actually blocks a correct implementation.
 
-## Validate the behavior the change could break
+## Place the change at the right boundary
 
-Start with an independent expected value, limiting case, symmetry relation or
-existing trusted numerical comparison. Inspect existing component tests before
-adding a duplicate. Choose a regression exercising the changed path with the
-same inputs and controls on the compared versions. A source-string assertion or
-an unchanged final scalar may miss an error in the underlying matrices.
+- Keep concrete input-file selection, producer filenames, task-specific reading,
+  unit decoding, and task output in the driver. Generic readers for standard
+  formats, such as CSC/ELSI, may live in `src/io`. Public computation/input APIs
+  accept data and do not read input files; library-generated restart files are
+  the exception. Numerical operations receive matrices, conventions, and
+  mean-field data rather than filenames.
+- Implement new public behavior through the C API under `src/api`, with public
+  declarations in `include/`; C++ and supported Fortran interfaces wrap that
+  layer. Keep host-program presets in the driver and pass parsed conventions
+  through the API.
+- Prefer public setters and getters over mutating a handler's Dataset from the
+  driver. Existing QSGW is a task prototype with internal access; keep necessary
+  prototype mutations local to its task. This exception does not establish a
+  general interface or require an unrelated API migration during cleanup.
+- Assemble physics from existing core objects and reusable math/MPI helpers.
+  Follow the developer guide's dependency rules, including the isolation of
+  `src/interface`. Check ownership and actual callers before moving a helper.
 
-For example, a complex Hamiltonian-mixing change should preserve Hermiticity,
-spin/k-point association and the intended linear update across supported matrix
-layouts. The public [Hamiltonian-mixing test](https://github.com/bhjia-phys/LibRPA/blob/7f986201/src/test/test_qsgw_hamiltonian_mixing.cpp)
-provides a source-reviewed example of this selection. It is a dated reference,
-not evidence that a current build passed. Check current test registration and
-run the relevant target before claiming execution success.
+Separate driver-only parameters from `LibrpaOptions`. A filename change should
+not grow the public numerical options struct. A shared option needs its C,
+Fortran, initializer, parser, and documentation paths checked as applicable.
+Trace defaults and overrides: the shared `nfreq` default affects RPA/GW as well
+as QSGW, while the driver supplies some defaults that a library caller must set.
 
-Choose parameters that expose the suspected error. Half-weight averaging cannot
-distinguish swapped initial/target coefficients; retain an unequal-weight case
-when testing that ordering. A layout error can also preserve Hermiticity, so
-compare the complex entries rather than using Hermiticity alone as acceptance.
+## Trace the numerical state before simplifying it
 
-For input-based regressions, read the current `regression_tests/README.md` and
-runner help. Resolve its working-directory assumptions and select only useful
-cases. Give test outputs a fresh workspace; do not overwrite reference results
-to make a comparison pass. Broaden testing when the numerical change or observed
-failure warrants it, rather than imposing a full campaign on every small edit.
+Follow input through conversion, distribution, numerical operation, and output.
+Resolve implicated units, spin/occupation normalization, k ordering and weights,
+AO versus KS basis, matrix layout, conjugation, and MPI ownership. Inspect the
+producer when meaning is ambiguous; a filename suffix does not establish basis.
 
-Keep the source location and relevant revision/local changes, build configuration,
-actual command, input and output locations, and comparison tolerance in the
-existing run report when needed for continuation. Use
-[numerical asset guidance](../../../../aitp-memory/references/numerical-assets.md)
-when those locations are not established. No additional provenance schema is
-required.
+For iteration, identify the immutable reference, live eigenpairs, operators, and
+caches. Track what is invalidated and rebuilt after each update. Fixed operator
+entries differ from a fixed operator represented in changing eigenstates.
+Automatic frequency nodes can change with the spectrum at fixed `nfreq`.
 
-## State what was established
+`Matz` in `src/math/matrix_m.h` shares storage on ordinary copy; use its `copy()`
+or an independently allocated result when mutation must not reach the input.
+Check temporary reference substitutions and their restoration on error paths.
+Preserve collective order and propagate a root-only failure before other ranks
+enter a dependent collective.
 
-Separate source review, successful compilation, executed component checks,
-regression agreement and physical convergence. A scheduler rejection is not a
-numerical failure; an unrun test is not a pass. Preserve a consequential failed
-route or corrected assumption through the topic's ordinary memory decision.
-Do not produce another research report for a routine successful command.
+Remove wrappers whose work is already expressed by the existing path; retain
+physical conversion, projection, lifetime management, and required communication.
+Use ordinary native inputs. Do not introduce manifests, hash inventories, or a
+second input-description protocol for an ordinary reader change.
 
-This initial Skill is grounded in source inspection and development constraints;
-it has not been validated by a new LibRPA build or production calculation here.
-[oh-my-LibRPA](https://github.com/AroundPeking/oh-my-LibRPA/tree/0c80d5809d82b60e31691779c2342cb0c063b548)
-is a separate reference for calculation workflows and diagnostics. Its MCP
-execution harness is not installed or invoked by this Skill. Any future
-integration must use the actual available interface and the user's task scope;
-this document does not import its admission machinery or execution defaults.
+## Choose evidence that distinguishes the change
+
+Follow the agreed acceptance scope. Before adding a test, identify a plausible
+error introduced by the change and why the existing cases would miss it. Reuse
+or extend an existing numerical end-to-end case and comparator when it can
+distinguish that error. Add a small full calculation for an uncovered producer
+or band path. Use a component test for a specific uncovered numerical or
+distributed invariant. Do not add dedicated input/output, file-reader, parser,
+log-format, source-text, invalid-input, or error-message tests. Numerical
+end-to-end regressions may read output files to compare physical results;
+that does not require separate tests of their I/O implementation.
+
+Reject malformed or unsupported input directly with a useful error. Keep the
+runtime checks needed to detect it before using the data, and propagate failures
+across participating MPI ranks. The absence of error-path tests is not a reason
+to omit those checks or silently accept invalid input. Apply the same testing
+scope to generic format helpers and avoid duplicate intermediate tests around
+an already validated workflow.
+
+Omit or remove redundant test additions within the change being prepared:
+checks that mirror implementation details, assert incidental output formatting,
+or repeat the same failure coverage without an additional relevant invariant.
+An end-to-end pass alone does not establish that every component test is
+redundant. Do not expand this cleanup into deleting unrelated upstream tests or
+other contributors' work. When removing an in-scope test, identify the retained
+coverage or obsolete behavior, and remove its unused registration/helper only
+after checking other callers. Do not add production abstractions solely to
+support a test that the requested behavior does not need.
+
+Choose controls that expose the suspected error: asymmetric mixing weights,
+more than one update for reference mutation, or nontrivial complex/distributed
+data for a changed matrix operation. Compare the relevant trajectory or spectrum;
+a stable gap alone can hide errors in other bands. See the
+[QSGW worked example](references/qsgw-cleanup.md) for these choices and their limits.
+
+Build the affected targets using the actual CMake configuration. Select tests
+from the current registrations and runner help; use a fresh output directory
+and matched input, frequency settings, MPI ranks, and threads. A source-only
+review needs no build, and a build or options-consistency check establishes no
+numerical result. If MPI behavior changes, include representative serial and
+multi-rank coverage appropriate to that path.
+
+Preserve the baseline and original references. On a numerical mismatch,
+distinguish changed controls, a new-code regression, and baseline variation;
+repeat the baseline if needed. Do not replace references or relax tolerances
+just to pass. Narrowing acceptance must still cover the requested behavior and
+explicitly retain the excluded failure. Once required checks pass, expand them
+only for a new change or unresolved concern.
+
+## Integrate and report the reviewed behavior
+
+When agent delegation is available and authorized, assign only independent,
+bounded tasks. Give each worker the checkout/base, relevant source or Skill,
+allowed files, and expected evidence. A review of input conventions can accompany
+kernel work without two writers changing the same files. The coordinator reviews
+the resulting diff and validates the combined tree; worker summaries alone do
+not establish integration correctness.
+
+Report the resulting behavior, the important source locations, checks actually
+performed, and remaining limits. Before delivery, review the full proposed diff,
+including build registrations, defaults, tests, and documentation. Remove
+incidental additions from the prepared change and report consequential deferred
+issues briefly; no separate audit file or checklist framework is required.
+For an authorized PR update, recheck its target
+and final combined tree after incorporating upstream numerical or dependency
+changes. Explain net behavior and shared-default effects; separate regression
+agreement from physical convergence. Keep useful evidence in the established
+working location without another recording protocol.
+
+When revising these development instructions, consult the
+[Codex/Kimi source study](references/agent-development-patterns.md). It explains
+the division between repository rules, task Skills, and executable checks. The
+QSGW example demonstrates particular development decisions; source walkthroughs
+of this Skill are not independent measurements of agent effectiveness.
