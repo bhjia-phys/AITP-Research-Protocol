@@ -64,6 +64,12 @@ Short labels such as "derived; awaiting review" are enough. When support differs
 one note, label the claim or section rather than the whole note. The researcher's own reading
 replaces an AI description. Check every locator against the source version cited.
 
+When several sessions contribute to one collection, give each substantive page one
+writer and collect proposed shared-index and navigation edits separately. The integrating
+session rereads the current shared file immediately before applying small exact changes.
+Preserve unrelated rows and review labels, then check the resulting links. This
+coordination can use ordinary proposal notes; it needs no permanent workflow registry.
+
 ## When to use it
 
 - **At the start of a theoretical derivation, a conceptual question, or a reading or
@@ -193,6 +199,14 @@ from it to the passage and know what that passage does. It records:
 Keep quoted text short. The source itself is the reference, so the reading points
 into it rather than reproducing it.
 
+Check locators in the exact edition used. A TeX search hit may be commented out or
+inside an inactive block; included files, custom section macros and reset counters can
+change the printed numbering. Distinguish printed page numbers from physical PDF pages.
+An equation label or distinctive search phrase locates a passage; it does not by itself
+establish the claim attached to it. When a collection must work without the originating
+workspace or network, retain or link the permitted local source copy and test that
+route. State when an anchor was checked in an external cache instead.
+
 A reading usually grows in two layers:
 - **A map of the source**, from a skeleton reading. It gives the source's chain of
   questions and the job of each section, a reading order by dependency, what the source
@@ -205,6 +219,15 @@ A reading usually grows in two layers:
   - what the section depends on and what uses it.
 
   Give each hard step its own heading, so that other notes can link to it.
+
+State the passages actually covered. A populated page, a checked locator, a completed
+source reading, a reconstructed proof, and the researcher's review are different facts.
+A section can be read completely while importing a theorem whose proof remains
+external; a selected calculation does not make the surrounding section completely read.
+When full source coverage is requested, account for omitted prose, footnotes and figure
+arguments as well as equations. A compact source-to-note checklist can help a large
+build, but is not required for ordinary notes. Keep unfinished coverage visible in the
+map and story; do not infer the reader's progress from authored material.
 
 How to read closely is in [learning from a source](../../aitp-writing/references/learning.md#read-a-source-closely).
 

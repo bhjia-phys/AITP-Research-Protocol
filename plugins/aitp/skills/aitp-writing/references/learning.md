@@ -75,13 +75,27 @@ reader cannot supply:
   line as quoted from the source, imported (with the theorem and its locator), or
   reconstructed (with how it was checked). Filled steps are where a written explanation
   most often errs.
+
+  A displayed calculation can inherit the attribution of its introducing block. Split a
+  block where its support changes; do not repeat a label on every mechanical line or
+  purely editorial heading. Put the substantial missing inference under the optional
+  try-first prompt and give it a stable heading for direct links. Keep routine
+  substitutions in the explanation. A question page should reach the needed atom, exact
+  source step and return to the question without requiring the reader to navigate an
+  entire bibliography.
 - **Two layers.** Gaps that block following the argument come first. Rigor gaps, such as
   domains, unbounded operators and truncations, can sit in an optional layer.
 - **Details worth remembering.** Record each briefly, with what it does and where it leads:
   a footnote that reveals a choice, a general statement made for later use, an analogy, a
   surprise, or an alternative route. Such a detail often explains a hard step.
-- **Compressions and claimed errors.** Mark the steps the source compresses. Keep any claim
-  that the source is wrong separate until an independent check confirms it.
+- **Compressions and claimed errors.** Mark the steps the source compresses. Distinguish a
+  wrong source formula from an error in the note, and distinguish both from a premise that
+  the source assumes without proving. Keep a source-error claim separate until an
+  independent derivation, limiting case or counterexample checks it; record the edition
+  and exact passage beside that step. Explain which downstream uses change and which
+  remain conditional. A counterexample to a general lemma does not automatically refute
+  the special physical family that motivated it. Keep unresolved research consequences
+  provisional under the shared-knowledge rules.
 
 **Let the reader steer.** The reader reads the section and marks where they got stuck, and
 those steps come first. For a load-bearing derivation, the reader's own rederivation is
@@ -112,6 +126,14 @@ carry the missing central argument. Link longer prerequisites with an explicit
 reading order when necessary, and keep enough local explanation to follow the
 present step. Apply [supporting-note guidance](supporting-notes.md) to the whole
 explanation, including its captions and exercises.
+
+Tie a check to the formula and inference actually written. Reusing the same mistaken
+expression on both sides does not test it. Where useful, compare with an independent
+identity or a case that distinguishes the proposed answer from a plausible wrong one:
+noncommuting densities, a nonzero boundary term, a complex phase, or a normalization
+fixed by a second method. State the reach of a finite calculation. It may refute a
+universal assertion, but a successful finite test does not prove an infinite-dimensional
+closure, domain, limit or gravitational-identification theorem.
 
 ## Use feedback and review to improve the next passage
 

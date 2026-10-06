@@ -66,6 +66,16 @@ and a particular step demonstrated in their response. Evidence for one step does
 not establish mastery of a whole topic. Use these observations to adapt locally;
 do not create learner scores, a mastery registry or a transcript by default.
 
+When evaluating a substantial learning collection, a fresh session can test whether its
+navigation and explanations support a new question or changed assumption. Give that
+session only the intended reader resources and keep the evaluator's expectations
+separate. Record the first unsupported inference, wrong transfer, or unreachable
+prerequisite and repair the explanation at that point. Distinguish a documentation-use
+test from an unaided attempt: if an answer key is visible, successful repetition is not
+independent reconstruction. Such trials diagnose an artifact; they do not demonstrate a
+human learner's mastery, speed or retention, and are not a default assessment workflow
+for ordinary conversation.
+
 When a persistent topic gains a useful explanation, corrected misconception or
 unresolved question, use memory and writing to keep it in its natural note.
 Record the researcher's learning preferences or difficulties only when they are

@@ -1,5 +1,40 @@
 # Validation and its limits
 
+## A large learning collection built in parallel, 2026-10-06
+
+Several fresh sessions extended a learning collection on an operator-algebra topic,
+built from public papers and lecture notes. Each owned its own pages: atoms, paper maps,
+section notes and story questions.
+
+**Review.** A fresh reviewer checked each builder's pages against the cached sources, and
+the builder fixed the findings.
+- **Locators:** about 3% of sampled locators failed before repair. These were wrong
+  sections or claims the passage did not support. No verbatim anchor was misquoted.
+- **Mathematics:** the reviewers found errors in reconstructed mathematics that the
+  existing check scripts had passed.
+- **After integration,** a random audit of about 10% of locators found 0.5% failing. The
+  failures were corrected.
+
+**Learning trials.** Four fresh sessions in a sandbox answered transfer questions using
+only a read-only copy of the collection. An independent scorer graded them against sealed
+expectations, and all four received full marks.
+
+**The guidance changes** respond to these observations:
+- coverage, checked locators, proof and review are recorded as distinct facts;
+- locators are checked in the exact edition;
+- checks must be able to fail;
+- a source error, a note error and an unproved premise are kept separate;
+- attribution is placed where support changes;
+- fresh-session trials are described as an optional diagnostic;
+- concurrent builders use single page ownership with proposed shared edits.
+
+**Limits:**
+- one topic and one model family;
+- the trials were open-book, so they test retrieval and transfer from the collection,
+  not a learner's mastery;
+- most section notes remain marked partial;
+- the builders' own self-checks missed errors the reviewers found.
+
 ## Main and supporting research-note redesign, 2026-10-05
 
 The redesign makes each main note develop its current argument: new evidence
