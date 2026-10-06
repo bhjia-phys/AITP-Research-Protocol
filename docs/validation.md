@@ -1,5 +1,267 @@
 # Validation and its limits
 
+## Main and supporting research-note redesign, 2026-10-05
+
+The redesign makes each main note develop its current argument: new evidence
+replaces the passage it changes, while detailed setups, repeated measurements
+and historical observations remain in linked support. Guidance distinguishes
+computational campaigns, formal theory, learning, branches and deliverables,
+with synthetic worked edits showing placement and correction propagation.
+
+Fresh `codex exec` subjects ran ordinary research requests inside a filesystem
+boundary containing one disposable case and read-only frozen AITP skills.
+Guidance digests, sealed expectations, complete transcripts and pre/post file
+inventories were retained. A separate scorer reviewed answers and artifacts
+independently of the subject sessions; that scorer also authored fixtures, so
+this was not a blinded external audit. Live notes and sealed answers were outside
+the subjects' filesystem view.
+
+| Round | What was tested | Result |
+| --- | --- | --- |
+| First retrieval round | 14 before/after retrieval runs on two pilot notes | All scored 8/8 without material overclaim; both editions supported correct retrieval |
+| First editing round | 6 updates, polling, correction and handoff tasks | 4 passed; a support-only clarification unnecessarily changed the main note, and a correction missed an unlinked dependent use |
+| Version 2 | 8 runs, including 2 replacement held-outs and retrieval regressions | 6 passed; the two remaining failures duplicated detailed report setup in the main note despite correct scientific integration |
+| Version 3 | 4 editing runs: two re-tests and two new held-outs | All passed, including setup ownership, provisional scope, index restraint and evidence preservation |
+| Final reading verification, using frozen version 2 | 8 runs on real-note copies, including 2 before/after pairs | 7 scored 8/8; one scored 7/8 by omitting an explicitly stated method-order condition. No material overclaim or research write |
+
+Retrieval required four answers scored 0/1/2, with 8/8 and no material overclaim
+to pass. Editing conditions were conjunctive. Earlier scores were retained when
+later rounds added explicit editorial gates.
+
+Version 2 clarified leaving an already accurate main passage alone, searching
+aliases and unlinked dependent claims when correcting results, updating only
+affected index entries, and keeping full setups in support. Version 3 explicitly
+extended setup ownership to first provisional values and inherited pending
+passages. Rollout review also prompted a clarification that unchanged headings
+already supply anchors. Exposed candidate held-outs were retired before execution;
+replacements were authored after the guidance freeze. Version 3's subjects ran
+concurrently despite the prescribed re-test-first order, with unchanged sealed
+guidance and separate case mounts.
+
+The rollout restructured 15 main notes, adapting usable existing text to each
+note's purpose. Every restructure was independently reviewed, and incoming links
+were verified. All 15 are applied. Four notes that live sessions were still editing were
+applied only after the researcher paused those sessions and their edits were
+merged into the restructure.
+
+Limits: one subject per case and one model family; no old-versus-new guidance
+arm. Before/after reading-volume and timing differences are descriptive, not
+causal estimates. Explicit skill loading varied across reading subjects.
+Editing results used synthetic observations; they do not validate the underlying
+science. Reduced fixtures caused some optional-asset detours. Boundary probes
+were reused rather than repeated for every run, and filesystem isolation does
+not establish network isolation. The small editing cases do not independently
+validate anchor handling during large restructures. Strict plugin validation
+and Markdown consistency checks passed after this entry was added.
+
+## Research results as pointers into research notes, 2026-10-05
+
+At the researcher's request, research now reaches the shared collection only through
+citations, so that research errors do not spread into it:
+- A result enters as a provisional index row that cites the research note and names the
+  question, not the result.
+- An atom is written from research only after the researcher confirms the result.
+- Rows are updated whenever a cited research note is corrected, withdrawn, moved or
+  renamed.
+- The researcher's collection gained a report-only link checker.
+
+Fresh `claude -p` sessions were run with write access in complete isolated copies:
+
+| Task | Result |
+|---|---|
+| Record a numerical finding (old rule) | Provisional row, no atom, but the row restated the result |
+| Same, after the question-not-result rule | The row names only the question and cites a new subsection; no atom |
+| Fix links after a cited research note was renamed | All topic links and the index row updated; anchors checked |
+| Correct a recorded finding that proved wrong | Dated correction in the research note, failed route kept; row rewritten to the question with the correction; status kept |
+
+Shell writes needing approval were refused, and the sessions used ordinary edits. No
+session ran the checker unprompted.
+
+Real use between runs supported the rule. Other sessions added provisional research rows
+that cited their notes as designed. One of them grew to about 4,000 characters of
+evolving results, including live job status: the stale copy the new rule prevents.
+
+Limits: one session per test, one host. Strict validation passed.
+
+## Real-work writing sessions for shared knowledge, 2026-10-03
+
+Fresh `claude -p` sessions were given real tasks with write access:
+- **Tools:** Skill, Read, Glob, Grep, Edit, Write; `acceptEdits`.
+- **Workspace:** an isolated copy of a researcher's collection and topics, with writes to
+  the real tree denied.
+- **AITP:** loaded from this checkout.
+- **Requests:** ordinary ones that named neither the collection nor AITP.
+
+Five tasks were run. Failing behaviours were fixed and the tasks re-run:
+
+| Task | Problem found | Fix | After |
+|---|---|---|---|
+| Record a numerical-methods finding | The topic note was integrated well, but nothing went to the collection; the session only offered | The research route covers methodological and numerical work, decided in the same pass as the topic note | An index row added with origin and review state |
+| Write close-reading notes for one section | Step-level note followed the guidance, but there was no paper map | The rule that a map may start as a stub, also stated in the collection's README and section template | Map stub created, and the section note links it |
+| Set up a learning topic | none | — | One main note as a story; index entry; unverified identifiers labelled |
+| Answer a "remind me why" question | Correct answer, but the collection was never read | "Conceptual question" added to the start-of-task trigger | Read the index and atom, and answered from it |
+| Correct a planted overclaim in an atom | Correct sourced fix, but no visible correction | Correction rule stated at the top of the collection's index and in the workspace instructions | Dated correction line, qualified index row, other uses searched |
+
+Main lesson: for collection tasks, sessions follow the workspace instructions and the
+collection's own index, README and templates. They often never load the Skill reference.
+The shared-knowledge reference now says the collection's README should state its working
+rules.
+
+Limits:
+- one host, one model, one session per variant;
+- some re-runs used the previous round's files;
+- Codex, Hakimi and interactive permissions were not tested.
+
+Strict validation passed after the edits.
+
+## Self-consistency pass after the shared-knowledge changes, 2026-10-02
+
+After the day's changes, every Skill, reference, starting file, both READMEs and the two
+explanatory docs were reread for contradictions. Fixes:
+- **One vocabulary.** Atom, index row, source reading, story and author collection replace
+  "concept note/row", "standalone concept or theorem note", "reading note" and "discovery
+  entry".
+- **Two label axes.** What supports a claim (derived, source or unchecked) is separate from
+  who has reviewed it.
+- **One main note per learning topic,** either `research.md` or a story.
+- **The retained Witten corpus analysis** is labelled design history, not an author
+  library.
+- **Stale statements corrected.** Two READMEs still had the old obstacle-only collection
+  trigger. `docs/transition.md` counted four Skills instead of six core Skills.
+- **`docs/when-to-write.md`** gained rows for close reading, stories, the research route
+  and exemplar authors.
+
+A read-only Codex review (`gpt-6-astra`) of the whole plugin then reported 14
+inconsistencies, three of them high. All were checked against the files, confirmed and
+fixed:
+- **High:**
+  - close reading had made the learner's attempt sound compulsory;
+  - a move's correction waited for repeated failures, unlike distillation;
+  - the packaged README kept the old trigger.
+- **Medium:**
+  - the support labels did not fit source-backed explanations;
+  - technique atoms overlapped with Skills;
+  - the reuse test was too absolute for stated-condition examples;
+  - reading placement lacked a single rule, including a fallback without a collection;
+  - several reads triggered writes unconditionally;
+  - index updates were required for routine edits;
+  - `research.md` was assumed as the learning main note;
+  - the row-only case lacked a link rule.
+- **Low:**
+  - the story form read as mandatory;
+  - "core" was used inconsistently;
+  - three moves lacked failure conditions.
+
+A second read-only pass by the same reviewer found 13 findings resolved and one partly
+resolved. That one was the theory template's placement of existing readings. The pass also
+found one new conflict: a repeat-lookup restriction that excluded the pre-creation coverage
+check. Both were then fixed.
+
+Strict plugin and marketplace validation passed, and all 239 links and heading anchors in
+the plugin, READMEs and docs resolve. These are document-consistency checks. They do not
+show that agents follow the guidance better.
+
+## Adding what research teaches to shared knowledge, 2026-10-02
+
+The story vocabulary below serves reading and study, but most shared entries come from
+research. The shared-knowledge section on growing the collection became "Add what research
+teaches", reorganized without dropping its earlier rules. It covers:
+- the test of reuse without the topic's own assumptions;
+- checking what the index and the topic already record;
+- the lightest form that works: an index row, an atom of the right kind, or the research
+  note itself as the home;
+- provenance, meaning origin, checks and review state;
+- links in both directions;
+- passages read closely during research going into the source's reading;
+- corrections made where the error lives;
+- the rule that a research topic needs no story.
+
+Research, memory and supporting-note guidance now point to it.
+
+A fresh read-only `claude -p` session in a research-topic folder was given a real
+numerical-stability finding. It was asked whether and how to record it beyond the topic,
+without naming the collection or AITP. It:
+- read the collection index and README, and applied the reuse test;
+- kept the research note as the primary home, including correcting an earlier claim;
+- proposed a technique atom with its origin and an awaiting-review state, and an index row
+  added in the same edit that extends the existing related row;
+- explained why the finding is knowledge rather than a Skill, and wrote nothing.
+
+It did not check the topic's own notes for an existing record before proposing a home.
+The "check what is already recorded" sentence was added in response. That sentence has not
+been retested. Strict plugin validation passed.
+
+## Close reading, stories and atoms in shared knowledge, 2026-10-02
+
+The shared-knowledge guidance gained a vocabulary of entries:
+- atoms: one concept, theorem, technique, example or result each;
+- source readings: a map from a skeleton reading, plus section notes;
+- stories: a learning topic's main note, told as a chain of questions;
+- author collections, which now also record how an author organizes a paper.
+
+The index is grouped by area, and each entry names its kind. The writing guidance gained
+a close-reading procedure:
+- the unit is a step of the argument, including claims made only in prose;
+- hard steps are filled under a "try first" prompt, each added line labelled quoted,
+  imported or reconstructed;
+- rigor gaps form an optional layer;
+- notable details and compressions are recorded;
+- claims that a source errs are kept separate until independently checked.
+
+The exemplar guidance gained the study of an author's organization: skeleton reading,
+section jobs, and the handling of prerequisites, derivations, details and discussion.
+None of this prescribes a directory layout.
+
+These changes came from a private pilot: a researcher's collection and an agent's close
+reading of two papers. In that pilot:
+- every verbatim anchor of the organization record was checked against the source TeX;
+- the close reading found a missing truncation in one cyclicity argument and a swapped
+  derivative and logarithm in a displayed formula. Both were confirmed by a second model.
+
+Strict plugin and marketplace validation passed. Links and heading anchors in the Skill
+files resolve, apart from one pre-existing illustrative path in the citation guide.
+
+One fresh read-only `claude -p` session was run in a research-topic folder, with the
+collection as an allowed directory. It was asked where close-reading notes for a paper
+section should live and what they should contain, without naming the collection or AITP.
+- It read the collection index first, then the README describing the kinds of entry, and
+  found the section and paper templates and the existing atoms.
+- It placed the reading where the collection's README says, and proposed linking the atoms
+  rather than restating them.
+- It listed the step-level contents the guidance names: coverage, hard steps under a
+  "try first" prompt, notable details and compressions. It noted that index rows change in
+  the same edit, and wrote nothing.
+- It could not open linked material outside its allowed directories.
+
+This is one read-only trial of one host. It does not test writing, Codex or Hakimi copies,
+or whether the format improves learning.
+
+## Shared knowledge read at the start of theoretical work, 2026-10-01
+
+The shared-knowledge guidance was rewritten. A collection now holds concept
+explanations, source readings with checked locators, and optional author moves,
+indexed by one README. Theoretical derivation, reading and study tasks read that index
+once at the start, instead of consulting it only at a recognized obstacle. The local
+collection gained a Witten source collection and concept rows pointing into it.
+
+Three fresh `claude -p` sessions were run in research-topic folders, with read-only
+tools (Skill, Read, Glob, Grep), no MCP and no session persistence. They were asked
+ordinary study questions that named neither the collection nor AITP.
+- In every session the first action was to read the collection index, including in a
+  topic that had never linked to it.
+- In the first session the read was denied, because the collection lies outside the
+  working directory and a non-interactive session cannot request permission.
+- With the collection added as a readable directory, both remaining sessions built
+  their answers on the matching rows and kept the rows' support labels. Each offered to
+  retain a missing derivation as a linked note.
+- One session left unresolved a point that a linked PDF settles. This suggests that a
+  row's scope sentence should carry its key result.
+
+These are three read-only trials of one host. They do not test retention edits,
+interactive permission handling, Codex or Hakimi installed copies, or scientific
+correctness. Hosts that confine file access to the working directory need the
+collection added as an allowed directory.
+
 ## Claude Code installation, 2026-09-27
 
 The development plugin gained a native Claude manifest and repository marketplace,

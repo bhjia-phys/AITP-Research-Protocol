@@ -5,14 +5,15 @@ method or experiment. Locate related material first. One file can serve several
 of the roles below; these are writing choices, not mandatory document types or
 directories. A short explanation can stay in the main note.
 
-| Role | What makes the note useful |
+| Role | Necessary substance |
 | --- | --- |
-| Concept or background | A concrete reason to introduce the object, precise definition and conventions, a worked example, and limits of the analogy. |
-| Literature reading | The question answered by the source, the inspected passage and locator, its hypotheses, convention translations and relevance to the topic. |
-| Derivation or proof | The exact claim, assumptions, mechanism, justified steps, and the conditions under which the conclusion follows. |
-| Method or implementation | The mathematical operation, representation and approximation, relevant code entrypoints, and a comparison that tests the operation. |
-| Calculation and analysis | The question tested, settings actually used, inputs and output locations, defined observables and errors, results and interpretation. |
-| Exploratory branch | Why the route was plausible, what was established, the obstruction or missing step, and the remaining conditions for continuation. |
+| Concept or teaching companion | Prerequisites, concrete difficulty, definitions and conventions, worked reasoning, intended capability and connection to the research passage. |
+| Source reading | Source/version and inspected passages; question answered, hypotheses, convention translations, and source argument distinguished from local reconstruction. |
+| Derivation or proof | Precise claim, assumptions and conventions, imported inputs with locators, consequential steps, meaningful checks, result and scope. |
+| Method or implementation | Mathematical operation, representation and approximation, operative code/version boundary, inputs and outputs, reproducible use, validation and unsupported cases. |
+| Experiment or run report | Question tested, actual inputs and source/executable identities, settings and measurement definitions, output locations, observations, failures and interpretation at that time. |
+| Analysis across runs | Why comparisons are meaningful, uncertainty treatment, selected evidence, conclusions and unresolved alternatives. |
+| Side investigation or earlier route | Origin and rationale, relationship to the main question, surviving results, failure or changed relevance, corrected interpretation, evidence and reopening or resumption condition. |
 
 Failures belong where their reasons are explained. A rejected ansatz does not
 require a separate failure directory. Several attempts at the same question
@@ -122,15 +123,27 @@ as an exercise is insufficient for a self-study explanation. Keep routine algebr
 compact once its operation is established. Scientific correctness and whether a
 reader can follow the explanation need separate judgments.
 
-Name the parent topic where it explains the purpose, without making the argument
-depend on that project's latest status. Introduce prerequisites at the point of
-need, with a short local explanation and a link for depth.
+The opening identifies the question, setting, intended result and relationship to
+the parent where useful. The ending says what follows, what remains unsupported
+and any meaningful continuation. Neither relies on the original conversation or
+copies the parent's changing project summary. Introduce prerequisites at first
+use, with a short explanation and a link for depth.
 
-For a reusable concept or theorem, follow
-[shared theoretical knowledge](../../aitp-memory/references/shared-knowledge.md).
-A concept note teaches an object; a theorem note states quantified hypotheses
-and proves or precisely attributes a claim about those objects. Split them only
-when each has a substantial independent use. A theorem name or dictionary
+Prefer stable descriptive filenames such as `response-partition-derivation.md`;
+reserve dates or run identifiers for experiments and frozen editions. Preserve
+established names unless changing them materially improves discovery. Split
+independently useful questions, different maintenance needs, or a stable method
+from expanding experimental history. Merge when notes repeatedly restate the
+same assumptions and answer or require navigation to reconstruct one calculation.
+A report combining a discrepancy and its explanatory derivation may work best intact.
+
+For a reusable concept, theorem or technique, follow
+[shared theoretical knowledge](../../aitp-memory/references/shared-knowledge.md): it
+first receives a provisional index row naming the question and pointing into this
+note; a research result becomes an atom only after researcher confirmation. An atom about a concept
+teaches an object; one about a theorem states quantified hypotheses and proves or
+precisely attributes a claim about those objects. Split them only when each has a
+substantial independent use. A theorem name or dictionary
 definition alone is not a graduate-level explanation.
 
 For an experiment, explain what each comparison discriminates and connect its
@@ -146,7 +159,12 @@ term invalidates the proposed extension; the linked derivation identifies the
 surviving term." Use [citation conventions](citations.md) for formulas and sources.
 
 A supporting note connects its own claims to deeper explanations and original
-assets. Direct main-note links to a paper, figure or code file are also useful;
+assets. When part of its explanation is useful beyond the topic, with its assumptions
+stated, the shared collection's index can cite it, marked provisional. Once the researcher
+confirms it, that part can become a shared atom, with the supporting note keeping the
+application and linking to it
+([what research teaches](../../aitp-memory/references/shared-knowledge.md#add-what-research-teaches)).
+Direct main-note links to a paper, figure or code file are also useful;
 no intermediate Markdown file is required merely to wrap a link. Keep a figure
 beside its generating analysis when practical, and identify the data and script
 in its caption or nearby prose. A local source path plus a function name is more
@@ -157,6 +175,12 @@ outgoing relative links and affected incoming references. Preserve the original
 scientific assets and historical run observations. A substantive correction
 changes dependent claims as well as the last paragraph of the supporting note.
 
+A maintained explanation states the current interpretation; a dated report records
+what was observed then. Correct dependent maintained claims without rewriting frozen
+observations to agree with a new conclusion. The [worked correction](worked-note-edits.md#formal-a-failed-descent-and-a-surviving-lemma)
+shows a derivation, its main-note implication and a separate application changing
+together, while the failed argument remains discoverable.
+
 ## Correct claims and keep earlier routes findable
 
 Update according to the changed claim, in either direction between main and
@@ -166,13 +190,14 @@ the explanations and applications that actually depend on it. Understand each
 affected note's argument before revising it; matching a term is not evidence that
 its conclusion fails under the same assumptions.
 
-Search relevant note collections for the changed claim, its terminology or
-aliases, and the affected file's name and incoming links. Include retained notes
-that the current main note no longer cites. Start with the current topic, the
-shared explanation and known dependent topics; follow substantive dependencies
-as needed. Do not scan all assets or recursively audit the entire knowledge graph
-for an ordinary revision. If the consequences reach beyond the work completed,
-identify the known uses still needing review instead of claiming full consistency.
+Search relevant notes for the changed claim, alternate names of its objects and
+operation, and the affected file's name and incoming links. Include uncited uses.
+Open each plausible application: a filename or search hit is not an inspected
+dependency. If broad output obscures candidates, narrow by filename or terminology
+and read those passages before declaring the correction complete. Start with the
+current topic, shared explanation and known dependent topics; follow substantive
+dependencies without scanning all assets or the entire knowledge graph. Identify
+known uses still needing review instead of claiming full consistency.
 
 When an error is established, correct the affected statement and conclusions in
 the maintained note. Preserve a short explanation of the rejected step when it
@@ -183,7 +208,7 @@ search may land there directly. Do not leave a known false claim unqualified unt
 a future search. If the objection is unresolved, state the precise doubt and
 needed check without declaring the whole note false or inventing a replacement.
 Keep original PDFs, raw outputs and frozen evidence intact; place their changed
-interpretation in the maintained companion or discovery entry.
+interpretation in the maintained note, source reading or index row.
 
 Removing a citation is a change of relevance, not a deletion request or a verdict
 on correctness. Keep useful omitted detail, abandoned approaches and their assets

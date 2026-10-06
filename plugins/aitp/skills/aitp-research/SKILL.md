@@ -80,6 +80,9 @@ discriminating question call for revisiting the method, not a larger scan.
   and validating a numerical implementation.
 - [Method placement and discovery](references/method-library.md): find or retain
   a focused procedure under its research domain.
+- [Exemplar authors](references/exemplar-authors.md): the researcher wants to learn
+  from chosen authors, or keeps an index of an author's passages that could suggest
+  the next decisive calculation.
 
 Read only the resources needed for the current task.
 Keep machine-specific setup in the project's environment instructions. A known
@@ -113,23 +116,30 @@ the main note retains the line of reasoning.
 Distill a Skill only when the work teaches a reusable operation, such as checking
 an anomaly under stated assumptions, rather than a summary of a theorem.
 
-## Consult shared theory only when it helps
+## Start theoretical work from shared knowledge
 
-During theoretical derivation or learning, including the theoretical part of a
-numerical project, consult shared explanations for a conceptual obstacle, a
-questioned assumption, or a useful previous treatment. Continue a fluent
-derivation with the context already available. A theoretical term alone does not
-trigger a search; routine coding, job handling and plotting do not trigger this
-concept workflow. Their normal research-memory and source checks still apply.
+Begin a theoretical derivation, a conceptual question, or a reading or study task,
+including the theoretical part of a numerical project, from what is already understood. When the researcher
+keeps a [shared collection](../aitp-memory/references/shared-knowledge.md), read its
+index once at the start, then open the entries for the task's central concepts and
+sources. Reuse their conventions or state the difference. This is one bounded read
+per task. After it, continue a fluent derivation without further searches. Consult the
+collection again for a conceptual obstacle, a questioned assumption, or the coverage check
+before creating an atom; that check can reuse the initial read when it already covers
+the proposed entry.
+Routine coding, job handling and plotting do not trigger this. Their normal
+research-memory and source checks still apply.
 
-Use memory's [shared-knowledge guidance](../aitp-memory/references/shared-knowledge.md)
-to locate and compare explanations when needed. Check for an existing treatment
-before creating a standalone concept or theorem note, not before every reasoning
-step. Read-only reuse needs no update. Separately, when work produces a useful
-new explanation, correction or reusable connection, retain it at a natural
-pause even if no library lookup or conceptual obstacle occurred. Use memory to
-choose its primary home and writing for the revision; preserve fragile reasoning
-sooner if necessary. In learning, understanding is itself
+When the task reads a paper or lecture, start from its reading in the collection
+if one exists. When the session establishes something new, leave the reading improved:
+locators checked, what the passage establishes, and the index rows it serves. For close reading, use
+[learning from a source](../aitp-writing/references/learning.md#read-a-source-closely).
+Check for an existing atom before creating one. Read-only reuse needs no update.
+Separately, when work produces a useful new explanation, technique, correction or
+reusable connection, retain it at a natural pause even if no library lookup or
+conceptual obstacle occurred, as described under
+[retaining the result](#retain-the-result-and-reusable-learning). Preserve fragile
+reasoning sooner if necessary. In learning, understanding is itself
 the task; in research, develop background to the depth needed by the current
 argument. Do not expand either task into routine library maintenance.
 
@@ -138,7 +148,17 @@ argument. Do not expand either task into routine library maintenance.
 Explain the supported conclusion, decisive evidence, limits and useful next
 step. At a natural pause or handoff after consequential work, apply memory's
 [write decision](../aitp-memory/SKILL.md#timing-and-recovery) to both the research
-argument and any transferable learning. Notice a demonstrated non-obvious
+argument and any transferable learning. Some results could be used by another question
+beyond this topic, with their assumptions stated: a derivation, a technique (theoretical
+or numerical), an example, a counterexample or a correction. These belong in the
+researcher's shared collection as well. They go there as an index row citing the research
+note's section and naming the question rather than restating the result, marked
+provisional and awaiting review. The research note stays the single
+home of the claim, and an atom is written only after the researcher confirms the result.
+When a collection exists, decide this in the same pass as the topic note; it does not
+need a separate request. See
+[what research teaches](../aitp-memory/references/shared-knowledge.md#add-what-research-teaches),
+which also says where a passage read closely during the work should go. Notice a demonstrated non-obvious
 choice, diagnostic sequence, failure-prevention method or correction to an
 existing procedure; use [aitp-distill](../aitp-distill/SKILL.md) when it teaches
 a reusable operation. Do not wait for an explicit distillation request or repeat

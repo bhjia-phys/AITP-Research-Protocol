@@ -177,6 +177,18 @@ theorems. Reader feedback guides later explanations. A learning note may start
 small and grow into a synthesis. Journal typography does not change its reader
 or justify compressing away the teaching steps.
 
+[Close reading](plugins/aitp/skills/aitp-writing/references/learning.md#read-a-source-closely)
+works in two passes:
+1. A skeleton reading maps the source's chain of questions.
+2. Section notes follow the argument step by step, including claims made only in prose.
+   Hard steps are filled in under a "try first" prompt, notable details and compressions
+   are recorded, and the reader's own sticking points come first.
+
+A learning topic's single main note can be told as a story of questions. When the
+researcher chooses authors to learn from, [exemplar authors](plugins/aitp/skills/aitp-research/references/exemplar-authors.md)
+keeps an index of their moves and a record of how they organize a paper, in the
+researcher's own collection. AITP has no default author.
+
 Use `aitp-writing` to explain, draft or revise the scientific argument. It keeps
 the former Witten-style emphasis on faithful examples, explicit central
 derivations and assumptions at their point of use. Formal theory follows the
@@ -203,16 +215,32 @@ distinguishes concepts, source readings, proofs, methods, calculations and
 exploratory branches without imposing document schemas.
 [Citation conventions](plugins/aitp/skills/aitp-writing/references/citations.md)
 use local equation numbers and meaningful file links; precise rendered anchors
-depend on the reader. A [shared theoretical collection](plugins/aitp/skills/aitp-memory/references/shared-knowledge.md)
-may live outside individual topics. Consult it when theoretical derivation or
-learning needs an explanation; a theoretical term or routine numerical operation
-does not trigger a search. Before creating a standalone concept or theorem note,
-check the existing entry and relevant notes using names and related terms. Reuse
-needs no write. Independently of whether a lookup was needed, retain a new
-explanation, derivation or correction with reusable scope at a natural pause,
-updating the relevant primary note and discovery entry. A complete explanation
-can remain in its topic with a shared entry link. No database or recursive
-loading is required.
+depend on the reader.
+
+A [shared theoretical collection](plugins/aitp/skills/aitp-memory/references/shared-knowledge.md)
+may live outside individual topics. It holds:
+- atoms: one concept, theorem, technique, example or result each;
+- source readings: a paper map plus section notes;
+- stories for learning topics;
+- optional author collections.
+
+One index lists these by area. At the start of a theoretical derivation, a conceptual
+question, or a reading or study task, read that index once and open the entries the task
+needs. After that, a theoretical
+term or a routine numerical operation does not trigger another search. Before creating an
+atom, check the existing entry and relevant notes using names and related terms. Reuse
+needs no write.
+
+Most entries come from research. At a natural pause, and whether or not a lookup was
+needed, retain an explanation, technique, derivation or correction that another question
+could use beyond the topic, with its assumptions stated. It enters as an index row that
+cites the research note and names the question rather than restating the result, marked
+provisional. The research note stays the single home, so its
+corrections apply at once. A shared atom is written from it only after the researcher
+confirms the result. Review rows when their cited note changes; update only affected
+locations, scope, support, review state or qualifications. A link check reports stale
+targets. The collection's kinds are a vocabulary, not a
+directory layout. No database or recursive loading is required.
 
 Research notes keep useful links to working assets. Only an explicit manuscript
 request activates the [Note-to-LaTeX guidance](plugins/aitp/skills/aitp-writing/references/manuscripts.md),

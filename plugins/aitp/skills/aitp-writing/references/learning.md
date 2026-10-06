@@ -31,7 +31,10 @@ Keep formal manipulations and physical assumptions identifiable at their use.
 ## Keep a primary reading thread
 
 When learning an existing lecture or paper, retain its argument as the current
-thread and identify the relevant version, section and equation. Explain the
+thread and identify the relevant version, section and equation. If the shared
+collection has a reading of the source, start from it, and improve it when the session
+establishes something new; see
+[source readings](../../aitp-memory/references/shared-knowledge.md#keep-source-readings-usable). Explain the
 problem that motivates the passage before expanding its steps. Preserve the
 source and write complementary explanations at useful logical boundaries;
 wholesale rewriting or a multi-source survey is not the default.
@@ -48,6 +51,44 @@ the connections established so far and the remaining obstacles. Put sustained
 reading and calculations in supporting notes and integrate their implications
 when they change that account. A concise main note does not constrain the length
 of a teaching derivation.
+
+## Read a source closely
+
+To study a source in depth, read it in two passes.
+
+**First, a skeleton reading.** Read the introduction's opening and ending, all section
+titles, and the first and last sentences of each section. Write the source's chain of
+questions and the job of each section. This map sets the reading order, which can follow
+dependencies rather than the source's own order. For example, a finite-dimensional
+section can be read before the general section it motivates.
+
+When the first section note of a source is written and the source has no map yet, create
+one. A stub is enough: the version, the section list, and a link to the note. Complete the
+skeleton as the reading extends.
+
+**Then read section by section.** The unit is a step of the argument, whether a displayed
+equation or a sentence; gaps often sit in prose such as "in exactly the same way". Read
+every sentence, footnote and equation, and record that coverage. Write out only what the
+reader cannot supply:
+
+- **Hard steps.** Fill each in completely, under a prompt to try first. Label each added
+  line as quoted from the source, imported (with the theorem and its locator), or
+  reconstructed (with how it was checked). Filled steps are where a written explanation
+  most often errs.
+- **Two layers.** Gaps that block following the argument come first. Rigor gaps, such as
+  domains, unbounded operators and truncations, can sit in an optional layer.
+- **Details worth remembering.** Record each briefly, with what it does and where it leads:
+  a footnote that reveals a choice, a general statement made for later use, an analogy, a
+  surprise, or an alternative route. Such a detail often explains a hard step.
+- **Compressions and claimed errors.** Mark the steps the source compresses. Keep any claim
+  that the source is wrong separate until an independent check confirms it.
+
+**Let the reader steer.** The reader reads the section and marks where they got stuck, and
+those steps come first. For a load-bearing derivation, the reader's own rederivation is
+the best note; the written filled step is its answer key.
+
+A learning topic's main line can then be told as a chain of questions that links into
+these readings; see [stories](../../aitp-memory/references/shared-knowledge.md#tell-a-learning-topic-as-a-story-of-questions).
 
 ## Develop one result far enough to use it
 

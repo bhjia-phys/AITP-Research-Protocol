@@ -98,14 +98,25 @@ would change scientific scope use human brainstorming first.
 
 Use [supporting-note writing](skills/aitp-writing/references/supporting-notes.md)
 for detailed explanations and [citation conventions](skills/aitp-writing/references/citations.md)
-for equations and evidence links. Reusable concepts and theorems can live in an
-optional [shared collection outside topics](skills/aitp-memory/references/shared-knowledge.md).
-Consult it for an actual need during theoretical derivation or learning, including
-theory within numerical work. Check for an existing explanation before creating
-a standalone concept or theorem note. A short README entry with related terms
-helps another topic find it. Reuse needs no write; retain useful new explanations
-or corrections at a natural pause even if the work needed no library lookup.
-A complete topic explanation can gain a shared entry link without relocation.
+for equations and evidence links. Reusable understanding can live in an optional
+[shared collection outside topics](skills/aitp-memory/references/shared-knowledge.md).
+It holds:
+- atoms, each one concept, theorem, technique, example or result;
+- source readings, as a paper map plus section notes;
+- stories for learning topics;
+- optional author collections.
+
+One index lists these by area. Read the index once at the start of a theoretical
+derivation, a conceptual question, or a reading or study task, including theory within
+numerical work. Check it before creating an atom. Reuse needs no write.
+
+At a natural pause, retain a new explanation, technique (theoretical or numerical) or
+correction that another question could use. Decide this in the same pass as the topic
+note, even if the work needed no lookup. It enters as an index row
+that cites the research note and names the question rather than restating the result,
+marked provisional. A shared atom is written from it only after
+the researcher confirms the result. Review rows when their cited note changes; update
+only affected locations, scope, support, review state or qualifications.
 Link prerequisites, related ideas and applications in ordinary
 prose, following only what the current argument needs.
 

@@ -8,8 +8,9 @@ the same question and its freshness is adequate.
 
 ## Choose a source and a tool for the missing information
 
-Use an already available local paper or reading note when it contains the needed
-passage. When locating or verifying literature, choose the available tool by the
+Use an already available local paper, or its reading in the researcher's
+[shared collection](../../aitp-memory/references/shared-knowledge.md#keep-source-readings-usable),
+when it contains the needed passage. When locating or verifying literature, choose the available tool by the
 question; MCP is an access mechanism, not an additional research stage:
 
 | Need | Suitable available source or tool |
@@ -47,7 +48,10 @@ page that supports the claim. Distinguish the paper's result from the inference
 made for this topic. Note a convention translation where it is used. A citation
 to a whole PDF cannot substitute for finding the required hypothesis.
 
-Integrate useful background into the main argument or a linked concept note.
+Integrate useful background into the main argument or a linked supporting note.
+Background useful beyond the topic, with its assumptions stated, can become a shared
+atom. A passage read closely can become part of that source's reading; see
+[what research teaches](../../aitp-memory/references/shared-knowledge.md#add-what-research-teaches).
 Do not create one compulsory summary per downloaded paper. A small literature
 map is useful when it explains which source answers which part of the question.
 Downloaded papers retain their own licenses; link them rather than redistributing

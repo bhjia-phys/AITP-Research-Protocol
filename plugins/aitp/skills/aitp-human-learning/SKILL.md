@@ -14,7 +14,16 @@ a standalone explanation needs no new research folder.
 ## Establish the useful depth
 
 Recover the actual question, known prerequisites and requested outcome from the
-conversation and relevant notes. Distinguish understanding the physical mechanism,
+conversation and relevant notes. When the researcher keeps a shared knowledge
+collection, read its index once and use the entries for the concepts and sources
+being studied. When studying a paper or lecture, start from its reading there if
+one exists. Record what the session establishes in that reading, with checked
+locators and with the researcher's own corrections marked as theirs; see
+[shared knowledge](../aitp-memory/references/shared-knowledge.md#keep-source-readings-usable).
+For in-depth study of a source, follow [close reading](../aitp-writing/references/learning.md#read-a-source-closely):
+a skeleton first, then step-level section notes, with a prompt to try each hard step
+before its filled version. The attempt is an invitation, not a gate: deliver the requested
+explanation either way. Distinguish understanding the physical mechanism,
 reproducing a calculation and proving a result. Different steps may need different
 depth. A graduate-level label alone does not identify what the learner knows.
 
@@ -61,8 +70,8 @@ When a persistent topic gains a useful explanation, corrected misconception or
 unresolved question, use memory and writing to keep it in its natural note.
 Record the researcher's learning preferences or difficulties only when they are
 explicitly expressed and useful for resumption; do not invent a learner profile.
-The main `research.md` retains the connection to the broader question and the
-next unresolved inference, while substantial teaching derivations have linked
+The topic's main note, its `research.md` or a story in the shared collection, retains the
+connection to the broader question and the next unresolved inference, while substantial teaching derivations have linked
 supporting homes. Ordinary clarification may need no file write.
 
 If learning reveals a consequential choice about the research goal or route,

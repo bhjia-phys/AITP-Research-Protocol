@@ -18,8 +18,8 @@ from the main note and its evidence. Add an ordinary relevant link for discovery
 there is no registry or knowledge-card layer. Links from `aitp-research` provide
 portable discovery. Host catalogs can differ: Codex can also expose a nested
 `SKILL.md` directly, while Hakimi loads the containing research Skill as one
-bundle. There are four core roles, but not necessarily only four selectable
-Skills in every host. A directly selected method still starts with memory for
+bundle. AITP has six core Skills, but a host may list more selectable Skills,
+such as a directly exposed nested method. A directly selected method still starts with memory for
 research-topic work. Do not edit an installed plugin cache as its durable home.
 
 Generalizing a procedure does not authorize publishing its motivating research

@@ -5,10 +5,17 @@ prompts with a connected argument and use informative section titles. Merge or
 remove unused sections; a beginning need not resemble completed research.
 For learning, use the learning guide in aitp-writing: retain the primary reading thread,
 choose a concrete learning target and the depth needed to reach it. This main
-note integrates the developing understanding; detailed reading companions may
-grow separately. A TeX/PDF format does not require expert-level compression.
+note integrates the developing understanding, and can be told as a chain of questions
+(a story). Source readings, meaning maps and section notes, grow separately. A new
+reading that other questions can use goes into the shared collection when one exists;
+established readings keep their place. A TeX/PDF format does not require expert-level
+compression.
 Use $...$ and $$...$$ for mathematics in a compatible Markdown reader.
 This is an original Markdown adaptation, not an official journal template. -->
+
+<!-- When evidence changes an answer, replace its existing passage and affected
+uses, retaining decisive conditions. Put substantial evidence in its primary
+supporting home; preserve old observations there, not as successive main-note updates. -->
 
 ## Abstract
 
@@ -30,7 +37,7 @@ explain the idea of the argument without requiring all later definitions. -->
 <!-- Define the objects and the structures the argument must preserve. Specify
 the hypotheses, domains, equivalences, boundary conditions or global data that
 affect the claim. Explain why these choices are needed. Link extended background
-or shared concept notes while keeping the definitions needed to read this note.
+or shared atoms while keeping the definitions needed to read this note.
 Make an imported result's meaning, conditions and role clear at its first use.
 Use a concrete case when a definition alone would not let the reader continue.
 Do not front-load a dictionary of concepts that the argument never uses. -->
@@ -69,5 +76,6 @@ Delete the section if there is no remaining question within the agreed scope. --
 ## References
 
 <!-- Give identifiable works actually used, with ordinary DOI, arXiv or local
-PDF links, and cite each at its point of use. Long reading notes belong in
-linked files. Do not imply that an abstract-only source supplied a proof. -->
+PDF links, and cite each at its point of use. Long source readings belong in
+linked files; a new reusable one goes into the shared collection when one exists, and
+established readings keep their place. Do not imply that an abstract-only source supplied a proof. -->

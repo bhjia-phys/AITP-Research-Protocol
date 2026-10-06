@@ -49,7 +49,7 @@ may restate a decisive equation with its own local number and link its derivatio
 Distinguish local equation numbers from source-paper numbers: write "Witten,
 Section 2.6, Eq. (2.28)" when citing that source, rather than an ambiguous "Eq. (2)".
 Give an identifiable title/author and DOI, arXiv or local PDF link. Preserve the
-version or page convention when it affects the locator. A reading note says
+version or page convention when it affects the locator. A source reading says
 which passages were inspected and separates source claims from the researcher's
 derivation. Do not claim full-paper understanding from abstract inspection.
 

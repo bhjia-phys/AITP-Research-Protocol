@@ -6,10 +6,12 @@ description: Write and revise physics research notes, expand lecture derivations
 # Write the scientific argument
 
 Make the question, reasoning and supported answer intelligible to the intended
-reader. This Skill develops the researcher's former `witten-style-theory-note`:
-introduce objects through a concrete need, use a small example that retains the
-difficulty, unfold the central argument, and place qualifications where they
-matter. These are structural choices, not imitation of an author's phrasing.
+reader. Introduce objects through a concrete need, use a small example that retains
+the difficulty, unfold the central argument, and place qualifications where they
+matter. These are structural choices, not imitation of an author's phrasing; this
+Skill developed them from the former `witten-style-theory-note`. When the researcher
+has chosen authors to learn from, use [exemplar authors](../aitp-research/references/exemplar-authors.md)
+to read a passage that does the same job as the one being written.
 It also incorporates `computational-physics-note` for implementation, calculation
 settings and benchmark exposition; neither former Skill is a dependency.
 
@@ -71,9 +73,11 @@ route within one question, use [supporting-note writing](references/supporting-n
 An agreed independent research branch has its own folder and `research.md`;
 the same guide explains how to connect it to the originating question. For equation
 numbers and links across files, use [citation conventions](references/citations.md).
-Before creating a standalone concept or theorem note, use
-[shared knowledge](../aitp-memory/references/shared-knowledge.md) to find and
-compare existing explanations. Reuse a current search result; a prose clarification
+Before creating a shared atom (a concept, theorem, technique, example or result
+explanation), use [shared knowledge](../aitp-memory/references/shared-knowledge.md)
+to find and compare existing explanations. When a note introduces a central concept that has a
+shared entry, link it and reuse or explicitly adapt its conventions rather than
+re-deriving it silently. Reuse a current search result; a prose clarification
 does not require another search. Writing an answer does not itself require a
 durable knowledge page. Load these guides when that task arises, not for every
 prose edit.
@@ -117,7 +121,12 @@ fixes the convention. Mechanical repetition can follow by a stated symmetry or
 move to a linked derivation once the reason is clear. The main text must retain
 the decisive implication and the hypothesis that licenses it.
 
-Let paragraphs carry motivation, calculation and consequence. Avoid repeated
+Let paragraphs carry motivation, calculation and consequence. Say what kind of
+argument is coming when it matters (preliminary, schematic, an oversimplified route).
+Give the premise an inference rests on its own sentence without implying it is the only
+one, and locate a failure in one sentence where it occurs. State an outcome plainly and
+no more strongly than what was shown. Say separately whether a result is right and
+whether the argument given proves it. Avoid repeated
 labels such as “Target”, “Checkpoint” and “Claim status” around every equation.
 Do not cross a conceptual gap with “obvious” or “after some algebra”. Do not
 manufacture an intermediate identity, proof or uncertainty estimate to make an
@@ -145,7 +154,11 @@ Follow [literature guidance](../aitp-research/references/literature.md) when a
 needed source is uncertain. Exposition inspired by this Skill is not a reason
 to cite Witten. The retained [source analysis](references/witten-corpus-analysis.md)
 and [reading census](references/witten-2011-2026-corpus.md) are optional historical
-background, not material to load for every writing task.
+background, not material to load for every writing task. They record where this
+Skill's structural guidance came from; they are not an author library and do not make
+Witten a default. Authors the researcher chooses to learn from have their libraries in
+the researcher's shared collection, as described in
+[exemplar authors](../aitp-research/references/exemplar-authors.md).
 
 For requested TeX or PDF delivery, use [manuscript handling](references/manuscripts.md).
 Keep an established format; Markdown is the usual AITP main note. Templates

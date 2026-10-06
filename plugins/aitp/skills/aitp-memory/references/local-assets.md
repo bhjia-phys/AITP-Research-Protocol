@@ -29,8 +29,8 @@ and then text as needed. Open the plausible notes and compare their questions,
 assumptions and qualifications before reuse. A title or index entry locates
 material; it neither proves coverage nor validates a claim. One unmatched term
 does not establish that the work is absent. Follow the
-[shared-knowledge guidance](shared-knowledge.md) when comparing concept or
-theorem explanations.
+[shared-knowledge guidance](shared-knowledge.md) when comparing shared atoms or
+other explanations.
 
 Stop once the relevant location and context are found. Reuse them within the
 current task rather than listing every directory again at each turn. If this
@@ -74,7 +74,7 @@ needed. This is a menu of useful locations, not a tree to generate in advance:
 topic/
   README.md                 Folder map and actual material locations, if needed
   research.md               Developing main argument
-  notes/                    Detailed derivations, concepts and reading notes
+  notes/                    Detailed derivations, concepts and topic-specific reading
   references/               Papers, bibliography and source documents
   code/                     Reusable code owned by this topic
   calculations/             Experiments with their inputs, outputs and analysis
@@ -90,9 +90,11 @@ while numerical work adds calculations.
 Mixed work follows the connections between the theory and its tests.
 
 A [shared theoretical collection](shared-knowledge.md) can live outside individual
-topics, for example in a sibling `knowledge/` directory. Its README provides
-useful entry routes, while topic notes link the concepts and theorems they use.
-This is optional ordinary Markdown, with no graph database or required taxonomy.
+topics, for example in a sibling `knowledge/` directory. Its index, the README or a
+page the README names, lists entries by area. Topic notes link the atoms and source
+readings they use. When the collection exists, a new reading of a source that other
+questions can use goes there; established readings keep their place. This is optional
+ordinary Markdown, with no graph database or required taxonomy.
 
 For code changes, builds, numerical tests and run outputs, consult
 [numerical development and experiment locations](numerical-assets.md) when more
@@ -112,7 +114,7 @@ family/
 
 Keep topic-specific assets beside their question unless the working code requires
 another location. Describe that relationship in the family README. Do not create
-a shared workspace merely because this example includes one; shared concept notes
+a shared workspace merely because this example includes one; shared atoms
 or methods likewise need only one primary home when real reuse appears. Existing
 projects retain useful layouts and names. These suggestions never require a move.
 

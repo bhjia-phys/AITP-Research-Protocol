@@ -831,3 +831,296 @@ independent validation of this proposed architecture.
 This entry records feedback only. It changes no Skills, schemas, hooks, host
 goals or scientific manuscripts, and it claims no measured improvement. Existing
 feedback and unrelated local changes must remain intact.
+
+## Practical usefulness: reduce recovery effort and researcher correction
+
+Reported on 2026-10-03 as a follow-up to the computational memory and writing
+feedback above. This is a qualitative review with the researcher, not an
+independent trial or a measurement of time saved. Examples are sanitized;
+private research files, numerical results and conversations remain outside
+this tree.
+
+### What helps, and what remains difficult
+
+AITP is useful for long-running research when it preserves settled model choices,
+reasons for rejecting earlier routes, and the connection between conclusions and
+evidence. In an orbital-resolved screening project, those records helped recover
+the research context. The researcher nevertheless had to ask repeatedly which
+implementation and results currently applied and what the checks established.
+Saving the information did not make the current understanding easy to recover.
+
+A large main note can contain accurate details while leaving the reader to
+assemble the live answer across older comparisons, corrections and supporting
+reports. The problem is the effort needed to recover their relationships, not
+file length alone. Shortening a note must preserve decisive reasoning and the
+reasons that useful earlier routes failed.
+
+The current [memory guidance](../plugins/aitp/skills/aitp-memory/SKILL.md) already
+requires integrating consequential changes, replacing stale claims and avoiding
+unchanged writes. This review does not establish an activation failure or prove
+that AITP caused the observed difficulties. The agent remains responsible for
+its execution. The absence of a background writer explains how maintenance
+works; it does not excuse an omitted update within existing authorization.
+
+### Focus the next improvement on observed use
+
+- Make the existing opening and conclusion carry the current question, operative
+  model, supported answer and decisive remaining uncertainty. Keep detailed
+  calculations linked from their relevant claims, with one primary home for each
+  argument. Do not create a parallel status dashboard.
+- Use selective recovery for ordinary questions and reuse known-current context.
+  Retain whole-argument reading before substantive revision; do not turn it into
+  a compulsory full read on every turn.
+- Before another expensive refinement, explain what a successful result would
+  establish. Distinguish a numerical uncertainty from a mismatch in physical
+  models that more precision cannot resolve. Recording more tests cannot replace
+  that missing inference.
+- Demonstrate these behaviors with a small concrete example and a fresh-session
+  check before adding more general instructions. The earlier optional reminder
+  proposal remains a candidate, not a demonstrated remedy or permission for
+  automatic cross-thread edits.
+
+### Evidence that would justify calling it easier to use
+
+Compare against ordinary, well-maintained Markdown notes with the same evidence
+and task scope. A returning reader should recover the current answer, an important
+qualification, a rejected route and the next discriminating check without the
+originating conversation. A corrected premise should change affected live claims
+while preserving valid earlier results. An unchanged status question should add
+neither a memory write nor another recording ritual. Restricted read-only work
+should identify a consequential pending integration without editing outside scope.
+
+Observe recovery effort, researcher corrections, repeated rejected routes,
+unsupported completion claims and maintenance cost. File counts, successful
+packaging checks and the presence of instructions do not measure these outcomes.
+Current experience supports retaining AITP as guidance, but does not quantify
+saved wall time, tokens or computing allocation.
+
+This entry records feedback only. It implements no Skill changes, reminder,
+runtime service or evaluation, and leaves existing feedback and unrelated work
+intact.
+
+## Computational validation: completion, transfer and practical benefit
+
+This feedback extends the
+[practical-usefulness review](#practical-usefulness-reduce-recovery-effort-and-researcher-correction)
+with observations from a computational validation campaign and a read-only
+review of the current Skills and benchmark documentation. It is a qualitative
+assessment by the same assistant, not an independent evaluation or a measured
+causal benefit of AITP. Examples are sanitized; private materials, numerical
+results, machine paths and conversation records remain outside this tree.
+
+### What the experience supports
+
+The campaign retained implementation boundaries, failed controls and the
+difference between intermediate operators and final predicted energies.
+These records made it possible to explain which routes had been exercised,
+which agreements depended on a numerical setting, and which questions were
+still unresolved. This supports keeping linked research memory and explicit
+acceptance conditions. It does not separate the contribution of AITP from
+model capability, ordinary research practice or the researcher's corrections.
+
+The closeout already disclosed strict failures and conditional passes, and
+the researcher subsequently asked what problems remained. This is not evidence
+that the closeout claimed universal success. It does expose a reporting risk:
+a host's completed label cannot express the distinction between completing a
+requested investigation and obtaining an accepted scientific result. A test can
+be resolved by a reproduced, localized failure. An implementation request can
+still be incomplete if a required supported route remains unavailable.
+
+One numerical screening issue was explicitly retained as known and deferred.
+That decision should survive later recovery without becoming an automatic
+repair priority. Conditional passing controls remain useful, while the deferred
+default-setting failure stays visible.
+
+### Improvements to prioritize
+
+| Priority | Concrete change or check |
+| --- | --- |
+| Make completion conditions visible | In the existing closeout and main argument, distinguish experiments completed, numerical gates passed, defects repaired, unsupported routes and physical acceptance. Attach the condition to each passing claim; define completion from the actual request rather than from a count of finished tests. |
+| Reduce recovery and maintenance effort | Apply the existing selective-reading and context-reuse rules to ordinary questions and narrow annotations. Preserve whole-argument reading for substantive revisions. Move historical detail to a supporting note when it has an independent role, retaining the implication and reasons for changed conclusions in the main account. Shortening alone is not success. |
+| Test domain Skills through independent use | Give a fresh session a different small instance, the local method and its evidence, without the originating chat or evaluator hints. Check version selection, input compatibility, actual execution of the requested route, unsupported-case detection and acceptance. Valid frontmatter and links do not establish this transfer. |
+| Evaluate the choice of the next calculation | Ask for competing explanations and the observations that would distinguish them before expanding a scan. Choose a small informative control. A finite-input symmetry residual, a screening approximation and an incorrect transformation require different checks; numerical refinement need not resolve all three. |
+| Measure added benefit against ordinary notes | Compare the same task, persistent evidence, model, tools and budget with and without AITP guidance. Report correctness, researcher corrections, repeated failures, time to verified progress, reading and maintenance effort, and compute/model costs separately. Preserve failed and timed-out trials. |
+
+Much of this behavior is already required by
+[memory](../plugins/aitp/skills/aitp-memory/SKILL.md),
+[research](../plugins/aitp/skills/aitp-research/SKILL.md) and
+[distillation](../plugins/aitp/skills/aitp-distill/SKILL.md).
+An unnecessary full reread, an unsupported inference or a repeated request for
+settled information remains the agent's execution responsibility. This review
+does not establish an activation failure or attribute those choices to a
+specific sentence in a Skill. First check whether the existing rule is followed;
+make a narrow clarification only where an observed ambiguity warrants it.
+
+### Evidence needed before claiming improvement
+
+The [general regression suite](../benchmarks/general-v0.1/README.md) reports
+twelve completed development cases, each scored 2/2, and a fresh continuation.
+Its documentation also explicitly states that there is no matched ordinary-note
+or old-versus-new baseline. These are useful behavior checks, not evidence of
+causal superiority, general physical accuracy or original discovery.
+[Validation records](validation.md) distinguish authored walkthroughs,
+fresh-session observations and document-consistency checks; retain those
+distinctions when discussing future results.
+
+A small continuation comparison could test the priorities without adding a
+runtime or another memory format. Give new sessions the same retained evidence
+and inspect whether they:
+
+- recover a mixed pass/fail campaign and its conditions without upgrading it to
+  universal implementation correctness;
+- preserve an explicitly deferred issue while pursuing the requested remaining
+  question;
+- use a method on a changed instance, including recognizing a genuinely
+  unsupported input instead of silently falling back;
+- make a narrow authorized annotation without redundant recovery, while still
+  reading the full argument before a consequential premise revision;
+- select a control that distinguishes candidate mechanisms, and recognize when
+  further refinement would leave the essential inference untouched.
+
+Use a baseline with equally complete ordinary notes; removing the evidence
+would compare memory with no memory rather than isolate AITP. Keep host
+instructions, injected memory, actual Skill versions and resource conditions
+observable, and use held-out instances after tuning. Score the action and
+resulting artifacts, not the agent's ability to repeat the instructions.
+
+This section records feedback only. It implements no Skill change, evaluation
+or research action, and claims no validated improvement. Existing feedback and
+unrelated working-tree changes are preserved.
+
+## Choose the physical diagnostic before expanding the calculation
+
+Reported on 2026-10-04 from a researcher-agent exchange about out-of-time-order
+correlators (OTOCs) and quantum chaos. This extends the feedback on
+[long-running research goals](#long-running-goals-must-converge-on-the-physical-question)
+with a case about choosing an observable and its time window. It is a qualitative
+review of the interaction and current source guidance, not an independent trial
+or evidence that AITP caused the observed choices. The account is sanitized:
+private parameter grids, numerical results, run identities, machine paths and
+conversation transcripts are omitted.
+
+### The next calculation was specified before its interpretation was settled
+
+The researcher wanted to understand what existing OTOC curves could say about
+chaos in a spin-chain family. The agent distinguished spatial spreading from a
+chaos diagnosis, but then elevated post-growth temporal fluctuations into the
+next substantial calculation. It proposed a much longer time window before
+explaining why this diagnostic should take priority in the present model over
+analysis of the already available growth and propagation data.
+
+The researcher questioned that choice, pointing to literature focused on early
+growth. The agent then returned to a closer model comparison, explained the
+difference between the strict short-time expansion and the pre-saturation front,
+and discussed which parameters could actually be inferred. The proposed
+longer-time job had not been submitted when this correction was discussed.
+This case therefore shows a premature research recommendation, not demonstrated
+wasted compute or an invalid numerical result.
+
+The conversation also included repeated requests to see the project's figures.
+Figures were subsequently linked and explained. This supports a need to make
+the physical evidence easier to reach and interpret; it does not establish that
+the figures had never existed or that every status report was misleading.
+
+The late-time proposal was not intrinsically inappropriate. Its priority and
+connection to the target inference were insufficiently justified. Likewise,
+the correction does not establish that early growth is always preferable.
+For a diagnostic to be useful, the agent must explain what alternative physical
+mechanisms could produce the same observation and which comparison would
+distinguish them.
+
+### Relevant rules already exist
+
+The current [research Skill](../plugins/aitp/skills/aitp-research/SKILL.md#agree-on-consequential-research-choices)
+asks what perfect success of a calculation would establish, calls for a small
+informative case before an expensive expansion, and separates physical validity
+from numerical convergence. Its
+[objection guidance](../plugins/aitp/skills/aitp-research/SKILL.md#reason-and-respond-to-objections)
+requires examining the disputed inference rather than agreeing merely to end a
+disagreement. The [literature guidance](../plugins/aitp/skills/aitp-research/references/literature.md#read-for-the-claim-that-matters)
+requires checking source assumptions and separating published results from their
+application to the current topic. The
+[learning Skill](../plugins/aitp/skills/aitp-human-learning/SKILL.md#explain-then-locate-the-remaining-difficulty)
+requires resolving a conceptual obstacle before building on it.
+
+Repeating these principles in another long checklist would not by itself address
+the case. The execution failure is observable; the cause is not isolated. A useful
+design change would make their application concrete at the decision where a
+plausible literature method becomes a proposed research programme. AITP guidance,
+model capability, host instructions and researcher intervention remain distinct
+possible influences.
+
+### Focused improvements to test
+
+1. **Explain the diagnostic before specifying a costly extension.** In the
+   calculation proposal, state what is measured, which competing explanations
+   remain, and how the proposed result could distinguish them. A longer time
+   window or larger size should remove an identified uncertainty. Bounded
+   exploration is also legitimate when its purpose is to discover whether a
+   useful diagnostic exists; do not demand a complete solution in advance.
+
+2. **Use applicability to rank literature methods.** Compare the features that
+   determine transfer: Hamiltonian, symmetries, ensemble, operator normalization,
+   available limits and observation window. Explain why one method is preferred
+   and what remains an analogy. A paper from a different model can supply the
+   best method, but a shared keyword or an accessible implementation is not
+   sufficient justification. Put a short worked comparison in the existing
+   literature guidance if fresh-session use shows that clarification is needed.
+
+3. **Turn limitations into discriminating questions.** Saying that an observable
+   does not prove chaos is a useful boundary, not a complete continuation. In a
+   generic OTOC example, altered coupling strength, interaction range and
+   integrable operator propagation are possible alternative explanations for
+   changed growth. Select a control or derivation that addresses one such
+   ambiguity, or state why the observable cannot settle the intended question.
+   More precision must not silently replace the missing physical distinction.
+
+4. **Make corrections change the reasoning and the next action.** After a
+   challenge, identify the premise that survives, changes or fails, retain the
+   useful part of the earlier route, and explain the new priority. Test both
+   valid and mistaken researcher objections. Agreement with the most recent
+   message is not evidence of good judgment; neither is defending a route only
+   because work has already been invested in it.
+
+5. **Present a usable physical result early.** Give the researcher an accessible
+   figure, derivation, counterexample or bounded negative result, with its
+   interpretation and remaining ambiguity. Coverage counts, job states and
+   numerical controls support that result but should not displace it. Preserve
+   the distinction between data produced, numerical reliability and the physical
+   conclusion supported. This requires no additional dashboard or report type.
+
+6. **Respect a change from execution to understanding.** When the researcher
+   asks for a derivation of the premise behind a proposed calculation, resolve
+   that premise before launching new work that depends on it. Continue unrelated
+   authorized work when appropriate; a conceptual question does not itself
+   authorize canceling existing jobs. Resume within the existing agreement when
+   the issue is resolved, without asking again for settled permissions. Apply
+   current conversation boundaries to any durable edits.
+
+### Evaluate decisions, not instruction recitation
+
+Use small, generic continuations compatible with the existing
+[human-interaction cases](../benchmarks/human-interaction-v0.1/README.md).
+These are proposed checks; no new benchmark or independent session is executed
+by this feedback change.
+
+| Situation | Behavior that would support improvement |
+| --- | --- |
+| Existing early-time data and a request to diagnose chaos | Explain what the data can distinguish, compare plausible diagnostics, and justify any new time window before expanding the calculation. |
+| A proposed late-time measurement has a clear discriminating role | Retain and pursue that route under existing authorization; do not pass by always rejecting long-time work. |
+| A method works in a related model with different assumptions | Identify the relevant differences and distinguish a justified transfer from a hypothesis requiring a control. |
+| The researcher gives a valid objection, then a separate case with an invalid objection | Revise or defend the claim using its premises and evidence, and make the next action consistent with that reasoning. |
+| The researcher asks to see the result or understand its derivation | Provide the relevant artifact or complete requested explanation before work that depends on the unresolved interpretation. |
+| A numerical refinement would resolve a scientifically relevant uncertainty | Continue the refinement without inventing a new approval stage or replacing useful computation with indefinite discussion. |
+
+Compare current guidance, a narrowly revised version and ordinary well-maintained
+notes with the same task evidence, model, tools, authorization and resource budget.
+Keep evaluator hints outside the tested session and use held-out instances after
+tuning. Observe unsupported inferences, the relevance of the next action, time to
+a usable scientific result, researcher corrections, unnecessary tool or compute
+cost, and whether useful authorized work is wrongly delayed. A Skill read, a
+passing link check or a larger number of saved artifacts does not establish these
+outcomes.
+
+This entry adds feedback only. It changes no Skills, runtime behavior, host goals
+or research calculations, and makes no claim of validated improvement.

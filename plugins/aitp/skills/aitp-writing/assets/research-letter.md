@@ -6,6 +6,10 @@ sections. Read the whole existing argument before adapting an established note.
 Use $...$ and $$...$$ for mathematics in a compatible Markdown reader.
 This is an original Markdown adaptation, not an official journal template. -->
 
+<!-- When evidence changes an answer, replace its existing passage and affected
+uses, retaining decisive conditions. Put substantial evidence in its primary
+supporting home; preserve old observations there, not as successive main-note updates. -->
+
 ## Abstract
 
 <!-- One paragraph: the question and setting, the approach, the strongest

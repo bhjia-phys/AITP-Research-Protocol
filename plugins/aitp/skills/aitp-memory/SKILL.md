@@ -144,30 +144,29 @@ repair is needed, there is no additional maintenance report.
 
 ## Integrate changes into the argument
 
-Retain a useful new derivation, observation, failure, literature correction or
-choice where it changes the topic's reasoning. Decide which existing passages
-need revision before adding text. A new result may require updating the opening
-claim, an assumption in the method, the discussion and the next question together.
-Explain a consequential correction where its scientific effect becomes visible.
+Identify the question a new derivation, observation, failure, correction or choice
+answers, and the existing passage whose meaning changes. Replace that account;
+inspect dependent uses, the opening and conclusion, and remove resolved next steps.
+Follow the [placement and restructuring procedure](../aitp-writing/references/research-note.md#add-move-and-remove-material-without-losing-the-thread)
+and its [worked edits](../aitp-writing/references/worked-note-edits.md).
+The main note grows by developing its argument, not appending session summaries.
+Preserve useful failures, unresolved objections, original observations and reasons
+for route changes. Supporting detail has one primary home with a precise link.
 
-The main note must remain readable as a whole. Do not append dated session
-summaries as its default growth mechanism. Merge duplicate explanations, repair
-contradictory passages and remove a completed next step from the live argument.
-Preserve a failed route when its reason prevents a plausible repeat mistake.
-Keep an unresolved objection visible until evidence answers it. Reorganization
-does not license deleting source artifacts or unrelated work.
-
-A changed hypothesis or conclusion calls for checking affected supporting notes
-and uses, in either direction; a wording change does not. Removing a main-note
-link neither invalidates nor deletes its target. Keep useful detached material
-discoverable and correct known errors where a future reader will encounter them,
-following [corrections and retained notes](../aitp-writing/references/supporting-notes.md#correct-claims-and-keep-earlier-routes-findable).
-This is work performed during the task, not background synchronization.
+A changed hypothesis or conclusion needs a bounded search for dependent claims,
+including terminology, aliases and incoming links; a wording change does not.
+Removing a link neither invalidates nor deletes its target. Keep useful detached
+material discoverable and correct known errors where readers encounter them,
+using [corrections and retained notes](../aitp-writing/references/supporting-notes.md#correct-claims-and-keep-earlier-routes-findable).
+Name known dependencies beyond the completed scope. This is work during the task,
+not background synchronization.
 
 Use [aitp-human-learning](../aitp-human-learning/SKILL.md) for interactive study
 or a conceptual difficulty; it decides how to use feedback, not what is true.
 For a learning topic, retain the primary reading thread and a consequential
-conceptual obstacle or explanation when useful for continuation. Keep a source
+conceptual obstacle or explanation when useful for continuation. Its main note can be a
+[story of questions](references/shared-knowledge.md#tell-a-learning-topic-as-a-story-of-questions)
+that links into source readings and shared atoms. Keep a source
 passage's location near its supporting derivation. The main note integrates the
 relationships established so far; it need not become a complete survey before
 the reading has progressed. Distinguish an explanation the agent has produced
@@ -179,14 +178,18 @@ Keep the core implication intelligible in the main text. Move a long derivation,
 specialized concept or detailed analysis to a separate file when it has a useful
 independent role. Leave the result, decisive condition, explanation and link in
 the main note. Introduce definitions when they become necessary. Reuse a shared
-concept note when its conventions apply; state a topic-specific difference near
+atom when its conventions apply; state a topic-specific difference near
 the point of use. Do not create a knowledge taxonomy before there is material.
-Use [shared knowledge outside topics](references/shared-knowledge.md) when a
-theoretical derivation or learning task needs an explanation, or when retaining
-a useful concept or theorem note. Before creating such a standalone note, check
-for an existing treatment. This is not a search on every topic entry or theoretical
-term. Reuse needs no write; maintain explanations at a natural pause when useful
-understanding changes. Follow only dependencies needed by the current argument.
+When the researcher keeps a [shared knowledge collection](references/shared-knowledge.md),
+read its index once at the start of a theoretical derivation, a conceptual question,
+or a reading or study task.
+This is the same habit as reading the main note before topic work, and one bounded
+read rather than a search on every term. Open the entries for the task's central
+concepts and sources, and reuse their conventions or state the difference. Before
+creating an atom (a shared concept, theorem, technique, example or result), check the
+index for an existing treatment. Reuse needs no write. At a natural pause, retain useful understanding;
+an index row with a checked locator is often enough. Follow only dependencies
+needed by the current argument.
 
 For a first main note or a substantive revision, apply
 [aitp-writing](../aitp-writing/SKILL.md) and its
@@ -248,39 +251,30 @@ This is an editorial decision, not an automatic end-of-turn write:
 - No new durable understanding and no material defect in the retained account:
   answer the user without editing memory.
 - Useful supporting detail with the main account still accurate: update or create
-  the relevant detailed note or artifact; adjust a main-note link only if needed.
+  the relevant detailed note or artifact. If the main note already explains the
+  implication and links its owning support section, leave it unchanged; each new
+  detail does not need its own main-note link.
 - First consequential result, changed conclusion, assumption, failed route or
   next research decision: revise the affected main-note passages together and
   link the supporting evidence, including when the result is still provisional.
 - An encountered main note materially fails the current guidance: perform the
   [on-use repair](#repair-an-outdated-main-note-during-use), even without new results.
 
-Before handing back consequential work, check whether the main note itself
-states the current model, newest supported result and remaining question.
-If it does not, integrate them within the existing authorization; saving a
-supporting report or adding a link does not complete that work. Replace stale
-claims and merge repeated status paragraphs instead of appending another update.
-When editing the main note, link it in the handoff so the researcher can find
-the integrated argument. If an explicit read-only or restricted scope prevents
-the edit, identify the affected claim and pending integration without implying
-that the supporting artifact has already updated the main account.
+Before handoff, check that the main note states the current model, supported answer
+and remaining question. A supporting report alone does not integrate a changed
+conclusion. Link the edited main note in the reply; if scope prevents integration,
+identify the affected claim and pending work. Check preservation, affected links
+and scientific meaning separately, and merge concurrent edits against the latest
+files, including changes inside relocated passages. Use the linked restructuring
+procedure for a live-note handoff rather than overwriting another session's work.
 
-Remove obsolete next steps and redundant detail from the live account, but retain
-the reason and source for a consequential reversal. When shortening, leave a
-working link to unique useful material moved elsewhere. Use the writing guide to
-check both the argument and the affected links.
-
-Update when understanding, a central assumption, a useful result, or the next
-research decision meaningfully changes. Capture a fragile insight or the intent
-of an expensive experiment before losing it. At an interruption, leave a precise
-continuation point if the note is behind the work. Classify a query by what it
-reveals: a first material result or new failure discovered during a job poll can
-change the main account even while the job is running. An unchanged query or
-job poll requires no write when the relevant account remains usable; do not
-polish every paragraph after every small calculation. Background collectors
-preserve evidence, not its scientific
-interpretation; integrate consequential evidence when the research task next
-examines it, within the authorized scope.
+Record a fragile insight or expensive experiment's intent before interruption.
+A poll revealing the first consequential value replaces the provisional comparison
+at its substantive location, with conditions, even while the job is running.
+A run-state change without a scientific result belongs in its report only if
+useful; an unchanged poll or supported explanation needs no write. Background
+collectors preserve evidence; integrate its scientific consequence when research
+next examines it within scope. Do not polish the note after every small calculation.
 
 Prepared examples are dated snapshots. Live topic documents may develop beyond
 them; do not synchronize the two or mistake a source example for current state.
@@ -291,12 +285,18 @@ After consequential work, also retain transferable learning where it belongs.
 Reorganizing an existing argument alone does not produce a new theory explanation
 or demonstrated procedure; reuse what is already retained:
 
-- A useful theoretical explanation, derivation, correction or connection with
-  independent reuse: extend the relevant primary explanation using
-  [shared knowledge](references/shared-knowledge.md#grow-and-correct-the-knowledge-when-it-matters),
-  or create one after checking existing coverage. A complete topic note can
-  remain in place and gain a shared discovery link. This decision does not depend
-  on having needed a library search during the work.
+- A useful explanation, derivation, technique (theoretical or numerical), correction or
+  connection that another question could use beyond this topic, with its assumptions
+  stated: add it to the shared collection, in the same pass as the topic note, as
+  [research teaches](references/shared-knowledge.md#add-what-research-teaches)
+  describes. Add an index row that cites the research note's section and names the
+  question rather than restating the result, marked provisional and awaiting review. The
+  research note stays the single home of the claim. Propose an
+  atom rather than writing one until the researcher confirms the result. Review cited
+  rows in the same edit, changing only affected locations, scope, support, review state
+  or qualifications. An unrelated change elsewhere in the cited file needs no row
+  update or dated acknowledgement. Check existing coverage first and extend rather
+  than duplicate. This decision does not depend on having needed a library search.
 - A demonstrated reusable operation or correction to one: use
   [aitp-distill](../aitp-distill/SKILL.md) to create or revise the appropriate
   local Skill within the authorized scope, without waiting for another request.

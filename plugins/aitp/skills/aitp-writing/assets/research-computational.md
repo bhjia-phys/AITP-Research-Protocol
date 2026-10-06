@@ -6,6 +6,10 @@ needed by this question. This is an original Markdown adaptation, not an
 official journal template. Use $...$ and $$...$$ for mathematics in a compatible
 Markdown reader. It does not request new calculations or figures. -->
 
+<!-- When evidence changes an answer, replace its existing passage and affected
+uses, retaining decisive conditions. Put substantial evidence in its primary
+supporting home; preserve old observations there, not as successive main-note updates. -->
+
 ## Abstract
 
 <!-- One paragraph: the physical or algorithmic question, approach, decisive
@@ -39,9 +43,14 @@ inputs and relevant settings, with evidence for the claimed check. In the main
 text, explain why that operation and comparison answer the scientific question.
 Include hardware and measured cost when making a performance claim. -->
 
-## Results
+## Results and active comparisons
 
-<!-- Organize by the question answered by each comparison. Show the decisive
+<!-- An active campaign can keep accepted and provisional comparisons together,
+with their conditions and evidence. Replace a pending value when the first
+consequential measurement arrives, even during a running job; replace a better
+value in the same row and retain the old one in its report. State the acceptance
+boundary beside the comparison. Omit empty rows without a useful live question.
+Organize by the question answered by each comparison. Show the decisive
 values, figure or table, define axes/units and error measures, and explain the
 pattern and consequential exceptions. Put a descriptive evidence link beside
 the claim or caption; the supporting note should locate data and generating

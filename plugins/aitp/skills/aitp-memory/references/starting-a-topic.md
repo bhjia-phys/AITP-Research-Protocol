@@ -51,6 +51,11 @@ Use the [main-note templates](../../aitp-writing/references/research-note.md) as
 starting points: an honest abstract, introduction and proposed route can be enough
 at this stage. Omit unused sections. Use the requested language and level of explanation.
 
+A learning topic follows the same rule of one main note. That note can be told as a
+[story of questions](shared-knowledge.md#tell-a-learning-topic-as-a-story-of-questions),
+either as the topic's `research.md` or as a story in the researcher's shared collection,
+but not both.
+
 Let the scientific dependencies shape the note. In formal work, make the objects,
 conventions and missing argument explicit. In computational work, connect the
 approximation and observable to a discriminating calculation and its checks.
