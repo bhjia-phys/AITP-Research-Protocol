@@ -150,6 +150,9 @@ inspect dependent uses, the opening and conclusion, and remove resolved next ste
 Follow the [placement and restructuring procedure](../aitp-writing/references/research-note.md#add-move-and-remove-material-without-losing-the-thread)
 and its [worked edits](../aitp-writing/references/worked-note-edits.md).
 The main note grows by developing its argument, not appending session summaries.
+Its opening states the question, current answer, operative method, decisive
+limitation and next step, without recounting experiments. Full setups, repeated
+runs and job states belong in the supporting note or run report.
 Preserve useful failures, unresolved objections, original observations and reasons
 for route changes. Supporting detail has one primary home with a precise link.
 

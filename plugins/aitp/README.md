@@ -148,6 +148,9 @@ its existing `AGENTS.md` (`CLAUDE.md` for Claude Code), or state it in the conve
 > For work on a research topic, first use aitp-memory to locate or establish the
 > main note and determine the current task. Reuse that context for follow-ups.
 > At completion, retain meaningful changes using aitp-memory and aitp-writing.
+> When a result arrives, replace the passage whose meaning it changes rather than
+> appending an update; full setups, repeated runs and job states go in the
+> supporting note or run report.
 
 This assumes AITP is available in the host. It is optional workspace guidance,
 not a new required file. The Skill descriptions and cross-references request
