@@ -1,5 +1,53 @@
 # Validation and its limits
 
+## Topic-tree checks, 2026-10-07
+
+Memory now includes [keeping the topic tree clear](../plugins/aitp/skills/aitp-memory/SKILL.md#keep-the-topic-tree-clear).
+When a main note has a parent or branches, a session relates them at entry. The
+parent states each branch's implication once, where its argument uses it, with a
+link; the branch keeps its numbers, settings and step history. A changed branch
+answer reaches the parent at handoff, and a line of work that has grown its own
+question and evidence moves out of the parent.
+
+A read-only survey of a researcher's fifteen main notes found four parent/branch
+trees, all linked in both directions. Three parents re-narrated their branch's
+evidence, in one case at about 700 words, although the writing guide already said
+that the child owns the detail.
+
+Fresh `codex exec` subjects ran four ordinary requests inside a filesystem boundary.
+Each boundary contained a disposable Markdown copy of one real topic tree and read-only
+frozen skills. Each request ran once with the previous guidance and once with the new.
+Synthetic run summaries supplied the new results, and the prompts did not mention
+parents or branches. Sealed expectations were written before any subject ran. A Claude
+Opus judge scored each run blind to the guidance version and compared each pair. When
+it reached a usage limit, DeepSeek V4.1 Flash scored the four remaining judgments, and
+Claude repeated them after the limit reset.
+
+| Request | Previous guidance | New guidance |
+| --- | --- | --- |
+| Record a branch result that changes a parent claim | Parent +52 words, six branch values copied in; clarity 5/10 | Parent +8 words, no new values; clarity 8/10; preferred in the pair comparison |
+| Record a completed branch diagnostic | Parent +59 words, three values copied in; clarity 5/10 | Parent +39 words, no new values; clarity 7/10; preferred |
+| Record a rerun that reproduces the record | Supporting note only | Supporting note only; tie |
+| Improve a cluttered parent's structure | Sections rearranged, branch values kept; clarity 3/10 (DeepSeek 6/10) | Parent 259 words shorter, 32 duplicated values removed; clarity 7/10 (DeepSeek 8/10); preferred by both judges |
+
+Correctness was equal or higher with the new guidance in every request. The judges'
+notes prompted one refinement: state the implication once, and replace touched
+narration of a branch rather than appending to it. Re-running the first two requests
+with it gave parents 53 words shorter and 23 words longer, with no new values; their
+blind scores were 9/9/9 and 7/8/8 for clarity, correctness and preservation, and all
+expectations passed. Every value removed from a parent was traced across the complete
+fixture to a branch, supporting note or sibling topic that still holds it.
+
+Limits:
+- One subject per arm, from one model family.
+- Synthetic results and single-turn sessions; no live concurrent editing.
+- The refinement was re-tested on two requests, without a new previous-guidance arm.
+- The judges saw reduced file sets, so preservation was checked separately.
+- The fixture author also wrote the expectations.
+
+The researcher's live notes were not restructured. Strict plugin validation and local
+link checks passed after this change.
+
 ## A large learning collection built in parallel, 2026-10-06
 
 Several fresh sessions extended a learning collection on an operator-algebra topic,

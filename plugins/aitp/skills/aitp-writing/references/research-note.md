@@ -29,6 +29,7 @@ Choose the order of explanation for the situation, not a compulsory set of headi
 | Theory tested numerically | Model and conventions; meaning of each diagnostic; predictions beside their numerical tests; combined judgment; unresolved discrimination. |
 | Learning | Connected questions, prerequisites at first use, representative calculations and the next conceptual difficulty. An agent's explanation does not establish learner understanding. |
 | Bounded diagnostic or branch | Origin and relationship to the parent, then the appropriate order above. The child owns the detail; the parent retains its implication and limitation. |
+| Parent of branches | Question and current answer; the argument, with each branch's result entering where it is used, as its implication and a link; what remains open and which branch decides it. |
 | Deferred investigation | Usable result, unresolved issue, reason for deferral and condition for resumption. Old next steps are historical context. |
 | Deliverable | Product, audience and intended argument; artifacts and sources; evidence and outstanding checks; reproduction instructions. Artifact completion and scientific verification differ. |
 
@@ -141,7 +142,8 @@ the branch folder; detailed derivations stay with their own question. Use
 without forcing every short diagnostic into a new research question.
 Keep one primary account of each branch's detailed argument. The parent retains
 its implication and limiting condition, and the child explains its purpose and
-dependencies. Directory nesting describes a working home, not every scientific
+dependencies. Memory's [topic-tree checks](../../aitp-memory/SKILL.md#keep-the-topic-tree-clear)
+keep this division as the branches develop. Directory nesting describes a working home, not every scientific
 relationship; a branch may depend on a sibling topic through an ordinary link.
 
 For formal work, keep the hypotheses and central construction or obstruction

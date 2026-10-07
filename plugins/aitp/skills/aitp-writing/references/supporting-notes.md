@@ -78,9 +78,10 @@ Resume from the retained agreement and current request. A proposed next stage
 is not automatically agreed; ordinary work inside a confirmed objective can
 continue without another planning exchange.
 
-When pausing, leave the unresolved step and useful assets findable. On completion
-or a consequential failure, update the branch and the affected originating
-claim or next step. Fixing restart support does not establish that the dependent
+When pausing, leave the unresolved step and useful assets findable. On completion,
+a consequential failure or another change to the branch's answer or next step,
+update the branch and the parent's using passage with its implication, as memory's
+[topic-tree checks](../../aitp-memory/SKILL.md#keep-the-topic-tree-clear) describe. Fixing restart support does not establish that the dependent
 material calculation ran or converged. Propagate only consequences actually
 supported. Keep useful abandoned branches and their failures; an existing README
 or note index can retain a link if they leave the main argument. A small

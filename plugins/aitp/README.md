@@ -90,7 +90,10 @@ Memory retains the agreement in the branch's `research.md`. An agreed independen
 research branch gets its own folder and main note unless a suitable home already
 exists; short diagnostics stay with the existing question. The nearest README maps
 the folders, while the originating and branch main notes link each other and
-explain their scientific relationship. Writing connects plans, derivations,
+explain their scientific relationship. As branches develop, memory's
+[topic-tree checks](skills/aitp-memory/SKILL.md#keep-the-topic-tree-clear) keep
+each branch's evidence in the branch and its implication in the parent, and carry
+a changed branch answer into the parent at handoff. Writing connects plans, derivations,
 implementation and results there, splitting detail only when useful. Reuse
 existing notes and asset locations through links. Authorized organization can
 establish clear branch homes without another approval; unresolved choices that

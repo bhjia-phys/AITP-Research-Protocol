@@ -71,7 +71,8 @@ Reuse this established context when those Skills refer back here.
 Locate the user-designated main note, normally `research.md`. Several independent
 questions may share a code workspace; choose the relevant note rather than
 forcing them into one paper. Focused recall reads the relevant passages and
-qualifications; branch work also needs its relationship to the originating question.
+qualifications; branch work also needs its relationship to the originating question,
+recovered as in [keeping the topic tree clear](#keep-the-topic-tree-clear).
 Before a substantive revision, read the complete main argument, including its
 conclusion and open questions. If it exceeds one read, read successive sections
 until it is understood. A title, recent tail, abstract or keyword hit is insufficient
@@ -203,6 +204,59 @@ routes and consequential conjectures needed to
 continue the research. Memory decides what must survive; writing makes it a
 clear argument. They edit the same note, without a separate summary to maintain.
 
+## Keep the topic tree clear
+
+A topic often grows into a tree: a parent main note whose argument uses the answers
+of branch main notes, each with its own question and evidence. Keep each level
+telling its own part of the story, so that the parent stays readable as work grows.
+
+When the task's note has a parent or branches, relate them before working. For
+branch work, read the parent's opening and the passage that uses this branch; for
+parent work, read the openings of the branches the task touches. Privately establish
+what the parent needs from the branch, what the branch currently answers, and whether
+both notes say so. This bounded read adds no other ancestor, sibling or supporting
+file. A material mismatch is an [on-use repair](#repair-an-outdated-main-note-during-use).
+
+Whenever you edit a note in the tree, check that:
+
+- The parent uses each branch where its argument needs the result: the branch's
+  question in a clause, its current answer and limitation in a sentence or two,
+  what follows for the parent's question, and a link. The branch's numbers, settings,
+  step sequences and failed attempts stay in the branch, unless a parent inference
+  turns on a particular value. A parent passage that would change whenever the
+  branch's evidence changes is carrying that evidence; reduce it to the implication.
+  A parent section that narrates one branch's work tends to collect such evidence.
+  State the implication once, where the argument uses it; the opening and the
+  continuation name it with a link rather than restating it. When an update touches
+  a passage that narrates a branch, replace the touched narration instead of
+  appending another paragraph to it.
+- The branch's opening states which parent inference it serves and what its
+  possible outcomes would mean there.
+- The parent's opening tells the topic's story: the question, what each branch has
+  established or ruled out and how that moved the answer, and which branch or step
+  decides what remains open. It names a branch's next step and links it, rather
+  than restating that step's details.
+- A sibling or related topic is linked at the passage that depends on it, not restated.
+
+At handoff, when a branch's answer, decisive limitation or next step has changed,
+revise the branch's opening and the parent's using passage together, and the
+parent's opening if its own answer, limitation or next step changed. An unchanged
+branch state needs no parent edit.
+
+Before adding material to a main note, ask whether its argument needs it at this
+level. A line of work belongs in a branch or supporting note when it has its own
+question and acceptance test, accumulates its own runs or derivations, changes more
+often than the rest of the note, and is used elsewhere only through its conclusion.
+Moving existing work there is ordinary organization within the authorized scope,
+following the [restructuring procedure](../aitp-writing/references/research-note.md#add-move-and-remove-material-without-losing-the-thread);
+starting a new investigation still needs agreement. A concluded branch's result
+becomes part of the parent's argument and its note remains the evidence; an
+abandoned branch leaves its reason in one sentence where the parent used it.
+
+These checks belong to entry, editing and handoff, not to a separate audit, status
+file or registry; a clear tree needs no rewrite. Mention a tree repair in one
+sentence when handing back the task.
+
 ## Use ordinary files and meaningful links
 
 Use the existing topic or project README to locate material when its location
@@ -260,6 +314,9 @@ This is an editorial decision, not an automatic end-of-turn write:
 - First consequential result, changed conclusion, assumption, failed route or
   next research decision: revise the affected main-note passages together and
   link the supporting evidence, including when the result is still provisional.
+- A branch's answer, decisive limitation or next step changed: also revise the
+  parent's using passage, and its opening when needed, as
+  [keeping the topic tree clear](#keep-the-topic-tree-clear) describes.
 - An encountered main note materially fails the current guidance: perform the
   [on-use repair](#repair-an-outdated-main-note-during-use), even without new results.
 
