@@ -1,5 +1,79 @@
 # Validation and its limits
 
+## A research backbone and one research cycle, 2026-10-08
+
+A researcher described the architecture they want: `research.md` as the intellectual backbone
+and long-term memory of the whole research, with the skills guiding how it grows. Discussions
+should become part of the research, the agent should take initiative, and every paper,
+question, derivation and numerical experiment should be locatable from the backbone. Two
+independent assessments, by Claude and by a GPT model, found that the live design is the right
+foundation but not yet enough, and that a request router is not the missing architecture. The
+GPT model then drafted the design over two rounds, in which it accepted five objections from
+Claude.
+
+The implementation starts from the live tree:
+
+- `aitp-memory` is the single entry and opens with a six-line research cycle.
+- The backbone has levels: a root note for the whole research, holding directions,
+  connections, seeds, agreed choices and standing agreements; optional programme notes; topics;
+  and branches.
+- A reachability rule: every retained item has one home and a link path from the root and
+  from the note that uses it.
+- Homes for discussion outcomes without a topic, and seeds that are proposed as branches when
+  ready.
+- A visible close that names what the work warrants, with an initiative table separating what
+  proceeds within the agreement from what is proposed.
+- Status, history and continuation move into a reference.
+- New `aitp-verify`, with review cycles folded in and an honest record of how independent a
+  second read was.
+- New `computational-work.md`: experiment design, the trace from formulation to code, feature
+  development, debugging, benchmark suites, paper reproduction, comparison with earlier results,
+  and environment placement.
+- Synthesis across sources in the literature guide.
+- Reviewed plans, and hand-offs with rules for parallel work.
+- From the router prototype: the domain method indexes, the Slurm resource and restart
+  guidance, and figure and manuscript rules. Its dispatch table and `aitp-investigate` are not
+  carried over.
+- The version moves to 1.2.0.
+
+An adversarial review of the implementation by the same GPT model raised fourteen findings, ten
+important and four minor, none blocking. Fixes:
+
+- **Single wording.** The cycle now uses the design's exact six sentences, placed first in
+  memory and reproduced verbatim in the Kimi system prompt.
+- **Authorization** can come from the current request or any existing agreement. A standing
+  agreement in the root is defined as an explicit instruction with scope and end, never inferred
+  from past actions.
+- **Discussions.** A missing topic note no longer turns a discussion into a topic.
+- **The root** keeps its own content rule rather than every parent rule.
+- **Atoms.** A research-derived atom always needs the researcher's confirmation.
+- **Environments** go in established, authorized code or development locations, which may lie
+  beneath a topic, never in a prose-only reading folder.
+- **Plans.** A phase is complete only against its acceptance condition, not because evidence is
+  linked.
+- **Evidence gaps.** Persistent gaps are recorded; only temporary session limits stay in the reply.
+- **Current docs.** The write-decision page now puts status-only requests first and keeps useful
+  ideas as seeds.
+- **Smaller fixes:**
+  - method indexes replace the term "domain pack";
+  - moving a root note into a topic is optional;
+  - review triage gains an "unresolved" state.
+- **Length.** Memory was condensed to about 470 lines by pointing duplicated procedures to their
+  references; further consolidation remains possible.
+
+Link, frontmatter, manifest and whitespace checks pass across the plugin and docs. The new
+behaviour has not yet been tested with fresh sessions; the review recommends bounded tasks
+covering:
+
+- retrieving an obscure item;
+- retaining an untethered derivation as a seed;
+- correcting a branch through the root;
+- plan review, continuation and retirement;
+- joining parallel results;
+- status without edits.
+
+They should run on more than one host.
+
 ## Topic-tree checks, 2026-10-07
 
 Memory now includes [keeping the topic tree clear](../plugins/aitp/skills/aitp-memory/SKILL.md#keep-the-topic-tree-clear).

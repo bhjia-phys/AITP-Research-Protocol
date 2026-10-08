@@ -9,12 +9,20 @@ Extract a procedure that helps another session perform a task. Work directly
 from the actual derivation, code, result, failure analysis or research note.
 There is no intermediate knowledge-card format, trial ledger or hash protocol.
 
-When distilling from a research topic, first use
-[aitp-memory](../aitp-memory/SKILL.md) to recover its question and the requested
-scope, reusing current context. Use `research.md` to find the relevant method,
+When distilling from a research topic, work inside
+[memory's research cycle](../aitp-memory/SKILL.md#the-research-cycle): recover its
+question and the requested scope, reusing current context. Use `research.md` to find the relevant method,
 then follow its links to the derivation, code and evidence needed to teach it.
 A compressed conclusion alone may omit decisive conditions. A standalone worked
 example needs no new research topic merely to support distillation.
+
+## Read when
+
+| When the task involves | Read |
+| --- | --- |
+| Where a method belongs | [Method placement](../aitp-research/references/method-library.md) and the field's [domain methods](../aitp-research/SKILL.md#domain-methods) |
+| A method that comes from a topic | Its main note and linked evidence, recovered through [memory](../aitp-memory/SKILL.md) |
+| Revising an existing method | That Skill and the use that contradicted it |
 
 ## Decide what is reusable
 

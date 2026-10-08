@@ -61,7 +61,11 @@ measured timings are essential when they support a performance claim.
 
 ## Benchmark results: show the quantities behind the conclusion
 
-Give each table one scientific question. Setup, producer-state agreement, RPA
+How a benchmark is designed, its cases and their reasons, its tolerances and its home,
+is in research's [computational work](../../aitp-research/references/computational-work.md#benchmark-suites);
+this section covers how to present it. Lead with the table that carries the conclusion,
+and keep the prose to what the table cannot show: the pattern, the outliers and the
+conditions. Give each table one scientific question. Setup, producer-state agreement, RPA
 energies and quasiparticle comparisons may need separate tables. Display the
 actual values for both variants where available, with units and a defined signed
 or absolute difference. If a report contains only a difference or summary norm,
@@ -163,3 +167,16 @@ and appropriate data/code citation or supplementary location. Preserve original
 arrays and clearly distinguish a new analysis from new physical calculations.
 Replotting a retained spectrum can validate the plotting chain, but does not
 rerun the eigensolver or establish physical convergence.
+
+Keep scripts in their established primary location and link them with the data and the
+figure; preserve useful existing filenames and earlier deliverables. When the researcher
+asks to see results, reuse an existing figure if it represents the requested data,
+settings and analysis; regenerate it when it is missing, stale or the comparison changed.
+Inspect the rendered figure, and give an accessible link with a one-line reading. Label
+axes with quantities and units, keep colours and markers consistent across related
+figures, and plot the comparison the claim needs; a difference or ratio is often clearer
+than two overlapping curves. Check the field's
+[domain methods](../../aitp-research/SKILL.md#domain-methods) before polishing, such as
+unfolding and symmetry sectors for level statistics or the path and Fermi level for band
+structures. A polished figure of an unchecked quantity is worse than a plain figure of a
+checked one.

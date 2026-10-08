@@ -6,11 +6,24 @@ description: Develop physics research questions and consequential choices with t
 # Resolve the choice that changes the research
 
 Help the researcher shape a useful question and choose among consequential
-directions. For an existing topic, reuse the context recovered by
-[aitp-memory](../aitp-memory/SKILL.md). An open discussion needs neither a new
-topic nor a planning document. This Skill manages the conversation;
+directions. This skill works inside [memory's research cycle](../aitp-memory/SKILL.md#the-research-cycle);
+for an existing topic, reuse the context it recovered. An open discussion needs neither
+a new topic nor a planning document; an idea worth keeping becomes a labelled
+[seed](../aitp-memory/SKILL.md#where-discussion-outcomes-land), and an agreed choice is
+recorded with its reason in the owning main note. This Skill manages the conversation;
 [aitp-research](../aitp-research/SKILL.md) remains responsible for scientific
 reasoning and evidence.
+
+## Read when
+
+| When the task involves | Read |
+| --- | --- |
+| A choice about an existing topic or branch | Its main note's opening and recorded agreement, recovered as in [memory](../aitp-memory/SKILL.md#locate-the-main-note-then-establish-the-current-task) |
+| A new direction or an idea not yet agreed | [Seeds and their promotion](../aitp-memory/SKILL.md#where-discussion-outcomes-land) |
+| Options that need scientific evidence | [aitp-research](../aitp-research/SKILL.md) |
+| A conceptual gap that blocks an informed choice | [aitp-human-learning](../aitp-human-learning/SKILL.md) |
+| A choice inside a phased plan | [Plans](../aitp-memory/references/plans.md) |
+| Recording the decision | [Memory](../aitp-memory/SKILL.md) and [writing](../aitp-writing/SKILL.md) |
 
 ## Decide whether a human answer is needed
 

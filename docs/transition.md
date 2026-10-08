@@ -1,9 +1,10 @@
 # Replacing the legacy implementation
 
 AITP now consists of article-centred memory, research Skills and learning through
-direct Skill distillation. The active bundle is `plugins/aitp`, with six core
-Skills: memory, research, writing and distillation, plus the two conditional
-interaction Skills, human-brainstorming and human-learning. Taste remains future work.
+direct Skill distillation. The active bundle is `plugins/aitp`, with seven core
+Skills: memory (the entry and research cycle), research, verify, writing and
+distillation, plus the two conditional interaction Skills, human-brainstorming and
+human-learning. Taste remains future work.
 
 The earlier ledger runtime, stage machinery, schemas and adapter contracts are
 retired from the active tree. Published Git history remains intact. This is a
@@ -26,7 +27,7 @@ research examples and their evaluation records are retained outside the publishe
 Unpublished commits containing them were excluded from the release ancestry.
 This does not erase any material already present in older published history.
 
-Codex and Hakimi expose the same six core Skills; how a nested method Skill is exposed
+Codex and Hakimi expose the same seven core Skills; how a nested method Skill is exposed
 differs by host, as the README explains. Start a new host thread after
 replacing an installed version. See [validation](validation.md) for the bounded
 checks and their limits.

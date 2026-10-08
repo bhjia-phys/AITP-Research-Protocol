@@ -1,7 +1,7 @@
 {
   "name": "aitp",
-  "version": "1.1.0+codex.20260927155546",
-  "description": "Begin physics research topics with aitp-memory; develop a concise research.md through research, writing and method distillation.",
+  "version": "1.2.0+codex.20261008",
+  "description": "Physics research around a research.md backbone: aitp-memory runs one research cycle; research, verify, writing, learning, brainstorming and distill grow the root, topic and branch notes.",
   "author": {
     "name": "Bohan Jia"
   },
@@ -9,8 +9,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "AITP",
-    "shortDescription": "Develop a coherent research note across sessions.",
-    "longDescription": "Use aitp-memory first to locate or establish the main note, recover context and determine the current task. Research, writing and domain methods develop one concise argument with linked evidence, useful failures and explicit uncertainty. For learning, expand source passages at the reader's needed depth; main notes synthesize the question and supporting notes develop usable results. Retain meaningful changes and distill reusable procedures. During use, repair materially outdated main notes within the current editing scope, preserving evidence and useful history; a usable note needs no rewrite. Produce or revise a LaTeX paper only when requested. No ledger runtime or automatic maintenance hook. Use aitp-human-brainstorming for unresolved research choices and aitp-human-learning for interactive conceptual learning. Reuse settled decisions; neither requires a separate phase or document. Main and branch notes explain which next inference advances the question.",
+    "shortDescription": "Grow research from a connected research.md backbone across sessions.",
+    "longDescription": "Begin research work and substantive physics discussions with aitp-memory. Its research cycle recovers the relevant research.md (or the root note when there is no topic), reads what the task needs, states what it should settle, uses the needed skills, checks consequential claims, keeps outcomes in their primary homes and reachable, and closes by saying what is supported, where it was saved and what it warrants next. The root note holds directions, cross-topic connections, seeds of new ideas, the agreed agenda and standing agreements; topic and branch notes hold their arguments, with evidence linked. aitp-research investigates, synthesizes sources, designs and runs calculations, develops and debugs code and keeps benchmark suites; aitp-verify checks claims, numbers, references and other models' reviews; aitp-writing writes notes and requested JHEP PDFs; aitp-human-learning and aitp-human-brainstorming handle study and the researcher's choices; aitp-distill keeps reusable methods. Routine work and organization proceed without repeated permission; new investigations, expensive campaigns, installations, submissions and publication are proposed first. No runtime, ledger or session hook.",
     "developerName": "Bohan Jia",
     "category": "Productivity",
     "capabilities": [
@@ -18,10 +18,10 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Use aitp-memory first for this research topic: locate or establish research.md, recover its context and clarify this session's task.",
-      "Read the whole research note and recover this topic.",
-      "Integrate this result into the topic's argument.",
-      "Use aitp-writing to revise this physics explanation or manuscript.",
+      "Use aitp-memory and its research cycle for this research topic or discussion.",
+      "Read the whole research note and tell me where this topic stands.",
+      "Integrate this result into the topic's argument and close with what it warrants next.",
+      "Check this derivation, number or reference with aitp-verify before we rely on it.",
       "Distill this demonstrated method into a focused Skill."
     ]
   }

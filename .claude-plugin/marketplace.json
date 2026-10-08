@@ -8,7 +8,7 @@
     {
       "name": "aitp",
       "source": "./plugins/aitp",
-      "description": "Physics research memory, reasoning, writing, human collaboration and method distillation."
+      "description": "Physics research around a research.md backbone: one research cycle, investigation, verification, writing, learning, brainstorming and method distillation."
     }
   ]
 }

@@ -89,6 +89,11 @@ coordination can use ordinary proposal notes; it needs no permanent workflow reg
   Unchanged reuse needs no write.
 - **At a natural pause after theoretical work.** Retain what another question could
   use (see below). A row with a locator is often enough.
+- **When a discussion without a topic explains a concept or framework.** Its durable
+  outcome lands here, as memory's
+  [discussion outcomes](../SKILL.md#where-discussion-outcomes-land) describe, and the
+  root note reaches it through the index. Combining several sources into one explanation
+  follows research's [synthesis](../../aitp-research/references/literature.md#synthesize-several-sources).
 
 Routine coding, job handling and plotting do not trigger this. Do not read the
 whole collection, chase links recursively, or stop a fluent derivation to polish
@@ -327,9 +332,12 @@ collection holds no second copy that could go stale.
   only in the research note. A session that needs the answer opens the cited section.
   Once the researcher confirms the result, the row may state it.
 - **Promotion to an atom needs the researcher's confirmation.** Write an atom from a
-  research result only after the researcher confirms the result, or when its explanation
-  rests on sources or derivations checked independently of the topic's argument. Until
-  then, propose the atom in the handoff rather than writing it. When promoting, extend an
+  research result only after the researcher confirms the result. Independent checks
+  strengthen a provisional pointer's support; they do not supply that confirmation, and
+  they do not turn a research result into source-based learning. Explanations grounded in
+  sources rather than in the topic's research, such as source readings, follow the
+  collection's own learning rules. Until confirmation, propose the atom in the handoff
+  rather than writing it. When promoting, extend an
   existing atom if the object and scope match, rather than writing a second one.
 - **Not research claims.** Readings of sources made during the work, and corrections to
   existing entries, follow their own rules below.

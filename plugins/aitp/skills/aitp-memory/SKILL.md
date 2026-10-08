@@ -1,11 +1,49 @@
 ---
 name: aitp-memory
-description: Start physics topic work here. Locate or establish research.md, recover the context needed by the task, retain meaningful changes and repair materially outdated main notes during use. Reuse current context for follow-ups.
+description: Start AITP research work and substantive physics discussions here. Runs the research cycle around research.md, the backbone at every level (root, topic and branch) - recover the context, decide what the task settles, use the skills it needs, keep outcomes in their homes and reachable, and close with the warranted next move. Also answers status questions and resumes on "continue".
 ---
 
-# Research memory as a developing article
+# The research backbone and the research cycle
 
-Help the researcher make the whole topic clear. The main note should converge
+## The research cycle
+
+Start research work and substantive physics discussions here; a skill opened directly
+applies the same cycle. Within an ongoing task, reuse the context already recovered.
+
+1. Recover the request, existing agreement and relevant backbone note; without a topic,
+   start from the root without creating one.
+2. Read the whole argument before revising it, the relevant parent passage for branch
+   work, and the knowledge index once for theory or study.
+3. Explain what the task should settle; identify the uncertainty and use the needed
+   skills within the agreed scope and plan review.
+4. Read, reason, synthesize or experiment; check consequential claims before relying
+   on them.
+5. Retain durable outcomes in their primary homes; repair reachability and affected uses
+   within scope. Read-only work makes no edits.
+6. Close with the supported answer and warranted next move: do authorized routine work,
+   propose consequential choices, and retain agreed directions in the backbone.
+
+A status-only request (where things stand, what is running, a topic's history or
+connections) is answered from the existing records without edits, as
+[status and continuation](references/status-and-continuation.md) describes. The cycle
+repeats when evidence changes the question; it is not a fixed pipeline, and one task may
+pass through several skills without returning to the researcher. Explain an intended
+consequential change before making it, without turning every explanation into a request
+for approval. No route announcement is needed.
+
+`research.md` is the researcher's long-term memory and the backbone of the research.
+Each one is a developing article about the question at its own level: a root note for
+the whole research, a note for each topic, and notes for branches inside topics. The
+other skills are processes that grow it:
+[aitp-human-learning](../aitp-human-learning/SKILL.md) for study and conceptual
+difficulty, [aitp-human-brainstorming](../aitp-human-brainstorming/SKILL.md) for the
+researcher's choices, [aitp-research](../aitp-research/SKILL.md) for investigation,
+synthesis and computation, [aitp-verify](../aitp-verify/SKILL.md) for checking claims,
+[aitp-writing](../aitp-writing/SKILL.md) for notes, papers and PDFs, and
+[aitp-distill](../aitp-distill/SKILL.md) for reusable methods. This skill keeps the
+backbone and runs the cycle around every task.
+
+Help the researcher make the whole research clear. A main note should converge
 toward a coherent account of a question, its reasoning, evidence and remaining
 obstruction. Convergence can be a qualified result, a precise failure, or a
 better question; do not force success or erase uncertainty to make a neat paper.
@@ -13,13 +51,89 @@ This account should help a returning agent choose the next useful inference:
 what the main question needs, which branch can supply it, and which completed or
 failed route no longer needs repeating. It is not a queue of all unfinished work.
 
+## Read when
+
+| When the task involves | Read |
+| --- | --- |
+| The root note, a seed, or a discussion outcome without a topic | [The backbone](#the-backbone-at-each-level) and [discussion outcomes](#where-discussion-outcomes-land) |
+| An agreed new topic, or scattered material that needs a home | [Starting or organizing a topic](references/starting-a-topic.md) |
+| Where a script, figure, input or output belongs | [Asset placement and links](references/local-assets.md) |
+| Source trees, builds, environments, tests and runs | [Numerical assets](references/numerical-assets.md) |
+| Shared concepts, source readings or a pointer row for a result | [Shared knowledge](references/shared-knowledge.md) |
+| Where a new result, failure or correction goes | The [placement table](../aitp-writing/references/research-note.md#add-move-and-remove-material-without-losing-the-thread) |
+| A note with a parent or branches | [Keeping the topic tree clear](#keep-the-topic-tree-clear) |
+| Planning a stage of work | [Plans](references/plans.md) |
+| Handing work to another session or model, or work in parallel | [Hand-offs and parallel work](references/handoffs.md) |
+| Where things stand, a topic's history or its connections | [Status, history and continuation](references/status-and-continuation.md) |
+| A bare "continue" | [Continuing the authorized task](references/status-and-continuation.md#continue-the-authorized-task) |
+
+## The backbone at each level
+
+| Level | What its main note owns |
+| --- | --- |
+| Root: the `research.md` at the top of the research workspace | The researcher's overarching questions and directions, as they state them; why each topic serves them; consequential cross-topic connections and turning points; unattached seeds; agreed directions; standing agreements about what agents may do without asking. Independent directions can stay independent. |
+| Programme, only for a real cross-topic question | The question connecting several topics, their combined implications and the missing relation. Shared software alone does not justify one. |
+| Topic | A defined research or learning question: its assumptions, developing answer, decisive reasoning, evidence, limitations and what each branch contributes. |
+| Branch | An independent subquestion: its origin and parent relation, agreed scope, method, answer, limits, continuation and what its outcomes mean upstream. |
+
+Each opening states the question, the current answer at its supported strength, the
+approach, the decisive limitation and the next step. At the root these describe the
+directions and their unresolved relationships; do not invent a single thesis or a
+priority order. The root never copies topic answers, measurements or progress; it owns
+their implications for the larger questions. The workspace README stays the folder map.
+The root links it, the shared knowledge index and each top-level topic, and each
+top-level topic links back to the root.
+
+Start a root note only from existing notes and the researcher's documented choices, with a
+link to where each choice is recorded, and leave unstated priorities unspecified. When a
+topic's role, an important connection, a direction or an agreed next choice changes, the
+session that changed it updates the affected root passage before handoff, within its
+editing scope. Routine evidence updates do not by themselves require a root edit; update it
+when their implications change a direction or connection. One coordinating writer
+integrates concurrent root edits.
+
+**Reachability.** Every retained paper, question, derivation, numerical experiment and
+output has one primary home and an intelligible link path from the root and from the
+main note that uses it. The path may pass through supporting notes, source maps, READMEs
+or the knowledge index; keep it short enough to follow. Maintain it when retaining,
+moving or correcting material, and say what each link establishes. Useful failed or
+detached work stays reachable through an "earlier approaches" passage or an index that
+the main note reaches. Unread sources and unavailable remote data carry honest labels
+and precise locations. Temporary caches and tool environments need no research entry.
+
+## Where discussion outcomes land
+
+A substantive physics discussion needs no topic. Keep what is durable; a clarification
+that is already recorded needs no write.
+
+| Outcome | Primary home, and its route from the backbone |
+| --- | --- |
+| A concept or framework learned | An existing or new explanation, source reading or story in the [shared collection](references/shared-knowledge.md), with its index row. Root → knowledge index. A checked locator can be enough; write no empty entry per term. |
+| A derivation worth keeping | The source's section note or a topic's supporting note; with neither, `notes/<question>.md` beside the root note, linked from the root in context. State assumptions, checks and unresolved steps; do not manufacture a topic. |
+| A connection between topics | One explanation in a supporting note, linked from the passages that use it in both topics. The root states its wider implication, marking a conjecture as such. |
+| An open question or idea | A short seed in the relevant main note, or in the root when unattached: the question, why it matters, what prompted it, the missing evidence and a possible first check. Mark it uncommitted; link longer reasoning. |
+
+A seed becomes a proposed branch when it has a distinct question, useful grounds, a
+discriminating first action and a continuation worth pursuing. Propose it inside an
+existing topic when it serves that topic, otherwise as a new topic linked from the root.
+Once it is agreed, or already covered by the current request or an existing applicable
+agreement, build its home without further instruction: folder, `research.md`, links in
+both directions and the README map. Revisit seeds when related work changes their grounds; merge duplicates,
+replace a resolved seed with its answer and link, or keep the reason for setting it
+aside. Seeds are possible directions, not a queue or a priority order.
+
+Research results stay in their research account, including a standalone derivation
+note. A reusable result enters the shared collection only as a provisional index row
+naming the question and citing that account; an atom written from a research result
+needs the researcher's confirmation.
+
 ## Locate the main note, then establish the current task
 
-This is the entry point for work on a research topic. Use it before topic-specific
-derivation, coding, analysis or substantial writing, even if the user did not ask
-to record anything. A standalone physics question does not by itself establish
-a persistent topic. Within an ongoing task, reuse the current topic context;
-entry does not mean restarting this process on each turn.
+This is step 1 of the cycle, used before topic-specific derivation, coding, analysis or
+substantial writing, even if the user did not ask to record anything. A standalone
+physics question does not by itself establish a persistent topic; its durable outcomes
+land as [described above](#where-discussion-outcomes-land). Within an ongoing task,
+reuse the current topic context; entry does not mean restarting this process on each turn.
 
 First check for the designated `research.md`, or the established main note in
 another format. Use the working folder and README links to locate it; do not
@@ -28,16 +142,26 @@ assume an unfamiliar subdirectory or missing literal filename means no note exis
 - If a main note exists, recover the context needed by the request as described
   below. Apply [on-use repair](#repair-an-outdated-main-note-during-use) when the
   encountered account has a material gap; substantive revision needs the whole argument.
-- If none exists, use [starting or organizing a topic](references/starting-a-topic.md).
+- If none exists and the researcher has agreed to a persistent topic, or authorized
+  consolidating existing material, use [starting or organizing a topic](references/starting-a-topic.md).
   Distinguish an empty project from existing research without a synthesis. Suggest
   the [optional layout](references/local-assets.md#optional-layouts-for-a-new-home)
   when a home is needed, reuse available assets, and draft a small `research.md`
   once the question and location are clear. Do not manufacture completed results.
+- For a discussion, a missing topic note is not a reason to create one: locate the root
+  through the workspace instructions and maps, and place durable outcomes as the
+  [outcome table](#where-discussion-outcomes-land) describes. If the workspace has no root
+  yet, do not infer a topic or reorganize the workspace; create a minimal root only within
+  authorized organization, and otherwise name the missing navigation and continue the
+  permitted discussion.
 
 Connect the user's request to that understanding and state the current task
 briefly: what this session should resolve or produce, and what would settle that
 task. A historical next step is context, not a substitute for today's request.
-No separate goal file, host Goal object or fixed research stage is required.
+No separate goal file, host Goal object or fixed research stage is required. Associate a
+host's goal, research line or loop with the existing notes it concerns; do not create
+topics to mirror host objects. A host's "completed" describes the task, not an accepted
+result.
 
 When work turns to a useful side investigation, retain why it arose, its working
 home and how it relates to the originating question. Use
@@ -115,33 +239,24 @@ Do not initialize a ledger or reconstruct all archived sessions merely to begin.
 
 ## Repair an outdated main note during use
 
-As a topic is used, assess the encountered account against the applicable current
+As a topic is used, assess the encountered account against the current
 [main-note guidance](../aitp-writing/references/research-note.md). If its organization
-obscures the supported answer, decisive conditions, evidence, consequential history
-or continuation, repair it within the current topic-editing authorization without
-waiting for a separate maintenance request. Examples include a dated update queue
-whose opening still promotes a superseded claim, or completed work still presented
-as the next prerequisite. A durable improvement in recovering the argument warrants
-an edit even when no new scientific result has been obtained.
+obscures the supported answer, decisive conditions, evidence, consequential history or
+continuation, repair it within the current topic-editing authorization without waiting for
+a separate maintenance request; for example, a dated update queue whose opening still
+promotes a superseded claim, or completed work still presented as the next prerequisite. A
+durable improvement in recovering the argument warrants an edit even without a new
+scientific result.
 
-First understand the complete current argument and inspect the evidence needed to
-resolve the defect, then use writing's [adaptation guidance](../aitp-writing/references/research-note.md#adapt-an-existing-note-during-use).
-Integrate the repair into the current work before handoff, preferably alongside
-other warranted edits. Preserve the researcher's question, complete useful reasoning,
-original observations and reasons for earlier routes. Missing scientific evidence
-or historical reasons remain unknown; better organization does not establish them.
-
-Judge the content, not a stored Skill version or exact template. A usable note
-with different headings needs no rewrite, and a Skill update alone needs no edit.
-Ordinary recall does not require a whole-library conformity audit. This is upkeep
-of the active topic during use, not an installation-time migration or background
-writer. Explicit read-only or restricted scope takes precedence: name the affected
-claim and pending repair without editing outside that scope.
-
-After repairing the material gap, an unchanged revisit should make no further
-write. No compatibility stamp, repeated backup, new summary or migration registry
-is required. Briefly link the repaired note when handing back the task; when no
-repair is needed, there is no additional maintenance report.
+Understand the complete argument and the evidence needed first, then follow writing's
+[adaptation guidance](../aitp-writing/references/research-note.md#adapt-an-existing-note-during-use):
+preserve the researcher's question, useful reasoning, original observations and reasons for
+earlier routes; missing evidence or reasons stay unknown. Judge the content, not a Skill
+version or template: a usable note with different headings needs no rewrite, an unchanged
+revisit makes no further write, and ordinary recall needs no library-wide audit. Explicit
+read-only or restricted scope takes precedence: name the affected claim and the pending
+repair instead. Link the repaired note briefly when handing back; no compatibility stamp,
+backup ritual or maintenance report is needed.
 
 ## Integrate changes into the argument
 
@@ -165,35 +280,19 @@ using [corrections and retained notes](../aitp-writing/references/supporting-not
 Name known dependencies beyond the completed scope. This is work during the task,
 not background synchronization.
 
-Use [aitp-human-learning](../aitp-human-learning/SKILL.md) for interactive study
-or a conceptual difficulty; it decides how to use feedback, not what is true.
-For a learning topic, retain the primary reading thread and a consequential
-conceptual obstacle or explanation when useful for continuation. Its main note can be a
+For a learning topic, use [aitp-human-learning](../aitp-human-learning/SKILL.md) for the
+interaction; its main note can be a
 [story of questions](references/shared-knowledge.md#tell-a-learning-topic-as-a-story-of-questions)
-that links into source readings and shared atoms. Keep a source
-passage's location near its supporting derivation. The main note integrates the
-relationships established so far; it need not become a complete survey before
-the reading has progressed. Distinguish an explanation the agent has produced
-from understanding the learner has actually confirmed. No mastery checklist,
-separate learning ledger or record of every exchange is needed. A small useful
-explanation can stay in place without rewriting the whole main note.
+linking source readings and atoms, and it distinguishes an explanation the agent produced
+from understanding the learner confirmed. No mastery checklist or learning ledger is needed.
 
-Keep the core implication intelligible in the main text. Move a long derivation,
-specialized concept or detailed analysis to a separate file when it has a useful
-independent role. Leave the result, decisive condition, explanation and link in
-the main note. Introduce definitions when they become necessary. Reuse a shared
-atom when its conventions apply; state a topic-specific difference near
-the point of use. Do not create a knowledge taxonomy before there is material.
-When the researcher keeps a [shared knowledge collection](references/shared-knowledge.md),
-read its index once at the start of a theoretical derivation, a conceptual question,
-or a reading or study task.
-This is the same habit as reading the main note before topic work, and one bounded
-read rather than a search on every term. Open the entries for the task's central
-concepts and sources, and reuse their conventions or state the difference. Before
-creating an atom (a shared concept, theorem, technique, example or result), check the
-index for an existing treatment. Reuse needs no write. At a natural pause, retain useful understanding;
-an index row with a checked locator is often enough. Follow only dependencies
-needed by the current argument.
+Keep the core implication intelligible in the main text, and move a long derivation,
+specialized concept or detailed analysis to its own file when it has an independent role,
+leaving the result, decisive condition and link. Reuse a shared atom when its conventions
+apply, and state a topic-specific difference where it is used. When the researcher keeps a
+[shared knowledge collection](references/shared-knowledge.md), read its index once at the
+start of a theoretical derivation, a conceptual question or a reading or study task, open
+the entries the task needs, and check it before creating an entry.
 
 For a first main note or a substantive revision, apply
 [aitp-writing](../aitp-writing/SKILL.md) and its
@@ -209,6 +308,10 @@ clear argument. They edit the same note, without a separate summary to maintain.
 A topic often grows into a tree: a parent main note whose argument uses the answers
 of branch main notes, each with its own question and evidence. Keep each level
 telling its own part of the story, so that the parent stays readable as work grows.
+The root note is the top of every tree. Relationships, reachability and the propagation
+of changed meaning apply at every level, but the root's content follows its
+[own rule](#the-backbone-at-each-level): implications for the larger questions, not each
+topic's current answer and continuation.
 
 When the task's note has a parent or branches, relate them before working. For
 branch work, read the parent's opening and the passage that uses this branch; for
@@ -240,7 +343,8 @@ Whenever you edit a note in the tree, check that:
 
 At handoff, when a branch's answer, decisive limitation or next step has changed,
 revise the branch's opening and the parent's using passage together, and the
-parent's opening if its own answer, limitation or next step changed. An unchanged
+parent's opening if its own answer, limitation or next step changed. Continue upward,
+to the root when it is affected, only while an ancestor's meaning changes. An unchanged
 branch state needs no parent edit.
 
 Before adding material to a main note, ask whether its argument needs it at this
@@ -251,7 +355,8 @@ Moving existing work there is ordinary organization within the authorized scope,
 following the [restructuring procedure](../aitp-writing/references/research-note.md#add-move-and-remove-material-without-losing-the-thread);
 starting a new investigation still needs agreement. A concluded branch's result
 becomes part of the parent's argument and its note remains the evidence; an
-abandoned branch leaves its reason in one sentence where the parent used it.
+abandoned branch leaves its reason in one sentence where the parent used it, with
+what survives and what would justify reopening it.
 
 These checks belong to entry, editing and handoff, not to a separate audit, status
 file or registry; a clear tree needs no rewrite. Mention a tree repair in one
@@ -259,45 +364,66 @@ sentence when handing back the task.
 
 ## Use ordinary files and meaningful links
 
-Use the existing topic or project README to locate material when its location
-is unfamiliar. When related topics or shared explanations may help, first
-[browse nearby directories, entries and note titles](references/local-assets.md#browse-nearby-topics-and-shared-knowledge),
-then search and read promising candidates. This is a bounded discovery step
-when needed, not a whole-library read or a repeated check on every turn.
-Once the main note and relevant asset locations are established,
-explain them there briefly if that navigation is missing or has changed. The
-README maps the actual folder architecture, including established branch folders
-and shared locations; the main note carries its scientific argument through
-links to detailed research notes, whose relevant passages connect to derivations,
-code, inputs, results, papers and figures. Keep the decisive result and conditions
-in the main note. Direct asset links are useful too; do not create an intermediate
-note solely to wrap a link or turn the README into a file-by-file inventory.
+The README maps the actual folders; the main note carries the scientific argument through
+links to detailed notes, whose passages connect to derivations, code, inputs, results,
+papers and figures, so that the [reachability rule](#the-backbone-at-each-level) holds. When
+a location is unfamiliar, use the README and
+[browse nearby directories and note titles](references/local-assets.md#browse-nearby-topics-and-shared-knowledge)
+before searching; this is a bounded step, not a whole-library read. Before saving an asset,
+reuse its established location or a suitable place beside related material, keep one
+primary copy and link it. [Asset placement and links](references/local-assets.md) covers
+unclear cases and moves; its optional layouts create only the locations actual work needs.
+Full recovery follows every scientific branch, including useful failed routes.
 
-Before saving a new asset, reuse its established working location or a suitable
-place alongside related material. Consult [asset placement and links](references/local-assets.md)
-when that choice is unclear or a move is requested. Keep one primary asset and
-link it where needed. For a new home, the asset guide offers optional layouts;
-create only the locations needed by actual work. Full recovery follows
-every scientific branch, including useful failed routes; recovering a selected
-report is not evidence of complete topic coverage.
+Prefer descriptive relative Markdown links with precise locators, such as a derivation's
+section, a specific report, an input, a data product, a PDF or an image, and say what the
+linked material establishes. Use Markdown for the main note unless an established TeX note
+or an explicit choice says otherwise. No special IDs, schema, knowledge cards or hashes are
+required. After a meaningful edit, reread the changed argument in context, check affected
+links and qualifications, and confirm that the opening, reasoning and conclusion agree.
+Preserve concurrent edits, and repair relative links when a note moves.
 
-Prefer descriptive relative Markdown links. Link a derivation's section, a
-specific report, input file, data product, PDF or image when possible. A directory
-is enough for navigation; a scientific assertion usually needs a more precise
-locator. Tell the reader what the linked material establishes. Keep one primary
-explanation rather than copying the same argument into several summaries.
+## Close the task visibly
 
-Use Markdown for the main note by default; respect an established TeX main note
-or explicit format choice. Supporting files may use any suitable format. No
-special IDs, schema, immutable Note revisions, knowledge cards or hashes are
-required by this workflow. Existing recorded version information can remain
-useful without being made a universal prerequisite.
+At every substantive close or meaningful pause, say in a few lines what is now
+supported, where it was retained, with a link to each changed file, and what the
+evidence warrants next. Complete routine follow-through within the agreement, propose
+the rest, and record agreed directions in the relevant backbone passage's next step.
+An unaccepted suggestion stays a labelled seed. "The question is settled; nothing
+further is warranted" is a valid close.
 
-Read and edit with normal host tools. After a meaningful edit, reread the changed
-argument in its whole-note context, check affected links and qualifications, and
-verify that the opening, reasoning and conclusion agree. Preserve concurrent
-edits. Moving a note requires repairing affected relative links. Do not run
-an unrelated whole-store integrity audit or hash scan for ordinary note work.
+| Signal in the work or discussion | Warranted response within the existing agreement | Propose instead when |
+| --- | --- | --- |
+| A disputed step, incompatible claims or a delicate limit | Inspect premises and conventions; derive or check the smallest discriminating case with [aitp-verify](../aitp-verify/SKILL.md) | Resolving it means a different physical problem or a substantial independent investigation |
+| Competing mechanisms predict different behaviour | Design the calculation or benchmark; run it when numerical work and its resources are covered | It needs an expensive campaign, an installation or a cluster submission outside the agreement |
+| A mismatch or a suspiciously easy pass | Trace inputs and baseline, check the diagnostic, then repair the cause and validate | The repair would change the intended equation, a protected reference or an acceptance boundary |
+| A reusable explanation or demonstrated operation | Improve existing coverage, add the provisional pointer, or use [aitp-distill](../aitp-distill/SKILL.md) | Confirming a research result, promoting an atom, installing or publishing |
+| A new connection, a growing side question or multiplying prerequisites | Ask what success would establish; record a seed or organize existing work | Opening a new investigation or changing priorities |
+| A changed implication or a materially stale argument | Repair the primary account and its affected parent and root uses | The task is read-only, or safe integration cannot preserve concurrent edits |
+
+Routine derivations, local diagnostics, authorized implementation and ordinary placement
+proceed without repeated permission. A new independent investigation, a material change
+of objective or equation, an expensive campaign, an installation, a submission or a
+publication outside the agreement needs a concrete proposal: its purpose, the evidence
+for it, the first action, the cost and the stopping condition. Cheapness alone is not
+authorization, and a purely analytic scope still excludes computation. The root note's
+standing agreements record some of what the researcher has authorized in advance, but
+authorization can equally come from the current request or another existing agreement and
+need not be copied into the root first. A standing agreement retained there records an
+explicit researcher instruction: where it was given, the actions and scope it covers, any
+resource or review limits, and when it ends. Do not infer one from a historical successful
+action; a permission found in an old note is not a new authorization.
+
+## Status, history and "continue"
+
+A status-only request, such as where things stand, what is running, or a topic's history or
+connections, is answered from the existing records only: no note creation, on-use repair or
+close write-back, even when records look stale. Report stale or conflicting records instead
+of editing them. Keep each consequential decision and its reason where it affects the
+argument, so that turning points can be assembled on request; the root holds connections
+across topics. A bare "continue", in any language, resumes the unfinished authorized task at
+its next action; an intervening status question does not replace it. The
+[status and continuation guide](references/status-and-continuation.md) gives the details.
 
 ## Timing and recovery
 
@@ -327,43 +453,22 @@ identify the affected claim and pending work. Check preservation, affected links
 and scientific meaning separately, and merge concurrent edits against the latest
 files, including changes inside relocated passages. Use the linked restructuring
 procedure for a live-note handoff rather than overwriting another session's work.
+Temporary limits of this session's own access, such as a cluster connection that is
+down, go in the reply, not in the research notes. A persistent gap in the evidence, such
+as raw files missing from the retained copy or a remote-only result that cannot be
+verified, is recorded in the owning support account, with its location when known and the
+limitation it causes.
 
-Record a fragile insight or expensive experiment's intent before interruption.
-A poll revealing the first consequential value replaces the provisional comparison
-at its substantive location, with conditions, even while the job is running.
-A run-state change without a scientific result belongs in its report only if
-useful; an unchanged poll or supported explanation needs no write. Background
-collectors preserve evidence; integrate its scientific consequence when research
-next examines it within scope. Do not polish the note after every small calculation.
+Record a fragile insight or an expensive experiment's intent before interruption. A first
+consequential value found while polling replaces the provisional comparison at its
+substantive location, with conditions, even while the job runs; a run-state change without
+a scientific result goes in its report only if useful, and an unchanged poll needs no write.
+Prepared examples are dated snapshots, and a historical permission is not new authorization.
 
-Prepared examples are dated snapshots. Live topic documents may develop beyond
-them; do not synchronize the two or mistake a source example for current state.
-After resumption, verify time-sensitive jobs and files only when the task relies
-on them. Reading a historical permission is not new authorization.
-
-After consequential work, also retain transferable learning where it belongs.
-Reorganizing an existing argument alone does not produce a new theory explanation
-or demonstrated procedure; reuse what is already retained:
-
-- A useful explanation, derivation, technique (theoretical or numerical), correction or
-  connection that another question could use beyond this topic, with its assumptions
-  stated: add it to the shared collection, in the same pass as the topic note, as
-  [research teaches](references/shared-knowledge.md#add-what-research-teaches)
-  describes. Add an index row that cites the research note's section and names the
-  question rather than restating the result, marked provisional and awaiting review. The
-  research note stays the single home of the claim. Propose an
-  atom rather than writing one until the researcher confirms the result. Review cited
-  rows in the same edit, changing only affected locations, scope, support, review state
-  or qualifications. An unrelated change elsewhere in the cited file needs no row
-  update or dated acknowledgement. Check existing coverage first and extend rather
-  than duplicate. This decision does not depend on having needed a library search.
-- A demonstrated reusable operation or correction to one: use
-  [aitp-distill](../aitp-distill/SKILL.md) to create or revise the appropriate
-  local Skill within the authorized scope, without waiting for another request.
-  Keep insufficiently supported candidates in the research note with their limits.
-
-The same work can support both an explanation and a procedure when each has a
-distinct use; link their primary accounts rather than duplicating them. Reuse
-the current assessment at handoff. No durable learning means no additional write.
-When something is retained, give its location and relevant limitation alongside
-the result so the researcher can find it; no separate learning report is needed.
+After consequential work, retain transferable learning where it belongs. A result another
+question could use goes to the shared collection as a provisional index row citing its
+research section, as [research teaches](references/shared-knowledge.md#add-what-research-teaches)
+describes, and an atom waits for the researcher's confirmation. A demonstrated reusable
+operation goes through [aitp-distill](../aitp-distill/SKILL.md) within the authorized scope.
+Check existing coverage first, link rather than duplicate, and give the location and
+limitation alongside the result. No durable learning means no additional write.

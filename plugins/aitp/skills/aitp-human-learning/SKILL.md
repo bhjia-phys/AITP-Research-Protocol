@@ -8,8 +8,22 @@ description: Guide interactive physics learning and respond to conceptual diffic
 Use this when the researcher asks to learn, read together or resolve a conceptual
 difficulty, including one encountered during research. A theoretical term in an
 otherwise routine research task is not a reason to start a teaching interview.
-Reuse the topic context from [aitp-memory](../aitp-memory/SKILL.md) when present;
-a standalone explanation needs no new research folder.
+This skill works inside [memory's research cycle](../aitp-memory/SKILL.md#the-research-cycle);
+reuse the topic context it recovered when present. A standalone explanation needs no new
+research folder; what it produces lands as memory's
+[discussion outcomes](../aitp-memory/SKILL.md#where-discussion-outcomes-land) describe.
+
+## Read when
+
+| When the task involves | Read |
+| --- | --- |
+| Explaining, deriving or teaching in writing | [Learning from sources](../aitp-writing/references/learning.md) |
+| Studying a paper or lecture in depth | [Close reading](../aitp-writing/references/learning.md#read-a-source-closely), starting from its reading in the [shared collection](../aitp-memory/references/shared-knowledge.md#keep-source-readings-usable) |
+| Several papers that must be combined into one understanding | Research's [synthesis across sources](../aitp-research/references/literature.md#synthesize-several-sources) |
+| A concept the researcher's collection may cover | The shared knowledge index, once, and the entries it names |
+| Learning a field's methods | Its [domain methods](../aitp-research/SKILL.md#domain-methods) |
+| A requested PDF note | [Manuscript handling](../aitp-writing/references/manuscripts.md) and the [JHEP starter](../aitp-writing/assets/jheppub-note-template.tex) |
+| A step that may be a real error | [aitp-verify](../aitp-verify/SKILL.md), or [aitp-research](../aitp-research/SKILL.md) to rederive it |
 
 ## Establish the useful depth
 

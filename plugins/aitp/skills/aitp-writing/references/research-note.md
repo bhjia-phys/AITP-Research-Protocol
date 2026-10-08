@@ -188,6 +188,10 @@ replace that account first, then inspect its dependent uses, opening and ending.
 | Assumption or interpretation corrected | Correct the primary account and affected maintained uses. Explain what survives and why the rejected inference fails. |
 | Useful failure or consequential route change | Keep the restriction beside its argument. For a route change, retain its rationale, surviving result, changed relevance and reopening condition; link the diagnosis. |
 | Independent question agreed | Establish or reuse its main note, explain both directions of the relationship and update the nearest folder map. |
+| A seed agreed as a branch or topic | Build its home: folder, `research.md`, links in both directions and the folder map. Replace the seed with a link to the new note. |
+| An outcome of a discussion with no topic: a concept, derivation, connection or idea | As memory's [discussion outcomes](../../aitp-memory/SKILL.md#where-discussion-outcomes-land) describe: the shared collection, a `notes/` derivation beside the root, one connection note linked from both topics, or a seed. |
+| A topic's role, a direction, an important connection or an agreed next choice changed | The affected [root](../../aitp-memory/SKILL.md#the-backbone-at-each-level) passage states the implication; the topic keeps its evidence. |
+| A detailed phased plan | A separate [plan](../../aitp-memory/references/plans.md) linked from the main note's next step; the main note does not copy its phases. |
 | Run starts, finishes or changes state without a scientific result | Add a dated observation to its existing report only if useful for continuation; otherwise no write. |
 | Unchanged status or explanation | Answer without writing when the account is usable. |
 | Completed stage still appears as future work | Repair its heading, instructions and continuation together; preserve the historical plan. |

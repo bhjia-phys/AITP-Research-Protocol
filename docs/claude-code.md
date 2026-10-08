@@ -6,7 +6,7 @@ metadata; the [marketplace](../.claude-plugin/marketplace.json) points to that
 plugin directory. No copy of the research instructions, runtime, MCP service,
 session hook or global `CLAUDE.md` is required.
 
-Claude scans the default `skills/` directory for the six core Skills. The
+Claude scans the default `skills/` directory for the seven core Skills. The
 manifest adds the nested `developing-librpa` directory so that the domain method
 is selectable too. Its files stay in their existing location, preserving links
 to the research Skill and method library. When another domain method needs
@@ -26,7 +26,7 @@ claude plugin list
 claude plugin details aitp
 ```
 
-The user scope enables AITP across this user's projects. Expect six core Skills
+The user scope enables AITP across this user's projects. Expect seven core Skills
 plus `developing-librpa`. Start a new Claude session in the research workspace.
 These instructions install the current local checkout; the published `v1.1.0`
 release predates the Claude manifest and the two human interaction Skills.

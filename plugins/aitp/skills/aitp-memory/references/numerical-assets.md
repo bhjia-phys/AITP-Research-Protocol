@@ -10,6 +10,7 @@ directory template to create or a reason to move functioning projects.
 | Main source checkout | `code/LibRPA/` | The authoritative working source; an existing external checkout can remain there and be linked. |
 | Isolated source change | `worktrees/<change>/` | Only when isolation helps; describe its relationship to the main checkout and local edits. |
 | Compiled configuration | `builds/<configuration>/` | Cache, build output and executable for one source/configuration; follow existing out-of-source build conventions. |
+| Tool environment or package cache | The established, authorized code, development or environment location, which may lie beneath a topic | Not a prose-only reading or note folder merely because it is the current directory; record its requirements and invocation where the experiment or build is described. Installing needs its own authorization. |
 | Component tests and reusable fixtures | The source repository's existing test locations | Keep maintainable tests with their code and protected reference data; avoid a second test suite in the topic. |
 | A scientific experiment | `calculations/<question>/<run>/` | Inputs, launch script, outputs and analysis that belong to this attempt. |
 | Long derivation or implementation explanation | `notes/<question>.md` | The claim and reasoning, linked to relevant code and experiments. |
@@ -27,6 +28,11 @@ and observed numerical difference in ordinary prose or the existing run script.
 Record the environment details that affect reproduction, rather than copying
 the whole machine configuration. Existing Git references are useful; no file
 hashes, rigid run identifiers or separate ledger are required by AITP.
+
+Before building or installing, look for an existing suitable environment, as
+[computational work](../../aitp-research/references/computational-work.md#environments-caches-and-resumed-work)
+describes. An environment is a tool, not research material: it needs no research
+entry, and the research notes record only what is needed to recreate it.
 
 Keep a trusted baseline and its inputs intact. Put a new attempt's outputs in
 a fresh working location, including unsuccessful attempts whose failure remains

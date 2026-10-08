@@ -38,6 +38,44 @@ queue/resource limits, input errors, implementation failures, numerical failure
 and physical disagreement. A successful exit does not establish convergence.
 Do not lower a meaningful tolerance merely to obtain a pass.
 
+## Estimate resources before submitting
+
+Estimate memory and time for an expensive run by scaling the closest comparable completed
+run with the method's scaling and the implementation's distribution; the field's
+[domain methods](../SKILL.md#domain-methods) give known scalings. Compare the estimate with any recorded failure: agreement
+supports both the estimate and that reading of the failure. Record what each measurement
+covers: step, task or node scope, units and parallel layout. `MaxRSS` is the largest
+single task's resident memory, not a multi-task node peak, and it excludes GPU memory;
+with one task per node it is the largest node's resident memory for that step. Use node
+or device measurements where available, account for replicated allocations, and treat
+missing accounting as unknown. A question about a measurement's scope qualifies an
+estimate; it does not replace it. When unsure, run a pilot that exercises the suspected
+peak allocation at the target settings. Record the estimate and the measurement in the
+run report, so that an overrun corrects the next estimate.
+
+When a report that the current decision relies on is shown to be ambiguous or misread,
+by its layout or another measurement, add a dated note beside it; do not reword the
+original record. A caveat that is only suspected, or that applies to several reports,
+goes in the reply or the plan rather than into each report.
+
+## Many jobs, several sites
+
+Keep each job's run directory and report, so that a status request can assemble them;
+no separate tracking file is needed. Record the site, the job or array identity and the
+run directory in the report at submission. Site profiles, such as accounts, partitions, GPU
+or CPU nodes, memory per node and queue habits, belong in the workspace's environment
+instructions.
+
+## Restart, resubmit or change resources
+
+Before resubmitting, read the failed job's first causal error and check for a
+checkpoint. Resume from a checkpoint when the code supports it and the inputs are
+unchanged. Moving between GPU and CPU or changing the parallel layout requires
+confirming that the code supports the target and that a small case agrees; record the
+change in the run report.
+
+## Record state changes
+
 An unchanged poll requires no memory edit when the account remains usable.
 A failure that changes the diagnosis or a first consequential result belongs in
 the relevant research argument, even while the job is unfinished. Link its evidence

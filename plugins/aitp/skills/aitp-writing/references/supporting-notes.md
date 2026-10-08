@@ -30,9 +30,14 @@ to settle its purpose, stage objective and approach before dependent work.
 An agreed independent research branch needs its own folder and `research.md`
 even before results exist; reuse a suitable existing branch folder and main note
 when they already cover its question. A passing idea can remain a proposed direction
-in the existing text without a new file or implied execution agreement. If work
-has already begun without a clear agreement, preserve what was done honestly and
-resolve the consequential choice before extending it.
+in the existing text without a new file or implied execution agreement: a labelled
+[seed](../../aitp-memory/SKILL.md#where-discussion-outcomes-land) in the relevant main
+note, or in the root note when no topic owns it. A seed with a distinct question, useful
+grounds, a discriminating first action and a continuation worth pursuing is proposed as a
+branch; once agreed, or already covered by the current request or an existing agreement,
+build its home without further instruction and replace the seed with a link. If work has already begun without a
+clear agreement, preserve what was done honestly and resolve the consequential choice
+before extending it.
 
 Place the branch folder near the originating question or in an established topic
 family, following the actual working location. Check relevant existing notes
@@ -49,8 +54,10 @@ Explain in ordinary prose what prompted the branch, the agreed stage objective,
 approach and scope, what evidence would settle it or call for reconsideration,
 what has actually been established, and the next action needed to resume it.
 Keep proposed alternatives and unresolved choices distinct from agreed work.
-A short plan can live in this note; link a longer plan, derivation, implementation
-account, scripts, inputs and results when they have their own useful homes.
+A short plan can live in this note; a detailed phased plan is a separate
+[plan](../../aitp-memory/references/plans.md), reviewed before it runs. Link it, and the
+derivation, implementation account, scripts, inputs and results, when they have their own
+useful homes.
 These are content needs, not a required set of documents. Preserve useful
 failures and the reasons for material changes of plan; replace obsolete next
 steps while retaining the evidence. In the originating main note, link the
@@ -76,15 +83,20 @@ reusing context already understood. Read a main note's complete argument before
 substantively changing it, not every ancestor or sibling for a local branch task.
 Resume from the retained agreement and current request. A proposed next stage
 is not automatically agreed; ordinary work inside a confirmed objective can
-continue without another planning exchange.
+continue without another planning exchange. Branches worked in parallel by different
+sessions or models follow memory's
+[parallel-work rules](../../aitp-memory/references/handoffs.md#work-in-parallel): one
+writer per note, one integrator for the parent.
 
 When pausing, leave the unresolved step and useful assets findable. On completion,
 a consequential failure or another change to the branch's answer or next step,
 update the branch and the parent's using passage with its implication, as memory's
-[topic-tree checks](../../aitp-memory/SKILL.md#keep-the-topic-tree-clear) describe. Fixing restart support does not establish that the dependent
+[topic-tree checks](../../aitp-memory/SKILL.md#keep-the-topic-tree-clear) describe,
+and the root note when the topic's role or direction changed. Fixing restart support does not establish that the dependent
 material calculation ran or converged. Propagate only consequences actually
 supported. Keep useful abandoned branches and their failures; an existing README
-or note index can retain a link if they leave the main argument. A small
+or note index can retain a link if they leave the main argument. An abandoned branch
+keeps its reason, what survives, and what would justify reopening it. A small
 "Related investigations" passage is useful when several branches need context,
 but routine commands, job polls and unchanged branch states need no updates.
 

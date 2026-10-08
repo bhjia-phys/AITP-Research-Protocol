@@ -49,6 +49,8 @@ inputs, work established here, decisive conditions and remaining inference?
 Synthesize how the results change the answer rather than listing sections.
 Distinguish project provenance from publication novelty and from logical status;
 an exact candidate-model result may still lack its physical identification.
+These are checks on the opening, not its vocabulary: write them as physics, without
+phrases such as "supported answer", "imported inputs" or "project provenance".
 
 Translate Markdown source links into the appropriate scientific references,
 equation/section references, figures or supplementary material. Inspect linked
@@ -75,7 +77,11 @@ Choose sections for the actual argument. Do not automatically insert a theorem,
 an IMRAD structure, a notation inventory or a long overview. Do not invent
 author information, affiliations, email addresses or publication identifiers.
 Use inspected primary sources for technical attributions and verify new
-bibliographic metadata before treating it as complete.
+bibliographic metadata before treating it as complete. Cite the original sources for
+the methods a calculation uses; the field's
+[domain methods](../../aitp-research/SKILL.md#domain-methods) list standard ones. Before
+sharing, check numbers, derivations and references with
+[aitp-verify](../../aitp-verify/SKILL.md).
 
 When PDF output is requested, use the project's build command and engine.
 Compile in a way that preserves prior deliverables; rerun bibliography and

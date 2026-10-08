@@ -61,3 +61,26 @@ Record the search boundary when discussing novelty or an apparent absence.
 Failing to find a construction does not establish that no construction exists.
 If the source is unavailable, mark the claim as awaiting source inspection and
 continue only work that does not require treating it as established.
+
+## Synthesize several sources
+
+Combining papers is its own step, not a by-product of reading each one.
+
+1. State the common question, and why combining these sources could answer it.
+2. Align the actual objects, hypotheses, regimes and observables. Translate sign,
+   normalization, gauge, unit and limit conventions before combining formulas, and
+   keep each translation beside the inference that uses it.
+3. Locate each source's decisive passage. Distinguish agreement, a different scope,
+   competing physical assumptions and a genuine contradiction; do not resolve a
+   disagreement by counting citations.
+4. Derive the bridge between them, or identify the premise that is missing. Use an
+   independent derivation, a counterexample or a bounded test when warranted, and check
+   the consequential step with [aitp-verify](../../aitp-verify/SKILL.md).
+5. Write the combined argument once, in a supporting note or the main note, linking each
+   source's reading. Return only its implication to a parent or the root, and keep
+   unresolved alternatives at their true strength.
+
+For example, two constructions can produce the same integer for different reasons: one
+a smooth deformation of a Green function, the other a physical response identity. The
+useful synthesis names the extra premise that makes them agree, rather than treating
+similar integers as interchangeable.

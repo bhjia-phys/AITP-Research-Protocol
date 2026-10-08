@@ -1,14 +1,19 @@
 {
   "name": "aitp",
-  "version": "1.1.0+claude.20260927",
-  "description": "Physics research memory, reasoning, writing, human collaboration and direct method distillation around linked research notes.",
+  "version": "1.2.0+claude.20261008",
+  "description": "Physics research around a research.md backbone: aitp-memory runs one research cycle; research, verify, writing, learning, brainstorming and distill grow the root, topic and branch notes.",
   "author": {
     "name": "Bohan Jia"
   },
   "homepage": "https://github.com/bhjia-phys/AITP-Research-Protocol",
   "repository": "https://github.com/bhjia-phys/AITP-Research-Protocol",
   "license": "MIT",
-  "keywords": ["physics", "research", "memory", "learning"],
+  "keywords": [
+    "physics",
+    "research",
+    "memory",
+    "learning"
+  ],
   "skills": [
     "./skills/aitp-research/methods/librpa/developing-librpa"
   ]

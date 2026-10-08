@@ -1,6 +1,6 @@
 ---
 name: aitp-writing
-description: Write and revise physics research notes, expand lecture derivations for a learner, and develop clear arguments with linked evidence. First use aitp-memory for research.md. Produce or revise a LaTeX manuscript only when requested.
+description: Write and revise physics research notes, expand lecture derivations for a learner, and develop clear arguments with linked evidence. Runs inside aitp-memory's research cycle. Produce or revise a LaTeX manuscript or PDF only when requested.
 ---
 
 # Write the scientific argument
@@ -13,7 +13,25 @@ Skill developed them from the former `witten-style-theory-note`. When the resear
 has chosen authors to learn from, use [exemplar authors](../aitp-research/references/exemplar-authors.md)
 to read a passage that does the same job as the one being written.
 It also incorporates `computational-physics-note` for implementation, calculation
-settings and benchmark exposition; neither former Skill is a dependency.
+settings and benchmark exposition; neither former Skill is a dependency. This skill works
+inside [memory's research cycle](../aitp-memory/SKILL.md#the-research-cycle); opened
+directly, apply that cycle and reuse context already recovered.
+
+## Read when
+
+| When the task involves | Read |
+| --- | --- |
+| A research note or supporting note | [Main-note writing](references/research-note.md); [supporting notes](references/supporting-notes.md) |
+| A construction, theorem or delicate derivation | [Formal theory](references/formal-theory.md) |
+| Data, algorithms or finite numerical tests | [Computational and mixed work](references/computational-and-mixed.md) |
+| A requested paper, TeX or PDF | [Manuscript handling](references/manuscripts.md), [journal templates](references/journal-templates.md) and the [JHEP starter](assets/jheppub-note-template.tex) |
+| Equation numbers, citations and links across files | [Citation conventions](references/citations.md) |
+| A written explanation for a learner | [Learning from sources](references/learning.md) |
+| Outlining a paper, when the researcher has chosen authors to learn from | That author's organization record, through [exemplar authors](../aitp-research/references/exemplar-authors.md#study-how-the-author-organizes-a-paper) |
+| A field's methods | Its [domain methods](../aitp-research/SKILL.md#domain-methods): conventions and standard sources |
+| Placing or correcting material in notes | [Worked note edits](references/worked-note-edits.md) |
+| Making or presenting a figure | [Figures and their evidence](references/computational-and-mixed.md#figures-and-their-underlying-evidence) |
+| A document about to be shared or relied on | [aitp-verify](../aitp-verify/SKILL.md) |
 
 ## Choose the task and the reader
 

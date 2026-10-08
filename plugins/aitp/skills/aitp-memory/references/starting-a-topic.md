@@ -41,7 +41,10 @@ related work and resolve ambiguity before saving there. The
 [optional asset layouts](local-assets.md#optional-layouts-for-a-new-home) provide
 a starting point. Create `research.md` and explain the new folder in the nearest
 suitable README; add a local README when its own material locations need explanation.
-Add other files as material develops, not as empty scaffolds.
+Link the new topic from the [root note](../SKILL.md#the-backbone-at-each-level) where its
+question serves a direction, and link back to the root; when the topic grew from a seed,
+replace the seed with that link. Add other files as material develops, not as empty
+scaffolds.
 
 Write the smallest coherent account supported so far: what is being asked and
 why, the setting and relevant known background, a proposed route and its assumptions,

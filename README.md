@@ -9,8 +9,8 @@ AITP currently has three parts:
 
 | Part | What it does |
 | --- | --- |
-| [Memory](plugins/aitp/skills/aitp-memory/SKILL.md) | Enter the topic first, locate or establish its main note, recover the argument and current task, and retain consequential changes. |
-| Research skills | [aitp-research](plugins/aitp/skills/aitp-research/SKILL.md) guides physical reasoning, literature use and computation; [aitp-writing](plugins/aitp/skills/aitp-writing/SKILL.md) develops explanations and manuscripts for formal, computational and mixed work. |
+| [Memory](plugins/aitp/skills/aitp-memory/SKILL.md) | The single entry and its research cycle. It keeps the research backbone: a root `research.md` with directions, connections, seeds and standing agreements, and topic and branch notes. It recovers context, places outcomes so that they stay reachable, and closes each task with what is supported and what it warrants next. |
+| Research skills | [aitp-research](plugins/aitp/skills/aitp-research/SKILL.md) guides physical reasoning, synthesis across sources, literature, calculations, code, debugging and benchmarks; [aitp-verify](plugins/aitp/skills/aitp-verify/SKILL.md) checks consequential claims and other models' reviews; [aitp-writing](plugins/aitp/skills/aitp-writing/SKILL.md) develops explanations and manuscripts for formal, computational and mixed work. |
 | [Method distillation](plugins/aitp/skills/aitp-distill/SKILL.md) | Extract a demonstrated reusable procedure directly into a Skill; test and improve it through use. |
 
 Two conditional interaction Skills work across these parts:
@@ -27,11 +27,14 @@ Writing and research guidance do not constitute the future taste component.
 
 ## A topic is a developing article
 
-Begin research-topic work with `aitp-memory`, including derivation, coding and
-analysis requests that do not explicitly mention memory. First locate the main
+Begin research work and substantive physics discussions with `aitp-memory` and its
+research cycle, including derivation, coding and analysis requests that do not
+explicitly mention memory. A discussion needs no topic: its durable outcomes land in
+the shared collection, in notes beside the root, or as seeds. First locate the main
 note. If it exists, recover the context needed by the request and understand its
-complete argument before substantive revision; if not, establish the question
-and working home, then draft a small `research.md`. Existing TeX main notes count,
+complete argument before substantive revision. If none exists, draft a small
+`research.md` only for an agreed persistent topic or an authorized consolidation, once
+the question and working home are clear; a discussion without a topic uses the root. Existing TeX main notes count,
 and scattered research material is not an empty project. Determine the current
 session's task from this context and the user's request. Reuse current context
 for follow-ups instead of repeating entry on every turn.
@@ -48,8 +51,9 @@ Use `aitp-research` for the scientific work. At task completion or handoff,
 needs updating, or the main argument has changed. `aitp-writing` shapes the first
 note and substantive revisions; `aitp-distill` teaches demonstrated reusable
 methods from the note and its evidence. The two human interaction Skills help
-when a consequential choice or learning need arises. All six roles work around
-one main account, without requiring six documents or mandatory phases.
+when a consequential choice or learning need arises, and `aitp-verify` checks a
+consequential claim before it is relied on. All seven roles work around the same
+backbone, without requiring seven documents or mandatory phases.
 
 Read the whole `research.md` (or established TeX main note) before a substantive
 revision. Follow supporting links as needed.
@@ -107,10 +111,10 @@ not certify its scientific correctness or authorize its recorded next action.
 ## Use and installation
 
 Install [AITP 1.1.0](https://github.com/bhjia-phys/AITP-Research-Protocol/releases/tag/v1.1.0).
-Memory-first entry, main and supporting note standards, source-based learning,
-domain methods and numerical layouts in
-this development tree are newer than that release. This development tree exposes
-six core Skills to Codex, Claude Code and Hakimi; the published release has four.
+The research backbone and cycle, verification, computational and benchmark procedures,
+main and supporting note standards, source-based learning, domain methods and numerical
+layouts in this development tree are newer than that release. This development tree
+exposes seven core Skills to Codex, Claude Code and Hakimi; the published release has four.
 The release contains the former teaching exercise; the current research examples
 are pending review. Codex and Claude Code additionally expose the LibRPA domain
 method as a selectable Skill; Hakimi discovers the containing bundles. The linked

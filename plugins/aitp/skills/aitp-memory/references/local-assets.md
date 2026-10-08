@@ -118,6 +118,24 @@ a shared workspace merely because this example includes one; shared atoms
 or methods likewise need only one primary home when real reuse appears. Existing
 projects retain useful layouts and names. These suggestions never require a move.
 
+The whole research workspace has the same shape one level up, with the
+[root note](../SKILL.md#the-backbone-at-each-level) as its main argument:
+
+```text
+research-workspace/
+  README.md                 Folder map: each topic's location and question
+  research.md               Root note: directions, connections, seeds, agreed agenda
+  notes/<question>.md       Derivations and connections from discussions without a topic
+  topic-a/research.md       A topic, with its own branches and material
+  topic-b/research.md
+knowledge/                  Optional shared collection, linked from the root
+```
+
+The root `notes/` folder holds what a discussion produced and no topic owned at the time.
+When a topic adopts such a note, keep it in place and link the relationship, or move it
+when that materially improves organization, repairing incoming links and knowledge-index
+rows together.
+
 ## README explains the folder architecture
 
 Use the nearest suitable README as the map of the actual folder structure. When

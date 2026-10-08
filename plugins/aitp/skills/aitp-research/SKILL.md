@@ -1,18 +1,32 @@
 ---
 name: aitp-research
-description: Investigate theoretical and computational physics through derivations and discriminating calculations. Start topic work with aitp-memory; agree on independent branches and material changes of objective or route, then continue within that agreement.
+description: Investigate theoretical and computational physics - derivations, synthesis across sources, discriminating calculations, implementation, debugging and benchmarks. Runs inside aitp-memory's research cycle; agree on independent branches and material changes of objective or route, then continue within that agreement.
 ---
 
 # Research toward a clear answer
 
 Start from the unresolved physical or mathematical question and the researcher's
-purpose. For work on a research topic, first apply
-[aitp-memory](../aitp-memory/SKILL.md): locate or establish its main note, recover
-the argument and determine this session's task from the user's request. Reuse
-that context when it is already current. A standalone explanation needs no new
-topic files. Keep the present step connected to the question. An exploratory topic
-may need a useful question before a hypothesis; do not invent a thesis to satisfy
-an outline.
+purpose. This skill works inside [memory's research cycle](../aitp-memory/SKILL.md#the-research-cycle),
+which locates the main note, recovers the argument and states this session's task;
+opened directly, apply that cycle and reuse context that is already current. A
+standalone explanation needs no new topic files; what it produces lands as memory's
+[discussion outcomes](../aitp-memory/SKILL.md#where-discussion-outcomes-land) describe.
+Keep the present step connected to the question. An exploratory topic may need a
+useful question before a hypothesis; do not invent a thesis to satisfy an outline.
+
+## Read when
+
+| When the task involves | Read |
+| --- | --- |
+| An uncertain imported assumption, background, related work, references or novelty | [Literature](references/literature.md) |
+| Combining several sources into one argument | [Synthesis across sources](references/literature.md#synthesize-several-sources) |
+| Designing, running or debugging a calculation; developing code; a benchmark; reproducing a paper; comparing with an earlier value | [Computational work](references/computational-work.md) |
+| Preparing, observing or diagnosing a batch job | [Slurm work](references/slurm.md) |
+| A field's methods, conventions and standard sources | [Domain methods](#domain-methods) |
+| Checking a consequential claim, number or reference | [aitp-verify](../aitp-verify/SKILL.md) |
+| Learning from chosen authors | [Exemplar authors](references/exemplar-authors.md) |
+| Finding or retaining a focused procedure | [Method placement and discovery](references/method-library.md) |
+| An important explanation, linked derivation or revision of a note | [aitp-writing](../aitp-writing/SKILL.md) |
 
 ## Agree on consequential research choices
 
@@ -65,28 +79,32 @@ lecture past an unresolved central objection or agree merely to end disagreement
 For calculations, distinguish intended configuration, executed configuration,
 software comparison, numerical error and physical validity. Retain enough input,
 output and code location to continue the actual experiment. Select error and
-convergence checks for the observable being claimed. Repeated runs without a new
-discriminating question call for revisiting the method, not a larger scan.
+convergence checks for the observable being claimed, and design the experiment before
+running it, as [computational work](references/computational-work.md) describes.
+Repeated runs without a new discriminating question call for revisiting the method,
+not a larger scan. Before a new, changed or disputed consequential claim is relied on,
+check it with [aitp-verify](../aitp-verify/SKILL.md), by a route different from the one
+that produced it.
 
-## Read detail when relevant
+## Domain methods
 
-- [aitp-writing](../aitp-writing/SKILL.md): an important explanation,
-  linked derivation or revision of a research note.
-- [Literature](references/literature.md): uncertain imported assumptions,
-  theoretical background, related work, references or novelty claims.
-- [Slurm work](references/slurm.md): prepare, observe or diagnose a batch job.
-- [Developing LibRPA](methods/librpa/developing-librpa/SKILL.md): tracing a formula
-  through LibRPA source or its self-consistency loop, as well as changing code
-  and validating a numerical implementation.
-- [Method placement and discovery](references/method-library.md): find or retain
-  a focused procedure under its research domain.
-- [Exemplar authors](references/exemplar-authors.md): the researcher wants to learn
-  from chosen authors, or keeps an index of an author's passages that could suggest
-  the next decisive calculation.
+A field's shareable methods, conventions and checks, and the standard sources for its
+methods, live under `methods/<domain>/`, indexed by the domain's README. The researcher's
+own topic skills stay in the workspace, listed in the topic family's README. Read a
+domain index when the task uses that field's methods, whether investigating with them,
+writing about them or learning them; no task requires one before research can proceed.
+[Method placement](references/method-library.md) explains where a new method belongs.
+
+| Domain | Index |
+| --- | --- |
+| GW, RPA and LibRPA, including [developing LibRPA](methods/librpa/developing-librpa/SKILL.md) | [methods/librpa](methods/librpa/README.md) |
+| Quantum chaos: spectra, OTOCs, operator growth | [methods/quantum-chaos](methods/quantum-chaos/README.md) |
 
 Read only the resources needed for the current task.
-Keep machine-specific setup in the project's environment instructions. A known
-operation needs no new tutorial or repeated method search.
+Keep machine-specific setup in the project's environment instructions, and tool
+environments in their established, authorized location, never in a prose-only reading or
+note folder. A known operation needs no new tutorial or
+repeated method search.
 
 For placement of scripts, figures, inputs, outputs and shared development,
 use the locations explained in the topic or project README and the relevant
