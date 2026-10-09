@@ -1,6 +1,6 @@
 # AITP
 
-Development version 1.2.1: article-centred research memory, research and writing guidance,
+Development version 1.2.2: article-centred research memory, research and writing guidance,
 and direct Skill distillation. The bundle contains instructions and
 optional manuscript assets, with no runtime. This development tree adds the research
 backbone (a root note, topic trees, reachability, seeds and a visible close), a single
@@ -96,6 +96,11 @@ campaign, an installation, a cluster submission or a publication is proposed fir
 the current request or an existing applicable agreement already covers it; a standing
 agreement recorded in the root is one such agreement. There is no dispatcher: a task may
 pass through several Skills, and a directly opened Skill applies the same cycle.
+Consequential algorithm choices, including numerical-method changes at fixed physical
+equations, are surfaced before dependent edits or runs. Give concrete alternatives,
+a recommendation and the relevant accuracy/cost tradeoffs; wait for a choice when it
+is reserved to the researcher or not already settled or delegated. Implementation and
+bug fixes within the chosen method continue without repeated questions.
 
 These seven Skills are available in this development tree. The published 1.1.0 release
 has the four original Skills. Interaction is conditional throughout, not two extra

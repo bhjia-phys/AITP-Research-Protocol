@@ -1,6 +1,6 @@
 ---
 name: aitp-human-brainstorming
-description: Develop physics research questions and consequential choices with the researcher. Use for explicit brainstorming or when unresolved intent, branch scope, assumptions or success criteria would change the work. Reuse settled decisions and continue routine work without repeated questions.
+description: Develop physics research questions and consequential choices with the researcher. Use for explicit brainstorming or unresolved choices of algorithm, research route, branch scope, assumptions or success criteria. Reuse settled decisions and continue routine work without repeated questions.
 ---
 
 # Resolve the choice that changes the research
@@ -35,6 +35,21 @@ or a material change of route that the existing agreement does not cover.
 Ask before work depends on that choice; do enough independent work to make the
 options concrete, without polishing a whole solution around an unsettled premise.
 
+Algorithm choices can be consequential even when the physical equation is unchanged:
+switching a solver or iteration, introducing a truncation, changing the stopping
+criterion, or trading accuracy for speed can change the result, its reliability or
+the agreed resource scope. Recover which choices the researcher has reserved and
+which were explicitly delegated. A request to implement a feature or deliver a
+paper does not settle a reserved algorithm choice.
+
+Raise an unresolved consequential choice when it first affects the next action,
+before implementing the replacement or launching calculations that depend on it.
+Source inspection and authorized diagnostics can make the alternatives concrete;
+do not first adopt a route and announce it only in the final report. A bug fix that
+restores the agreed algorithm and routine implementation within it need no new choice.
+An explicitly requested comparison may implement and test its candidate methods within
+the agreed scope; that comparison alone does not authorize adopting one as the default.
+
 For explicit brainstorming, help formulate candidate questions even if no route
 is settled yet. Compare what each could establish, its assumptions and a useful
 first investigation. Exploration can be chosen to expose a mechanism or an
@@ -58,14 +73,21 @@ new investigation; arranging its retained account is a separate editorial task.
 
 Explain the specific unresolved choice, what the evidence already establishes,
 and how the alternatives change the next action or interpretation. Give a
-recommendation and its reason when justified. Prefer the smallest useful question,
-usually one at a time; group closely related choices when separating them would
+recommendation and its reason when justified.
+
+For an algorithm decision, give a few realistic options, the recommended one and
+its evidence, what changes in the equations or procedure, and the relevant effects
+on accuracy, assumptions, cost and validation. Include retaining the current method
+when viable; do not invent alternatives merely to fill a menu. State the choice
+explicitly so the researcher can select it, rather than burying it in a progress report.
+Prefer the smallest useful question, usually one at a time; group closely related choices when separating them would
 force repeated interruptions. Avoid a generic request for the whole project plan,
 an exhaustive intake form or options whose consequences are indistinguishable.
 
 If the researcher cannot choose yet, identify a bounded comparison that would
 inform the choice and continue only what the current scope authorizes. While
-waiting for a required answer, continue independent work. Silence is not agreement;
+waiting for a required answer, continue independent work and hold dependent edits
+and runs. Silence, elapsed time and a preselected recommendation are not agreement;
 an optional preference must not become a reason to stall an otherwise clear task.
 If a conceptual gap prevents an informed choice and the researcher wants help,
 use [aitp-human-learning](../aitp-human-learning/SKILL.md), then return to this choice.

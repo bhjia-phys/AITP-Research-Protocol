@@ -43,6 +43,14 @@ result normally belongs in separate work. Note a consequential unrelated issue
 without silently fixing it. Continue the authorized task; ask for clarification
 only when an unresolved scope choice actually blocks a correct implementation.
 
+Before adopting or replacing a consequential algorithm, recover the researcher's
+reserved choices and explicit delegation. An unchanged GW/RPA equation does not
+settle a switch of mixing/solver, continuation method, truncation or convergence
+criterion. Use [human brainstorming](../../../../aitp-human-brainstorming/SKILL.md)
+to present the viable options, evidence and numerical consequences before dependent
+edits or runs. Restore an agreed method's intended behavior without asking again;
+do not present an unagreed method replacement as ordinary debugging.
+
 ## Place the change at the right boundary
 
 - Keep concrete input-file selection, producer filenames, task-specific reading,

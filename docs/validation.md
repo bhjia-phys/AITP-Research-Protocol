@@ -970,3 +970,18 @@ numerical support, preserved original evidence and anchors, and repaired stale
 continuations and parent duplication. This is editorial and navigation evidence,
 not a fresh scientific recertification of the research archive or evidence of
 human learning, physical insight or model-independent behavior.
+
+## Algorithm-choice timing, development version 1.2.2
+
+Consequential numerical-method choices are now explicit even when the physical
+equation is unchanged. The entry cycle, research procedure and LibRPA guidance
+route unresolved choices through human brainstorming before dependent edits or runs.
+Reserved choices, prior selections and explicit delegation retain their actual scope.
+
+A coordinating-assistant walkthrough examined an unagreed solver replacement,
+repair of an agreed algorithm, an authorized two-method comparison, explicit bounded
+delegation, an unanswered required choice, and an accuracy-changing shortcut.
+The first, fifth and sixth require a choice before adoption; the other cases permit
+the already authorized work without repeated questions. This was an instruction
+walkthrough, not an independent executor trial or an automatic-trigger measurement.
+The earlier 1.2.1 trial counts are not reused as evidence for this revision.

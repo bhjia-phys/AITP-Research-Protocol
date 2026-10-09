@@ -15,7 +15,9 @@ applies the same cycle. Within an ongoing task, reuse the context already recove
 2. Read the whole argument before revising it, the relevant parent passage for branch
    work, and the knowledge index once for theory or study.
 3. Explain what the task should settle; identify the uncertainty and use the needed
-   skills within the agreed scope and plan review.
+   skills within the agreed scope and plan review. Surface unresolved consequential
+   algorithm choices before dependent implementation or runs, using
+   [human brainstorming](../aitp-human-brainstorming/SKILL.md).
 4. Read, reason, synthesize or experiment; check consequential claims before relying
    on them.
 5. Retain durable outcomes in their primary homes; repair reachability and affected uses
@@ -29,7 +31,9 @@ connections) is answered from the existing records without edits, as
 repeats when evidence changes the question; it is not a fixed pipeline, and one task may
 pass through several skills without returning to the researcher. Explain an intended
 consequential change before making it, without turning every explanation into a request
-for approval. No route announcement is needed.
+for approval. When the researcher retains a choice of algorithm or material method
+change, present the alternatives and wait for that choice. Routine operations within
+an agreed route need no announcement or repeated decision.
 
 Memory owns context, placement and propagation; it does not redo research, verification
 or writing when those skills return. Open only the needed guidance and reuse current
@@ -339,8 +343,8 @@ further is warranted" is a valid close.
 
 Routine derivations, local diagnostics, authorized implementation and ordinary placement
 proceed without repeated permission. A new independent investigation, a material change
-of objective or equation, an expensive campaign, an installation, a submission or a
-publication outside the agreement needs a concrete proposal: its purpose, the evidence
+of objective, equation or numerical route, an expensive campaign, an installation,
+a submission or a publication outside the agreement needs a concrete proposal: its purpose, the evidence
 for it, the first action, the cost and the stopping condition. Cheapness alone is not
 authorization, and a purely analytic scope still excludes computation. The root note's
 standing agreements record some of what the researcher has authorized in advance, but

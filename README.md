@@ -78,7 +78,11 @@ objective or research route, `aitp-research` discusses the choice and obtains
 agreement; work inside an existing agreement continues without repeated
 confirmation. `aitp-memory` preserves the agreement and its reasons in the
 branch's `research.md`, and `aitp-writing` develops the account with links to
-plans, implementation and results. An agreed independent research branch gets
+plans, implementation and results. Consequential algorithm choices include changes
+of solver, truncation or convergence rule with the physical equation unchanged.
+Present unresolved choices before dependent edits or runs, with alternatives and a
+recommendation; respect the researcher's reserved choices and explicit delegation.
+An agreed independent research branch gets
 its own folder and main note unless a suitable home already exists; a short
 diagnostic can stay in the current account. Branches can reuse other topics and
 shared code through links without forcing nested directories.
@@ -111,7 +115,7 @@ not certify its scientific correctness or authorize its recorded next action.
 ## Use and installation
 
 Install [AITP 1.1.0](https://github.com/bhjia-phys/AITP-Research-Protocol/releases/tag/v1.1.0).
-The current local development version is 1.2.1. The research backbone and cycle, verification, computational and benchmark procedures,
+The current local development version is 1.2.2. The research backbone and cycle, verification, computational and benchmark procedures,
 main and supporting note standards, source-based learning, domain methods and numerical
 layouts in this development tree are newer than that release. This development tree
 exposes seven core Skills to Codex, Claude Code and Hakimi; the published release has four.

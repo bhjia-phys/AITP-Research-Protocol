@@ -41,6 +41,11 @@ Specify the scientific behaviour the feature should have, choose a test that cou
 its failure, implement it, and check the affected existing behaviour against preserved
 baselines. Separate a change to the physical equation from a change to how it is solved:
 a new equation is a research choice that needs agreement, unless already authorized.
+A material change of solver, truncation, stopping rule or accuracy/cost tradeoff can
+also need a choice with the equation unchanged. Apply
+[the algorithm-decision guidance](../../aitp-human-brainstorming/SKILL.md#decide-whether-a-human-answer-is-needed)
+before implementing or running that alternative; fixing a defect in the agreed method
+does not by itself reopen the choice.
 
 When changing code that others maintain, validate the intended change and that required
 existing behaviour is preserved. Prepare a minimal reproduction when useful, excluding

@@ -31,12 +31,16 @@ useful question before a hypothesis; do not invent a thesis to satisfy an outlin
 ## Agree on consequential research choices
 
 Use [aitp-human-brainstorming](../aitp-human-brainstorming/SKILL.md) for explicit
-brainstorming or unresolved choices of purpose, independent branch scope,
+brainstorming or unresolved choices of purpose, algorithm, independent branch scope,
 consequential assumptions or success criteria. Before an independent investigation
 or a material change of objective or route, resolve choices not already settled
 by the current request or earlier agreement. Knowing how to do a calculation
 does not establish that it answers the intended question. The interaction Skill
 guides what to ask and when; research supplies the evidence and scientific options.
+An unchanged physical equation does not make a new solver, truncation or convergence
+rule routine. Where the choice is consequential and not already settled or delegated,
+present alternatives and a recommendation before dependent edits or runs; wait for
+the researcher's selection while continuing independent work.
 
 Continue routine derivations, diagnostics and implementation within the agreement.
 Return to the researcher when the objective or route changes materially, essential
