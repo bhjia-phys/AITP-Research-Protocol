@@ -38,9 +38,11 @@ options concrete, without polishing a whole solution around an unsettled premise
 Algorithm choices can be consequential even when the physical equation is unchanged:
 switching a solver or iteration, introducing a truncation, changing the stopping
 criterion, or trading accuracy for speed can change the result, its reliability or
-the agreed resource scope. Recover which choices the researcher has reserved and
-which were explicitly delegated. A request to implement a feature or deliver a
-paper does not settle a reserved algorithm choice.
+the agreed resource scope. By default, the researcher selects among unresolved
+consequential algorithm choices unless the current request or an explicit agreement
+already settles or delegates that choice. This is an AITP rule and needs no personal
+standing-agreement entry. A broad request to implement a feature or deliver a paper
+does not by itself select or delegate its consequential algorithm choices.
 
 Raise an unresolved consequential choice when it first affects the next action,
 before implementing the replacement or launching calculations that depend on it.

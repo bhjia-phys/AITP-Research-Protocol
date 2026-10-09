@@ -1,6 +1,6 @@
 {
   "name": "aitp",
-  "version": "1.2.2+claude.20261008",
+  "version": "1.2.3+claude.20261008",
   "description": "Physics research around a research.md backbone: aitp-memory runs one research cycle; research, verify, writing, learning, brainstorming and distill grow the root, topic and branch notes.",
   "author": {
     "name": "Bohan Jia"

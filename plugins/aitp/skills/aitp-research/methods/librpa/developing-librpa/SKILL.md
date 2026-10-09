@@ -43,8 +43,9 @@ result normally belongs in separate work. Note a consequential unrelated issue
 without silently fixing it. Continue the authorized task; ask for clarification
 only when an unresolved scope choice actually blocks a correct implementation.
 
-Before adopting or replacing a consequential algorithm, recover the researcher's
-reserved choices and explicit delegation. An unchanged GW/RPA equation does not
+Before adopting or replacing a consequential algorithm, apply AITP's default of
+researcher selection unless already settled or explicitly delegated. No workspace
+copy of that rule is needed. An unchanged GW/RPA equation does not
 settle a switch of mixing/solver, continuation method, truncation or convergence
 criterion. Use [human brainstorming](../../../../aitp-human-brainstorming/SKILL.md)
 to present the viable options, evidence and numerical consequences before dependent

@@ -28,6 +28,12 @@ editing scope. Routine evidence updates do not by themselves require a root edit
 when their implications change a direction or connection. One coordinating writer
 integrates concurrent root edits.
 
+Standing agreements record concrete workspace-wide delegations or exceptions, not
+a copy of AITP's general procedures or decision boundaries. Keep personal preferences
+and local environment context in workspace instructions, and scientific choices in
+the topic that uses them. Refer to the owning Skill when a general rule is needed;
+an empty agreement section needs no catalogue of hypothetical future permissions.
+
 **Reachability.** Every retained paper, question, derivation, numerical experiment and
 output has one primary home and an intelligible link path from the root and from the
 main note that uses it. The path may pass through supporting notes, source maps, READMEs

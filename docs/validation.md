@@ -985,3 +985,16 @@ The first, fifth and sixth require a choice before adoption; the other cases per
 the already authorized work without repeated questions. This was an instruction
 walkthrough, not an independent executor trial or an automatic-trigger measurement.
 The earlier 1.2.1 trial counts are not reused as evidence for this revision.
+
+## General rules and local agreements, development version 1.2.3
+
+The algorithm-choice default now explicitly belongs to AITP and needs no local
+standing-agreement entry. General procedures stay in their owning Skills; workspace
+instructions supply local context, personal preferences and actual overrides, while
+root agreements retain concrete workspace-wide delegations or exceptions.
+
+A coordinating-assistant walkthrough checked a workspace with no personal agreement,
+an explicit bounded delegation and retention of a concrete topic decision. The first
+still requires a consequential method choice, the second proceeds within its scope,
+and the third records the scientific choice without duplicating the general protocol.
+This is a placement and instruction walkthrough, not an independent execution test.

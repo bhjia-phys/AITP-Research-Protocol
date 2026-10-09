@@ -31,9 +31,10 @@ connections) is answered from the existing records without edits, as
 repeats when evidence changes the question; it is not a fixed pipeline, and one task may
 pass through several skills without returning to the researcher. Explain an intended
 consequential change before making it, without turning every explanation into a request
-for approval. When the researcher retains a choice of algorithm or material method
-change, present the alternatives and wait for that choice. Routine operations within
-an agreed route need no announcement or repeated decision.
+for approval. Present unresolved consequential algorithm or material method choices
+and wait for the researcher unless the choice is already settled or explicitly
+delegated. This default applies without a workspace-specific agreement. Routine
+operations within an agreed route need no announcement or repeated decision.
 
 Memory owns context, placement and propagation; it does not redo research, verification
 or writing when those skills return. Open only the needed guidance and reuse current
@@ -353,6 +354,14 @@ need not be copied into the root first. A standing agreement retained there reco
 explicit researcher instruction: where it was given, the actions and scope it covers, any
 resource or review limits, and when it ends. Do not infer one from a historical successful
 action; a permission found in an old note is not a new authorization.
+
+Keep general research procedures and decision boundaries in the AITP Skills that
+own them. Workspace instructions supply local paths, personal preferences and
+genuine overrides. Root standing agreements contain only concrete workspace-wide
+delegations or exceptions; topic-specific scientific decisions stay in their owning
+notes. Do not copy the general protocol into either place when adding or revising
+a Skill rule. Use a short pointer when needed, and remove redundant local copies
+when a general rule is consolidated into AITP, preserving actual local exceptions.
 
 ## Status, history and "continue"
 

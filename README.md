@@ -81,11 +81,17 @@ branch's `research.md`, and `aitp-writing` develops the account with links to
 plans, implementation and results. Consequential algorithm choices include changes
 of solver, truncation or convergence rule with the physical equation unchanged.
 Present unresolved choices before dependent edits or runs, with alternatives and a
-recommendation; respect the researcher's reserved choices and explicit delegation.
+recommendation; obtain the researcher's selection unless already settled or explicitly
+delegated. This default is part of AITP and needs no personal agreement entry.
 An agreed independent research branch gets
 its own folder and main note unless a suitable home already exists; a short
 diagnostic can stay in the current account. Branches can reuse other topics and
 shared code through links without forcing nested directories.
+
+General workflow and decision rules belong to the Skills. Workspace instructions
+hold local context, personal preferences and actual overrides; root standing
+agreements hold concrete workspace-wide delegations or exceptions. Keep scientific
+choices in their owning topics rather than duplicating the protocol in every workspace.
 
 The README maps the established folder architecture, including branch folders
 and shared working locations. The originating and branch main notes link each
@@ -115,7 +121,7 @@ not certify its scientific correctness or authorize its recorded next action.
 ## Use and installation
 
 Install [AITP 1.1.0](https://github.com/bhjia-phys/AITP-Research-Protocol/releases/tag/v1.1.0).
-The current local development version is 1.2.2. The research backbone and cycle, verification, computational and benchmark procedures,
+The current local development version is 1.2.3. The research backbone and cycle, verification, computational and benchmark procedures,
 main and supporting note standards, source-based learning, domain methods and numerical
 layouts in this development tree are newer than that release. This development tree
 exposes seven core Skills to Codex, Claude Code and Hakimi; the published release has four.
