@@ -121,7 +121,7 @@ not certify its scientific correctness or authorize its recorded next action.
 ## Use and installation
 
 Install [AITP 1.1.0](https://github.com/bhjia-phys/AITP-Research-Protocol/releases/tag/v1.1.0).
-The current local development version is 1.2.3. The research backbone and cycle, verification, computational and benchmark procedures,
+The current local development version is 1.2.4. The research backbone and cycle, verification, computational and benchmark procedures,
 main and supporting note standards, source-based learning, domain methods and numerical
 layouts in this development tree are newer than that release. This development tree
 exposes seven core Skills to Codex, Claude Code and Hakimi; the published release has four.

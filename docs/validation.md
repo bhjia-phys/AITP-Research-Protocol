@@ -998,3 +998,54 @@ an explicit bounded delegation and retention of a concrete topic decision. The f
 still requires a consequential method choice, the second proceeds within its scope,
 and the third records the scientific choice without duplicating the general protocol.
 This is a placement and instruction walkthrough, not an independent execution test.
+
+## Skill-selection boundaries, development version 1.2.4
+
+This revision corrects two contradictory routes: sharing a research note no longer
+selects manuscript production, and close reading no longer prescribes a try-first
+prompt for every difficult step. Practice is conditional on the learner's purpose;
+a requested complete explanation has no exercise or response gate. Memory's
+description scopes status and continuation to research. Verification's description
+and writing's route distinguish a requested review or changed consequential claim
+from routine wording edits and unchanged, still-applicable checks.
+
+The memory entry selects guidance for the current unmet need and reconsiders it when
+new evidence changes that need. A link is not itself a call. The cycle explicitly
+routes new, changed or disputed consequential claims to verification and reaches
+the existing write/distillation decision at a natural pause or handoff. It neither
+loads every Skill nor makes every turn a write or a distillation opportunity.
+
+The coordinating assistant checked these concrete boundaries against the revised
+instructions. These are authored walkthroughs, not independent executions or a
+measurement of automatic selection:
+
+| Request and evidence | Behavior required by the instructions |
+| --- | --- |
+| Explain the recorded topic status, with no new evidence | Recover the relevant account and answer without edits, new calculations or method distillation. |
+| Change a README title in an unrelated software project | No physics research cycle follows merely from the word "edit". |
+| Prepare a Markdown research note for sharing; it reports a 90% acceptance rate from 12 accepted of 15 attempts | Trace the arithmetic, correct or report 80% according to editing scope, and retain Markdown; no manuscript production. |
+| Produce the requested teaching PDF from a completed derivation | Writing's manuscript handling applies; preserve teaching depth and deliver the requested artifact. |
+| Explain the entire missing projection step without exercises | Supply the complete inference; do not insert try-first questions or stop at a skeleton. |
+| Practise that projection step interactively | Offer a targeted attempt and use the response to choose the next explanation; do not infer mastery from silence. |
+| Change only wording around an unchanged, checked result | Check preservation of meaning; no fresh scientific audit, exemplar reading or distillation solely because wording changed. |
+| A new calculation contradicts the main note's conclusion | Check the discrepancy before adopting it, preserve raw evidence, and integrate the supported change into the owning note and affected uses. |
+| Add a diagnostic detail that changes no conclusion or next step | Keep it in the existing support account; leave an accurate main note and parent unchanged. |
+| An implementation bug violates the already selected algorithm | Repair it and run relevant checks; no repeated algorithm-choice question. |
+| A faster proposal changes the solver or drops matrix terms, without a settled choice or delegation | Present the consequential choice before dependent implementation or runs. |
+| A demonstrated diagnostic corrects an existing method, versus an interesting theorem summary | Repair the existing method at a natural pause; keep the theorem's explanation in notes, without a duplicate Skill. |
+
+The hand review found no remaining conflict in these routes. That result does not
+establish that an independent model will select or execute them reliably. Earlier
+natural-language discovery trials concerned older versions; their outcomes are not
+relabelled as tests of 1.2.4. A future independent trial should withhold Skill names
+and loading instructions, inspect actual reads and resulting artifacts, and check
+both missed work and unnecessary work. Packaging and installed-host discovery are
+separate checks, not substitutes for that behavioral evidence.
+
+All eight Skill frontmatters, three 1.2.4 manifests and 361 local links passed
+structural checks. All 49 plugin files matched the installed Windows Codex, WSL
+Codex, Claude Code and Hakimi copies. Fresh passive Codex loaders on Windows and
+WSL discovered eight enabled Skills from 1.2.4 with no AITP errors; no model turn
+was started by those checks. Hakimi's native manager reported seven core roots
+and no errors. These results do not imply that already-running conversations
+reloaded their instructions.

@@ -1,6 +1,6 @@
 ---
 name: aitp-verify
-description: Check an existing claim, result, number, reference or document before it is relied on, or assess another model's review. Re-derive decisive steps by another route, trace numbers to raw output, verify references, test claims against their evidence, and run review cycles. Use before a new, changed or disputed consequential claim enters a decision, a main note's opening or a manuscript, or when asked to check, review or audit.
+description: Check research claims, results, numbers, references and documents, or assess another model's review. Use before a new, changed or disputed consequential claim enters a decision, a main note's opening or a manuscript, or when asked to check, review or audit. Reuse applicable checks for unchanged claims; routine wording edits do not require scientific revalidation.
 ---
 
 # Check work before it is relied on
@@ -35,7 +35,8 @@ opened directly, apply the cycle and reuse context already recovered.
 | Numbers in a note, table, figure or paper | Their raw outputs and run reports, located through [memory](../aitp-memory/SKILL.md) |
 | A numerical result, a benchmark or a code change | [Computational work](../aitp-research/references/computational-work.md) |
 | References and attributions | [Literature](../aitp-research/references/literature.md) |
-| A paper or note about to be shared | [Manuscript handling](../aitp-writing/references/manuscripts.md) |
+| A research note being reviewed or prepared for sharing | The checks relevant to its claims below; sharing alone does not request a manuscript or PDF |
+| A requested paper draft, manuscript revision or TeX/PDF deliverable | [Manuscript handling](../aitp-writing/references/manuscripts.md) |
 
 ## Check a derivation
 

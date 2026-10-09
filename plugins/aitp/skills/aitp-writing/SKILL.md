@@ -36,7 +36,7 @@ directly, apply that cycle and reuse context already recovered.
 | A field's methods | Its [domain methods](../aitp-research/SKILL.md#domain-methods): conventions and standard sources |
 | Placing or correcting material in notes | [Worked note edits](references/worked-note-edits.md) |
 | Making or presenting a figure | [Figures and their evidence](references/computational-and-mixed.md#figures-and-their-underlying-evidence) |
-| A document about to be shared or relied on | [aitp-verify](../aitp-verify/SKILL.md) |
+| A requested review, or new, changed or disputed consequential claims in the document | [aitp-verify](../aitp-verify/SKILL.md), reusing checks that still apply |
 
 ## Choose the task and the reader
 

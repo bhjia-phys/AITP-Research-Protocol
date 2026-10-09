@@ -1,6 +1,6 @@
 ---
 name: aitp-memory
-description: Start AITP research work and substantive physics discussions here. Runs the research cycle around research.md, the backbone at every level (root, topic and branch) - recover the context, decide what the task settles, use the skills it needs, keep outcomes in their homes and reachable, and close with the warranted next move. Also answers status questions and resumes on "continue".
+description: Start AITP research work and substantive physics discussions here. Runs the research cycle around research.md, the backbone at every level (root, topic and branch) - recover the context, decide what the task settles, use the skills it needs, keep outcomes in their homes and reachable, and close with the warranted next move. Also answers research-status questions and resumes the authorized research task on "continue".
 ---
 
 # The research backbone and the research cycle
@@ -18,10 +18,12 @@ applies the same cycle. Within an ongoing task, reuse the context already recove
    skills within the agreed scope and plan review. Surface unresolved consequential
    algorithm choices before dependent implementation or runs, using
    [human brainstorming](../aitp-human-brainstorming/SKILL.md).
-4. Read, reason, synthesize or experiment; check consequential claims before relying
-   on them.
-5. Retain durable outcomes in their primary homes; repair reachability and affected uses
-   within scope. Read-only work makes no edits.
+4. Read, reason, synthesize or experiment; use [verification](../aitp-verify/SKILL.md)
+   before relying on new, changed or disputed consequential claims. Reuse checks that
+   still apply.
+5. At a natural pause or handoff, apply the [write decision](#timing-and-recovery)
+   to the result and any demonstrated reusable method. Retain durable outcomes in their
+   primary homes and repair affected uses within scope. Read-only work makes no edits.
 6. Close with the supported answer and warranted next move: do authorized routine work,
    propose consequential choices, and retain agreed directions in the backbone.
 
@@ -37,9 +39,13 @@ delegated. This default applies without a workspace-specific agreement. Routine
 operations within an agreed route need no announcement or repeated decision.
 
 Memory owns context, placement and propagation; it does not redo research, verification
-or writing when those skills return. Open only the needed guidance and reuse current
-reads, decisions and checks. A reference back to this cycle is not an instruction to
-restart it. The final answer reports completed integration, not an intention to save later.
+or writing when those skills return. Select guidance for an unmet need in the current
+task, not every skill that could describe it. A link identifies where guidance lives;
+it does not by itself require loading or executing that guidance. Reuse current reads,
+decisions and checks. Reconsider the selection when the task reveals a new need; a
+calculation can expose a disputed claim or an unresolved algorithm choice. A reference
+back to this cycle is not an instruction to restart it. The final answer reports
+completed integration, not an intention to save later.
 
 `research.md` is the researcher's long-term memory and the backbone of the research.
 Each one is a developing article about the question at its own level: a root note for

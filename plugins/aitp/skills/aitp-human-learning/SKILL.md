@@ -35,9 +35,10 @@ one exists. Record what the session establishes in that reading, with checked
 locators and with the researcher's own corrections marked as theirs; see
 [shared knowledge](../aitp-memory/references/shared-knowledge.md#keep-source-readings-usable).
 For in-depth study of a source, follow [close reading](../aitp-writing/references/learning.md#read-a-source-closely):
-a skeleton first, then step-level section notes, with a prompt to try each hard step
-before its filled version. The attempt is an invitation, not a gate: deliver the requested
-explanation either way. Distinguish understanding the physical mechanism,
+a skeleton first, then step-level section notes. Offer an optional try-first prompt only
+when practice serves the learner's request or helps locate an uncertain inference.
+Direct exposition and a requested complete explanation need no exercise prompts or
+response gate. Distinguish understanding the physical mechanism,
 reproducing a calculation and proving a result. Different steps may need different
 depth. A graduate-level label alone does not identify what the learner knows.
 
