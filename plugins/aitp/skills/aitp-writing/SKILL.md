@@ -11,7 +11,12 @@ the difficulty, unfold the central argument, and place qualifications where they
 matter. These are structural choices, not imitation of an author's phrasing; this
 Skill developed them from the former `witten-style-theory-note`. When the researcher
 has chosen authors to learn from, use [exemplar authors](../aitp-research/references/exemplar-authors.md)
-to read a passage that does the same job as the one being written.
+to read a passage that does the same job as the one being written. A choice recorded
+in the request or workspace remains active across sessions: recover it rather than
+requiring the author to be named again. For a substantial new argument or reorganization,
+use that author's organization record and at least one matching original passage;
+reuse a passage already read for the same purpose. Routine wording edits need no new
+exemplar read.
 It also incorporates `computational-physics-note` for implementation, calculation
 settings and benchmark exposition; neither former Skill is a dependency. This skill works
 inside [memory's research cycle](../aitp-memory/SKILL.md#the-research-cycle); opened
@@ -104,7 +109,11 @@ prose edit.
 
 Privately identify the question, strongest supported answer, assumptions,
 decisive mechanism, evidence and unresolved obstacle. Use this to decide the
-order of explanation; do not create another required status document.
+order of explanation; do not create another required status document. Give each section an explanatory job:
+which question does it answer, what establishes the answer, and what unresolved issue
+makes the next section necessary? Use this chain to remove repetition without cutting
+out the decisive inference. A useful branch result enters at its point of use; a folder
+inventory or a set of identical section templates cannot supply that argument.
 
 | What carries the claim? | Useful order of exposition |
 | --- | --- |

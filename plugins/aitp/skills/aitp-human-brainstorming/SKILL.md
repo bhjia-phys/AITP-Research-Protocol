@@ -81,5 +81,8 @@ prerequisites materially displace the original question.
 Use memory and [writing](../aitp-writing/SKILL.md) to retain a consequential
 decision, its reason and reconsideration condition in the existing main or branch
 note. Distinguish a proposal from agreed work and link the branch to its origin.
+An agreed change can retire an old next step without invalidating its earlier result:
+update the owning continuation and affected parent use, retaining the reason and any
+condition for reopening it. A proposed alternative remains visibly uncommitted.
 No separate meeting transcript, decision ledger or recurring approval record is
 needed. Resume the scientific or editorial work once the choice is resolved.

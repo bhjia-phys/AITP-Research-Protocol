@@ -9,8 +9,8 @@ its [domain methods](../SKILL.md#domain-methods).
 
 ## Design the experiment before running it
 
-Before execution, write in the experiment's note (an existing derivation or report when
-it already carries these facts):
+For a retained experiment or campaign, establish these facts before execution in its
+existing derivation, plan or report:
 
 - the question and the observable, with its conventions;
 - the hypotheses or competing mechanisms, and what each outcome would mean;
@@ -20,8 +20,11 @@ it already carries these facts):
 - the expected cost and the stopping evidence.
 
 Explain why each chosen case exposes the physical or numerical issue. Use the smallest
-informative case first, unless it removes the very obstruction under study. Preparing this
-account is not authorization to run it; a substantial campaign goes through a reviewed
+informative case first, unless it removes the very obstruction under study. A brief local consistency check can state its question and expected discriminant in the
+current work and retain consequential inputs, result and limitation afterward; it needs
+no standalone pre-run document. Do not choose acceptance criteria after seeing results.
+Preparing an account does not add execution authority; use the current request and prior
+agreement, and take a substantial campaign through a reviewed
 [plan](../../aitp-memory/references/plans.md).
 
 ## Trace the formulation into the code

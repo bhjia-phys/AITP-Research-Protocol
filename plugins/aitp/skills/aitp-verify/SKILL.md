@@ -14,6 +14,13 @@ checks all reported quantities and citations; a local change checks the affected
 and their dependencies. Unchecked observations may be kept, marked provisional; they
 must not gain authority by being repeated.
 
+Identify the audit actually requested. An editorial or navigation revision checks
+preservation, logical qualifications and evidence routes; it does not freshly certify
+every scientific result in the archive. Reuse the retained checks, identifying them as
+such, and investigate a specific conflict before rewriting its conclusion. A scientific
+validation request requires the corresponding derivations, source inspections or numerical
+checks. Report these scopes separately.
+
 Checking is separate from producing: use a different route from the one that made the
 result. When an audit needs a new derivation, calculation or debugging, do that work
 through [aitp-research](../aitp-research/SKILL.md) and return its evidence here. This
@@ -64,7 +71,10 @@ reaches further than its evidence.
 ## Report
 
 List what was checked, what failed with exact locations, what could not be checked and
-why, and what must change before the result is relied on. For an assessment request,
+why, and what must change before the result is relied on. For changed research notes,
+check both directions: the main claim reaches evidence that actually supports it, and a
+changed supporting conclusion is reflected in its maintained parent and other known uses.
+A passing link checker establishes neither of these semantic relationships. For an assessment request,
 return the findings without revising the artifact. When revision is in scope, fix an
 error at its source and correct the passages that depend on it, following memory's write
 rules: a qualification or correction beside the claim, substantial check evidence in the

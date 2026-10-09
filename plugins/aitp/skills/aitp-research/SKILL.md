@@ -82,7 +82,10 @@ output and code location to continue the actual experiment. Select error and
 convergence checks for the observable being claimed, and design the experiment before
 running it, as [computational work](references/computational-work.md) describes.
 Repeated runs without a new discriminating question call for revisiting the method,
-not a larger scan. Before a new, changed or disputed consequential claim is relied on,
+not a larger scan. When an agreed exemplar library is relevant to this choice, read a
+matching passage through [exemplar authors](references/exemplar-authors.md), identify the
+operation it suggests and test its applicability. Author analogy cannot supply a missing
+physical identification. Before a new, changed or disputed consequential claim is relied on,
 check it with [aitp-verify](../aitp-verify/SKILL.md), by a route different from the one
 that produced it.
 

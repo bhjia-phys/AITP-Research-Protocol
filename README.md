@@ -111,7 +111,7 @@ not certify its scientific correctness or authorize its recorded next action.
 ## Use and installation
 
 Install [AITP 1.1.0](https://github.com/bhjia-phys/AITP-Research-Protocol/releases/tag/v1.1.0).
-The research backbone and cycle, verification, computational and benchmark procedures,
+The current local development version is 1.2.1. The research backbone and cycle, verification, computational and benchmark procedures,
 main and supporting note standards, source-based learning, domain methods and numerical
 layouts in this development tree are newer than that release. This development tree
 exposes seven core Skills to Codex, Claude Code and Hakimi; the published release has four.
@@ -185,13 +185,16 @@ or justify compressing away the teaching steps.
 works in two passes:
 1. A skeleton reading maps the source's chain of questions.
 2. Section notes follow the argument step by step, including claims made only in prose.
-   Hard steps are filled in under a "try first" prompt, notable details and compressions
+   Hard steps are filled in, with optional practice prompts; notable details and compressions
    are recorded, and the reader's own sticking points come first.
 
 A learning topic's single main note can be told as a story of questions. When the
 researcher chooses authors to learn from, [exemplar authors](plugins/aitp/skills/aitp-research/references/exemplar-authors.md)
 keeps an index of their moves and a record of how they organize a paper, in the
-researcher's own collection. AITP has no default author.
+researcher's own collection. AITP has no global default author; a workspace's explicit
+choice persists across sessions. Substantial argument revisions retrieve a matching
+original passage and apply a concrete decision, checking the analogy's hypotheses;
+ordinary wording edits do not repeat that reading.
 
 Use `aitp-writing` to explain, draft or revise the scientific argument. It keeps
 the former Witten-style emphasis on faithful examples, explicit central

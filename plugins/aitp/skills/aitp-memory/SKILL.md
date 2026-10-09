@@ -31,6 +31,11 @@ pass through several skills without returning to the researcher. Explain an inte
 consequential change before making it, without turning every explanation into a request
 for approval. No route announcement is needed.
 
+Memory owns context, placement and propagation; it does not redo research, verification
+or writing when those skills return. Open only the needed guidance and reuse current
+reads, decisions and checks. A reference back to this cycle is not an instruction to
+restart it. The final answer reports completed integration, not an intention to save later.
+
 `research.md` is the researcher's long-term memory and the backbone of the research.
 Each one is a developing article about the question at its own level: a root note for
 the whole research, a note for each topic, and notes for branches inside topics. The
@@ -69,63 +74,30 @@ failed route no longer needs repeating. It is not a queue of all unfinished work
 
 ## The backbone at each level
 
-| Level | What its main note owns |
-| --- | --- |
-| Root: the `research.md` at the top of the research workspace | The researcher's overarching questions and directions, as they state them; why each topic serves them; consequential cross-topic connections and turning points; unattached seeds; agreed directions; standing agreements about what agents may do without asking. Independent directions can stay independent. |
-| Programme, only for a real cross-topic question | The question connecting several topics, their combined implications and the missing relation. Shared software alone does not justify one. |
-| Topic | A defined research or learning question: its assumptions, developing answer, decisive reasoning, evidence, limitations and what each branch contributes. |
-| Branch | An independent subquestion: its origin and parent relation, agreed scope, method, answer, limits, continuation and what its outcomes mean upstream. |
+The root owns the researcher's directions, cross-topic implications, seeds and standing
+agreements. A topic or branch owns its question, argument, answer, limits and continuation.
+A programme note is useful only for a real shared question, not shared software alone.
+The README maps locations. Top-level topics and the root link both ways.
+The root states changed implications for directions and cross-topic dependencies;
+leave topic measurements, settings, run progress and detailed next actions in their
+owning topic or branch. Completing a control need not change the root at all.
 
-Each opening states the question, the current answer at its supported strength, the
-approach, the decisive limitation and the next step. At the root these describe the
-directions and their unresolved relationships; do not invent a single thesis or a
-priority order. The root never copies topic answers, measurements or progress; it owns
-their implications for the larger questions. The workspace README stays the folder map.
-The root links it, the shared knowledge index and each top-level topic, and each
-top-level topic links back to the root.
-
-Start a root note only from existing notes and the researcher's documented choices, with a
-link to where each choice is recorded, and leave unstated priorities unspecified. When a
-topic's role, an important connection, a direction or an agreed next choice changes, the
-session that changed it updates the affected root passage before handoff, within its
-editing scope. Routine evidence updates do not by themselves require a root edit; update it
-when their implications change a direction or connection. One coordinating writer
-integrates concurrent root edits.
-
-**Reachability.** Every retained paper, question, derivation, numerical experiment and
-output has one primary home and an intelligible link path from the root and from the
-main note that uses it. The path may pass through supporting notes, source maps, READMEs
-or the knowledge index; keep it short enough to follow. Maintain it when retaining,
-moving or correcting material, and say what each link establishes. Useful failed or
-detached work stays reachable through an "earlier approaches" passage or an index that
-the main note reaches. Unread sources and unavailable remote data carry honest labels
-and precise locations. Temporary caches and tool environments need no research entry.
+Every retained scientific result or useful route needs one primary home and a meaningful
+path from the note that uses it to its supporting derivation, sources or numerical assets.
+An owning report can cover a whole run bundle; caches and intermediate files need no
+individual entries. A directory link establishes location, not support for a claim.
+For root structure, seeds and the full reachability rule, read
+[the backbone guide](references/backbone.md#the-backbone-at-each-level).
 
 ## Where discussion outcomes land
 
-A substantive physics discussion needs no topic. Keep what is durable; a clarification
-that is already recorded needs no write.
-
-| Outcome | Primary home, and its route from the backbone |
-| --- | --- |
-| A concept or framework learned | An existing or new explanation, source reading or story in the [shared collection](references/shared-knowledge.md), with its index row. Root → knowledge index. A checked locator can be enough; write no empty entry per term. |
-| A derivation worth keeping | The source's section note or a topic's supporting note; with neither, `notes/<question>.md` beside the root note, linked from the root in context. State assumptions, checks and unresolved steps; do not manufacture a topic. |
-| A connection between topics | One explanation in a supporting note, linked from the passages that use it in both topics. The root states its wider implication, marking a conjecture as such. |
-| An open question or idea | A short seed in the relevant main note, or in the root when unattached: the question, why it matters, what prompted it, the missing evidence and a possible first check. Mark it uncommitted; link longer reasoning. |
-
-A seed becomes a proposed branch when it has a distinct question, useful grounds, a
-discriminating first action and a continuation worth pursuing. Propose it inside an
-existing topic when it serves that topic, otherwise as a new topic linked from the root.
-Once it is agreed, or already covered by the current request or an existing applicable
-agreement, build its home without further instruction: folder, `research.md`, links in
-both directions and the README map. Revisit seeds when related work changes their grounds; merge duplicates,
-replace a resolved seed with its answer and link, or keep the reason for setting it
-aside. Seeds are possible directions, not a queue or a priority order.
-
-Research results stay in their research account, including a standalone derivation
-note. A reusable result enters the shared collection only as a provisional index row
-naming the question and citing that account; an atom written from a research result
-needs the researcher's confirmation.
+A discussion needs no new topic. Retain a useful explanation in the existing source
+reading or shared collection, a derivation in its owning note, a connection once with
+links from its uses, and an uncommitted idea as a seed. Research results enter shared
+knowledge as provisional question-named pointers; an atom waits for researcher
+confirmation. Ordinary clarification already covered by the notes needs no write.
+See [discussion outcomes and seed promotion](references/backbone.md#where-discussion-outcomes-land)
+when choosing a home or establishing an agreed branch.
 
 ## Locate the main note, then establish the current task
 
@@ -305,62 +277,18 @@ clear argument. They edit the same note, without a separate summary to maintain.
 
 ## Keep the topic tree clear
 
-A topic often grows into a tree: a parent main note whose argument uses the answers
-of branch main notes, each with its own question and evidence. Keep each level
-telling its own part of the story, so that the parent stays readable as work grows.
-The root note is the top of every tree. Relationships, reachability and the propagation
-of changed meaning apply at every level, but the root's content follows its
-[own rule](#the-backbone-at-each-level): implications for the larger questions, not each
-topic's current answer and continuation.
+Before branch work, read the parent's opening and its using passage; before parent work,
+read the relevant branches' openings. Identify what each branch contributes: prerequisite,
+alternative, control, application or independent offshoot. Directory nesting alone does
+not determine this relation. A branch can have several scientific users.
 
-When the task's note has a parent or branches, relate them before working. For
-branch work, read the parent's opening and the passage that uses this branch; for
-parent work, read the openings of the branches the task touches. Privately establish
-what the parent needs from the branch, what the branch currently answers, and whether
-both notes say so. This bounded read adds no other ancestor, sibling or supporting
-file. A material mismatch is an [on-use repair](#repair-an-outdated-main-note-during-use).
-
-Whenever you edit a note in the tree, check that:
-
-- The parent uses each branch where its argument needs the result: the branch's
-  question in a clause, its current answer and limitation in a sentence or two,
-  what follows for the parent's question, and a link. The branch's numbers, settings,
-  step sequences and failed attempts stay in the branch, unless a parent inference
-  turns on a particular value. A parent passage that would change whenever the
-  branch's evidence changes is carrying that evidence; reduce it to the implication.
-  A parent section that narrates one branch's work tends to collect such evidence.
-  State the implication once, where the argument uses it; the opening and the
-  continuation name it with a link rather than restating it. When an update touches
-  a passage that narrates a branch, replace the touched narration instead of
-  appending another paragraph to it.
-- The branch's opening states which parent inference it serves and what its
-  possible outcomes would mean there.
-- The parent's opening tells the topic's story: the question, what each branch has
-  established or ruled out and how that moved the answer, and which branch or step
-  decides what remains open. It names a branch's next step and links it, rather
-  than restating that step's details.
-- A sibling or related topic is linked at the passage that depends on it, not restated.
-
-At handoff, when a branch's answer, decisive limitation or next step has changed,
-revise the branch's opening and the parent's using passage together, and the
-parent's opening if its own answer, limitation or next step changed. Continue upward,
-to the root when it is affected, only while an ancestor's meaning changes. An unchanged
-branch state needs no parent edit.
-
-Before adding material to a main note, ask whether its argument needs it at this
-level. A line of work belongs in a branch or supporting note when it has its own
-question and acceptance test, accumulates its own runs or derivations, changes more
-often than the rest of the note, and is used elsewhere only through its conclusion.
-Moving existing work there is ordinary organization within the authorized scope,
-following the [restructuring procedure](../aitp-writing/references/research-note.md#add-move-and-remove-material-without-losing-the-thread);
-starting a new investigation still needs agreement. A concluded branch's result
-becomes part of the parent's argument and its note remains the evidence; an
-abandoned branch leaves its reason in one sentence where the parent used it, with
-what survives and what would justify reopening it.
-
-These checks belong to entry, editing and handoff, not to a separate audit, status
-file or registry; a clear tree needs no rewrite. Mention a tree repair in one
-sentence when handing back the task.
+The child owns its evidence and explains its upstream purpose. Each parent retains the
+branch's answer, decisive limitation, implication and link where the argument uses it.
+When those meanings or the warranted next inference change, revise the child and affected
+parent passages together; continue to ancestors and known sibling users only while their
+meaning changes. A completed control does not complete the physical investigation.
+Unchanged meanings require no synchronized rewrite. For restructuring, shared dependencies,
+and ended branches, use [the topic-tree guide](references/topic-tree.md).
 
 ## Use ordinary files and meaningful links
 
@@ -382,6 +310,14 @@ or an explicit choice says otherwise. No special IDs, schema, knowledge cards or
 required. After a meaningful edit, reread the changed argument in context, check affected
 links and qualifications, and confirm that the opening, reasoning and conclusion agree.
 Preserve concurrent edits, and repair relative links when a note moves.
+
+Before closing a substantive edit, read the changed conclusion from the main note and
+follow its actual evidence route. Can a returning reader recover the decisive assumption,
+understand the nontrivial step, and locate the source passage or the script, inputs and
+output that support it? Open the relevant support rather than only checking that its path
+exists. Check each changed evidence route; representative routes suffice for an unchanged
+bundle. Missing evidence stays explicitly missing. Use existing reports and explanations;
+create no wrapper merely to satisfy this check.
 
 ## Close the task visibly
 

@@ -32,7 +32,11 @@ result. One worked case can justify a narrow Skill when its decisive choice,
 check and limits can be taught from the evidence. This can be a successful method
 or an informative failure with a demonstrated way to detect or avoid it; do not
 wait for another failure or an explicit request. Repetition alone does not make
-a procedure good. If the useful operation or its evidence is still unclear,
+a procedure good. Distill at the natural pause after this evidence exists and before a handoff would lose
+the reusable choice; preserve the research result and its parent implication first.
+Do not interrupt an unfinished decisive calculation to polish a Skill. If use has exposed
+an error in an existing Skill, qualify or repair that instruction before using it again.
+If the useful operation or its evidence is still unclear,
 retain the candidate and missing check in the research note instead of presenting
 an untested idea as a demonstrated method.
 
@@ -68,14 +72,20 @@ being applicable. These are content needs, not mandatory headings.
 Separate general steps from one machine's account, path, parameter value or
 historical workaround. Put substantial background or a worked example in an
 ordinary linked reference only when it helps. Preserve a locator to the example
-that motivated the method. Do not require scripts for a procedure that the
+that motivated the method, its decisive validation and an untested boundary. Match the
+claimed capability to the evidence: a prepared input is not a demonstrated execution,
+a passing implementation control is not physical adequacy, and a procedure supported in
+one setting must not silently become a general theorem. Do not require scripts for a procedure that the
 agent can perform with existing tools.
 
 ## Check with a concrete use
 
 Check name, description, local references and unfinished placeholders with the
 host's available Skill validator. Then, when practical, apply the instructions
-to a small different instance. Inspect whether they select the relevant evidence,
+to a small different instance that changes a consequential assumption or input, and
+include a plausible case it should reject or qualify. Repeating the motivating example
+only demonstrates replay. If no transfer check is feasible, retain that limit and the
+narrow demonstrated scope; do not describe the method as generally validated. Inspect whether they select the relevant evidence,
 perform the decisive check, and respect the method's limitations. A formatting
 pass is not behavioral validation; a hand walkthrough is not an independent test.
 Retain only corrections supported by the observed use.

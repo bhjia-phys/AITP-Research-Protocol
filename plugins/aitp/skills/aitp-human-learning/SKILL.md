@@ -94,6 +94,12 @@ When a persistent topic gains a useful explanation, corrected misconception or
 unresolved question, use memory and writing to keep it in its natural note.
 Record the researcher's learning preferences or difficulties only when they are
 explicitly expressed and useful for resumption; do not invent a learner profile.
+After resolving a source difficulty, return to the exact passage and use the explanation
+to complete the inference that prompted it. Keep the source's claim, the local
+reconstruction and a proposed research application distinct. Retention of a new reading
+uses its source map or existing supporting note; link its implication where the main
+argument needs it, without inferring that the researcher has mastered the passage.
+
 The topic's main note, its `research.md` or a story in the shared collection, retains the
 connection to the broader question and the next unresolved inference, while substantial teaching derivations have linked
 supporting homes. Ordinary clarification may need no file write.

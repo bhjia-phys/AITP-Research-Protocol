@@ -2,8 +2,10 @@
 
 Use this when the researcher wants to learn from authors they admire, or when choosing the
 next decisive calculation and the researcher keeps an index of such an author's passages.
-The researcher chooses the authors; there is no default author. The examples below come
-from Witten's papers only to illustrate each move.
+The researcher chooses the authors; there is no global default. A choice in the current
+request or workspace instructions is sufficient and persists at its stated scope. Recover
+that choice and its collection through ordinary links. The examples below come from
+Witten's papers; another workspace can choose different authors.
 
 The target is the author's *decisions*: what to compute, which example keeps the
 difficulty, what a result does and does not establish, how an argument is made
@@ -86,7 +88,12 @@ Each move says when it applies, what to do, and how it fails.
 5. Check the result by calculation, a source or an independent reader.
 
 A move suggests what to try; it is not evidence for the answer. Skip it when its failure
-condition applies.
+condition applies. For a consequential choice, make the transfer explicit in the owning
+working note when it explains the decision: the obstruction in the present problem,
+what the passage suggests doing, which hypotheses survive the transfer, and what check
+could reject it. Do not paste a move label into every note or infer the author's insight
+from fluent prose. If the original is unavailable, disclose that the adaptation uses a
+secondary reading; do not claim to have inspected the paper.
 
 For writing, retrieve a paragraph that does the same job: motivating, defining,
 computing, interpreting a display, qualifying, or handing over to the next question.
@@ -133,8 +140,10 @@ hand.
 
 ## Improve and test
 
-Record each real use beside the research it served: the move, the passage, the decision,
-and whether it helped. When a use demonstrates an error in a move, correct it at once
+Retain a consequential use beside the research it served: the passage, decision and
+what its check established. An editorial adaptation needs no separate use log. Success
+means a better justified calculation, diagnostic or explanation, not resemblance of tone;
+a new scientific insight still needs its own evidence. When a use demonstrates an error in a move, correct it at once
 with [aitp-distill](../../aitp-distill/SKILL.md). Examples of such an error are a wrong
 failure condition or a passage that does not show what is claimed. One surprising case
 justifies narrowing the move or recording a caveat; broadening or redesigning a move

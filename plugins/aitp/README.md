@@ -1,6 +1,6 @@
 # AITP
 
-Based on version 1.1.0: article-centred research memory, research and writing guidance,
+Development version 1.2.1: article-centred research memory, research and writing guidance,
 and direct Skill distillation. The bundle contains instructions and
 optional manuscript assets, with no runtime. This development tree adds the research
 backbone (a root note, topic trees, reachability, seeds and a visible close), a single
@@ -49,7 +49,9 @@ retained paper, derivation, experiment and output has one home and a link path f
 root and from the note that uses it.
 
 The seven Skills are processes on that backbone. Each says what it reads, what it writes
-back and where, and what it can trigger next.
+back and where, and what it can trigger next. They reuse one recovered context rather
+than restarting the cycle at each cross-reference. The root and branch details are
+loaded only when needed through memory's references.
 
 - [aitp-memory](skills/aitp-memory/SKILL.md) is the single entry for research work and
   substantive physics discussions. It opens with the
@@ -111,7 +113,10 @@ what was adapted from PRL, PRX, JHEP and PRB. These are article structures, with
 flexible headings and no prescribed length. Memory and writing edit the same account.
 It should let a returning agent choose the next useful inference: why the main
 line matters, what each branch contributes and which completed route need not
-be repeated. A folder map alone does not express these scientific relationships.
+be repeated. A folder map alone does not express these scientific relationships. After changing an
+argument, follow its evidence route into the owning explanation and actual source or
+numerical assets. Check known users of a changed branch conclusion, including another
+parent or sibling; valid links alone do not establish that their meanings agree.
 
 During use, they also [repair an older main note](skills/aitp-memory/SKILL.md#repair-an-outdated-main-note-during-use)
 when its current organization obscures the supported answer, conditions, evidence
@@ -234,3 +239,9 @@ narrow method with explicit limits; do not wait for a separate request or
 repeat failure. Insufficiently supported candidates stay in research notes.
 See the [repository README](https://github.com/bhjia-phys/AITP-Research-Protocol/tree/v1.1.0)
 for further usage guidance.
+
+When a researcher has selected an exemplar author in their workspace, recover that
+choice across sessions. A substantial new argument or reorganization reads the relevant
+organization record and a matching original passage, then adapts a concrete decision
+under checked assumptions. Routine prose edits need no fresh exemplar read. This guidance
+supports reasoning and exposition; it does not certify imitation of an author's insight.

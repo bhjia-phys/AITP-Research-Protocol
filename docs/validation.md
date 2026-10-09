@@ -936,3 +936,37 @@ and installed file equality. No runtime or search framework was added. This
 walkthrough does not establish automatic-trigger reliability, exhaustive semantic
 retrieval or a research-speed advantage. The local application stays outside the
 public repository.
+
+## Research-cycle consistency review, 2026-10-08
+
+Development version 1.2.1 clarifies context reuse, parent/branch propagation,
+actual evidence-route inspection, scoped verification, persistent exemplar-author
+choices and the timing and transfer checks for method distillation. Root and
+topic-tree detail now have focused references; the mandatory entry retains their
+essential constraints. No runtime hook or recording framework was introduced.
+
+Three synthetic tasks were executed by fresh agents using either the original
+1.2.0 snapshot or a revised snapshot: completed-data integration with two
+scientific users; reconstruction of a supplied original paper passage; and
+repair of an existing complex basis-transformation method. Each configuration
+met all fifteen initial artifact-based expectations. Execution was independent;
+the coordinating assistant's grading was not blinded. There was one run per
+task/configuration, so these results do not establish a general performance
+advantage, automatic triggering or a reliable failure-rate estimate.
+
+Artifact review found a regression outside those initial expectations: the
+first revised calculation run copied measurements and settings into the root
+note. The old run did not. Restoring the root-scope constraint to the mandatory
+entry was followed by one fresh same-prompt retest, which kept the root at the
+level of shared implications. That added diagnostic is reported separately,
+not retroactively hidden in the original pass count. Calculation and reading
+used the first revised snapshot; distillation and the targeted retest used the
+corrected snapshot. Private fixtures, outputs, preservation checks, scores and
+the review page remain outside this repository. Timing and token comparisons
+were not available from the host and were not estimated.
+
+The accompanying topic review followed changed claims to existing source or
+numerical support, preserved original evidence and anchors, and repaired stale
+continuations and parent duplication. This is editorial and navigation evidence,
+not a fresh scientific recertification of the research archive or evidence of
+human learning, physical insight or model-independent behavior.

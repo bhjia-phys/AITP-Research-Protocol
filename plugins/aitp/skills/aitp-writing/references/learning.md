@@ -71,16 +71,17 @@ equation or a sentence; gaps often sit in prose such as "in exactly the same way
 every sentence, footnote and equation, and record that coverage. Write out only what the
 reader cannot supply:
 
-- **Hard steps.** Fill each in completely, under a prompt to try first. Label each added
+- **Hard steps.** Supply the complete missing inference. When practice serves the
+  learner's request, offer a short optional try-first prompt before its explanation;
+  direct exposition and a requested complete note need no exercise gate. Label each added
   line as quoted from the source, imported (with the theorem and its locator), or
   reconstructed (with how it was checked). Filled steps are where a written explanation
   most often errs.
 
   A displayed calculation can inherit the attribution of its introducing block. Split a
   block where its support changes; do not repeat a label on every mechanical line or
-  purely editorial heading. Put the substantial missing inference under the optional
-  try-first prompt and give it a stable heading for direct links. Keep routine
-  substitutions in the explanation. A question page should reach the needed atom, exact
+  purely editorial heading. Give a substantial missing inference a stable heading for
+  direct links; keep routine substitutions in the explanation. A question page should reach the needed atom, exact
   source step and return to the question without requiring the reader to navigate an
   entire bibliography.
 - **Two layers.** Gaps that block following the argument come first. Rigor gaps, such as
