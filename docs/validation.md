@@ -1,5 +1,26 @@
 # Validation and its limits
 
+## Minimal session reminder, 2026-10-10
+
+AITP 1.2.5 adds one 65-word reminder at session entry and recovery, pointing to
+the existing memory Skill and its write decision. There are no end-of-turn or
+exit hooks. Hakimi reads the same text through `systemPromptPath`, replacing
+its longer, duplicated instructions.
+
+Native Codex runs on Windows and WSL, including the desktop app's WSL executor,
+delivered the reminder as session context; a two-turn WSL session ran it only
+once. Claude Code's startup hook returned the
+same text successfully, but an expired login prevented a model-turn check.
+Hakimi's native loader resolved the shared prompt with no plugin diagnostics.
+
+Two fresh Codex sessions used a small, disposable oscillator-note fixture. A
+read-only status request left every file unchanged. A supplied control result
+updated the existing research note and control report, retained the earlier
+failure and added no files or session log. These are bounded smoke checks, not
+an old-versus-new comparison or evidence of general efficiency or correctness.
+Skill frontmatter, manifests, local links and installed-copy equality also pass.
+Test records remain outside the published tree.
+
 ## A research backbone and one research cycle, 2026-10-08
 
 A researcher described the architecture they want: `research.md` as the intellectual backbone

@@ -1,6 +1,6 @@
 # AITP
 
-Development version 1.2.3: article-centred research memory, research and writing guidance,
+Development version 1.2.5: article-centred research memory, research and writing guidance,
 and direct Skill distillation. The bundle contains instructions and
 optional manuscript assets, with no runtime. This development tree adds the research
 backbone (a root note, topic trees, reachability, seeds and a visible close), a single
@@ -196,26 +196,28 @@ can remain linked from an existing README or index. Known errors or unresolved
 objections stay visible where the old material is read, with corrected treatment
 linked when available. No automatic synchronization or deletion is implied.
 
-Use normal read, search and edit tools. There is no ledger command, adapter
-contract, automatic session hook or required service. Host permissions govern
-execution and publication. Skills guide behavior; they cannot guarantee activation,
-crash recovery or scientific correctness.
+## Session reminders
 
-For a persistent workspace instruction, a researcher may put the following in
-its existing `AGENTS.md` (`CLAUDE.md` for Claude Code), or state it in the conversation:
+Codex and Claude Code use one optional [SessionStart hook](hooks/hooks.json) at
+startup, resume, clear and compaction. It reads only the bundled
+[short reminder](hooks/session-start.txt); it neither reads research files nor
+writes state. Hakimi loads that same text through `systemPromptPath`. The Skills
+remain usable without these host reminders.
 
-> For research work and substantive physics discussions, begin with aitp-memory and
-> its research cycle; reuse current context for follow-ups. The root `research.md` holds
-> the directions, connections, seeds and standing agreements; topic and branch notes hold
-> their arguments. When a result arrives, replace the passage whose meaning it changes
-> rather than appending an update; full setups, repeated runs and job states go in the
-> supporting note or run report. Close each task by saying what is supported, where it
-> was saved and what it warrants next.
+The reminder points to `aitp-memory`, reuses current context and applies its
+existing write decision at a natural handoff. There are no `Stop`, `SessionEnd`
+or per-turn hooks, extra summaries, checklists or mandatory note updates.
+The [read/write rules](skills/aitp-memory/SKILL.md#timing-and-recovery) stay in
+their owning Skill. No Python, Node or external service is needed for the hook.
 
-This assumes AITP is available in the host. It is optional workspace guidance,
-not a new required file. The Skill descriptions and cross-references request
-the same entry; Hakimi also supplies an entry reminder from the plugin manifest.
-These are instructions for the agent, not an executable router or session hook.
+Codex requires review and trust of a new or changed hook through its native
+hook controls before it runs; installation alone does not enable execution.
+Either host can disable the hook through its hook settings. Start a fresh
+session after updating. See [Codex hooks](https://learn.chatgpt.com/docs/hooks)
+and [Claude hooks](https://code.claude.com/docs/en/hooks) for host controls.
+Reminders do not guarantee Skill activation, crash recovery or scientific correctness.
+
+## Continue with the relevant guidance
 
 For a new or unfamiliar topic, use
 [starting or organizing a topic](skills/aitp-memory/references/starting-a-topic.md).

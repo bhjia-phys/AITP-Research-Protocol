@@ -3,8 +3,9 @@
 Claude Code uses the same `plugins/aitp/skills/` files as Codex and Hakimi.
 Its [plugin manifest](../plugins/aitp/.claude-plugin/plugin.json) supplies native
 metadata; the [marketplace](../.claude-plugin/marketplace.json) points to that
-plugin directory. No copy of the research instructions, runtime, MCP service,
-session hook or global `CLAUDE.md` is required.
+plugin directory. The optional [session reminder](../plugins/aitp/README.md#session-reminders)
+uses the same short text as the other hosts. No global `CLAUDE.md`, additional
+runtime or MCP service is required.
 
 Claude scans the default `skills/` directory for the seven core Skills. The
 manifest adds the nested `developing-librpa` directory so that the domain method
