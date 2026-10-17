@@ -17,7 +17,9 @@ conversation. Write it so that the receiver could act on it alone.
 - **Task:** what to produce or decide, and what counts as done.
 - **Constraints:** what must not change, such as existing functionality, original outputs
   or a frozen branch, and what is authorized, such as submitting jobs.
-- **Files and evidence:** exact paths for the inputs, scripts, reports and figures needed.
+- **Files and evidence:** exact paths for the inputs, scripts, reports and figures needed,
+  with the inspected revision or dated snapshot, distinguished from later changes that
+  were not inspected.
 - **Live work:** existing jobs and their run reports, who owns submission and integration,
   and which files the receiver may edit and which stay with the coordinator.
 - **Checks:** how the receiver should verify its own result.

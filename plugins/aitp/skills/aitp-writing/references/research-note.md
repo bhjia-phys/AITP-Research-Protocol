@@ -109,15 +109,18 @@ Keep the consequential evidence boundary in the scientific account: for example,
 an analytic benchmark does not demonstrate that an implementation passes it.
 
 Retain research information that a publication might omit: why a plausible route
-failed, an objection that still matters, a conjecture's actual evidence, or the
-next discriminating calculation. Put it where it affects the reasoning. A short
-ending on open directions is useful when these do not fit earlier; do not append
-a chronological session diary. A completed question needs no invented open problem.
+failed, an objection that still matters, a conjecture's actual evidence, or why a
+calculation would discriminate. Put it where it affects the reasoning; the chosen next
+action lives only in the owning Current work entry. A short ending on open questions not
+yet taken up is useful when these do not fit earlier; do not append a chronological
+session diary. A completed question needs no invented open problem.
 
 ## Current work
 
 List each thread that has a continuation in this note's scope, including paused and
 dormant threads with their resume conditions; omit the section only when there is none.
+An open scientific question with no agreed continuation stays in the account, where its
+motivation is explained; it needs no entry.
 Each entry conveys the thread; its principal disposition, with a short qualifier when
 several things are true; the date of its last consequential change; the bounded frontier,
 meaning what is known and what is unresolved, with its scope; the next discriminating action
@@ -295,16 +298,31 @@ supporting destinations and affected uses. A correction search includes incoming
 links and claim terminology or aliases; inspect real dependencies and name known
 uses outside the completed scope. See [corrections](supporting-notes.md#correct-claims-and-keep-earlier-routes-findable).
 
-For a substantial restructure, preserve fresh private copies of affected notes,
-navigation and index entries. Map every removed passage to a destination or an
-existing equivalent. Give useful detail its primary home before shortening the
-main note; retain the result, decisive condition, implication and precise link.
-Repair outgoing relative links and maintained incoming references, including
-knowledge rows. Preserve old fragments at meaningful forwarding passages so
-historical links still reach an explanation, adding explicit anchors only for
-renamed, renumbered, moved or removed headings because an unchanged heading already
-keeps its fragment. Keep original outputs and editions.
-Do not create wrapper notes merely to hold links or split to meet a size target.
+For a substantial restructure, freeze private copies of the source and receiving notes,
+navigation, relevant index entries and incoming references. Inventory what must survive:
+the question, scope and authorizations, threads and their owners, equations, hypotheses,
+units, model and source identities, negative results, proposals and missing evidence.
+Reconcile existing content in receiving files before inserting anything. Give useful
+detail its primary home before shortening the main note; retain the result, decisive
+condition, implication and precise link. Give every removed passage, and every passage a
+preservation check matches only approximately, an explicit disposition: retained, moved,
+consolidated or superseded, with its destination or replacement. Repair outgoing
+relative links and maintained incoming references, including knowledge rows. Preserve
+old fragments at meaningful forwarding passages so historical links still reach an
+explanation, adding explicit anchors only for renamed, renumbered, moved or removed
+headings because an unchanged heading already keeps its fragment. Keep original outputs
+and editions. Do not create wrapper notes merely to hold links or split to meet a size
+target.
+
+Review preservation and meaning separately before applying anything: check
+destinations, anchors, links and unchanged evidence; then read the resulting argument
+and retrieve representative supporting results. The shortened note must still explain
+what follows, why, under what conditions, and where the evidence lives. A preservation
+script can find omitted sentences, numbers and links; it cannot certify that meaning was
+conserved. Before live application, an independent reader, such as the
+[AITP reviewer](../../../agents/aitp-reviewer.md), compares the complete baseline and
+prepared accounts against the inventory; judge its findings as
+[aitp-verify](../../aitp-verify/SKILL.md#assess-another-models-review) describes.
 
 Compare the captured baseline, prepared revision and latest files before applying.
 Carry concurrent edits into their new destinations, including edits inside moved
@@ -312,20 +330,12 @@ passages; a conflict-free text merge does not prove scientific consistency. A qu
 note requires a fresh comparison, not an old modification time. For a live shared
 note, prepare the revision first and apply through an agreed pause of editing
 sessions, covering affected support and index files too; reread and merge the
-latest versions during that handoff. Without that handoff, retain the prepared
-revision and identify what awaits application. This concurrency arrangement is
-not a recurring approval requirement for ordinary edits.
-
-Review preservation and meaning separately: check destinations, anchors, links
-and unchanged evidence; then read the resulting argument and retrieve representative
-supporting results. The shortened note must still explain what follows, why,
-under what conditions, and where the evidence lives. Then ask an independent reader,
-such as the [AITP reviewer](../../../agents/aitp-reviewer.md), to compare the baseline
-with the result for lost qualifications, ownership and preservation, and judge its
-findings as [aitp-verify](../../aitp-verify/SKILL.md#assess-another-models-review)
-describes. A preservation script can find omitted sentences, numbers and links; it
-cannot certify that meaning was conserved. Reorganization authorizes no deletion of
-original assets, execution of historical plans or publication.
+latest versions during that handoff, and recheck the final files before writers
+resume. Announce changed destinations, and keep a rollback route that preserves
+intervening edits. Without that handoff, retain the prepared revision and identify
+what awaits application. These requirements belong to substantial restructuring; they
+are not a recurring approval requirement for ordinary edits. Reorganization authorizes
+no deletion of original assets, execution of historical plans or publication.
 
 ## Adapt an existing note during use
 

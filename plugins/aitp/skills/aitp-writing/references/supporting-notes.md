@@ -11,7 +11,7 @@ directories. A short explanation can stay in the main note.
 | Source reading | Source/version and inspected passages; question answered, hypotheses, convention translations, and source argument distinguished from local reconstruction. |
 | Derivation or proof | Precise claim, assumptions and conventions, imported inputs with locators, consequential steps, meaningful checks, result and scope. |
 | Method or implementation | Mathematical operation, representation and approximation, operative code/version boundary, inputs and outputs, reproducible use, validation and unsupported cases. |
-| Experiment or run report | Question tested, actual inputs and source/executable identities, settings and measurement definitions, output locations, observations, failures and interpretation at that time. |
+| Experiment or run report | Question tested, actual inputs and source/executable identities, settings and measurement definitions, output locations, observations, failures and interpretation at that time. Execution and observation dates stay separate from later analysis or correction dates, which name the evidence and analysis version used; original observations are preserved. |
 | Analysis across runs | Why comparisons are meaningful, uncertainty treatment, selected evidence, conclusions and unresolved alternatives. |
 | Side investigation or earlier route | Origin and rationale, relationship to the main question, surviving results, failure or changed relevance, corrected interpretation, evidence and reopening or resumption condition. |
 
@@ -139,8 +139,9 @@ compact once its operation is established. Scientific correctness and whether a
 reader can follow the explanation need separate judgments.
 
 The opening identifies the question, setting, intended result and relationship to
-the parent where useful. The ending says what follows, what remains unsupported
-and any meaningful continuation. Neither relies on the original conversation or
+the parent where useful. The ending says what follows and what remains unsupported. It
+may explain a possible follow-up; a live thread's chosen next action is maintained only
+in the owning main note's Current work entry. Neither relies on the original conversation or
 copies the parent's changing project summary. Introduce prerequisites at first
 use, with a short explanation and a link for depth.
 

@@ -1,7 +1,7 @@
 # Replacing the legacy implementation
 
-AITP now consists of article-centred memory, research Skills and learning through
-direct Skill distillation. The active bundle is `plugins/aitp`, with seven core
+AITP now consists of research memory in living main notes, research Skills and learning
+through direct Skill distillation. The active bundle is `plugins/aitp`, with seven core
 Skills: memory (the entry and research cycle), research, verify, writing and
 distillation, plus the two conditional interaction Skills, human-brainstorming and
 human-learning. Taste remains future work.

@@ -48,7 +48,8 @@ Equivalent prose or a table is fine when it carries the same information. -->
 <!-- The scientific account: setting and conventions, reasoning, decisive comparisons,
 objections and implications, in logical order, under headings that follow the physics.
 A branch's result enters where the argument uses it: its implication, limiting condition
-and link. Long derivations, analyses and background go to supporting notes, linked at use.
+and link. Independently useful supporting detail can move to supporting notes, linked at
+use; a central derivation stays here regardless of length.
 Open scientific questions sit where their motivation is explained. The outlines
 research-theory.md, research-computational.md and research-letter.md in this folder
 suggest an order for theory, computation and compact arguments. -->

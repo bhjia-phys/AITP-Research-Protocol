@@ -114,7 +114,7 @@ the failed identification. Keep frozen editions unchanged; qualify maintained
 uses, including a provisional knowledge-index pointer if present. Name a known
 application left outside the editing scope instead of claiming it was repaired.
 
-## Multi-thread: a branch changes its next step, then its answer
+## Multi-thread: a retry, a changed answer and a changed next step
 
 A topic note `research.md` asks how strongly a model's local interaction depends on the
 screening that is excluded. Its branch `screening/research.md` owns the convergence of that
@@ -124,16 +124,16 @@ interaction with the k-point mesh. The parent's Current work carries a pointer e
 >   supplies the interaction used in the comparison section; values are from a 4×4 mesh,
 >   and their convergence is untested.
 
-**The next step changes.** The branch's 6×6 run is cancelled by a queue limit and
-resubmitted. Only the branch's entry changes, with its new date; the cancellation goes to
-the run report.
+The branch's own entry reads:
 
-> - **6×6 comparison** — waiting on run · 2026-03-07. The 4×4 interaction is 2.1 energy
->   units; its convergence is untested. Next: compare with the resubmitted 6×6 run under
->   the same inputs. Run report: `runs/mesh-6x6.md`.
+> - **Mesh convergence** — waiting on run · 2026-03-05. The 4×4 interaction is 2.1 energy
+>   units; its convergence is untested. Next: compare with a 6×6 run under the same
+>   inputs. Run report: `runs/mesh-6x6.md`.
 
-The parent's pointer, opening and account stay unchanged: the thread's contribution and
-limiting condition did not change.
+**A run is cancelled and resubmitted.** The queue cancellation and retry change only the
+run report. The scientific frontier, disposition and next discriminator are unchanged, so
+the branch's entry keeps its date, and the parent's pointer, opening and account stay as
+they are.
 
 **The answer changes.** The 6×6 run gives 2.4, outside the 0.1 tolerance that the parent's
 comparison assumed. The branch revises its account and its entry:
@@ -152,10 +152,26 @@ value change together:
 > The comparison with the reference interaction uses the 4×4 value and is provisional:
 > the value changes by 0.3 at 6×6 (`screening/mesh-comparison.md`).
 
+The parent also owns a thread of its own, which combines the branch result with its own
+comparison; it now waits on that integration:
+
+> - **Model ordering under the reference interaction** — waiting on integration ·
+>   2026-03-09. The ordering of the three models holds with the 4×4 value; the 6×6 shift
+>   may change it. Next: re-evaluate the ordering with the 6×6 value.
+
+**The next step changes.** Before an 8×8 run is authorized, the researcher asks first
+whether the excluded-screening window, rather than the mesh, causes the shift. Only the
+branch's entry changes, with a new date; the parent's pointer does not, because the
+contribution and limiting condition are unchanged:
+
+> - **Mesh convergence** — waiting on analysis · 2026-03-10. The interaction moves from
+>   2.1 at 4×4 to 2.4 at 6×6; whether the window or the mesh causes the shift is
+>   unresolved. Next: compare the selected transitions at both meshes before any 8×8 run.
+
 If the parent's opening stated the comparison as a result, its qualification changes too.
-When the 8×8 run finishes but has not been analyzed, the branch entry says `waiting on
+When a later run finishes but has not been analyzed, the branch entry says `waiting on
 analysis`, and the parent's comparison passage names that pending result until it is
-integrated. The parent never records the 8×8 job state or the branch's next run.
+integrated. The parent never records the branch's job states or its next run.
 
 ## A short analytic note stays short
 
@@ -164,10 +180,11 @@ live, there is no Current work section and no decisions list:
 
 > # Does the coordinate swap descend to the boundary?
 >
-> For linear $M:V\to W$ and $T:V\to V$, an induced operator on $\operatorname{im}M$ exists
-> exactly when $T(\ker M)\subseteq\ker M$. The swap of the two bulk coordinates fails this
-> criterion, so it induces no boundary operator and identifies no boundary sectors.
+> Let $M:\mathbb R^2\to\mathbb R$, $M(x,y)=x$, and $T(x,y)=(y,x)$. No operator $\bar T$
+> satisfies $\bar TM=MT$: both $0$ and $(0,1)$ have zero $M$-image, but their $MT$-images
+> are zero and one.
 >
-> The criterion, its proof and the earlier surjectivity argument it corrects are in
-> `boundary-descent.md`. What survives the failed application is the conditional
-> criterion; an operator that preserves the boundary kernel would reopen the question.
+> In general, an induced operator on $\operatorname{im}M$ exists exactly when
+> $T(\ker M)\subseteq\ker M$, because this makes $MTv$ independent of the representative
+> of $Mv$. Surjectivity alone does not establish that independence. What survives is the
+> conditional criterion; an operator that preserves the kernel would reopen the question.

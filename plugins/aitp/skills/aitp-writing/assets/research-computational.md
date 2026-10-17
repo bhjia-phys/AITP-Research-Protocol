@@ -71,10 +71,11 @@ link to its diagnosis. An unexplained discrepancy stays unexplained. -->
 
 ## Open questions
 
-<!-- Optional: identify the unresolved physical or methodological issue and
-the next comparison that could distinguish the plausible explanations. Link
-operational plans when useful; do not turn the main note into a job queue.
-Delete this section if the agreed question is complete. -->
+<!-- Optional: identify the unresolved physical or methodological issue and why a
+comparison would distinguish the plausible explanations. In a living main note, the
+chosen next action and plan pointer live only in the owning Current work entry; link
+it here, and do not turn the note into a job queue. Delete this section if the agreed
+question is complete. A requested manuscript may describe future directions. -->
 
 ## References
 

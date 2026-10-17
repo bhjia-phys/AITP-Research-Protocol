@@ -56,8 +56,8 @@ loaded only when needed through memory's references.
 - [aitp-memory](skills/aitp-memory/SKILL.md) is the single entry for research work and
   substantive physics discussions. It opens with the
   [six-line research cycle](skills/aitp-memory/SKILL.md#the-research-cycle). In summary:
-  recover the request and agreement; read what the operation needs, and the whole account
-  before revising it; explain
+  recover the request and agreement; read what the operation needs, and the whole affected
+  account before a reinterpretation or restructuring; explain
   what the task should settle; do the work and check consequential claims; retain outcomes
   in their homes and repair affected uses; close with the supported answer and the
   warranted next move. It also keeps the root, topic trees, seeds and plans, answers

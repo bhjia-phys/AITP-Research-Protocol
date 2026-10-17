@@ -42,7 +42,9 @@ local analysis relates to it, and any currently unavailable dependency.
 
 Independent questions can use one code checkout and build infrastructure. Give
 their scientific runs an intelligible question/run separation and explain the
-shared source once in the family README. Each main note links only the evidence
+shared source once in the family README. Where several source roles need
+distinguishing, the README can record each role, location and dated observed revision;
+exact per-run provenance stays in the run reports. Each main note links only the evidence
 needed for its argument. Sharing code does not require merging cRPA, QSGW and
 other independent research questions into one note.
 

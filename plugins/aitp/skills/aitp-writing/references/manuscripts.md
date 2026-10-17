@@ -63,7 +63,9 @@ For a later request to update the paper from the note, compare the new scientifi
 understanding with the existing manuscript and revise all dependent claims while
 preserving the author's edits. Record the source note/version or relevant date
 briefly in an existing manuscript README or source comment when needed to avoid
-confusing drafts. Neither document overwrites or synchronizes the other by default.
+confusing drafts. A first manuscript or teaching artifact likewise records the research
+state it incorporates in its README or a source comment. Neither document overwrites or
+synchronizes the other by default.
 
 Respect an existing venue or format. For a new theory manuscript, the optional
 [JHEP starter](../assets/jheppub-note-template.tex) preserves the former Skill's

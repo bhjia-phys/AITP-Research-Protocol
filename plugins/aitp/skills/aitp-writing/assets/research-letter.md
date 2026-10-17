@@ -50,8 +50,8 @@ relabel a conjecture, finite check or component test as a general result. -->
 
 <!-- Optional: retain the specific missing argument or discriminating calculation
 that follows from the discussion. State the evidence for a live conjecture and
-what would challenge it. Delete this section when the question is complete.
-Keep execution queues and session task lists in linked working notes. -->
+what would challenge it. In a living main note, the chosen next action lives only in
+the owning Current work entry. Delete this section when the question is complete. -->
 
 ## References
 

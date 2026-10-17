@@ -71,9 +71,10 @@ obstruction into a general no-go theorem. -->
 ## Open questions
 
 <!-- Optional: state the live conjecture or missing construction, what motivates
-it, and the next argument or counterexample that could resolve it. This is a
-scientific continuation, not a chronological log or a list of agent actions.
-Delete the section if there is no remaining question within the agreed scope. -->
+it, and which argument or counterexample would resolve it, where the argument needs
+that explanation. In a living main note, the chosen next action lives only in the
+owning Current work entry; link it here. Delete the section if no question remains
+within the agreed scope. A requested manuscript may describe future directions. -->
 
 ## References
 

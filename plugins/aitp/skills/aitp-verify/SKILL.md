@@ -102,8 +102,10 @@ second reader of qualifications, ownership, placement, preservation and propagat
 for any substantial restructuring or migration of a main note, and after an ordinary edit
 when a plausible failure is present: an opening or a claim's strength or scope changed, a
 change propagated across notes, or a pending integration was resolved. Where the host does
-not provide it as a subagent, give its instructions to a subagent or a separate session
-with read access only.
+not provide it as a subagent, as in Codex, give its complete instructions and the
+versioned inputs to a fresh subagent or a separate session with read access only, without
+the author's reasoning history; the tools line in its header configures only Claude Code.
+If no independent review is available, report that gate as pending.
 
 Give the reader only the document and its sources, and keep your own expectations out of
 the prompt. Record honestly how independent the read was: which model read it, whether it

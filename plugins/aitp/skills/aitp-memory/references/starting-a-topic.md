@@ -72,7 +72,8 @@ the relevant exposition; these distinctions do not require three directory schem
 
 Determine whether the request is to resume a question, synthesize scattered work,
 or migrate its home. Organizing a note does not imply moving assets or archiving
-the original project. Read an existing main argument in full before revising it.
+the original project. Read an existing main argument in full before reinterpreting or
+restructuring it; a local update reads the passage it changes and the passages that use it.
 When there is no main note, discover questions from manuscripts, detailed notes,
 code and result reports. For broad recovery, cover each discovered branch and
 its corrections and useful failures; for a scoped request, stay within that scope.

@@ -33,11 +33,11 @@ Whenever you edit a note in the tree, check that:
   appending another paragraph to it.
 - The branch's opening states which parent inference it serves and what its
   possible outcomes would mean there.
-- The parent's opening tells the topic's story: the question, what each branch has
-  established or ruled out and how that moved the answer, and which branch or step
-  decides what remains open. Its Current work has a pointer entry for each live
-  branch: what the branch contributes and its limiting condition, with a link. The
-  branch's next step, job state and run count stay in the branch.
+- The parent's opening synthesizes the branch implications needed for the overall answer
+  and the decisive gap; other branch contributions appear where the argument uses them.
+  Its Current work has a pointer entry for each live branch: what the branch contributes
+  and its limiting condition, with a link. The branch's next step, job state and run
+  count stay in the branch.
 - A sibling or related topic is linked at the passage that depends on it, not restated.
 
 At handoff, when a branch's answer, decisive limitation or contribution has changed,
