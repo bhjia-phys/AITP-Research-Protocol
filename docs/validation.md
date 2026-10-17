@@ -1,5 +1,28 @@
 # Validation and its limits
 
+## Living main notes and an independent reviewer, 2026-10-17
+
+AITP 1.3.0 gives each main note an opening of about one screen, a Current work section that is
+the only maintained home of each live thread's continuation, the scientific account, and optional
+decisions and retained alternatives. A read-only reviewer prompt checks qualifications, ownership,
+placement, preservation and propagation. Claude and a GPT model designed it over three rounds, then
+the GPT model reviewed the implementation; every blocking finding was fixed before testing.
+
+Packaging checks pass: Skill frontmatter, manifests at 1.3.0, local links and anchors, Claude's
+strict plugin and marketplace validation, and Claude's registration of the reviewer as a plugin
+subagent with read-only tools. Codex has no plugin agents; its sessions reach the reviewer through
+the instructions in `aitp-verify`.
+
+A pilot compared old and new Skills on old and new notes (a 2×2 design, one run per cell, five
+tasks, plus a reviewer-enabled arm on two writing tasks) in isolated Codex sessions on frozen copies
+of a researcher's notes, graded blind against criteria fixed beforehand. No run in any cell failed a
+trap criterion, and totals differed by at most two criteria, so the pilot shows no measurable
+difference in either direction. In the reviewer-enabled runs the agent read the review guidance but
+did not invoke the reviewer. Applying the structure to existing notes used a mechanical omission
+check and an independent semantic read; it moved text without deleting any. These results do not
+establish general efficiency, correctness or superiority. Test records remain outside the
+published tree.
+
 ## Minimal session reminder, 2026-10-10
 
 AITP 1.2.5 adds one 65-word reminder at session entry and recovery, pointing to
