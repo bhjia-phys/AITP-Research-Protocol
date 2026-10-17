@@ -8,12 +8,14 @@ of changed meaning apply at every level, but the root's content follows its
 [own rule](../SKILL.md#the-backbone-at-each-level): implications for the larger questions, not each
 topic's current answer and continuation.
 
-When the task's note has a parent or branches, relate them before working. For
-branch work, read the parent's opening and the passage that uses this branch; for
-parent work, read the openings of the branches the task touches. Privately establish
+When the task's note has a parent or branches, relate them before working. For branch
+work, read the parent's opening and the passage that uses this branch; for parent work,
+read the openings and Current work of the branches the task touches. Privately establish
 what the parent needs from the branch, what the branch currently answers, and whether
-both notes say so. This bounded entry read does not require unrelated ancestors, siblings or supporting
-files. Follow another parent or sibling when it actually uses the changed claim. A material mismatch is an [on-use repair](../SKILL.md#repair-an-outdated-main-note-during-use).
+both notes say so. This bounded entry read does not require unrelated ancestors,
+siblings or supporting files. Follow another parent or sibling when it actually uses the
+changed claim. A material mismatch is an [on-use
+repair](../SKILL.md#repair-an-outdated-main-note-during-use).
 
 Whenever you edit a note in the tree, check that:
 
@@ -33,13 +35,17 @@ Whenever you edit a note in the tree, check that:
   possible outcomes would mean there.
 - The parent's opening tells the topic's story: the question, what each branch has
   established or ruled out and how that moved the answer, and which branch or step
-  decides what remains open. It names a branch's next step and links it, rather
-  than restating that step's details.
+  decides what remains open. Its Current work has a pointer entry for each live
+  branch: what the branch contributes and its limiting condition, with a link. The
+  branch's next step, job state and run count stay in the branch.
 - A sibling or related topic is linked at the passage that depends on it, not restated.
 
-At handoff, when a branch's answer, decisive limitation or next step has changed,
-revise the branch's opening and the parent's using passage together, and the
-parent's opening if its own answer, limitation or next step changed. Continue upward,
+At handoff, when a branch's answer, decisive limitation or contribution has changed,
+revise the branch's opening and the parent's using passage together, the parent's
+pointer entry if the contribution or limiting condition changed, and the parent's opening
+if its own answer or limitation changed. A changed next step changes only the branch's
+Current work. While a checked branch result awaits integration, a parent claim it may
+change carries a brief qualification naming that result. Continue upward,
 to the root when it is affected, only while an ancestor's meaning changes. An unchanged
 branch implication needs no parent edit. Inspect all known scientific users of a changed
 claim, including a second parent or sibling reached by an ordinary link. Explain the

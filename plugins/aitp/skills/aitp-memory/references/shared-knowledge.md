@@ -246,7 +246,7 @@ one row per collection and the index rows that point into it.
 ## Tell a learning topic as a story of questions
 
 A learning topic needs a main line as much as a research topic does. Its story is a
-developing article, not a course that retells the sources. It is a chain of questions,
+developing explanation, not a course that retells the sources. It is a chain of questions,
 each arising from the difficulty the previous answer left. For each question, give a short
 answer at its true strength, what to read, and the key step. Link into atoms and section
 notes rather than copying them.

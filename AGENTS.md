@@ -10,7 +10,8 @@ cards and recording rituals are historical, not requirements for this tree.
 Do not restore them through copied instructions or automatic migration.
 
 Keep the product simple. A substantive research-note revision requires knowing
-its complete argument; ordinary recall uses only the links it needs. Record
+its complete argument; ordinary recall reads the opening, Current work and only the
+links it needs. Record
 consequential changes, useful failures and corrected assumptions. No durable
 change means no write. Teach reusable procedures directly as focused Skills.
 Use ordinary relative links. README explains established material locations;

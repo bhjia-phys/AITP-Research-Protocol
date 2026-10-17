@@ -50,7 +50,12 @@ JHEP is not restricted to proofs, and the journals do not mandate our proposed
 section headings. Do not create four almost identical `research.md` files or
 choose a publication venue merely to start a topic.
 
-## Use the templates
+## Use the outlines
+
+A living main note starts from the [living-note starter](../assets/research-topic.md):
+its opening, Current work and decisions frame the scientific account. These outlines
+suggest the account's order and serve directly when a paper or teaching document is
+requested:
 
 - [Compact argument](../assets/research-letter.md): a short, self-contained
   question with one central construction, comparison or obstruction.
@@ -59,10 +64,11 @@ choose a publication venue merely to start a topic.
 - [Computation or theory with numerical tests](../assets/research-computational.md):
   model, theoretical basis, method, evidence and controlled interpretation.
 
-Choose the form that carries the whole agreed research question. Section titles
-can describe the actual scientific content. Merge or omit sections that have no
-work to do, and remove drafting comments before presenting a finished revision.
-A new topic may contain only an honest abstract, introduction and proposed route.
+Choose the order that carries the agreed research question. Section titles can
+describe the actual scientific content. Merge or omit sections that have no work to
+do, and remove drafting comments before presenting a finished revision. In a living
+note, the opening replaces an outline's abstract. A new topic may contain only an
+honest opening and a proposed route.
 No journal word count, page count or fixed number of sections applies.
 
 Use ordinary Markdown headings, paragraphs, links and tables. Use `$...$` and
@@ -74,6 +80,7 @@ Obsidian plugin or bibliography processor is required.
 
 Research memory adds the live uncertainty, useful failed routes and evidence
 links that a submitted article might compress. Keep these attached to the
-argument; a short optional open-questions ending is enough when needed. Follow
+argument. Continuation lives in Current work; a short open-questions ending is
+enough for questions not yet taken up. Follow
 [main-note guidance](research-note.md) for revisions and asset preservation.
 TeX manuscript production remains a separate, explicitly requested task.

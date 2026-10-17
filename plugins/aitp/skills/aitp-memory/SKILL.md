@@ -12,8 +12,10 @@ applies the same cycle. Within an ongoing task, reuse the context already recove
 
 1. Recover the request, existing agreement and relevant backbone note; without a topic,
    start from the root without creating one.
-2. Read the whole argument before revising it, the relevant parent passage for branch
-   work, and the knowledge index once for theory or study.
+2. Read what the operation needs: the opening and Current work for recall or status,
+   the changed passage and its users for a local update, and the whole affected
+   account before a reinterpretation or restructuring; add the relevant parent
+   passage for branch work, and the knowledge index once for theory or study.
 3. Explain what the task should settle; identify the uncertainty and use the needed
    skills within the agreed scope and plan review. Surface unresolved consequential
    algorithm choices before dependent implementation or runs, using
@@ -48,8 +50,8 @@ back to this cycle is not an instruction to restart it. The final answer reports
 completed integration, not an intention to save later.
 
 `research.md` is the researcher's long-term memory and the backbone of the research.
-Each one is a developing article about the question at its own level: a root note for
-the whole research, a note for each topic, and notes for branches inside topics. The
+Each one is a living account of the question at its own level: a root note for the
+whole research, a note for each topic, and notes for branches inside topics. The
 other skills are processes that grow it:
 [aitp-human-learning](../aitp-human-learning/SKILL.md) for study and conceptual
 difficulty, [aitp-human-brainstorming](../aitp-human-brainstorming/SKILL.md) for the
@@ -66,6 +68,24 @@ better question; do not force success or erase uncertainty to make a neat paper.
 This account should help a returning agent choose the next useful inference:
 what the main question needs, which branch can supply it, and which completed or
 failed route no longer needs repeating. It is not a queue of all unfinished work.
+
+## The shape of a main note
+
+A topic or branch note has four parts, each with one job (see the
+[main-note structure](../aitp-writing/references/research-note.md) and its
+[starter](../aitp-writing/assets/research-topic.md)): an **opening** of about one screen
+with the question, the scope and binding constraints, the current answer at its true
+strength and the decisive gap; **Current work**, the only maintained home of each live
+thread's continuation; a **scientific account** whose headings follow the physics; and,
+when useful, **decisions and retained alternatives**. A short note can be three paragraphs.
+
+Put an observation where it was produced, its interpretation where the question is
+answered, its consequence where another argument uses it, and a next action only with the
+thread that owns it. A thread owned by a branch appears in the parent as a pointer entry:
+what it contributes and its limiting condition, never its next action or job state. Run
+reports own execution and observations, plans own the sequencing of an agreed stage, and
+READMEs own locations. Qualifications outrank compactness: shorten by omitting a secondary
+claim, never by dropping a claim's conditions.
 
 ## Read when
 
@@ -177,14 +197,16 @@ Reuse this established context when those Skills refer back here.
 
 Locate the user-designated main note, normally `research.md`. Several independent
 questions may share a code workspace; choose the relevant note rather than
-forcing them into one paper. Focused recall reads the relevant passages and
-qualifications; branch work also needs its relationship to the originating question,
-recovered as in [keeping the topic tree clear](#keep-the-topic-tree-clear).
-Before a substantive revision, read the complete main argument, including its
-conclusion and open questions. If it exceeds one read, read successive sections
-until it is understood. A title, recent tail, abstract or keyword hit is insufficient
-for that revision. Reuse a complete, known-current reading within the same work
-interval; ordinary turns do not require reading it again.
+forcing them into one paper. Read what the operation needs. Recall and status read the
+opening and Current work, then follow the relevant entry's links. A local update reads
+the passage it changes and the passages that use it. Branch work also needs its
+relationship to the originating question, recovered as in
+[keeping the topic tree clear](#keep-the-topic-tree-clear). Before a consequential
+decision, a reinterpretation or a restructuring, read the complete affected account,
+including its conclusion and open questions, and the using passages of dependent notes.
+If it exceeds one read, read successive sections until it is understood. A title, an
+opening or a keyword hit is insufficient for that. Reuse a complete, known-current
+reading within the same work interval; ordinary turns do not require reading it again.
 
 For whole-topic recovery or substantive revision, privately recover the central
 question, physical or mathematical setting, operative assumptions, job of each
@@ -214,8 +236,9 @@ decision: explain the reason, what the earlier result still supports and what
 it no longer establishes. If a choice's reason was not recorded, say so rather
 than reconstructing a historical fact from a plausible present-day rationale.
 
-If the note changed externally, re-establish its complete current argument
-before editing. If it is missing, establish the scope as above and use the
+If the note changed externally, reread the changed passages and those you will edit
+before editing; a substantive revision re-establishes the complete current argument.
+If the note is missing, establish the scope as above and use the
 researcher's material to start a small coherent note; identify unexamined
 material without manufacturing conclusions.
 Do not initialize a ledger or reconstruct all archived sessions merely to begin.
@@ -245,13 +268,15 @@ backup ritual or maintenance report is needed.
 
 Identify the question a new derivation, observation, failure, correction or choice
 answers, and the existing passage whose meaning changes. Replace that account;
-inspect dependent uses, the opening and conclusion, and remove resolved next steps.
+inspect dependent uses, the opening and conclusion, and update the owning Current work
+entry, removing it once the thread is concluded and integrated.
 Follow the [placement and restructuring procedure](../aitp-writing/references/research-note.md#add-move-and-remove-material-without-losing-the-thread)
 and its [worked edits](../aitp-writing/references/worked-note-edits.md).
 The main note grows by developing its argument, not appending session summaries.
-Its opening states the question, current answer, operative method, decisive
-limitation and next step, without recounting experiments. Full setups, repeated
-runs and job states belong in the supporting note or run report.
+Its opening states the question, scope, current answer and decisive limitation in
+about one screen, without recounting experiments; each live thread's next step lives in
+Current work. Full setups, repeated runs and job states belong in the supporting note
+or run report.
 Preserve useful failures, unresolved objections, original observations and reasons
 for route changes. Supporting detail has one primary home with a precise link.
 
@@ -279,10 +304,10 @@ the entries the task needs, and check it before creating an entry.
 
 For a first main note or a substantive revision, apply
 [aitp-writing](../aitp-writing/SKILL.md) and its
-[main-note guidance and Markdown templates](../aitp-writing/references/research-note.md).
-Choose a compact, theoretical or computational article structure for the whole
-research question, retaining the assumptions, decisive reasoning, useful failed
-routes and consequential conjectures needed to
+[main-note guidance](../aitp-writing/references/research-note.md), starting from the
+[living-note starter](../aitp-writing/assets/research-topic.md). The scientific account
+can follow a compact, theoretical or computational outline, retaining the assumptions,
+decisive reasoning, useful failed routes and consequential conjectures needed to
 continue the research. Memory decides what must survive; writing makes it a
 clear argument. They edit the same note, without a separate summary to maintain.
 
@@ -293,12 +318,16 @@ read the relevant branches' openings. Identify what each branch contributes: pre
 alternative, control, application or independent offshoot. Directory nesting alone does
 not determine this relation. A branch can have several scientific users.
 
-The child owns its evidence and explains its upstream purpose. Each parent retains the
-branch's answer, decisive limitation, implication and link where the argument uses it.
-When those meanings or the warranted next inference change, revise the child and affected
-parent passages together; continue to ancestors and known sibling users only while their
-meaning changes. A completed control does not complete the physical investigation.
-Unchanged meanings require no synchronized rewrite. For restructuring, shared dependencies,
+The child owns its evidence, its continuation and its upstream purpose. Each parent
+retains the branch's answer, decisive limitation, implication and link where the argument
+uses it, and a pointer entry in Current work while the branch is live; it never copies the
+child's next action, job state or run count. When the branch's answer, limitation or
+contribution changes, revise the child and affected parent passages together; continue to
+ancestors and known sibling users only while their meaning changes. A changed next step
+changes only the child's Current work. While a checked child result awaits integration, a
+parent claim it may change carries a brief qualification naming it. A completed control
+does not complete the physical investigation. Unchanged meanings require no synchronized
+rewrite. For restructuring, shared dependencies,
 and ended branches, use [the topic-tree guide](references/topic-tree.md).
 
 ## Use ordinary files and meaningful links
@@ -335,7 +364,7 @@ create no wrapper merely to satisfy this check.
 At every substantive close or meaningful pause, say in a few lines what is now
 supported, where it was retained, with a link to each changed file, and what the
 evidence warrants next. Complete routine follow-through within the agreement, propose
-the rest, and record agreed directions in the relevant backbone passage's next step.
+the rest, and record agreed directions in the owning thread's Current work entry.
 An unaccepted suggestion stays a labelled seed. "The question is settled; nothing
 further is warranted" is a valid close.
 
@@ -393,26 +422,28 @@ This is an editorial decision, not an automatic end-of-turn write:
   implication and links its owning support section, leave it unchanged; each new
   detail does not need its own main-note link.
 - First consequential result, changed conclusion, assumption, failed route or
-  next research decision: revise the affected main-note passages together and
-  link the supporting evidence, including when the result is still provisional.
-- A branch's answer, decisive limitation or next step changed: also revise the
+  next research decision: revise the affected main-note passages and the owning
+  Current work entry together and link the supporting evidence, including when the
+  result is still provisional.
+- A branch's answer, decisive limitation or contribution changed: also revise the
   parent's using passage, and its opening when needed, as
-  [keeping the topic tree clear](#keep-the-topic-tree-clear) describes.
+  [keeping the topic tree clear](#keep-the-topic-tree-clear) describes. A changed
+  next step alone changes only the branch's Current work.
 - An encountered main note materially fails the current guidance: perform the
   [on-use repair](#repair-an-outdated-main-note-during-use), even without new results.
 
-Before handoff, check that the main note states the current model, supported answer
-and remaining question. A supporting report alone does not integrate a changed
-conclusion. Link the edited main note in the reply; if scope prevents integration,
-identify the affected claim and pending work. Check preservation, affected links
-and scientific meaning separately, and merge concurrent edits against the latest
-files, including changes inside relocated passages. Use the linked restructuring
-procedure for a live-note handoff rather than overwriting another session's work.
-Temporary limits of this session's own access, such as a cluster connection that is
-down, go in the reply, not in the research notes. A persistent gap in the evidence, such
-as raw files missing from the retained copy or a remote-only result that cannot be
-verified, is recorded in the owning support account, with its location when known and the
-limitation it causes.
+Before handoff, check that the main note states the current model, supported answer and
+remaining question, and that each live thread's Current work entry is current. A
+supporting report alone does not integrate a changed conclusion. Link the edited main
+note in the reply; if scope prevents integration, identify the affected claim and
+pending work. Check preservation, affected links and scientific meaning separately, and
+merge concurrent edits against the latest files, including changes inside relocated
+passages. Use the linked restructuring procedure for a live-note handoff rather than
+overwriting another session's work. Temporary limits of this session's own access, such
+as a cluster connection that is down, go in the reply, not in the research notes. A
+persistent gap in the evidence, such as raw files missing from the retained copy or a
+remote-only result that cannot be verified, is recorded in the owning support account,
+with its location when known and the limitation it causes.
 
 Record a fragile insight or an expensive experiment's intent before interruption. A first
 consequential value found while polling replaces the provisional comparison at its

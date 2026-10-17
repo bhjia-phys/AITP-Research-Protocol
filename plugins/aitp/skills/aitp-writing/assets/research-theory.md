@@ -1,6 +1,8 @@
 # Descriptive title of the theoretical question
 
-<!-- AITP starting point for formal theory or conceptual learning. Replace the
+<!-- AITP outline for the scientific account of formal theory or conceptual learning,
+and a manuscript aid. A living main note starts from research-topic.md: its opening
+replaces the abstract below and its Current work holds continuation. Replace the
 prompts with a connected argument and use informative section titles. Merge or
 remove unused sections; a beginning need not resemble completed research.
 For learning, use the learning guide in aitp-writing: retain the primary reading thread,

@@ -13,12 +13,16 @@ discussion that no existing topic owns. Topic work reuses the existing relations
 | Branch | An independent subquestion: its origin and parent relation, agreed scope, method, answer, limits, continuation and what its outcomes mean upstream. |
 
 Each opening states the question, the current answer at its supported strength, the
-approach, the decisive limitation and the next step. At the root these describe the
-directions and their unresolved relationships; do not invent a single thesis or a
-priority order. The root never copies topic answers, measurements or progress; it owns
-their implications for the larger questions. The workspace README stays the folder map.
-The root links it, the shared knowledge index and each top-level topic, and each
-top-level topic links back to the root.
+approach and the decisive limitation, in about one screen; live threads and their next
+steps sit in Current work, as the [main-note
+structure](../../aitp-writing/references/research-note.md#current-work) describes. At
+the root these describe the directions and their unresolved relationships; the root's
+Current work holds only what no topic owns, such as an agreed direction not yet given to
+a topic or a seed awaiting a choice, and points to topics for the rest. Do not invent a
+single thesis or a priority order. The root never copies topic answers, measurements or
+progress; it owns their implications for the larger questions. The workspace README
+stays the folder map. The root links it, the shared knowledge index and each top-level
+topic, and each top-level topic links back to the root.
 
 Start a root note only from existing notes and the researcher's documented choices, with a
 link to where each choice is recorded, and leave unstated priorities unspecified. When a

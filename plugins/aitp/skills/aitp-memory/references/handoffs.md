@@ -12,7 +12,8 @@ conversation. Write it so that the receiver could act on it alone.
   the receiver works the same way. Do not restate their content or describe their steps.
 - **Code state:** for code work, the revision and any uncommitted local changes.
 - **Question and current state:** two or three sentences from the main note's opening,
-  plus the active plan phase if there is one.
+  the owning Current work entry, any result awaiting interpretation or integration, and
+  the active plan phase if there is one.
 - **Task:** what to produce or decide, and what counts as done.
 - **Constraints:** what must not change, such as existing functionality, original outputs
   or a frozen branch, and what is authorized, such as submitting jobs.

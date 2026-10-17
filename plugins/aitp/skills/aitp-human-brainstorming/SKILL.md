@@ -18,7 +18,7 @@ reasoning and evidence.
 
 | When the task involves | Read |
 | --- | --- |
-| A choice about an existing topic or branch | Its main note's opening and recorded agreement, recovered as in [memory](../aitp-memory/SKILL.md#locate-the-main-note-then-establish-the-current-task) |
+| A choice about an existing topic or branch | Its main note's opening, Current work and recorded decisions, recovered as in [memory](../aitp-memory/SKILL.md#locate-the-main-note-then-establish-the-current-task) |
 | A new direction or an idea not yet agreed | [Seeds and their promotion](../aitp-memory/SKILL.md#where-discussion-outcomes-land) |
 | Options that need scientific evidence | [aitp-research](../aitp-research/SKILL.md) |
 | A conceptual gap that blocks an informed choice | [aitp-human-learning](../aitp-human-learning/SKILL.md) |
@@ -102,11 +102,12 @@ if it still changes the work. A new stage label alone does not reopen a settled
 objective. Revisit the choice when evidence undermines its premise or accumulated
 prerequisites materially displace the original question.
 
-Use memory and [writing](../aitp-writing/SKILL.md) to retain a consequential
-decision, its reason and reconsideration condition in the existing main or branch
-note. Distinguish a proposal from agreed work and link the branch to its origin.
-An agreed change can retire an old next step without invalidating its earlier result:
-update the owning continuation and affected parent use, retaining the reason and any
-condition for reopening it. A proposed alternative remains visibly uncommitted.
-No separate meeting transcript, decision ledger or recurring approval record is
-needed. Resume the scientific or editorial work once the choice is resolved.
+Use memory and [writing](../aitp-writing/SKILL.md) to retain a consequential decision,
+its scope, reason and reconsideration condition in the existing main or branch note,
+where the work it constrains will see it. Distinguish a proposal from agreed work and
+link the branch to its origin. An agreed change can retire an old next step without
+invalidating its earlier result: update the owning Current work entry and any affected
+parent use, keeping the reason and any condition for reopening it with the retired
+route. A proposed alternative remains visibly uncommitted. No separate meeting
+transcript, decision ledger or recurring approval record is needed. Resume the
+scientific or editorial work once the choice is resolved.

@@ -25,7 +25,7 @@ The dedicated writing Skill replaces the former `witten-style-theory-note`
 and absorbs `computational-physics-note`.
 Writing and research guidance do not constitute the future taste component.
 
-## A topic is a developing article
+## A topic is a living research note
 
 Begin research work and substantive physics discussions with `aitp-memory` and its
 research cycle, including derivation, coding and analysis requests that do not
@@ -122,15 +122,17 @@ not certify its scientific correctness or authorize its recorded next action.
 
 ## Use and installation
 
-Install [AITP 1.1.0](https://github.com/bhjia-phys/AITP-Research-Protocol/releases/tag/v1.1.0).
-The current local development version is 1.2.5. The research backbone and cycle, verification, computational and benchmark procedures,
-main and supporting note standards, source-based learning, domain methods and numerical
-layouts in this development tree are newer than that release. This development tree
-exposes seven core Skills to Codex, Claude Code and Hakimi; the published release has four.
-The release contains the former teaching exercise; the current research examples
-are pending review. Codex and Claude Code additionally expose the LibRPA domain
-method as a selectable Skill; Hakimi discovers the containing bundles. The linked
-method library works in all three.
+Install [AITP
+1.1.0](https://github.com/bhjia-phys/AITP-Research-Protocol/releases/tag/v1.1.0). The
+current local development version is 1.3.0. The research backbone and cycle,
+verification, computational and benchmark procedures, main and supporting note
+standards, source-based learning, domain methods and numerical layouts in this
+development tree are newer than that release. This development tree exposes seven core
+Skills to Codex, Claude Code and Hakimi; the published release has four. The release
+contains the former teaching exercise; the current research examples are pending review.
+Codex and Claude Code additionally expose the LibRPA domain method as a selectable
+Skill; Hakimi discovers the containing bundles. The linked method library works in all
+three.
 
 For **Codex**, run in a terminal:
 
@@ -215,19 +217,26 @@ construction or proof; computational work follows the approximation, observable,
 controls and result. Its computational guide includes implementation, setup
 and benchmark tables from the former computational writing Skill. Mixed work
 explains exactly how a numerical test bears on an analytic claim. These are
-flexible argument structures with optional Markdown starting files.
+flexible argument structures with optional Markdown outlines.
 
-For `research.md`, the [main-note guide](plugins/aitp/skills/aitp-writing/references/research-note.md)
-provides three English Markdown starting files:
-[compact argument](plugins/aitp/skills/aitp-writing/assets/research-letter.md),
-[formal theory or learning](plugins/aitp/skills/aitp-writing/assets/research-theory.md),
-and [computational or mixed work](plugins/aitp/skills/aitp-writing/assets/research-computational.md).
-They use an article's abstract, introduction, central argument and discussion,
-with useful failures, uncertainty and linked evidence for continuing research.
-The [design and official TeX sources](plugins/aitp/skills/aitp-writing/references/journal-templates.md)
-explain the adaptations from PRL, PRX, JHEP and PRB. Keep decisive reasoning in
-the main text and extended derivations, implementation and data in linked notes.
-The templates impose no journal length limit or claim of completed research.
+For `research.md`, the [main-note
+guide](plugins/aitp/skills/aitp-writing/references/research-note.md) and its
+[living-note starter](plugins/aitp/skills/aitp-writing/assets/research-topic.md) give
+each note four parts: an opening of about one screen (question, scope, current answer at
+its true strength, decisive gap); Current work, the only maintained home of each live
+thread's continuation, with dated entries and pointer entries for threads that branches
+own; the scientific account under headings that follow the physics; and optional
+decisions and retained alternatives. A short note stays short. Three English Markdown
+outlines, for a [compact
+argument](plugins/aitp/skills/aitp-writing/assets/research-letter.md), [formal theory or
+learning](plugins/aitp/skills/aitp-writing/assets/research-theory.md) and [computational
+or mixed work](plugins/aitp/skills/aitp-writing/assets/research-computational.md),
+suggest the account's order and serve requested papers, keeping useful failures,
+uncertainty and linked evidence. The [design and official TeX
+sources](plugins/aitp/skills/aitp-writing/references/journal-templates.md) explain the
+adaptations from PRL, PRX, JHEP and PRB. Keep decisive reasoning in the main text and
+extended derivations, implementation and data in linked notes. The templates impose no
+journal length limit or claim of completed research.
 
 [Supporting-note guidance](plugins/aitp/skills/aitp-writing/references/supporting-notes.md)
 distinguishes concepts, source readings, proofs, methods, calculations and

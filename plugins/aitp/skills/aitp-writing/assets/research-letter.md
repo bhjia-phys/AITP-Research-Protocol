@@ -1,6 +1,8 @@
 # Descriptive title of the research question
 
-<!-- AITP starting point for a compact argument. Replace these prompts with
+<!-- AITP outline for a compact argument, for a main note's scientific account or a
+requested paper. A living main note starts from research-topic.md: its opening replaces
+the abstract below and its Current work holds continuation. Replace these prompts with
 scientific prose, rename headings to suit the question, and remove unused
 sections. Read the whole existing argument before adapting an established note.
 Use $...$ and $$...$$ for mathematics in a compatible Markdown reader.

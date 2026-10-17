@@ -13,6 +13,9 @@ is selectable too. Its files stay in their existing location, preserving links
 to the research Skill and method library. When another domain method needs
 direct discovery in Claude, add its directory to this manifest and verify the
 component inventory. A linked method does not need a duplicate wrapper Skill.
+Claude also scans the plugin's `agents/` directory, so the read-only
+[note reviewer](../plugins/aitp/agents/aitp-reviewer.md) is available as a subagent;
+the other hosts use its instructions through their own subagents or a separate session.
 
 ## Install the development checkout
 
@@ -28,7 +31,7 @@ claude plugin details aitp
 ```
 
 The user scope enables AITP across this user's projects. Expect seven core Skills
-plus `developing-librpa`. Start a new Claude session in the research workspace.
+plus `developing-librpa`, and the `aitp-reviewer` agent. Start a new Claude session in the research workspace.
 These instructions install the current local checkout; the published `v1.1.0`
 release predates the Claude manifest and the two human interaction Skills.
 

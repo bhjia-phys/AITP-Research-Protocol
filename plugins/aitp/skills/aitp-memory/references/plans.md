@@ -1,17 +1,19 @@
 # Plans for a stage of work
 
 A plan says how an agreed stage of work will proceed; the main note says what is known
-and why. Keep the two apart, so that the argument does not fill with phases and the plan
-does not pretend to be a result.
+and why, and its Current work says what each live thread needs next. Keep the two apart,
+so that the argument does not fill with phases and the plan does not pretend to be a
+result.
 
 ## Where a plan lives
 
 A detailed phased plan is a separate, reviewable document. Reuse the topic's `plan/`
 folder when it exists; otherwise write a supporting note named for its stage, for example
 `otoc-finite-size-plan.md`, not `plan-v3.md`, and create `plan/` only when several
-substantial plans justify it. The main note's next step links the active plan in one
-sentence, and the plan links back to the question it serves. A plan of a few routine
-actions can stay in that sentence.
+substantial plans justify it. The owning thread's Current work entry links the active
+plan and names its operative phase in one sentence, and the plan links back to the
+question it serves. A plan of a few routine actions can stay in that entry. The plan owns
+the sequencing; the entry owns the scientific frontier and does not copy the phases.
 
 ## What a plan contains
 
@@ -37,11 +39,11 @@ existing reviewed authorization carries across its phases.
 ## Keep the plan current, then retire it
 
 Revise a retained plan when its objective, dependencies, acceptance conditions or agreed
-next action change, and say why. Link each phase's evidence and state its outcome against
-the agreed acceptance, failure or stopping condition; a link alone does not establish
-completion. Run reports keep job states. Completing execution, accepting a result
-scientifically and the researcher's confirmation remain distinct. When the stage ends, record its outcome and reason at the top (completed,
-stopped or superseded, with a link to the resulting account), remove it from the main
-note's active next step, and integrate its scientific implication into the backbone.
-Link another plan only when further work has actually been chosen. Retired plans stay
-reachable as history.
+next action change, and say why. Link each phase's evidence and state its outcome
+against the agreed acceptance, failure or stopping condition; a link alone does not
+establish completion. Run reports keep job states. Completing execution, accepting a
+result scientifically and the researcher's confirmation remain distinct. When the stage
+ends, record its outcome and reason at the top (completed, stopped or superseded, with a
+link to the resulting account), update the owning Current work entry, and integrate its
+scientific implication into the backbone. Link another plan only when further work has
+actually been chosen. Retired plans stay reachable as history.

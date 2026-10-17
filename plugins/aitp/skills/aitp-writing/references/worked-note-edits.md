@@ -1,6 +1,6 @@
-# Two worked edits to a developing argument
+# Worked edits to a living main note
 
-Both examples are synthetic. The filenames below illustrate destinations inside
+All examples are synthetic. The filenames below illustrate destinations inside
 a topic; they do not require those files in every project. Each quoted passage
 is the text at that destination, before or after the new evidence.
 
@@ -113,3 +113,61 @@ The main opening and conclusion must carry the same restriction if they used
 the failed identification. Keep frozen editions unchanged; qualify maintained
 uses, including a provisional knowledge-index pointer if present. Name a known
 application left outside the editing scope instead of claiming it was repaired.
+
+## Multi-thread: a branch changes its next step, then its answer
+
+A topic note `research.md` asks how strongly a model's local interaction depends on the
+screening that is excluded. Its branch `screening/research.md` owns the convergence of that
+interaction with the k-point mesh. The parent's Current work carries a pointer entry:
+
+> - **Mesh convergence → screening branch** (`screening/research.md`, Current work) —
+>   supplies the interaction used in the comparison section; values are from a 4×4 mesh,
+>   and their convergence is untested.
+
+**The next step changes.** The branch's 6×6 run is cancelled by a queue limit and
+resubmitted. Only the branch's entry changes, with its new date; the cancellation goes to
+the run report.
+
+> - **6×6 comparison** — waiting on run · 2026-03-07. The 4×4 interaction is 2.1 energy
+>   units; its convergence is untested. Next: compare with the resubmitted 6×6 run under
+>   the same inputs. Run report: `runs/mesh-6x6.md`.
+
+The parent's pointer, opening and account stay unchanged: the thread's contribution and
+limiting condition did not change.
+
+**The answer changes.** The 6×6 run gives 2.4, outside the 0.1 tolerance that the parent's
+comparison assumed. The branch revises its account and its entry:
+
+> - **Mesh convergence** — active · 2026-03-09. The interaction moves from 2.1 at 4×4 to
+>   2.4 at 6×6, beyond the 0.1 tolerance, so the 4×4 value is not converged. Next: an 8×8
+>   run to bound the remaining change. Comparison: `screening/mesh-comparison.md`.
+
+The parent's limiting condition changed, so its pointer and the passage that used the
+value change together:
+
+> - **Mesh convergence → screening branch** (`screening/research.md`, Current work) —
+>   supplies the interaction for the comparison section; the 4×4 value is not converged
+>   (2.4 at 6×6), so that comparison is provisional.
+
+> The comparison with the reference interaction uses the 4×4 value and is provisional:
+> the value changes by 0.3 at 6×6 (`screening/mesh-comparison.md`).
+
+If the parent's opening stated the comparison as a result, its qualification changes too.
+When the 8×8 run finishes but has not been analyzed, the branch entry says `waiting on
+analysis`, and the parent's comparison passage names that pending result until it is
+integrated. The parent never records the 8×8 job state or the branch's next run.
+
+## A short analytic note stays short
+
+A question answered by one derivation needs an opening and its argument. With nothing
+live, there is no Current work section and no decisions list:
+
+> # Does the coordinate swap descend to the boundary?
+>
+> For linear $M:V\to W$ and $T:V\to V$, an induced operator on $\operatorname{im}M$ exists
+> exactly when $T(\ker M)\subseteq\ker M$. The swap of the two bulk coordinates fails this
+> criterion, so it induces no boundary operator and identifies no boundary sectors.
+>
+> The criterion, its proof and the earlier surjectivity argument it corrects are in
+> `boundary-descent.md`. What survives the failed application is the conditional
+> criterion; an operator that preserves the boundary kernel would reopen the question.

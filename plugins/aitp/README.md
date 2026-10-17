@@ -1,13 +1,13 @@
 # AITP
 
-Development version 1.2.5: article-centred research memory, research and writing guidance,
-and direct Skill distillation. The bundle contains instructions and
-optional manuscript assets, with no runtime. This development tree adds the research
-backbone (a root note, topic trees, reachability, seeds and a visible close), a single
-entry with a research cycle, verification, computational and benchmark procedures,
-synthesis across sources, reviewed plans, hand-offs and parallel work, main and
-supporting note standards, source-based learning and domain methods, beyond the
-published 1.1.0 release below. Real research examples are pending review.
+Development version 1.3.0: research memory in living main notes, research and writing
+guidance, and direct Skill distillation. The bundle contains instructions, optional
+manuscript assets and one read-only reviewer prompt, with no runtime. This development
+tree adds the research backbone (a root note, topic trees, reachability, seeds and a
+visible close), a single entry with a research cycle, verification, computational and
+benchmark procedures, synthesis across sources, reviewed plans, hand-offs and parallel
+work, main and supporting note standards, source-based learning and domain methods,
+beyond the published 1.1.0 release below. Real research examples are pending review.
 
 Install the versioned release in **Hakimi** with:
 
@@ -42,7 +42,7 @@ Start a new host thread after installation.
 ## The architecture: a backbone and the processes that grow it
 
 `research.md` is the researcher's long-term memory and the backbone of the research. Each
-one is a developing article about the question at its own level: a root note for the
+one is a living account of the question at its own level: a root note for the
 whole research workspace (directions, cross-topic connections, seeds of new ideas, agreed
 agenda and standing agreements), topic notes, and branch notes inside topics. Every
 retained paper, derivation, experiment and output has one home and a link path from the
@@ -56,7 +56,8 @@ loaded only when needed through memory's references.
 - [aitp-memory](skills/aitp-memory/SKILL.md) is the single entry for research work and
   substantive physics discussions. It opens with the
   [six-line research cycle](skills/aitp-memory/SKILL.md#the-research-cycle). In summary:
-  recover the request and agreement; read the whole argument before revising it; explain
+  recover the request and agreement; read what the operation needs, and the whole account
+  before revising it; explain
   what the task should settle; do the work and check consequential claims; retain outcomes
   in their homes and repair affected uses; close with the supported answer and the
   warranted next move. It also keeps the root, topic trees, seeds and plans, answers
@@ -112,22 +113,28 @@ These seven Skills are available in this development tree. The published 1.1.0 r
 has the four original Skills. Interaction is conditional throughout, not two extra
 required workflow stages.
 
-The first note and substantive revisions use
-[main-note writing](skills/aitp-writing/references/research-note.md): a concise,
-connected argument with decisive conditions, useful failures and uncertainty,
-linked to full derivations and assets. New notes can use an English Markdown template
-for a [compact argument](skills/aitp-writing/assets/research-letter.md),
-[theory or learning](skills/aitp-writing/assets/research-theory.md), or
-[computational and mixed work](skills/aitp-writing/assets/research-computational.md).
-Their [journal sources](skills/aitp-writing/references/journal-templates.md) explain
-what was adapted from PRL, PRX, JHEP and PRB. These are article structures, with
-flexible headings and no prescribed length. Memory and writing edit the same account.
-It should let a returning agent choose the next useful inference: why the main
-line matters, what each branch contributes and which completed route need not
-be repeated. A folder map alone does not express these scientific relationships. After changing an
-argument, follow its evidence route into the owning explanation and actual source or
-numerical assets. Check known users of a changed branch conclusion, including another
-parent or sibling; valid links alone do not establish that their meanings agree.
+The first note and substantive revisions use [main-note
+writing](skills/aitp-writing/references/research-note.md): a concise, connected argument
+with decisive conditions, useful failures and uncertainty, linked to full derivations
+and assets. New notes start from the [living-note
+starter](skills/aitp-writing/assets/research-topic.md): an opening of about one screen
+with the question, scope, current answer and decisive gap; Current work, where each live
+thread's continuation has one owner and a dated entry, and a parent points to a branch's
+thread without copying its next step; the scientific account; and optional decisions and
+retained alternatives. Outlines for a [compact
+argument](skills/aitp-writing/assets/research-letter.md), [theory or
+learning](skills/aitp-writing/assets/research-theory.md) and [computational and mixed
+work](skills/aitp-writing/assets/research-computational.md) suggest the account's order
+and serve requested papers; their [journal
+sources](skills/aitp-writing/references/journal-templates.md) explain what was adapted
+from PRL, PRX, JHEP and PRB. Headings stay flexible, with no prescribed length. Memory
+and writing edit the same account. It should let a returning agent choose the next
+useful inference: why the main line matters, what each branch contributes and which
+completed route need not be repeated. A folder map alone does not express these
+scientific relationships. After changing an argument, follow its evidence route into the
+owning explanation and actual source or numerical assets. Check known users of a changed
+branch conclusion, including another parent or sibling; valid links alone do not
+establish that their meanings agree.
 
 During use, they also [repair an older main note](skills/aitp-memory/SKILL.md#repair-an-outdated-main-note-during-use)
 when its current organization obscures the supported answer, conditions, evidence
@@ -195,6 +202,17 @@ across main and supporting notes. Useful material omitted from the main account
 can remain linked from an existing README or index. Known errors or unresolved
 objections stay visible where the old material is read, with corrected treatment
 linked when available. No automatic synchronization or deletion is implied.
+
+## Independent review
+
+[`agents/aitp-reviewer.md`](agents/aitp-reviewer.md) is a read-only reviewer for research
+notes. It checks that summaries keep their qualifications, that continuation stays with the
+thread that owns it, that material sits where its meaning belongs, that nothing was removed
+without a destination, and that changed meanings reached their users. Claude Code loads it
+as a plugin subagent; in Codex or Hakimi, give its instructions to a subagent or a separate
+read-only session. [aitp-verify](skills/aitp-verify/SKILL.md#commission-a-second-read) says
+when to use it: any substantial restructuring, and an ordinary edit only when a plausible
+failure is present. No hook invokes it.
 
 ## Session reminders
 

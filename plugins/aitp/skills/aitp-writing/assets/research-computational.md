@@ -1,7 +1,9 @@
 # Descriptive title of the physical or computational question
 
-<!-- AITP starting point for computation, method development, or theory tested
-numerically. Replace the prompts with scientific prose; retain only sections
+<!-- AITP outline for the scientific account of computation, method development, or
+theory tested numerically, and a manuscript aid. A living main note starts from
+research-topic.md: its opening replaces the abstract below and its Current work holds
+continuation. Replace the prompts with scientific prose; retain only sections
 needed by this question. This is an original Markdown adaptation, not an
 official journal template. Use $...$ and $$...$$ for mathematics in a compatible
 Markdown reader. It does not request new calculations or figures. -->

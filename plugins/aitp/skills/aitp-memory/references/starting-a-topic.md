@@ -46,13 +46,15 @@ question serves a direction, and link back to the root; when the topic grew from
 replace the seed with that link. Add other files as material develops, not as empty
 scaffolds.
 
-Write the smallest coherent account supported so far: what is being asked and
-why, the setting and relevant known background, a proposed route and its assumptions,
-and the first derivation or observation that could clarify the question. Label
-untested ideas as proposed. A new topic need not have results or a fixed hypothesis.
-Use the [main-note templates](../../aitp-writing/references/research-note.md) as
-starting points: an honest abstract, introduction and proposed route can be enough
-at this stage. Omit unused sections. Use the requested language and level of explanation.
+Write the smallest coherent account supported so far: what is being asked and why, the
+setting and relevant known background, a proposed route and its assumptions, and the
+first derivation or observation that could clarify the question. Label untested ideas as
+proposed. A new topic need not have results or a fixed hypothesis. Start from the
+[living-note starter](../../aitp-writing/assets/research-topic.md) and the [main-note
+guidance](../../aitp-writing/references/research-note.md): an honest opening, the
+setting, a proposed route and a Current work entry for the first agreed or proposed step
+can be enough at this stage. Omit unused sections. Use the requested language and level
+of explanation.
 
 A learning topic follows the same rule of one main note. That note can be told as a
 [story of questions](shared-knowledge.md#tell-a-learning-topic-as-a-story-of-questions),

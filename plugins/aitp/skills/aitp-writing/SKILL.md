@@ -65,23 +65,26 @@ Use [adapting an existing note](references/research-note.md#adapt-an-existing-no
 for that revision, including when the scientific results themselves are unchanged.
 
 For a first AITP main note or a substantive revision, first use
-[aitp-memory](../aitp-memory/SKILL.md) to locate the note, clarify the current
-task and understand its complete argument. Reuse that understanding when current;
-do not restart the reading cycle. Apply [main-note writing](references/research-note.md).
-For a new note, optional Markdown starting files are [compact argument](assets/research-letter.md),
-[formal theory or learning](assets/research-theory.md), or
-[computational and mixed work](assets/research-computational.md). Write an article's
-question, abstract, reasoning and discussion, preserving useful failures,
-uncertainty and links to detailed evidence. Adapt the headings to the whole
-question and remove unused prompts; do not turn the note into a source inventory
-or test-status report. Memory and writing act on the same
-document; do not make a second narrative for the session.
-For another manuscript, identify the intended source and read enough surrounding
-argument to understand what the change affects. Preserve the requested language,
-notation, audience and venue. Infer routine choices from the existing material.
+[aitp-memory](../aitp-memory/SKILL.md) to locate the note, clarify the current task and
+understand its complete argument. Reuse that understanding when current; do not restart
+the reading cycle. Apply [main-note writing](references/research-note.md). Start a new
+note from the [living-note starter](assets/research-topic.md): an opening of about one
+screen, Current work for live threads, the scientific account and, when useful,
+decisions and retained alternatives. For the account's order, outlines for a [compact
+argument](assets/research-letter.md), [formal theory or
+learning](assets/research-theory.md) and [computational and mixed
+work](assets/research-computational.md) help; they also serve a requested paper or
+teaching document. Preserve useful failures, uncertainty and links to detailed evidence.
+Adapt the headings to the question and remove unused prompts; do not turn the note into
+a source inventory or test-status report. Memory and writing act on the same document;
+do not make a second narrative for the session. For another manuscript, identify the
+intended source and read enough surrounding argument to understand what the change
+affects. Preserve the requested language, notation, audience and venue. Infer routine
+choices from the existing material.
 
 The main note must let its reader explain the question, supported answer, decisive
-reasoning and remaining gap, and choose a next inference that serves the question.
+reasoning and remaining gap, find each live thread's continuation, and choose a next
+inference that serves the question.
 Explain which branch supplies which part of that argument; a list of links alone
 does not do this. A supporting note must let its reader follow and use
 one result from stated prerequisites. Put substantial detail there while retaining

@@ -13,13 +13,17 @@ records instead of editing them.
 
 Determine the scope the question asks about, such as a topic, a campaign or all its
 materials, from the main notes' links and the calculation locations. Gather the main
-note's current answer and next step; the plan that governs the work and which phases have
-evidence; every relevant run, whether queued, running, failed, finished but not analysed,
-or unconfirmed, using the [Slurm guide](../../aitp-research/references/slurm.md) for live
-checks where a scheduler is reachable; results waiting for a check; and choices waiting
-for the researcher. Distinguish scheduler state from scientific outcome. Give one short
-table with a location for each line, state the coverage and the observation time, and mark
-what is unknown.
+note's current answer and, from Current work, each relevant thread's disposition, date
+and next step, following pointer entries to their owning notes; the plan that governs
+the work and which phases have evidence; every relevant run, whether queued, running,
+failed, finished but not analysed, or unconfirmed, using the [Slurm
+guide](../../aitp-research/references/slurm.md) for live checks where a scheduler is
+reachable; results waiting for a check; and choices waiting for the researcher.
+Distinguish scheduler state from scientific outcome, and keep apart the scientific
+frontier, execution state, evidence awaiting interpretation and choices awaiting the
+researcher. An entry's date shows when it last changed, not that it is current. Give one
+short table with a location for each line, state the coverage and the observation time,
+and mark what is unknown.
 
 For a topic's history, assemble its turning points from the reasons the notes retain,
 dated where the notes allow, each with a link. For connections, use the root note, the
@@ -35,19 +39,20 @@ and how topics connect. Answer these from the notes, not from separate status fi
   list of turning points in a main note is optional, for a long account whose history is
   hard to recover. The root holds the turning points and connections across topics.
 - The workspace README identifies each topic's location and question. Current answers
-  and next steps stay in the main notes, and the root states what they imply for the
-  larger questions. Update the README entry when a topic or a relationship is created or
-  changes.
+  stay in the main notes, next steps in their Current work entries, and the root states
+  what they imply for the larger questions. Update the README entry when a topic or a
+  relationship is created or changes.
 - Comparing a new value with an earlier one follows research's
   [comparison with earlier results](../../aitp-research/references/computational-work.md#compare-with-earlier-results).
 
 ## Continue the authorized task
 
 A bare "continue", in any language, resumes the unfinished authorized task and its next
-action, using the conversation and the current notes; an intervening status question does
-not replace that task. Reuse recovered context only while it is current: after context
-loss or relevant external changes, recover the topic and its plan before acting. It does
-not override a review the researcher reserved, or authorize a new campaign.
+action, using the conversation, the owning Current work entry and the current notes; an
+intervening status question does not replace that task. Reuse recovered context only
+while it is current: after context loss or relevant external changes, recover the topic
+and its plan before acting. It does not override a review the researcher reserved, or
+authorize a new campaign.
 
 Before another expensive calculation or a newly proposed prerequisite, apply research's
 [sustained-branch check](../../aitp-research/SKILL.md#agree-on-consequential-research-choices):

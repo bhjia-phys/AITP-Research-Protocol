@@ -1,20 +1,33 @@
-# An article-shaped main note that carries the research
+# A living main note that carries the research
 
 Use this when creating or substantively revising `research.md` or the established
 main note. Its reader should recover the question, the reason for the present
-answer, and the live uncertainty without opening every supporting file. Follow
-the user's language and format. The starting files below make this structure
-concrete; they are adaptable drafts, not forms to fill mechanically.
+answer, the live uncertainty and how work continues, without opening every
+supporting file. Follow the user's language and format.
 
-The note also directs continuation: explain why the current main line is worth
-following, how its branches contribute, and which next inference could change
-the answer. Keep these reasons in the scientific prose, not a second action
-plan or mandatory status table. A branch can remain useful without remaining a
-prerequisite, and a completed question needs no invented next task.
+A main note has four parts, each with one job:
 
-## Choose a starting point for the whole question
+| Part | Its job |
+| --- | --- |
+| Opening | The question; the scope (the overall objective, the agreed stage when different, and binding constraints, one line each with a link); the current answer at its true strength; the decisive reason or gap. About one screen. |
+| Current work | The only maintained home of each live thread's continuation, as [described below](#current-work). |
+| Scientific account | Setting, reasoning, decisive comparisons, objections and implications, under headings chosen for the physics. |
+| Decisions and retained alternatives | Optional: binding choices with their scope, and earlier routes with their kind, what survives and when to reopen. |
 
-| Kind of argument | Markdown starting file |
+The [living-note starter](../assets/research-topic.md) makes this concrete; it is an
+adaptable draft, not a form to fill mechanically. A short note can be three paragraphs;
+empty parts are omitted, never stubbed. The scientific prose still explains why the
+current main line is worth following, how its branches contribute and which inference
+could change the answer. A branch can remain useful without remaining a prerequisite,
+and a completed question needs no invented next task.
+
+## Choose an order for the scientific account
+
+Start a new note from the [living-note starter](../assets/research-topic.md). For the
+scientific account, these outlines suggest an order of explanation; they also help when
+a paper or teaching document is requested:
+
+| Kind of argument | Outline |
 | --- | --- |
 | One compact construction, comparison or obstruction | [Compact argument](../assets/research-letter.md) |
 | Formal theory or conceptual learning | [Theory](../assets/research-theory.md) |
@@ -29,7 +42,7 @@ Choose the order of explanation for the situation, not a compulsory set of headi
 | Theory tested numerically | Model and conventions; meaning of each diagnostic; predictions beside their numerical tests; combined judgment; unresolved discrimination. |
 | Learning | Connected questions, prerequisites at first use, representative calculations and the next conceptual difficulty. An agent's explanation does not establish learner understanding. |
 | Bounded diagnostic or branch | Origin and relationship to the parent, then the appropriate order above. The child owns the detail; the parent retains its implication and limitation. |
-| Parent of branches | Question and current answer; the argument, with each branch's result entering where it is used, as its implication and a link; what remains open and which branch decides it. |
+| Parent of branches | Question and current answer; the argument, with each branch's result entering where it is used, as its implication and a link; what remains open and which branch decides it; a pointer entry in Current work for each live branch. |
 | Deferred investigation | Usable result, unresolved issue, reason for deferral and condition for resumption. Old next steps are historical context. |
 | Deliverable | Product, audience and intended argument; artifacts and sources; evidence and outstanding checks; reproduction instructions. Artifact completion and scientific verification differ. |
 
@@ -38,9 +51,10 @@ comparison. During active work, replace provisional answers as evidence arrives.
 As work converges, consolidate repeated controls into the supported answer and
 link detailed evidence. A paused note explains what would justify resumption;
 a concluded note removes obsolete instructions without inventing next tasks.
-The developing article serves all these states, without a later format conversion.
+The same structure serves all these states, without a later format conversion; a paused
+thread's Current work entry states what would justify resuming it.
 For learning, see the [story of questions](../../aitp-memory/references/shared-knowledge.md#tell-a-learning-topic-as-a-story-of-questions).
-The [journal sources](journal-templates.md) explain the optional starters.
+The [journal sources](journal-templates.md) explain the optional outlines.
 
 For ordinary Markdown, use `$...$` for inline mathematics, including table cells,
 and `$$...$$` for displays, unless the project's renderer specifies otherwise.
@@ -60,25 +74,25 @@ to the one calculation that currently has a result.
 
 ## Focus the argument without making the research look finished
 
-Use informative section titles and connected scientific prose. The abstract
-states the question, approach, strongest supported answer and decisive condition.
-The introduction explains the difficulty, relevant background and why the question
-matters. The body establishes the answer, and the discussion interprets it. A
-reader should learn physics or a method from this structure, not just recover a
-status report. Compress repetition and routine detail rather than the logical
-steps needed to understand the claim; there is no imposed journal length limit.
+Use informative section titles and connected scientific prose. In the scientific
+account, explain the difficulty, relevant background and why the question matters;
+establish the answer, then interpret it. A reader should learn physics or a method
+from this structure, not just recover a status report. Compress repetition and
+routine detail rather than the logical steps needed to understand the claim; there
+is no imposed journal length limit.
 
-Open with the question, approach, strongest supported answer and decisive limitation,
-without recounting experiments. About one screen is an aspiration, not a length limit.
-Write for the returning first-year researcher: explain the decisive inference here
-and link substantial background teaching.
-Open with what is being investigated and the strongest answer currently supported.
-For a new topic, that may be a useful question and proposed route. Introduce the
-setting and assumptions when they become necessary, develop the decisive argument,
-and explain what remains unresolved. A failed approach or conditional result can
-be the present answer. An early abstract can honestly summarize a question and
-partial understanding. Rename a results section to describe a proposed approach,
-or omit it, when there are no results. Delete empty headings and template prompts.
+The opening states the question, the scope, the strongest supported answer and the
+decisive limitation in about 150 to 250 words of rendered prose, roughly one screen,
+without recounting experiments. When it would grow beyond that, omit a secondary claim,
+never a claim's conditions, and move detail to Current work or the account. Write for
+the returning first-year researcher: explain the decisive inference here and link
+substantial background teaching. For a new topic, the opening may state a useful
+question and a proposed route. Introduce the setting and assumptions in the account
+when they become necessary, develop the decisive argument, and explain what remains
+unresolved. A failed approach or conditional result can be the present answer. An early
+opening can honestly summarize a question and partial understanding. Rename a results
+section to describe a proposed approach, or omit it, when there are no results. Delete
+empty headings and template prompts.
 Do not manufacture a successful ending, measurements, proof or novelty.
 
 Make the opening explain how imported inputs and work developed here support the
@@ -87,10 +101,10 @@ and logical status are separate: a project derivation can remain conditional,
 and a rederivation need not be a publication novelty. A section itinerary or a
 list of completed checks does not express those relationships.
 
-A main note whose opening is a source inventory, followed by test coverage,
-execution status and a task list, is still an operational report even if short.
-Put those details in a linked working note. Explain instead what the model or
-method does, why the calculation is discriminating, and what follows from it.
+An opening that is a source inventory, test coverage, execution status or a task
+list is an operational report, even if short. Continuation belongs in Current work
+entries and execution in run reports. Explain instead what the model or method does,
+why the calculation is discriminating, and what follows from it.
 Keep the consequential evidence boundary in the scientific account: for example,
 an analytic benchmark does not demonstrate that an implementation passes it.
 
@@ -100,6 +114,70 @@ next discriminating calculation. Put it where it affects the reasoning. A short
 ending on open directions is useful when these do not fit earlier; do not append
 a chronological session diary. A completed question needs no invented open problem.
 
+## Current work
+
+List each thread that has a continuation in this note's scope, including paused and
+dormant threads with their resume conditions; omit the section only when there is none.
+Each entry conveys the thread; its principal disposition, with a short qualifier when
+several things are true; the date of its last consequential change; the bounded frontier,
+meaning what is known and what is unresolved, with its scope; the next discriminating action
+or pending choice; and links to the evidence, the operative plan phase or the decision.
+The default form, as Markdown source with synthetic content:
+
+```markdown
+- **Reduced-method accuracy** — active · 2026-03-04. The tested reduction is faster but
+  changes the target energy by 0.04, outside the 0.01 tolerance; the full method remains
+  the reference. Next: a less severe reduction under the same fixed-input control.
+  [comparison](fixed-input-report.md#reduced-versus-reference) · [plan](plans/reduction.md)
+```
+
+Equivalent prose or a table is acceptable when it carries the same information.
+
+A thread owned by a branch or another topic gets a pointer entry: the owner link, what
+it contributes here and its limiting condition.
+
+```markdown
+- **Mesh convergence → [screening branch](screening/research.md#current-work)** —
+  supplies the interaction used in the comparison section; its 4×4 value is not yet
+  shown to be converged.
+```
+
+The parent never copies the owner's next action, job state or run count, so changing that
+next step edits the owner only.
+
+Dispositions are prompts, not a closed set: `active`, `proposed`, `waiting on analysis`,
+`waiting on integration`, `waiting on the researcher`, `waiting on run`, `waiting on input`,
+`paused` (why), `dormant` (resume condition), `concluded`. Remove a concluded entry once its
+result, disposition and evidence route are integrated into the account. The date records
+the last consequential change: it shows age, not verification or scheduler freshness. When
+the date is unknown, write "change date unrecorded"; never substitute the date of a
+reorganization.
+
+When evidence exists but is not yet interpreted, or a checked branch result is not yet folded
+upstream, the owning entry says `waiting on analysis` or `waiting on integration`. Any claim
+that the unreconciled evidence may change carries a brief qualification beside it, naming that
+evidence, until integration happens.
+
+The thread owns scientific continuation: what is unresolved and what would discriminate. A
+[plan](../../aitp-memory/references/plans.md) owns the sequencing of an agreed stage, and the
+entry points to its operative phase. A run report owns execution and observations.
+
+## Decisions and retained alternatives
+
+Keep a researcher's choice where it constrains work: a binding constraint appears in the
+opening or beside the affected entry, with one authoritative statement of its rationale.
+Programmes benefit from a short list:
+
+- **Binding choices**: the choice, the scope it binds and, when recorded, the date, who
+  decided and a rationale link. For example: `2026-03-01 · keep the full method as the
+  reference · comparisons in this topic, not production elsewhere · researcher · [rationale]`.
+- **Retained alternatives**: the route; its kind (failed under stated conditions, refuted,
+  refocused, deferred, completed control, declined by the researcher, superseded); what
+  survives; and, when known, a reopening condition.
+
+"Not recorded" is a valid value for who decided and for the reopening condition; never
+invent a reason. Small notes keep these in prose where the argument uses them.
+
 ## Decide what stays in the main note
 
 Judge the main note by whether its intended reader can explain the overall
@@ -107,7 +185,7 @@ question, the decisive reasoning, the supported answer and the remaining gap.
 It need not prove every supporting theorem, but it must explain what an imported
 result says, why it applies here and what follows from it. A definition list or
 a link cannot carry the missing central inference. Keep assumptions next to the
-conclusions that need them, including in the abstract and discussion.
+conclusions that need them, including in the opening and discussion.
 
 For a learning topic, the main note may begin with a small synthesis of the
 question and partial understanding. Follow [learning from sources](learning.md)
@@ -176,7 +254,7 @@ a claim of physical convergence.
 ## Add, move and remove material without losing the thread
 
 Before adding text, identify the question answered and the existing passage whose
-meaning changes. Use the complete current argument recovered by `aitp-memory`;
+meaning changes. Use the current argument recovered by `aitp-memory` for this operation;
 replace that account first, then inspect its dependent uses, opening and ending.
 
 | What happened | Where the change belongs |
@@ -184,15 +262,22 @@ replace that account first, then inspect its dependent uses, opening and ending.
 | Useful detail; main answer remains accurate | Extend the supporting explanation or artifact. Leave an accurate main passage unchanged when its existing link already reaches the owning explanation; add a link only to repair a real discovery gap. |
 | Better measurement of the same quantity | Replace the current comparison value or row, with conditions and evidence; keep the old measurement in its report. |
 | First consequential value arrives during a poll | Replace the provisional entry or add the first result at its substantive location, retaining its provisional scope. Do not wait for completion. |
-| A result resolves a live question | Rewrite that answer and affected opening, discussion and conclusion; remove the resolved next step. |
+| A thread's next step or disposition changes | Its Current work entry in the owning note, with the new date. A parent pointer changes only if the thread's contribution or limiting condition changed. |
+| Evidence exists but is not yet interpreted, or a checked branch result is not yet folded upstream | The owning entry says `waiting on analysis` or `waiting on integration`; a claim it may change carries a brief qualification naming that evidence. |
+| A result resolves a live question | Rewrite that answer and affected opening, discussion and conclusion; remove the resolved Current work entry once integrated. |
 | Assumption or interpretation corrected | Correct the primary account and affected maintained uses. Explain what survives and why the rejected inference fails. |
-| Useful failure or consequential route change | Keep the restriction beside its argument. For a route change, retain its rationale, surviving result, changed relevance and reopening condition; link the diagnosis. |
+| Useful failure or consequential route change | Keep the restriction beside its argument. For a route change, retain its rationale, surviving result, changed relevance and reopening condition, as a retained alternative with its kind; link the diagnosis. |
+| The researcher chooses, declines or delegates | A binding choice with its scope and rationale link; the constraint stays visible where work uses it. |
 | Independent question agreed | Establish or reuse its main note, explain both directions of the relationship and update the nearest folder map. |
 | A seed agreed as a branch or topic | Build its home: folder, `research.md`, links in both directions and the folder map. Replace the seed with a link to the new note. |
 | An outcome of a discussion with no topic: a concept, derivation, connection or idea | As memory's [discussion outcomes](../../aitp-memory/SKILL.md#where-discussion-outcomes-land) describe: the shared collection, a `notes/` derivation beside the root, one connection note linked from both topics, or a seed. |
 | A topic's role, a direction, an important connection or an agreed next choice changed | The affected [root](../../aitp-memory/SKILL.md#the-backbone-at-each-level) passage states the implication; the topic keeps its evidence. |
-| A detailed phased plan | A separate [plan](../../aitp-memory/references/plans.md) linked from the main note's next step; the main note does not copy its phases. |
+| A detailed phased plan | A separate [plan](../../aitp-memory/references/plans.md) linked from the owning Current work entry; the main note does not copy its phases. |
 | Run starts, finishes or changes state without a scientific result | Add a dated observation to its existing report only if useful for continuation; otherwise no write. |
+| Infrastructure failure without scientific content (node failure, quota, retry) | The run report only. |
+| An identifier determines what was evaluated (source commit, input hash) | Beside the result it qualifies, or in the linked report. |
+| A passage outgrows a few paragraphs | Reconsider it against the branching criterion: a supporting note when it has an independent role, a branch when its reasoning, evidence and continuation can be maintained independently. A central derivation may stay in the account. |
+| Paper planning, article theme or figure selection | The manuscript folder, linked from the account. |
 | Unchanged status or explanation | Answer without writing when the account is usable. |
 | Completed stage still appears as future work | Repair its heading, instructions and continuation together; preserve the historical plan. |
 | Wording or ordering only | Edit the prose; no additional change record. |
@@ -205,7 +290,7 @@ listed them. Retain a particular setting in the main text when it explains the
 inference or its limit. Full setup, individual repeats and ancillary diagnostics
 remain in their existing report or analysis.
 
-The [two worked edits](worked-note-edits.md) show actual replacements, their
+The [worked edits](worked-note-edits.md) show actual replacements, their
 supporting destinations and affected uses. A correction search includes incoming
 links and claim terminology or aliases; inspect real dependencies and name known
 uses outside the completed scope. See [corrections](supporting-notes.md#correct-claims-and-keep-earlier-routes-findable).
@@ -234,8 +319,13 @@ not a recurring approval requirement for ordinary edits.
 Review preservation and meaning separately: check destinations, anchors, links
 and unchanged evidence; then read the resulting argument and retrieve representative
 supporting results. The shortened note must still explain what follows, why,
-under what conditions, and where the evidence lives. Reorganization authorizes
-no deletion of original assets, execution of historical plans or publication.
+under what conditions, and where the evidence lives. Then ask an independent reader,
+such as the [AITP reviewer](../../../agents/aitp-reviewer.md), to compare the baseline
+with the result for lost qualifications, ownership and preservation, and judge its
+findings as [aitp-verify](../../aitp-verify/SKILL.md#assess-another-models-review)
+describes. A preservation script can find omitted sentences, numbers and links; it
+cannot certify that meaning was conserved. Reorganization authorizes no deletion of
+original assets, execution of historical plans or publication.
 
 ## Adapt an existing note during use
 
@@ -255,7 +345,7 @@ its links before shortening the main text. Original outputs and historical editi
 remain evidence of their original setting.
 
 When a completed stage replaces an active plan, inspect its nearby heading,
-future-tense instructions, status table and later next-step passages together.
+future-tense instructions, Current work entries and later next-step passages together.
 Time-scope useful execution rules as historical conditions and replace completed
 prerequisites with the actual remaining inference. A new heading alone does not
 repair an old instruction to run the finished stage. If a linked artifact is

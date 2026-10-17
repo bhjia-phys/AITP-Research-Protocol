@@ -88,17 +88,19 @@ sessions or models follow memory's
 [parallel-work rules](../../aitp-memory/references/handoffs.md#work-in-parallel): one
 writer per note, one integrator for the parent.
 
-When pausing, leave the unresolved step and useful assets findable. On completion,
-a consequential failure or another change to the branch's answer or next step,
-update the branch and the parent's using passage with its implication, as memory's
-[topic-tree checks](../../aitp-memory/SKILL.md#keep-the-topic-tree-clear) describe,
-and the root note when the topic's role or direction changed. Fixing restart support does not establish that the dependent
-material calculation ran or converged. Propagate only consequences actually
-supported. Keep useful abandoned branches and their failures; an existing README
-or note index can retain a link if they leave the main argument. An abandoned branch
-keeps its reason, what survives, and what would justify reopening it. A small
-"Related investigations" passage is useful when several branches need context,
-but routine commands, job polls and unchanged branch states need no updates.
+When pausing, record the unresolved step and the resume condition in the branch's
+Current work entry, and keep useful assets findable. On completion, a consequential
+failure or another change to the branch's answer or limitation, update the branch and
+the parent's using passage with its implication, as memory's [topic-tree
+checks](../../aitp-memory/SKILL.md#keep-the-topic-tree-clear) describe, and the root
+note when the topic's role or direction changed. A changed next step alone changes only
+the branch's Current work. Fixing restart support does not establish that the dependent
+material calculation ran or converged. Propagate only consequences actually supported.
+Keep useful abandoned branches and their failures; an existing README or note index can
+retain a link if they leave the main argument. An abandoned branch keeps its reason,
+what survives, and what would justify reopening it. A small "Related investigations"
+passage is useful when several branches need context, but routine commands, job polls
+and unchanged branch states need no updates.
 
 ## Make the explanation usable without a navigation chase
 
