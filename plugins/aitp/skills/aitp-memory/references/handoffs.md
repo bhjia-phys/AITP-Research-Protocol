@@ -1,7 +1,9 @@
 # Hand work to another session or model, and work in parallel
 
 A hand-off prompt lets a fresh session or another model continue without this
-conversation. Write it so that the receiver could act on it alone.
+conversation. Write it so that the receiver could act on it alone. When the receiver will
+read the notes, the updated main note is the handoff: give the prompt only what the notes do
+not say, and leave no dated hand-off files in the topic.
 
 ## What the prompt contains
 

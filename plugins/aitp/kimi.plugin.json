@@ -1,6 +1,6 @@
 {
   "name": "aitp",
-  "version": "1.3.0+kimi.20261017",
+  "version": "1.3.1+kimi.20261017",
   "description": "Physics research around a research.md backbone: aitp-memory runs one research cycle; research, verify, writing, learning, brainstorming and distill grow the root, topic and branch notes.",
   "skills": "./skills/",
   "systemPromptPath": "./hooks/session-start.txt",

@@ -11,6 +11,17 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "^compact$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat \"${CLAUDE_PLUGIN_ROOT}/hooks/post-compact.txt\"",
+            "commandWindows": "type \"${CLAUDE_PLUGIN_ROOT}\\hooks\\post-compact.txt\"",
+            "timeout": 5
+          }
+        ]
       }
     ]
   }

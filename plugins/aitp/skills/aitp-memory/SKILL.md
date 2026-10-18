@@ -26,6 +26,8 @@ applies the same cycle. Within an ongoing task, reuse the context already recove
 5. At a natural pause or handoff, apply the [write decision](#timing-and-recovery)
    to the result and any demonstrated reusable method. Retain durable outcomes in their
    primary homes and repair affected uses within scope. Read-only work makes no edits.
+   When the record must stand on its own, have the
+   [independent process review](#independent-process-review) check it and assess its findings.
 6. Close with the supported answer and warranted next move: do authorized routine work,
    propose consequential choices, and retain agreed directions in the backbone.
 
@@ -100,6 +102,7 @@ claim, never by dropping a claim's conditions.
 | A note with a parent or branches | [Keeping the topic tree clear](#keep-the-topic-tree-clear) |
 | Planning a stage of work | [Plans](references/plans.md) |
 | Handing work to another session or model, or work in parallel | [Hand-offs and parallel work](references/handoffs.md) |
+| A handoff, a context compaction, or outside work relying on a recent change | [Independent process review](#independent-process-review) |
 | Where things stand, a topic's history or its connections | [Status, history and continuation](references/status-and-continuation.md) |
 | A bare "continue" | [Continuing the authorized task](references/status-and-continuation.md#continue-the-authorized-task) |
 
@@ -433,12 +436,15 @@ This is an editorial decision, not an automatic end-of-turn write:
   [on-use repair](#repair-an-outdated-main-note-during-use), even without new results.
 
 Before handoff, check that the main note states the current model, supported answer and
-remaining question, and that each live thread's Current work entry is current. A
-supporting report alone does not integrate a changed conclusion. Link the edited main
-note in the reply; if scope prevents integration, identify the affected claim and
-pending work. Check preservation, affected links and scientific meaning separately, and
-merge concurrent edits against the latest files, including changes inside relocated
-passages. Use the linked restructuring procedure for a live-note handoff rather than
+remaining question, and that each live thread's Current work entry is current, and have the
+[process review](#independent-process-review) check work that no review has covered. A
+request to prepare a handoff is met by this update; write a separate hand-off note only when
+the researcher asks for one or another session or model needs a
+[prompt](references/handoffs.md). A supporting report alone does not integrate a changed
+conclusion. Link the edited main note in the reply; if scope prevents integration, identify
+the affected claim and pending work. Check preservation, affected links and scientific
+meaning separately, and merge concurrent edits against the latest files, including changes
+inside relocated passages. Use the linked restructuring procedure for a live-note handoff rather than
 overwriting another session's work. Temporary limits of this session's own access, such
 as a cluster connection that is down, go in the reply, not in the research notes. A
 persistent gap in the evidence, such as raw files missing from the retained copy or a
@@ -458,3 +464,37 @@ describes, and an atom waits for the researcher's confirmation. A demonstrated r
 operation goes through [aitp-distill](../aitp-distill/SKILL.md) within the authorized scope.
 Check existing coverage first, link rather than duplicate, and give the location and
 limitation alongside the result. No durable learning means no additional write.
+
+## Independent process review
+
+The [AITP reviewer](../../agents/aitp-reviewer.md) checks that the record is faithful to the
+work — complete, sound, preserved and coherent — by reading the session log and the files, not
+your account of them. Use it, by judgment, when the record must stand on its own:
+
+| Signal | Why the record must be faithful now |
+| --- | --- |
+| Handoff, session end or delegation | The next reader will not have this conversation |
+| The conversation was compacted | Your context lost detail that the session log still holds |
+| Something outside this conversation is about to rely on a recent change: a submission, a manuscript or report, a decision the researcher will act on | An error would leave the session |
+| The researcher asks | |
+
+Most sessions need it only after a compaction and at the end: each review covers everything
+no earlier review inspected and rechecks the researcher's questions across the whole session,
+so a review between these points rarely finds what the next one would miss. Do not review
+status answers or routine steps. Read-only work is not exempt, but a "do not edit" instruction
+turns the corrections into a report. A host reminder or an orchestrating agent may raise the
+same signals; the review does not depend on who starts it.
+
+Start the reviewer without the conversation (in Codex, `fork_turns="none"`), tell it to follow
+the reviewer file, and give it the absolute path of your session log (Codex:
+`$CODEX_HOME/sessions/*/*/*/rollout-*-$CODEX_THREAD_ID.jsonl`; Claude Code:
+`~/.claude/projects/*/$CLAUDE_CODE_SESSION_ID.jsonl`) and the signal that prompted the review,
+and nothing else: no summary and no interval, since it finds its own scope in the log. Only
+independent work continues meanwhile.
+
+Assess its findings as [aitp-verify](../aitp-verify/SKILL.md#assess-another-models-review)
+describes and apply the valid ones yourself as the only writer: reread the passage, revise the
+owner once and the uses whose meaning changed, replace or qualify rather than append, and reread
+the result. A consequential finding you cannot resolve becomes a qualification beside the claim it
+affects; scope and contested interpretations go to the researcher. Write no review records into
+the notes; one line of your close says what the review found and changed.

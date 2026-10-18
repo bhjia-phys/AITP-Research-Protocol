@@ -124,7 +124,7 @@ not certify its scientific correctness or authorize its recorded next action.
 
 Install [AITP
 1.1.0](https://github.com/bhjia-phys/AITP-Research-Protocol/releases/tag/v1.1.0). The
-current local development version is 1.3.0. The research backbone and cycle,
+current local development version is 1.3.1. The research backbone and cycle,
 verification, computational and benchmark procedures, main and supporting note
 standards, source-based learning, domain methods and numerical layouts in this
 development tree are newer than that release. This development tree exposes seven core

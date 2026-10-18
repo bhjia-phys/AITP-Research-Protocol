@@ -1,0 +1,1 @@
+AITP: the conversation was just compacted, so your context lost detail that the session log still holds. At the next natural pause, have the AITP reviewer check the research record against the log, as aitp-memory's "Independent process review" describes, and apply its valid findings.

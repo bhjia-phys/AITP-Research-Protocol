@@ -1,6 +1,6 @@
 # AITP
 
-Development version 1.3.0: research memory in living main notes, research and writing
+Development version 1.3.1: research memory in living main notes, research and writing
 guidance, and direct Skill distillation. The bundle contains instructions, optional
 manuscript assets and one read-only reviewer prompt, with no runtime. This development
 tree adds the research backbone (a root note, topic trees, reachability, seeds and a
@@ -205,26 +205,41 @@ linked when available. No automatic synchronization or deletion is implied.
 
 ## Independent review
 
-[`agents/aitp-reviewer.md`](agents/aitp-reviewer.md) is a read-only reviewer for research
-notes. It checks that summaries keep their qualifications, that continuation stays with the
-thread that owns it, that material sits where its meaning belongs, that nothing was removed
-without a destination, and that changed meanings reached their users. Claude Code loads it
-as a plugin subagent; in Codex or Hakimi, give its instructions to a subagent or a separate
-read-only session. [aitp-verify](skills/aitp-verify/SKILL.md#commission-a-second-read) says
-when to use it: any substantial restructuring, and an ordinary edit only when a plausible
-failure is present. No hook invokes it.
+[`agents/aitp-reviewer.md`](agents/aitp-reviewer.md) is a read-only reviewer that checks
+whether the research record is faithful to the work: **complete** (every consequential
+result, decision, question and change of state recoverable, with its content), **sound**
+(no claim beyond its evidence), **preserved** (nothing valid lost, including other sessions'
+edits) and **coherent** (one owner per fact, every use consistent, no appended chronology).
+It reconstructs the work from the session log and the files, not from the author's summary,
+and continues from where earlier reviews stopped; a restructuring is the same review with a
+baseline copy as the prior record. The main agent assesses each finding and remains the only
+writer; the researcher decides scope and contested interpretations.
+[aitp-memory](skills/aitp-memory/SKILL.md#independent-process-review) lists the signals for
+using it: handoff, session end or delegation; a context compaction; something outside the
+conversation about to rely on a recent change; the researcher's request. Most sessions need
+it only after a compaction and at the end. The signals are
+host-neutral: the session reminder raises the compaction signal today, and an orchestrating
+agent could raise any of them without changing the reviewer. Claude Code loads the reviewer as
+a plugin subagent, whose shell its instructions limit to read-only parsing; in Codex or Hakimi,
+give its instructions to a subagent started without the conversation, or to a separate session.
 
 ## Session reminders
 
 Codex and Claude Code use one optional [SessionStart hook](hooks/hooks.json) at
 startup, resume, clear and compaction. It reads only the bundled
-[short reminder](hooks/session-start.txt); it neither reads research files nor
-writes state. Hakimi loads that same text through `systemPromptPath`. The Skills
+[short reminder](hooks/session-start.txt), and after a compaction also the
+[compaction notice](hooks/post-compact.txt); it neither reads research files nor
+writes state. Hakimi loads the reminder through `systemPromptPath`. The Skills
 remain usable without these host reminders.
 
 The reminder points to `aitp-memory`, reuses current context and applies its
-existing write decision at a natural handoff. There are no `Stop`, `SessionEnd`
-or per-turn hooks, extra summaries, checklists or mandatory note updates.
+existing write decision at a natural handoff. The compaction notice asks for an
+independent process review at the next natural pause, since the session log still
+holds what the compacted context lost; compaction recurs as the context fills, so
+long sessions are reviewed in step with their growth. Both hosts start the hook with
+source `compact` after an automatic compaction and pass its output to the model
+(verified on Codex 0.163). There are no `Stop`, `SessionEnd` or per-turn hooks,
+extra summaries, checklists or mandatory note updates.
 The [read/write rules](skills/aitp-memory/SKILL.md#timing-and-recovery) stay in
 their owning Skill. No Python, Node or external service is needed for the hook.
 

@@ -14,8 +14,9 @@ to the research Skill and method library. When another domain method needs
 direct discovery in Claude, add its directory to this manifest and verify the
 component inventory. A linked method does not need a duplicate wrapper Skill.
 Claude also scans the plugin's `agents/` directory, so the read-only
-[note reviewer](../plugins/aitp/agents/aitp-reviewer.md) is available as a subagent;
-the other hosts use its instructions through their own subagents or a separate session.
+[research reviewer](../plugins/aitp/agents/aitp-reviewer.md) is available as a subagent;
+it reads the session transcript named by `CLAUDE_CODE_SESSION_ID`. The other hosts use its
+instructions through their own subagents or a separate session.
 
 ## Install the development checkout
 
