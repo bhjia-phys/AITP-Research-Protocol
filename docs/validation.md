@@ -1,5 +1,42 @@
 # Validation and its limits
 
+## A research-process reviewer, 2026-10-18
+
+AITP 1.3.1 makes the reviewer one check that the research record is faithful to the work —
+complete, sound, preserved and coherent — judged from the main agent's session log and the
+files, not from the author's summary. `aitp-memory` names the signals for using it (handoff,
+session end or delegation; a context compaction; something outside the conversation about to
+rely on a recent change; the researcher's request), and a compaction-only SessionStart entry
+prints a one-sentence notice after each automatic compaction. Two critiques by a GPT model shaped the
+design. Verified on Codex 0.163: the session log is written as events happen and keeps every
+record through compaction; messages, tool calls and outputs are readable, reasoning and messages to
+subagents encrypted; a default spawn copies the parent's conversation, so the reviewer starts with
+`fork_turns="none"` and can find the parent's log from its own session record; after an automatic
+compaction SessionStart runs with source `compact`, honours matchers, and its output reaches the
+model.
+
+Multi-turn Codex sessions on frozen copies of a researcher's notes (two scenarios with planted
+results, dependencies, set-aside questions, an overclaim, a pause and another session's edit,
+each ending in a handoff and a fresh agent working from the notes alone) were graded blind. Without
+compaction, sixteen sessions across four reviewer variants were near ceiling and differed only
+within noise; a second blind grading reproduced the first exactly. The 1.3.0 reviewer, given the
+session's messages and a diff, repeatedly proposed deleting another session's recorded decision;
+the new reviewer never gave invalid or harmful advice. A regression suite of frozen checkpoints
+guards wording changes: the final reviewer raised 8 of 8 lost set-aside questions and 3 of 4
+questions hidden in gaps between earlier reviews, after a more compact first rewrite had lost
+recall. Under forced compaction, the new reviewer ran after every compaction and kept every
+planted item (46 of 46, set-aside questions 4 of 4 in two of its versions) against 43.5 and 1.5
+for 1.3.0. Read-only reviews of five real long research sessions, each with one to four
+compactions, covered the material before every compaction; an independent check judged 11 of 14
+findings valid, 2 partly valid and 1 superseded by later edits, among them intermediate findings
+and qualifications that had stayed in the conversation. Agents asked for reviews in most turns of
+the dense scripted sessions (6–9 per ten turns); narrowing the signals did not change that, and an
+added "one review per signal" sentence was dropped because it did not either. The cost was about
+25–30% more uncached tokens in scripted sessions with compaction and 11% without; a whole-session
+review of a real long session cost 160–260k uncached tokens. The samples are small and the
+compaction and real-session tests came after the first results, so these findings are
+exploratory. Test records remain outside the published tree.
+
 ## Living main notes and an independent reviewer, 2026-10-17
 
 AITP 1.3.0 gives each main note an opening of about one screen, a Current work section that is
