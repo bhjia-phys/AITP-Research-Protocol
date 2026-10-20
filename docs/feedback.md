@@ -1124,3 +1124,90 @@ outcomes.
 
 This entry adds feedback only. It changes no Skills, runtime behavior, host goals
 or research calculations, and makes no claim of validated improvement.
+
+## Benchmark tables must carry the scientific comparison
+
+Date: 2026-10-12. This is a qualitative manuscript-use case, sanitized to retain
+the editorial failure without private calculations or conversation records.
+The researcher found the numerical tables cumbersome and asked for a reading
+of Xinguo Ren's relevant original papers before proposing an improvement.
+
+### Observed reading failure
+
+A constrained-screening and quasiparticle manuscript put execution choices,
+complete-array coverage counts, comparison descriptions and numerical maxima
+into one main-text table. Some cells contained sentences rather than quantities.
+A single maximum column mixed energy differences with a pooled matrix maximum
+in unspecified native units. Some rows combined several changed conditions
+against different baselines. Small printed differences therefore did not let
+the reader readily identify the observable, the reference or the conclusion.
+
+This was primarily an execution failure. The existing owner,
+[computational and mixed writing](../plugins/aitp/skills/aitp-writing/references/computational-and-mixed.md#benchmark-results-show-the-quantities-behind-the-conclusion),
+already requires one scientific question per table, actual compared values
+where available, defined units and norms, visible criteria and retained stricter
+failures. The [earlier formal-manuscript feedback](#formal-theory-memory-must-make-the-research-contribution-reconstructible)
+also distinguishes a complete evidence trail from a readable scientific argument.
+Changing fonts or adding horizontal rules would not repair the comparison.
+
+### What the original displays contribute
+
+The matching examples were checked in original PDFs, including rendered pages:
+
+- Ren et al., NJP **14**, 053020 (2012): [arXiv:1201.0655v2](https://arxiv.org/pdf/1201.0655v2),
+  Table 3, p. 42; Table 4 and Fig. 16, p. 44; Table 5, pp. 46–47.
+- Ren et al., PR Materials **5**, 013807 (2021):
+  [published PDF](https://pure.mpg.de/rest/items/item_3263538/component/file_3285757/content),
+  Tables I–II and Fig. 7, pp. 15–16.
+- Ren et al., PRB **92**, 081104(R) (2015):
+  [original electronic reprint](https://acris.aalto.fi/ws/portalfiles/portal/2163742/PhysRevB.92.pdf),
+  Figs. 2–4, printed pp. 081104-3–4 (PDF pp. 4–5 after its repository cover).
+
+These examples suggest a useful editorial decision: arrange comparable
+quantities along visible axes, group shared conditions, and let a figure carry
+a distribution or spectral pattern when a table would obscure it. The first
+source is a specified preprint version, not checked published pagination.
+These are coauthored examples, not a universal personal style or evidence for
+a fixed column limit. Some source tables omit explicit units, so they must be
+adapted critically rather than copied as complete standards.
+
+### Focused refinement and how to assess it
+
+Keep any eventual clarification in the existing computational-writing owner:
+
+1. **Choose the comparison before formatting.** For an error-summary or regression
+   row, identify the compared pair and observable explicitly. A broader observable
+   table may compare several methods in grouped columns. Show the compared values
+   when available;
+   identify an error-only regression summary honestly when individual values
+   are unavailable. Do not reconstruct them to fill a visually pleasing table.
+2. **Keep each error interpretable.** Separate heterogeneous observables into
+   defined columns or panels. A raw maximum over coefficients, energies and
+   velocities cannot be made meaningful by naming it a matrix error. A
+   normalized aggregate needs declared component scales and a scientific reason.
+3. **Make the numerical body easy to scan.** Use concise row labels, grouped
+   headers, visible units, consistent alignment and precision suited to the
+   comparison. Put repeated protocol prose and detailed coverage in methods,
+   table notes or supporting material. Preserve essential conditions in a
+   self-contained caption; do not impose an arbitrary short-caption rule.
+4. **Use the display that reveals the result.** Curves expose refinement and
+   iteration; distributions expose spread and outliers; tables retain selected
+   numerical comparisons. A summary error does not replace the underlying
+   physical result. Neither a fixed decimal count nor a fixed number of columns
+   follows from the source examples.
+5. **Simplify without changing the claim.** Keep unmatched reference conditions,
+   consequential outliers and failed numerical criteria visible. Execution
+   invariance, independent correctness, numerical convergence and agreement with
+   experiment remain different conclusions even if their tables become shorter.
+
+Assess a concrete revised display at its intended reading size: can a reader
+identify what is compared, under which shared conditions, in which units, with
+what numerical pattern and remaining limitation, without consulting a run log?
+Use unchanged data and criteria, and inspect whether the body and caption
+actually answer the scientific question. A smaller table, a successful build or
+a link check does not establish better comprehension. A later independent
+reading comparison would be needed to support a measured improvement claim.
+
+This entry records feedback and a proposed refinement only. It adds no new
+Skill, checklist or author-style template, changes no installed instructions,
+and does not claim independently validated improvement.

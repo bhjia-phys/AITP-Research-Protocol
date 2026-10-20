@@ -101,6 +101,35 @@ physical conversion, projection, lifetime management, and required communication
 Use ordinary native inputs. Do not introduce manifests, hash inventories, or a
 second input-description protocol for an ordinary reader change.
 
+## Solid calculations require band paths
+
+For solid-material runs in this workflow, include a band path as part of the
+calculation, including bounded material pilots. Before any submission, recover
+an already agreed path; otherwise ask the researcher which path to use or
+search material literature and reliable crystallographic references for the
+appropriate path. Check it against the actual phase, lattice orientation,
+primitive/supercell and magnetic translation cell. Preserve fractional versus
+Cartesian conventions, endpoints and disconnected segments. State the selected
+path and its source before running. A clear, compatible researched path does
+not require a second approval question.
+
+Prepare both the integration mesh and the path from the same physical DFT
+reference. For GW/QSGW, export and stage the matching path eigenvalues,
+occupations, coefficients and Vxc, with the path metadata expected by the
+executed reader. Enable the actual path calculation and retain direct path
+QP energies and QSGW iteration spectra at the requested level. A PBE band
+table alone is insufficient; a QP-output switch operates on loaded k points
+and does not create a missing path. For a DFT/RPA/cRPA-only study, include the
+matching DFT path without adding an unrequested GW task.
+
+Do not submit a solid material calculation while its path or required path
+payload is unresolved. Continue independent preparation, but do not silently
+downgrade it to a mesh-only material run. Check startup path discovery and
+the actual output coverage across path points, spins and requested iterations;
+an automatic grid-only fallback is not completion of this workflow. H(R)/S(R)
+interpolation may supplement diagnosis and plotting, with its source stated,
+but does not replace the requested direct GW/QSGW path calculation.
+
 ## Choose evidence that distinguishes the change
 
 Follow the agreed acceptance scope. Before adding a test, identify a plausible

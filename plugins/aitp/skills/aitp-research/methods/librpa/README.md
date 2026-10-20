@@ -9,12 +9,22 @@ them or learning them. Read only the part the task needs.
 - [Developing LibRPA](developing-librpa/SKILL.md): review, simplify or extend LibRPA by
   tracing its active GW and RPA paths, API and driver boundaries, matrix ownership and
   relevant regressions.
+- [ABACUS–LibRPA basis preparation](https://github.com/AroundPeking/abacus-librpa-gw-basis-skill/blob/e491d0c38816de277877f89e4615b6482aaacdc2/SKILL.md)
+  (`abacus-librpa-gw-basis`): use when preparing or auditing matched pseudopotentials,
+  physical numerical atomic orbitals and auxiliary basis functions for RPA, GW or cRPA.
+  Read this Skill before selecting, generating or reusing basis assets; follow its
+  catalog, provenance and validation checks. Use an installed copy when available;
+  otherwise read the linked upstream Skill and its needed references at that revision.
 - The researcher's own GW skills, such as material workflows and producer/consumer
   runs, stay in the workspace. The topic family's README lists them; read that list when
   the task runs or adapts a calculation.
 
 ## Conventions and checks
 
+- Solid-material runs require a band path: recover the agreed path, ask the
+  researcher, or research and verify a compatible path before submission.
+  Follow [the solid-path procedure](developing-librpa/SKILL.md#solid-calculations-require-band-paths)
+  for producer data, direct GW/QSGW outputs and detection of a grid-only fallback.
 - Before comparing numbers, state the approximation (G0W0, self-consistent or
   quasiparticle self-consistent GW, RPA, constrained RPA), the frequency treatment
   (imaginary axis, analytic continuation, static limit) and the basis (atomic orbitals
