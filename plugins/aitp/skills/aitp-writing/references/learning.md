@@ -84,8 +84,10 @@ reader cannot supply:
   direct links; keep routine substitutions in the explanation. A question page should reach the needed atom, exact
   source step and return to the question without requiring the reader to navigate an
   entire bibliography.
-- **Two layers.** Gaps that block following the argument come first. Rigor gaps, such as
-  domains, unbounded operators and truncations, can sit in an optional layer.
+- **Two layers.** Gaps that block following the argument come first. State domains,
+  boundary assumptions and control of limits where the current inference needs them.
+  Proof details beyond the agreed depth can sit in an optional layer, with the imported
+  result and its assumptions explicit in the main argument.
 - **Details worth remembering.** Record each briefly, with what it does and where it leads:
   a footnote that reveals a choice, a general statement made for later use, an analogy, a
   surprise, or an alternative route. Such a detail often explains a hard step.
@@ -112,6 +114,14 @@ Introduce its physical question, work a small example that retains the actual
 difficulty, and introduce abstraction when it becomes useful. Continue through
 the decisive calculation, a relevant check and the interpretation. These are
 expository needs, not mandatory headings or nine repeated boxes.
+
+A teaching note earns its length by making an operation learnable. Let the reader see
+why a tempting shortcut fails, how a new object repairs the difficulty, and how the
+worked example returns to the question. Keep a useful failed route even when a specialist
+paper could state the successful construction directly. Explain the step that is new
+to this reader; compress a genuinely repeated operation only after showing it once.
+Use writing's [paragraph guidance](../SKILL.md#write-connected-paragraphs) to connect
+these steps without turning every paragraph into a labelled teaching exercise.
 
 For each substantive step ask: can the reader perform it from a previously
 explained operation and the allowed prerequisites? Expand a new idea, theorem,
@@ -150,3 +160,14 @@ every linked prerequisite into a textbook. Distinguish a derivation error from
 a valid argument that still needs better teaching. Source checks, a reviewer
 exercise and the learner's feedback provide different evidence. Report their
 actual scope without a mandatory audit manifest or a claim of proven pedagogy.
+
+For a substantial teaching artifact, choose a small number of questions it promises to
+make answerable: perform the decisive operation, explain the role of a hypothesis, or
+locate the step affected by changing it. When a fresh reader is available and warranted,
+give that reader only the artifact, its declared prerequisites and these questions;
+withhold the writer's conversation, intended answers and review hints. Ask where the
+text first becomes insufficient, and repair that passage and its uses. Source-assisted
+scientific checking is a separate task. A model may fill a gap from prior knowledge, so
+require it to locate the step in the text; a correct answer alone does not show the
+explanation is sufficient. This tests the artifact, not a human learner's mastery, and
+adds no exercise gate to a request for a complete explanation.

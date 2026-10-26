@@ -1,5 +1,47 @@
 # Validation and its limits
 
+## Connected physics prose and reader checks, 2026-10-26
+
+The writing guidance now connects paragraphs through their reasoning, checks a substantial
+completed draft with a private reverse outline, and compares language edits with the
+original scientific meaning. Section order can follow a useful independent check or change
+of viewpoint; it need not pretend every choice is logically forced. Learning guidance keeps
+essential hypotheses beside their uses and distinguishes an artifact-only reader check
+from source-assisted scientific verification and the research-process review.
+
+The editing choices adapt inspected public instructions from
+[Humanizer](https://github.com/blader/humanizer/blob/main/SKILL.md) and
+[Humanizer-zh](https://github.com/op7418/Humanizer-zh/blob/main/SKILL.md)
+(paragraph-level editing and preservation of meaning),
+[Research-Paper-Writing-Skills](https://github.com/Master-cai/Research-Paper-Writing-Skills/blob/main/research-paper-writing/SKILL.md)
+(checking the actual draft's argument),
+[doc-coauthoring](https://github.com/anthropics/skills/blob/main/skills/doc-coauthoring/SKILL.md)
+(a reader without the writer's context), and
+[scientific-writing](https://github.com/K-Dense-AI/scientific-agent-skills/blob/main/skills/scientific-writing/SKILL.md)
+(evidence-preserving drafting). These are design sources, not new runtime dependencies or
+evidence of effectiveness in theoretical physics. Fixed prose templates, word bans,
+claim registries and submission-oriented presentation incentives were not adopted.
+
+Two fresh same-model authoring sessions used the revised guidance on three small synthetic
+tasks: explaining a two-state energy shift from supplied fragments; polishing a numerical
+comparison while retaining its conditions and planned work; and checking an already-clear
+constant-phase paragraph. The coordinator inspected all outputs. The results paragraph
+kept the supplied dimensions, values, units, comparison scope and unrun status. The
+already-clear paragraph was retained unchanged.
+
+A separate fresh reader received only the study passage, prerequisites and three questions.
+It reconstructed the elimination, the sign of the shift and the failure of the expansion
+at zero level separation, locating their support in the text. It also found a malformed
+fraction command caused by a form-feed character. The original was retained, a corrected
+copy changed only that character sequence, and the same reader's targeted recheck confirmed
+the repair. The first pass was not a clean pass; the recheck was not a new independent trial.
+
+Skill frontmatter and changed-file local links and heading anchors were checked; host
+manifests still parse, and the patch passes whitespace checks. The prompts and outputs
+remain outside the public tree. These are small, explicitly skill-guided development
+checks with one output per task, not a blinded old/new comparison, long-manuscript test,
+proof of human learning or demonstration of general writing superiority.
+
 ## A research-process reviewer, 2026-10-18
 
 AITP 1.3.1 makes the reviewer one check that the research record is faithful to the work —

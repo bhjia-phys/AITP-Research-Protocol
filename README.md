@@ -219,6 +219,11 @@ and benchmark tables from the former computational writing Skill. Mixed work
 explains exactly how a numerical test bears on an analytic claim. These are
 flexible argument structures with optional Markdown outlines.
 
+Writing also checks the completed draft's argument, connects paragraphs through their
+reasoning, and edits language without changing scientific meaning. Learning notes keep
+the steps a reader needs to reproduce; a fresh-reader check can expose gaps hidden by
+the writer's context. Editorial checks remain separate from scientific verification.
+
 For `research.md`, the [main-note
 guide](plugins/aitp/skills/aitp-writing/references/research-note.md) and its
 [living-note starter](plugins/aitp/skills/aitp-writing/assets/research-topic.md) give

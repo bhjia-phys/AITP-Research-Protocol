@@ -69,6 +69,9 @@ loaded only when needed through memory's references.
   reference or document before it is relied on, and assesses another model's review.
 - [aitp-writing](skills/aitp-writing/SKILL.md) develops research notes and, when requested,
   LaTeX manuscripts and PDFs for formal theory, numerical studies and mixed work.
+  It connects the argument in prose, checks the structure of completed drafts, and
+  preserves scientific meaning during language edits; teaching notes also test whether
+  the reader can reconstruct the needed operations.
 - [aitp-human-learning](skills/aitp-human-learning/SKILL.md) adapts explanations to the
   learner's question and difficulty, without compulsory quizzes.
 - [aitp-human-brainstorming](skills/aitp-human-brainstorming/SKILL.md) resolves the

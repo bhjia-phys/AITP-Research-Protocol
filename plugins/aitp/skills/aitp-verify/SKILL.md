@@ -19,7 +19,10 @@ preservation, logical qualifications and evidence routes; it does not freshly ce
 every scientific result in the archive. Reuse the retained checks, identifying them as
 such, and investigate a specific conflict before rewriting its conclusion. A scientific
 validation request requires the corresponding derivations, source inspections or numerical
-checks. Report these scopes separately.
+checks. Report these scopes separately. For language editing, compare the changed claims
+with the original: check hypotheses, quantifiers, negation, conventions, numerical values,
+attribution and uncertainty before treating smoother prose as equivalent. A stylistic
+preference is not evidence that a valid statement needs scientific correction.
 
 Checking is separate from producing: use a different route from the one that made the
 result. When an audit needs a new derivation, calculation or debugging, do that work
@@ -96,6 +99,11 @@ a required step for every task. Write a reviewer prompt that stands on its own:
   severity: blocking, important or minor;
 - what to avoid: generic praise, rewriting the document, and style preferences
   presented as errors.
+
+For a reader-use test, apply [learning's artifact-only review](../aitp-writing/references/learning.md#use-feedback-and-review-to-improve-the-next-passage):
+check what the document enables without the writer's conversation or answer key. A
+scientific reviewer can then inspect original sources and calculations. Keep the two
+scopes separate; neither replaces the process review of what was actually done.
 
 For research notes, the [AITP reviewer](../../agents/aitp-reviewer.md) is a read-only
 second reader that checks whether the record is faithful to the work: complete, sound,

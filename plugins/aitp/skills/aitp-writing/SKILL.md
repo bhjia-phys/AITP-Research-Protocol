@@ -113,9 +113,11 @@ prose edit.
 Privately identify the question, strongest supported answer, assumptions,
 decisive mechanism, evidence and unresolved obstacle. Use this to decide the
 order of explanation; do not create another required status document. Give each section an explanatory job:
-which question does it answer, what establishes the answer, and what unresolved issue
-makes the next section necessary? Use this chain to remove repetition without cutting
-out the decisive inference. A useful branch result enters at its point of use; a folder
+which question does it answer, and what establishes the answer? Explain what the next
+step contributes: resolving an obstruction, supplying an independent check, changing
+viewpoint, or establishing a needed result. A justified choice need not be the only
+possible route. Use these relationships to remove repetition without cutting out the
+decisive inference. A useful branch result enters at its point of use; a folder
 inventory or a set of identical section templates cannot supply that argument.
 
 | What carries the claim? | Useful order of exposition |
@@ -136,6 +138,29 @@ or delicate derivation carries the result. Read
 data, algorithms or finite numerical tests carry an inference, including
 implementation, computational setup and benchmark tables. A mixed task may
 need both; ordinary prose edits need neither in full.
+
+## Write connected paragraphs
+
+Build paragraphs around a developing inference. Start from an object, question or result
+the reader can identify, and make clear what each sentence adds: a reason, consequence,
+qualification, example or change of viewpoint. Adding a transition word cannot repair a
+missing logical connection. Keep the same term and notation for the same object; resolve
+vague references when the antecedent could be mistaken. Choose paragraph breaks where
+the reasoning or the reader's task changes, without a fixed sentence count or a compulsory
+topic sentence for every calculation.
+
+Use continuous prose for a sustained explanation, with equations as part of its sentences.
+Lists and tables are useful for actual alternatives, procedures and comparisons. An
+internal outline, paragraph-role labels or an editing checklist need not appear in the
+delivered article. Keep the prescribed navigation of a research-memory note, and retain
+scientifically useful methods, definitions and limitations in the reader-facing text.
+
+Edit a whole passage when its structure is the problem. Remove empty importance claims,
+stock oppositions, repeated announcements and conclusions that merely restate the previous
+paragraph. Preserve a failed route when it explains a real obstruction. Match the requested
+register and the author's inspected samples; natural scientific prose can be formal.
+Do not manufacture personality, replace technical terms for variety, or enforce a ban on
+particular words, punctuation or useful lists. Already clear prose needs no change.
 
 ## Make equations advance the explanation
 
@@ -202,6 +227,22 @@ passages together. A later disclaimer cannot repair an earlier unconditional
 claim. Keep a substantive correction where its scientific consequence belongs.
 For changed dependencies or a supporting note removed from the main argument,
 use [corrections and retained notes](references/supporting-notes.md#correct-claims-and-keep-earlier-routes-findable).
+
+For a substantial draft, privately make a reverse outline from the text actually written:
+what each section and difficult paragraph establishes, what supports it, and what uses it.
+Check that these steps support the main answer, prerequisites precede their use, and a
+repeated passage adds an explanation or a needed reminder. Repair a missing inference,
+misplaced paragraph or unsupported claim before polishing its sentences. Write or revise
+the opening and abstract to match the resulting argument. This is an editing operation,
+not another maintained document or a required output for a small correction.
+
+After a language edit, compare the changed passage with its source text. Preserve negation,
+quantifiers, hypotheses, attribution, conventions, numbers and units, approximation order,
+limit order and uncertainty. Keep observation, interpretation and conjecture distinct:
+"consistent with" must not silently become "establishes", nor a local construction a
+global one. Do not add facts, citations, results or stronger causal claims to make the
+prose smoother. A discovered scientific error needs its own check and an explicit
+correction within scope; pure wording edits reuse applicable checks.
 
 Read the revised passage as a reader: is the purpose of each object apparent,
 is the central step justified, and does the conclusion follow at the stated
