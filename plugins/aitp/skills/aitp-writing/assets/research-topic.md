@@ -54,6 +54,29 @@ Open scientific questions sit where their motivation is explained. The outlines
 research-theory.md, research-computational.md and research-letter.md in this folder
 suggest an order for theory, computation and compact arguments. -->
 
+<!-- Optional map entries: use a Child topics or 子方向 heading for explicit branch
+links, and explain each branch's contribution and limit. Under Related materials or
+相关资料, group Literature, Knowledge and Code links when useful, and say how each
+source serves this question. Link an existing source reading and its exact edition;
+do not create empty notes or infer a person's reading. A link does not grant access.
+Omit groups that do not apply. The scientific argument and qualifications remain here;
+supporting derivations, reports and source files stay in their existing homes. -->
+
+<!-- An optional map can be written using ordinary Markdown like this; replace the
+illustrative links with actual sources, and omit entries and headings that do not apply:
+
+## 子方向
+- [子问题](branch/research.md)：这个分支对主问题的贡献与限制。
+
+## 相关资料
+### 文献
+- [论文或研读](path/to/paper.md)：为什么需要它，读的是哪个版本。
+### 知识
+- [概念或推导](path/to/knowledge.md)：解决当前问题的哪个前提。
+### 代码
+- [相关实现](path/to/source.cpp)：它在研究中的作用。
+-->
+
 ## Decisions and retained alternatives
 
 <!-- Optional. Small notes keep these in prose where the argument uses them.
