@@ -1,0 +1,14 @@
+# Mount the existing portable files; project and user Skill providers remain independent.
+- insert:
+    - id: aitp-core-skills
+      name: '@deepseek-ai/dsh-skill-filesystem'
+      config:
+        providerName: aitp-core
+        includeDefaultRoots: false
+        bundledSkillDir: !!js process.getBuiltinModule('node:path').join(process.getBuiltinModule('node:path').dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('dsh-aitp-skills/package.json')), 'skills')
+    - id: aitp-librpa-skills
+      name: '@deepseek-ai/dsh-skill-filesystem'
+      config:
+        providerName: aitp-librpa
+        includeDefaultRoots: false
+        bundledSkillDir: !!js process.getBuiltinModule('node:path').join(process.getBuiltinModule('node:path').dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('dsh-aitp-skills/package.json')), 'skills/aitp-research/methods/librpa')

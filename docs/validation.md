@@ -1,5 +1,41 @@
 # Validation and its limits
 
+## Portable Ren GW/RPA writing methods, 2026-10-29
+
+The LibRPA method library now includes `ren-gw-notation` and `ren-gw-writing`,
+with reciprocal links and conditional discovery from the writing Skill. Their
+public-paper readings, detailed LRI/GW equation chains, Hartree reference and
+synthetic controls are bundled as relative resources. The array map specifies
+contracts to verify in a target backend; it does not depend on a private source
+checkout. Project manuscripts, source snapshots and prior trial records were
+not copied into the plugin.
+
+All ten core/nested Skill frontmatters pass the Skill validator. All 48 local links
+in the two new methods' Markdown resources resolve inside the plugin, and the Codex, Claude and
+Kimi manifest names and Skill paths were checked. Claude's plugin validator
+passes with its non-blocking missing-catalog-icon warning. The Claude manifest
+explicitly adds the two nested methods; the existing Codex and Kimi Skill roots
+already contain them. This validates packaging, not fresh host discovery or
+automatic invocation. No installation or release is part of this integration.
+
+Both NumPy control scripts pass from a standalone copy of the plugin. The
+LRI/GW script checks finite tensor identities and discriminating alternatives;
+the Hartree script passes 26 finite identities and seven incorrect-alternative
+witnesses, including shifted-mesh folding and density-weight normalization.
+These are synthetic algebra checks. They do not execute LibRI/LibRPA, measure
+material fitting error, or certify an entire SOC/cRPA/QSGW method.
+
+An independent explicit-use trial used only the staged plugin to write a
+periodic SOC Hartree-update passage with supplied orbital, density and LRI
+symbol choices. Inspection of the resulting passage confirmed preservation
+of those symbols, the four translated endpoint terms, the native-reference
+offset, the energy cross term and the conditional weighted-input conversion.
+No missing local dependency blocked the task. The trial artifact is retained
+outside the public tree. It used the staged reference before the final explicit
+Coulomb-kernel and composite-index definitions were added; those clarifications
+were not independently exercised. This one use has no unassisted baseline and
+does not establish general writing quality or automatic Skill selection.
+
 ## Connected physics prose and reader checks, 2026-10-26
 
 The writing guidance now connects paragraphs through their reasoning, checks a substantial

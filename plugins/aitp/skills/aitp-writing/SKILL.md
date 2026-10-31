@@ -34,6 +34,7 @@ directly, apply that cycle and reuse context already recovered.
 | A written explanation for a learner | [Learning from sources](references/learning.md) |
 | Outlining a paper, when the researcher has chosen authors to learn from | That author's organization record, through [exemplar authors](../aitp-research/references/exemplar-authors.md#study-how-the-author-organizes-a-paper) |
 | A field's methods | Its [domain methods](../aitp-research/SKILL.md#domain-methods): conventions and standard sources |
+| GW/RPA/LibRPA theory or article organization using Ren-based conventions | The [GW/RPA writing and notation methods](../aitp-research/methods/librpa/README.md#methods), preserving the target's existing notation and exemplar choices |
 | Placing or correcting material in notes | [Worked note edits](references/worked-note-edits.md) |
 | Making or presenting a figure | [Figures and their evidence](references/computational-and-mixed.md#figures-and-their-underlying-evidence) |
 | A requested review, or new, changed or disputed consequential claims in the document | [aitp-verify](../aitp-verify/SKILL.md), reusing checks that still apply |

@@ -15,6 +15,8 @@
     "learning"
   ],
   "skills": [
-    "./skills/aitp-research/methods/librpa/developing-librpa"
+    "./skills/aitp-research/methods/librpa/developing-librpa",
+    "./skills/aitp-research/methods/librpa/ren-gw-notation",
+    "./skills/aitp-research/methods/librpa/ren-gw-writing"
   ]
 }

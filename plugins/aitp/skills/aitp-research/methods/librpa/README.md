@@ -9,6 +9,14 @@ them or learning them. Read only the part the task needs.
 - [Developing LibRPA](developing-librpa/SKILL.md): review, simplify or extend LibRPA by
   tracing its active GW and RPA paths, API and driver boundaries, matrix ownership and
   relevant regressions.
+- [Ren GW/RPA notation](ren-gw-notation/SKILL.md): write detailed Hartree, LRI,
+  GW and RPA derivations with explicit tensor spaces, endpoint coefficients,
+  Fourier conventions and normalization. Includes portable source comparisons,
+  equation chains and finite algebra checks; preserves the target's definitions.
+- [Ren GW/RPA writing](ren-gw-writing/SKILL.md): organize articles and notes by
+  their contribution, developing introductions, theory-to-algorithm passages,
+  numerical comparisons and conclusions from selected coauthored-paper readings.
+  Coordinates with the notation method without imposing an author template.
 - [ABACUS–LibRPA basis preparation](https://github.com/AroundPeking/abacus-librpa-gw-basis-skill/blob/e491d0c38816de277877f89e4615b6482aaacdc2/SKILL.md)
   (`abacus-librpa-gw-basis`): use when preparing or auditing matched pseudopotentials,
   physical numerical atomic orbitals and auxiliary basis functions for RPA, GW or cRPA.

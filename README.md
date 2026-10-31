@@ -130,8 +130,9 @@ standards, source-based learning, domain methods and numerical layouts in this
 development tree are newer than that release. This development tree exposes seven core
 Skills to Codex, Claude Code and Hakimi; the published release has four. The release
 contains the former teaching exercise; the current research examples are pending review.
-Codex and Claude Code additionally expose the LibRPA domain method as a selectable
-Skill; Hakimi discovers the containing bundles. The linked method library works in all
+Codex and Claude Code additionally expose three nested LibRPA domain Skills:
+development, Ren GW/RPA notation and Ren GW/RPA writing. Hakimi discovers the
+containing bundles. The linked method library works in all
 three.
 
 For **Codex**, run in a terminal:
@@ -290,7 +291,13 @@ and their limits.
 General procedures belong under `aitp-research/methods/<domain>/<method>/SKILL.md`.
 The initial [LibRPA development Skill](plugins/aitp/skills/aitp-research/methods/librpa/developing-librpa/SKILL.md)
 connects formulas and iteration state to source, and guides build selection and
-numerical validation when executing a change. Follow the
+numerical validation when executing a change. The linked
+[notation method](plugins/aitp/skills/aitp-research/methods/librpa/ren-gw-notation/SKILL.md)
+provides detailed Hartree/LRI/GW/RPA derivations and finite algebra controls;
+the companion [writing method](plugins/aitp/skills/aitp-research/methods/librpa/ren-gw-writing/SKILL.md)
+develops article and note structure from selected public coauthored papers.
+Their references are portable and contain no project manuscripts or local
+source-checkout dependencies. Follow the
 [method guide](plugins/aitp/skills/aitp-research/references/method-library.md) for
 local and shared methods; no knowledge-card layer is needed. Numerical projects
 can use the [asset recommendations](plugins/aitp/skills/aitp-memory/references/numerical-assets.md)

@@ -97,3 +97,14 @@ session was run for this instruction revision. The earlier executed QSGW
 regressions are documented separately in the worked example. This study does
 not measure either project's development productivity or this Skill's effect
 on an unfamiliar agent.
+
+A later revision incorporated the linked maintainer reviews in the architecture
+guide and corrected the obsolete QSGW prototype map. An independent read-only
+session applied the revised Skill to a different proposed thermal-screening
+contribution. It identified an unrelated matrix fix, an unnecessary G0W0
+migration, mixed API responsibilities and undefined result ownership, an
+unagreed method fallback, mislabeled synthetic data, and misplaced verification
+and theory files. It also qualified single-rank smooth-curve evidence and
+selected numerical and multi-rank checks. This is a proposal-review transfer
+check, not an implementation trial, numerical validation or a comparison against
+an agent without the Skill.

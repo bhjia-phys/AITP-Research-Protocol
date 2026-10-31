@@ -17,6 +17,15 @@ Identify the intended checkout, branch, local edits, upstream target, and, when
 running calculations, executable and build configuration. For a PR review,
 inspect the complete change against its actual base; comparison with the remote
 PR head answers only what the next update adds. Preserve unrelated work.
+Read the current discussion, submitted reviews and inline threads of every
+affected PR. An outdated or unresolved thread does not by itself establish
+whether its request is satisfied: check the reviewed source and all dependent
+stages. Distinguish a specific required correction from advice for future PRs.
+For a complete-history request, enumerate the author's PRs in all states on the
+current upstream and known predecessor repositories; a title search or open-PR
+list can miss earlier work. Trace an old comment to today's active code before
+acting. Bot suggestions are hypotheses to check, not project requirements;
+merged status does not prove that every old finding was fixed.
 
 Read applicable repository instructions and Minye's developer guidance in
 `docs/develop/develop_tips.md`. Use `driver/CMakeLists.txt` and
@@ -35,6 +44,12 @@ compatibility, or provide its necessary validation/documentation. Judge scope
 by dependencies and behavior, not file count: synchronizing a shared option
 across C and Fortran is necessary work even when it touches several files.
 Earlier explicit decisions, including accepted shared defaults, remain in scope.
+For new submissions, separate a new feature from independent numerical fixes;
+include each change's tests, justified reference updates and documentation with
+it. Shared files or one application name alone do not make changes dependent.
+Preserve a researcher-agreed existing PR grouping unless its revision is part
+of the request; a reviewer's future-PR advice is not an instruction to repartition
+an already agreed stack.
 
 Leave unrelated refactoring, renaming, formatting, logging redesign, new
 frameworks, and changes of physical approximation out of a focused fix or
@@ -61,13 +76,18 @@ do not present an unagreed method replacement as ordinary debugging.
   the exception. Numerical operations receive matrices, conventions, and
   mean-field data rather than filenames.
 - Implement new public behavior through the C API under `src/api`, with public
-  declarations in `include/`; C++ and supported Fortran interfaces wrap that
-  layer. Keep host-program presets in the driver and pass parsed conventions
-  through the API.
+  declarations grouped by responsibility in the existing input, compute and
+  options headers. Avoid a parallel feature-header classification. Prefer the
+  existing caller-buffer convention; a public concrete result needs a defined
+  layout, shapes, units, ownership and lifetime. Keep opaque handles distinct
+  from numerical result structures. C++ and supported Fortran interfaces wrap
+  the C layer. Check direct C inclusion and installed headers after reorganizing
+  declarations. Keep host-program presets in the driver.
 - Prefer public setters and getters over mutating a handler's Dataset from the
-  driver. Existing QSGW is a task prototype with internal access; keep necessary
-  prototype mutations local to its task. This exception does not establish a
-  general interface or require an unrelated API migration during cleanup.
+  driver. Implement new QSGW/cRPA task assembly in core with thin API adapters;
+  preserve existing API-owned state and the established G0W0/RPA caller and
+  output architecture. A prototype exception in the developer guide does not
+  authorize expanding internal access or migrating an existing task.
 - Assemble physics from existing core objects and reusable math/MPI helpers.
   Follow the developer guide's dependency rules, including the isolation of
   `src/interface`. Check ownership and actual callers before moving a helper.
@@ -84,6 +104,14 @@ Follow input through conversion, distribution, numerical operation, and output.
 Resolve implicated units, spin/occupation normalization, k ordering and weights,
 AO versus KS basis, matrix layout, conjugation, and MPI ownership. Inspect the
 producer when meaning is ambiguous; a filename suffix does not establish basis.
+For a disputed transpose or conjugation, write the component transformation
+using the actual stored row/column convention before changing it. Use a complex
+control that distinguishes the alternatives; a real matrix can hide the error.
+When extending an algorithm, keep distinct numerical implementations in
+separate classes behind the existing abstraction. Make fallback construction
+and dispatch explicit. Preserve the selected samples, degree, derivatives and
+failure policy unless a method change is agreed; test each implementation
+directly and retain controls of fallback behavior.
 
 For iteration, identify the immutable reference, live eigenpairs, operators, and
 caches. Track what is invalidated and rebuilt after each update. Fixed operator
@@ -95,6 +123,14 @@ or an independently allocated result when mutation must not reach the input.
 Check temporary reference substitutions and their restoration on error paths.
 Preserve collective order and propagate a root-only failure before other ranks
 enter a dependent collective.
+Use the communicator owned by the handler or numerical object throughout its
+call graph. If an API accepts independent communicators, a multi-rank world
+test alone can miss cross-group reductions; use distinct subgroup inputs when
+checking that invariant.
+Match MPI thread requirements to the exercised call path. A test whose MPI calls
+all run on the initializing thread can use FUNNELED even when local numerical
+work is threaded; retain a check of the support actually needed. Do not infer
+the same minimum for production paths that call MPI from worker threads.
 
 Remove wrappers whose work is already expressed by the existing path; retain
 physical conversion, projection, lifetime management, and required communication.
@@ -141,6 +177,14 @@ distributed invariant. Do not add dedicated input/output, file-reader, parser,
 log-format, source-text, invalid-input, or error-message tests. Numerical
 end-to-end regressions may read output files to compare physical results;
 that does not require separate tests of their I/O implementation.
+Name a new regression for its task, actual producer and material or synthetic
+model. Inspect the payload/generator before naming it; ABACUS-format output
+from a Python model does not make ABACUS its producer. Put backend requirements
+in build metadata rather than a new `_libri` suffix. Rename testcase and
+reference paths together and update suite, scripts, CI and documentation while
+preserving original payloads. Keep `run_regression.py` the only script at the
+regression root; place companions in an appropriate subdirectory and update
+their fixture paths and real CI invocations.
 
 Reject malformed or unsupported input directly with a useful error. Keep the
 runtime checks needed to detect it before using the data, and propagate failures
@@ -175,7 +219,10 @@ multi-rank coverage appropriate to that path.
 Preserve the baseline and original references. On a numerical mismatch,
 distinguish changed controls, a new-code regression, and baseline variation;
 repeat the baseline if needed. Do not replace references or relax tolerances
-just to pass. Narrowing acceptance must still cover the requested behavior and
+just to pass. For a bug-driven reference update, retain a control that
+distinguishes the old and corrected implementations; explain which reference
+quantities change and retain unaffected quantities and gates. Narrowing
+acceptance must still cover the requested behavior and
 explicitly retain the excluded failure. Once required checks pass, expand them
 only for a new change or unresolved concern.
 
@@ -193,11 +240,19 @@ performed, and remaining limits. Before delivery, review the full proposed diff,
 including build registrations, defaults, tests, and documentation. Remove
 incidental additions from the prepared change and report consequential deferred
 issues briefly; no separate audit file or checklist framework is required.
+Keep added theory in source-only `docs/theory`, explicitly excluded from the
+documentation build until publication is requested. Task usage belongs under
+the existing user-guide hierarchy, rather than alongside its parent topic.
 For an authorized PR update, recheck its target
 and final combined tree after incorporating upstream numerical or dependency
 changes. Explain net behavior and shared-default effects; separate regression
 agreement from physical convergence. Keep useful evidence in the established
 working location without another recording protocol.
+Retain focused differences and merge order for dependent PRs. Propagate shared
+corrections through later stages, then check the final combined source and
+remote file sets. Read back published heads and descriptions; distinguish new
+CI from earlier successful runs. Addressing a comment in code does not approve
+the review or authorize resolving the maintainer's threads.
 
 When revising these development instructions, consult the
 [Codex/Kimi source study](references/agent-development-patterns.md). It explains

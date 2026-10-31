@@ -31,11 +31,20 @@ claude plugin install aitp@aitp-protocol --scope user
 
 Claude support is newer than the published `v1.1.0` release. Its native manifest
 is `.claude-plugin/plugin.json`; the seven core Skills load from `skills/`, and
-the manifest additionally exposes the nested LibRPA method. The Skill files and
+the manifest additionally exposes the nested LibRPA development, Ren GW/RPA
+notation and Ren GW/RPA writing methods. The Skill files and
 their relative reference links are shared with Codex and Hakimi. Check the
 loaded inventory with `claude plugin details aitp`. In a new session, ordinary
 research requests can activate relevant Skills; `/aitp:aitp-memory` is also
 available as an explicit entry point. Installation does not rewrite research notes.
+
+For **DSH**, the development checkout also supplies a native Skills bundle:
+
+```sh
+dsh plugin --profile web add ./plugins/aitp
+```
+
+Run this from the repository root, or supply the absolute `plugins/aitp` path. The bundle uses DSH's existing filesystem Skill provider for the seven core Skills and the nested LibRPA methods; it adds no agent runtime or research UI. Isolated installation and catalog loading were checked against the local `0.2.1-rc.2` development baseline. The package's declared version range is not a compatibility test of every release. An explicit `DSH_BUNDLED_SKILL_DIR` in a nearer agent scope can override these Skills; remove the obsolete override when adopting the bundle. Claude-specific hooks do not execute merely because the Skills are installed in DSH. Research workbench and context plugins are separate capabilities, installed only when their own DSH bundle is wanted.
 
 Start a new host thread after installation.
 

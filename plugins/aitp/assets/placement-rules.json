@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "skill": "aitp-memory/references/asset-placement.md",
+  "root": {
+    "allowNames": [
+      "research.md",
+      "README.md",
+      ".gitignore"
+    ],
+    "allowExtensions": [
+      ".md",
+      ".tex",
+      ".bib"
+    ]
+  },
+  "topLevel": {
+    "canonical": [
+      "notes",
+      "references",
+      "code",
+      "calculations",
+      "manuscripts",
+      "data",
+      "figures",
+      "reports"
+    ],
+    "legacy": [
+      "results",
+      "workspace",
+      "sources",
+      "scripts",
+      "theory",
+      "manuscript",
+      "development",
+      "software",
+      "plan",
+      "analysis",
+      "runs",
+      "skills"
+    ],
+    "hidden": [
+      ".aitp",
+      ".agents",
+      ".codex"
+    ]
+  },
+  "freeDirs": [
+    "calculations"
+  ],
+  "extensionRouting": [
+    {
+      "extensions": [
+        ".py",
+        ".sh",
+        ".bash",
+        ".ps1",
+        ".ipynb",
+        ".c",
+        ".cc",
+        ".cpp",
+        ".h",
+        ".hpp",
+        ".f90",
+        ".f",
+        ".jl",
+        ".m",
+        ".rs",
+        ".go",
+        ".js",
+        ".ts",
+        ".sbatch",
+        ".slurm"
+      ],
+      "allowedTop": [
+        "code",
+        "calculations",
+        "scripts",
+        "development",
+        "software",
+        "workspace",
+        "analysis",
+        "runs"
+      ],
+      "target": "code/ 或 calculations/<run>/"
+    },
+    {
+      "extensions": [
+        ".csv",
+        ".tsv",
+        ".json",
+        ".h5",
+        ".hdf5",
+        ".npy",
+        ".npz",
+        ".dat",
+        ".xml",
+        ".out",
+        ".log"
+      ],
+      "allowedTop": [
+        "data",
+        "results",
+        "figures",
+        "calculations",
+        "workspace"
+      ],
+      "target": "data/、results/ 或 calculations/<run>/"
+    }
+  ],
+  "scanDirs": [
+    "notes",
+    "references",
+    "code",
+    "manuscripts",
+    "data",
+    "figures",
+    "reports",
+    "results",
+    "sources",
+    "scripts",
+    "theory",
+    "analysis",
+    "runs"
+  ]
+}
