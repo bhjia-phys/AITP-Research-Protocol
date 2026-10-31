@@ -1,4 +1,4 @@
-﻿# Locate and connect research assets
+# Locate and connect research assets
 
 Use this when deciding where to save research material, clarifying an unfamiliar
 location, or carrying out a requested move. Start with the existing README and
@@ -6,8 +6,8 @@ nearby related work. Reuse a useful established location; directory names and
 physical separation do not determine the structure of the scientific argument.
 
 The quick placement table shared with host adapters lives in
-[asset placement](asset-placement.md); the machine-readable copy is
-`plugins/aitp/assets/placement-rules.json`.
+[asset placement](asset-placement.md); its machine-readable copy is
+[assets/placement-rules.json](../../../assets/placement-rules.json).
 
 ## Browse nearby topics and shared knowledge
 
