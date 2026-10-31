@@ -1,9 +1,13 @@
-# Locate and connect research assets
+﻿# Locate and connect research assets
 
 Use this when deciding where to save research material, clarifying an unfamiliar
 location, or carrying out a requested move. Start with the existing README and
 nearby related work. Reuse a useful established location; directory names and
 physical separation do not determine the structure of the scientific argument.
+
+The quick placement table shared with host adapters lives in
+[asset placement](asset-placement.md); its machine-readable copy is
+[ssets/placement-rules.json](../../../assets/placement-rules.json).
 
 ## Browse nearby topics and shared knowledge
 
@@ -217,3 +221,4 @@ Use one migration note when such a review is requested, not a permanent ledger.
 
 Never delete the old home merely because a copy succeeded. Archiving and any
 installation or execution use the researcher's actual authorization.
+

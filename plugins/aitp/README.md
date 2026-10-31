@@ -39,6 +39,36 @@ available as an explicit entry point. Installation does not rewrite research not
 
 Start a new host thread after installation.
 
+### DeepSeek Harness
+
+The development checkout also supplies a native DSH Skills bundle with no runtime of
+its own:
+
+```sh
+dsh plugin --profile <profile> add ./plugins/aitp
+```
+
+Run this from the repository root, or pass the absolute `plugins/aitp` path. The bundle
+uses DSH's filesystem Skill provider for the seven core Skills and the nested LibRPA
+methods. Isolated installation and catalog loading were checked against the local
+`0.2.1-rc.2` development baseline; the declared version range is not a compatibility
+test of every release. An explicit `DSH_BUNDLED_SKILL_DIR` in a nearer agent scope can
+override these Skills; remove the obsolete override when adopting the bundle.
+
+A local DSH adapter bundle can serve the same `skills/` tree without republishing this
+package (for example `dsh-aitp/packages/aitp-skills-local`). Both the adapter and the
+research workbench load the machine-readable placement rule
+[`assets/placement-rules.json`](assets/placement-rules.json); the workbench's
+write-location guard, `research_path`, `research_write` and `research_check` all read
+that file. Keep it aligned with the human-readable
+[asset placement](skills/aitp-memory/references/asset-placement.md) table; when the
+Skills or the rule change, refresh the adapter's copies and reinstall its bundle.
+
+Claude-specific hooks do not execute merely because the Skills are installed in DSH.
+Research workbench and context plugins are separate capabilities, installed only when
+their own DSH bundle is wanted.
+
+
 ## The architecture: a backbone and the processes that grow it
 
 `research.md` is the researcher's long-term memory and the backbone of the research. Each
