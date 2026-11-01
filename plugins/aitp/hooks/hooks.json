@@ -23,6 +23,30 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/tidy.py\" --reply-end",
+            "commandWindows": "python \"${CLAUDE_PLUGIN_ROOT}\\hooks\\tidy.py\" --reply-end",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/tidy.py\" --turn-start",
+            "commandWindows": "python \"${CLAUDE_PLUGIN_ROOT}\\hooks\\tidy.py\" --turn-start",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }

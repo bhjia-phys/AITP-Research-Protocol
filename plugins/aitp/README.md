@@ -1,6 +1,6 @@
 # AITP
 
-Development version 1.3.1: research memory in living main notes, research and writing
+Development version 1.3.2: research memory in living main notes, research and writing
 guidance, and direct Skill distillation. The bundle contains instructions, optional
 manuscript assets and one read-only reviewer prompt, with no runtime. This development
 tree adds the research backbone (a root note, topic trees, reachability, seeds and a
@@ -265,7 +265,9 @@ agent could raise any of them without changing the reviewer. Claude Code loads t
 a plugin subagent, whose shell its instructions limit to read-only parsing; in Codex or Hakimi,
 give its instructions to a subagent started without the conversation, or to a separate session.
 
-## Session reminders
+## Session reminders and the end-of-reply check
+
+<a id="session-reminders"></a>
 
 Codex and Claude Code use one optional [SessionStart hook](hooks/hooks.json) at
 startup, resume, clear and compaction. It reads only the bundled
@@ -280,10 +282,20 @@ independent process review at the next natural pause, since the session log stil
 holds what the compacted context lost; compaction recurs as the context fills, so
 long sessions are reviewed in step with their growth. Both hosts start the hook with
 source `compact` after an automatic compaction and pass its output to the model
-(verified on Codex 0.163). There are no `Stop`, `SessionEnd` or per-turn hooks,
+(verified on Codex 0.163).
+
+One optional end-of-reply check, [tidy.py](hooks/tidy.py), uses two hooks. `UserPromptSubmit`
+records when a reply begins, and prints nothing. `Stop` lists the files that reply changed:
+files in the session's topic modified since then (including subagents' work) and files the
+transcript shows were edited in other topics. When there are any, it asks once for a
+[check](skills/aitp-memory/references/tidy.md) that each is in its home and linked from the
+passage that uses it. The agent fixes clear misplacements of its own files and lists the rest
+for the researcher. The check is silent when nothing changed, during its own continuation
+(`stop_hook_active`) and when `AITP_TIDY=off`. It needs `python3` (standard library only) and
+keeps only the turn start, in `~/.cache/aitp/turns/`. There are no `SessionEnd` or other hooks,
 extra summaries, checklists or mandatory note updates.
 The [read/write rules](skills/aitp-memory/SKILL.md#timing-and-recovery) stay in
-their owning Skill. No Python, Node or external service is needed for the hook.
+their owning Skill. The reminders need no Python, Node or external service.
 
 Codex requires review and trust of a new or changed hook through its native
 hook controls before it runs; installation alone does not enable execution.
@@ -305,6 +317,11 @@ README maps material folders and the main argument links detailed notes and thei
 assets. It offers optional layouts for new topics and shared development;
 reuse established locations and create folders for agreed independent questions,
 not as empty asset templates.
+[Checks and moves](skills/aitp-memory/references/checks-and-moves.md) adds a topic
+checker and a move script for whole-topic checks and multi-file moves, including links
+that reach the topic from other folders. After each reply that changed files in a topic, a
+hook asks once for a [check of those changes](skills/aitp-memory/references/tidy.md) against
+the topic's architecture: each file in its home and linked from the passage that uses it.
 For unfamiliar related work, [browse directory entries and note titles first](skills/aitp-memory/references/local-assets.md#browse-nearby-topics-and-shared-knowledge),
 then search and read selected notes. Short scope descriptions help choose a note;
 known useful links can be followed directly. Reuse the located context within the task.
