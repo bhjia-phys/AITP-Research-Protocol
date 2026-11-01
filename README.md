@@ -114,9 +114,11 @@ See [asset placement and discovery](plugins/aitp/skills/aitp-memory/references/l
 and the [recording examples](docs/when-to-write.md) for decisions during research.
 
 No Python runtime, ledger CLI, knowledge-card layer, hash protocol, search service,
-MCP service or background daemon is part of AITP. Optional
+MCP service or background daemon is part of AITP; the optional helper scripts and the tidy
+hook are standalone standard-library Python. Optional
 [session reminders](plugins/aitp/README.md#session-reminders) point back to the
-existing read/write rules without adding per-turn checks or records. Git is ordinary
+existing read/write rules, and an optional end-of-reply check asks the agent to confirm that
+the files a reply changed are in their homes and linked; neither keeps research records. Git is ordinary
 source version control, not a required research-memory protocol. Reading a note does
 not certify its scientific correctness or authorize its recorded next action.
 
@@ -124,7 +126,7 @@ not certify its scientific correctness or authorize its recorded next action.
 
 Install [AITP
 1.1.0](https://github.com/bhjia-phys/AITP-Research-Protocol/releases/tag/v1.1.0). The
-current local development version is 1.3.1. The research backbone and cycle,
+current local development version is 1.3.2. The research backbone and cycle,
 verification, computational and benchmark procedures, main and supporting note
 standards, source-based learning, domain methods and numerical layouts in this
 development tree are newer than that release. This development tree exposes seven core

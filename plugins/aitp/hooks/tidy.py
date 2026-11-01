@@ -1,0 +1,222 @@
+#!/usr/bin/env python3
+"""AITP end-of-reply check: did this reply's changes keep the topic's architecture?
+
+Two hook entry points (stdin is the host's hook event JSON):
+  python3 tidy.py --turn-start   UserPromptSubmit: remember when this reply began (prints nothing)
+  python3 tidy.py --reply-end    Stop: list the files this reply changed and, if any, ask once
+                                 for the check in skills/aitp-memory/references/tidy.md
+Manual use:
+  python3 tidy.py --status [DIR] [--hours H]   files changed in DIR's topic in the last H hours
+
+"Changed in this reply" is the union of two sets:
+- every file in the session's topic (the nearest folder above the working directory that holds
+  research.md) whose modification time is after the reply began. This covers the main agent's
+  edits, its shell commands and the work of its subagents;
+- the files that the main transcript's Write, Edit, MultiEdit or NotebookEdit calls touched
+  since the last user message, when they lie in a topic.
+
+It skips hidden folders, environments, nested repositories, caches, build output and frozen
+before/ and provenance/snapshots/ copies. It stays silent when:
+- nothing changed;
+- the session is outside a topic and edited none;
+- the stop is the hook's own continuation (stop_hook_active);
+- AITP_TIDY is "off" or "0".
+
+The check itself is done by the agent, following the rules. Nothing is moved or applied by this
+script, and it writes nothing inside a topic; its only state is the turn start, kept in
+~/.cache/aitp/turns/. Standard library only.
+"""
+import hashlib, json, os, sys, time
+from datetime import datetime
+
+SKIP_DIRS = {"__pycache__", "node_modules", "build", "dist", "before", ".venv", "venv"}
+EDIT_TOOLS = {"Write", "Edit", "MultiEdit", "NotebookEdit"}
+LIST_MAX = 20
+SCAN_BUDGET_S = 3.0
+STATE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "aitp", "turns")
+HERE = os.path.dirname(os.path.abspath(__file__))
+RULES = os.path.normpath(os.path.join(HERE, "..", "skills", "aitp-memory", "references", "tidy.md"))
+
+
+def find_topic(start):
+    d = os.path.abspath(start)
+    if os.path.isfile(d):
+        d = os.path.dirname(d)
+    while True:
+        if os.path.isfile(os.path.join(d, "research.md")):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            return None
+        d = parent
+
+
+def state_file(session):
+    return os.path.join(STATE_DIR, hashlib.sha1(str(session).encode("utf-8")).hexdigest()[:16] + ".json")
+
+
+def skipped(rel):
+    parts = rel.split("/")
+    if any(p.startswith(".") or p in SKIP_DIRS for p in parts[:-1]) or parts[-1].startswith("."):
+        return True
+    if "provenance" in parts and "snapshots" in parts:
+        return True
+    return parts[-1].endswith((".pyc", ".swp", "~"))
+
+
+def changed_in(topic, since):
+    """Files under topic modified after since: (list of rel, complete)."""
+    out, t0 = [], time.time()
+    for dp, dns, fns in os.walk(topic):
+        if dp != topic and any(os.path.exists(os.path.join(dp, x)) for x in (".git", "pyvenv.cfg", "conda-meta")):
+            dns[:] = []
+            continue
+        rel_dir = os.path.relpath(dp, topic).replace(os.sep, "/")
+        dns[:] = [d for d in dns if not d.startswith(".") and d not in SKIP_DIRS
+                  and not (d == "snapshots" and rel_dir.split("/")[-1] == "provenance")]
+        for fn in fns:
+            rel = (fn if rel_dir == "." else rel_dir + "/" + fn)
+            if skipped(rel):
+                continue
+            try:
+                if os.stat(os.path.join(dp, fn)).st_mtime > since:
+                    out.append(rel)
+            except OSError:
+                pass
+        if time.time() - t0 > SCAN_BUDGET_S:
+            return sorted(out), False
+    return sorted(out), True
+
+
+def parse_time(s):
+    try:
+        return datetime.fromisoformat(str(s).replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+
+def transcript_edits(path):
+    """(time of the last user message, files edited after it) from a Claude Code transcript."""
+    last_user, edits = None, []
+    try:
+        lines = open(path, encoding="utf-8", errors="replace").read().splitlines()
+    except OSError:
+        return None, []
+    for line in lines:
+        try:
+            e = json.loads(line)
+        except ValueError:
+            continue
+        msg = e.get("message") or {}
+        content = msg.get("content")
+        if e.get("type") == "user" and not e.get("isSidechain"):
+            is_tool_result = isinstance(content, list) and any(
+                isinstance(c, dict) and c.get("type") == "tool_result" for c in content)
+            if not is_tool_result:
+                last_user, edits = parse_time(e.get("timestamp")), []
+        elif e.get("type") == "assistant" and isinstance(content, list):
+            for c in content:
+                if isinstance(c, dict) and c.get("type") == "tool_use" and c.get("name") in EDIT_TOOLS:
+                    p = (c.get("input") or {}).get("file_path") or (c.get("input") or {}).get("notebook_path")
+                    if p:
+                        edits.append(p)
+    return last_user, edits
+
+
+def read_event():
+    try:
+        return json.load(sys.stdin)
+    except ValueError:
+        return {}
+
+
+def turn_start(event):
+    os.makedirs(STATE_DIR, exist_ok=True)
+    f = state_file(event.get("session_id", "default"))
+    json.dump({"start": time.time(), "cwd": event.get("cwd") or os.getcwd()}, open(f, "w", encoding="utf-8"))
+    now = time.time()
+    for name in os.listdir(STATE_DIR):  # forget turns older than a week
+        p = os.path.join(STATE_DIR, name)
+        try:
+            if now - os.stat(p).st_mtime > 7 * 86400:
+                os.remove(p)
+        except OSError:
+            pass
+    return 0
+
+
+def reply_end(event):
+    if event.get("stop_hook_active") or os.environ.get("AITP_TIDY", "").lower() in ("off", "0", "false"):
+        return 0
+    cwd = event.get("cwd") or os.getcwd()
+    try:
+        start = json.load(open(state_file(event.get("session_id", "default")), encoding="utf-8"))["start"]
+    except (OSError, ValueError, KeyError):
+        start = None
+    t_user, edited = transcript_edits(event["transcript_path"]) if event.get("transcript_path") else (None, [])
+    if start is None:
+        start = t_user
+    if start is None:
+        return 0
+    by_topic, complete = {}, True
+    topic = find_topic(cwd)
+    if topic:
+        files, complete = changed_in(topic, start)
+        if files:
+            by_topic[topic] = set(files)
+    for p in edited:
+        p = os.path.abspath(p)
+        t = find_topic(p)
+        if t and os.path.exists(p):
+            rel = os.path.relpath(p, t).replace(os.sep, "/")
+            if not skipped(rel):
+                by_topic.setdefault(t, set()).add(rel)
+    if not by_topic:
+        return 0
+    lines, n = [], 0
+    for t in sorted(by_topic):
+        for rel in sorted(by_topic[t]):
+            n += 1
+            if n <= LIST_MAX:
+                lines.append(f"  - {os.path.join(t, rel)}")
+    if n > LIST_MAX:
+        lines.append(f"  - … and {n - LIST_MAX} more")
+    note = "" if complete else " (the scan stopped at its time budget; the list may be incomplete)"
+    reason = (
+        f"AITP reply check: this reply changed {n} file(s) in research topics{note}:\n" + "\n".join(lines) + "\n\n"
+        f"Before ending, check these changes against the topic architecture ({RULES}). For each file: is it in "
+        "the home its kind and question use (the topic's README map and placement rules), and is it linked "
+        "from the research.md passage, or the note, that uses its result? If a thread's state changed, does "
+        "its Current work entry say so? Fix clear misplacements of files this reply created or changed, "
+        "within the task's scope. List anything else for the researcher in at most five lines. Never change a "
+        "number or conclusion, never delete, and leave frozen copies and other people's files to the "
+        "researcher. If everything fits, say in one line: 'architecture check: ok'."
+    )
+    print(json.dumps({"decision": "block", "reason": reason}))
+    return 0
+
+
+def status(argv):
+    hours = 24.0
+    if "--hours" in argv:
+        i = argv.index("--hours")
+        hours = float(argv[i + 1])
+        argv = argv[:i] + argv[i + 2:]
+    topic = find_topic(argv[0] if argv else os.getcwd())
+    if not topic:
+        print("not inside a research topic (no research.md above this folder)")
+        return 1
+    files, complete = changed_in(topic, time.time() - hours * 3600)
+    print(f"{topic}: {len(files)} file(s) changed in the last {hours:g} h" + ("" if complete else " (incomplete scan)"))
+    for rel in files:
+        print(f"  {rel}")
+    return 0
+
+
+if __name__ == "__main__":
+    args = sys.argv[1:]
+    if args[:1] == ["--turn-start"]:
+        sys.exit(turn_start(read_event()))
+    if args[:1] == ["--status"]:
+        sys.exit(status(args[1:]))
+    sys.exit(reply_end(read_event()))

@@ -211,7 +211,9 @@ layouts; do not rebuild the project tree to fit a UI. Move internal files only
 where that improves their actual use within the authorized task. Before moving
 them, keep a recoverable backup of those files and the notes whose links will
 change. Repair affected incoming and outgoing ordinary links together, and check
-the moved files and their uses before retiring the old copies. Shared repositories,
+the moved files and their uses before retiring the old copies. For several files,
+[checks and moves](checks-and-moves.md) gives the procedure and two scripts; include
+the folders that link into the topic, such as a shared knowledge collection. Shared repositories,
 shared source PDFs and large data stay in place; reference their actual locations.
 Routine organization already authorized needs no additional confirmation step;
 this guide is not itself permission to relocate other research or shared assets.

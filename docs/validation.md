@@ -1,5 +1,106 @@
 # Validation and its limits
 
+## End-of-reply architecture check, 2026-11-01 (1.3.2)
+
+**What it adds.** The plugin registers two hooks, defined in `hooks/hooks.json` and implemented
+in `hooks/tidy.py` (standard library only):
+
+- `UserPromptSubmit` records when a reply begins;
+- `Stop` lists the files that reply changed and, if any, asks once for the check in
+  `aitp-memory/references/tidy.md`: each file in its home, and linked from the passage that uses
+  it.
+
+"Changed in this reply" has two sources:
+
+- files in the session's topic modified after the turn start, which covers the main agent's
+  shell commands and subagents' work;
+- Write/Edit paths from the main transcript that fall in other topics.
+
+The hook moves nothing and writes nothing inside a topic.
+
+**Synthetic controls.** `hooks/test_tidy.py` passes 12. They check that the hook:
+
+- is silent without changes, outside a topic, during its own continuation (`stop_hook_active`)
+  and with `AITP_TIDY=off`;
+- lists shell and subagent changes;
+- excludes caches, environments, frozen copies and nested repositories;
+- does not report a previous reply's changes;
+- uses the transcript for edits in another topic, falling back to the last user message when no
+  turn start was recorded;
+- writes nothing in the topic.
+
+**End-to-end in Claude Code.** Two fresh `claude -p` sessions were run on a synthetic topic, with
+the two hooks added through `--settings`.
+
+- *Explicit "do nothing else" request.* The hook fired once. The agent reported its root-level
+  script as misplaced, belonging in `code/` and needing a link from `research.md`. It did not move
+  the file, respecting the request's scope, and ended after 3 turns.
+- *Ordinary request.* The script was created in `code/`. The check found it unlinked, added a
+  labelled link in the owning note, left `research.md` unchanged because the thread's state had
+  not changed, and ended without a second request.
+
+**Not exercised:**
+
+- Codex at runtime. The semantics are taken from the 0.163 probe recorded earlier: a `decision:
+  block` continues once, and `stop_hook_active` is set on the next stop.
+- `commandWindows`.
+- Concurrent sessions editing the same topic, whose changes would also be listed.
+- Edits by subagents outside the session's topic, which the main transcript does not show.
+
+These checks establish the trigger and the agent's response on two small cases. They establish
+nothing about general organizing quality.
+
+## Topic checks and note moves, 2026-11-01
+
+`aitp-memory` gains [checks and moves](../plugins/aitp/skills/aitp-memory/references/checks-and-moves.md)
+and two standard-library scripts. `check_topic.py` reports:
+- broken relative links and `#anchors`, and links into the topic from named outside folders;
+- root files the placement rules do not admit, and loose root notes;
+- missing or undated Current work entries, and unreached `notes/` files.
+
+`move_notes.py` moves files with a manifest and backup, rewrites only link targets, verifies
+the result, and reports, without editing, incoming links and code strings that name old
+paths. The procedure comes from a reorganization of a large private research family, which
+copied about 22 GB, moved 44 notes and rewrote 291 links. A topic-only check there had missed
+51 incoming links from a shared knowledge collection.
+
+`test_topic_tools.py` passes 29 synthetic controls. Each planted defect is reported exactly.
+Dry runs change nothing. Moved notes, inbound links, anchors, `%20` encoding and CRLF are
+handled. Code spans and code files stay untouched. Incoming links are detected, and rewritten
+only on request. Frozen, existing, missing and outside paths are refused.
+
+On the motivating family the checker reproduced the earlier audit's counts: 470 active notes,
+8,166 links, 3,016 frozen unresolved links, no errors and 5 genuinely undated Current work
+entries. Two private topics with other layouts tested transfer:
+- 12,009 anchor errors came from documentation inside nested source checkouts. A later
+  measurement attributed them: recognizing MyST `(label)=` and `{#id}` anchors removed 11,828 of
+  12,394, and skipping folders that hold `.git` or an environment removes only 48 once that is in
+  place. The skip is kept because such trees are not topic notes, not because it cured the anchors.
+- Historical copies named `*-backup-*` led to the `--frozen` option.
+- A false warning on undated pointer entries led to the pointer exemption.
+
+The remaining findings in those topics were not repaired; the checker reports them for their
+owners. Not exercised: Windows paths, non-UTF-8 text, HTML links and rewriting reference-style
+link definitions. A clean report establishes navigation only, not any scientific claim.
+
+**Independent trial.** A fresh agent was given only the reference and a different synthetic
+topic. That topic had a loose root note, a location-dependent run bundle owned by a branch,
+and an outside collection linking into the note. The agent:
+- left the run bundle in place, working out from its `__file__`-relative root why moving it
+  would retarget it;
+- edited nothing outside its scope;
+- staged, rather than applied, the one move that would have broken the outside link.
+
+It found four defects, now fixed and covered by four new controls:
+- the guidance gave no rule for an out-of-scope incoming link; it now says to stage the move
+  and ask;
+- the `--apply` backup inside a topic was read as live notes; it now goes under
+  `<manifest>-backup/before/`;
+- a rerun reported the earlier manifest and checker JSON as code naming old paths;
+- the dry run printed only counts.
+
+The trial covered one small instance; it is not a measure of general organizing quality.
+
 ## Portable Ren GW/RPA writing methods, 2026-10-29
 
 The LibRPA method library now includes `ren-gw-notation` and `ren-gw-writing`,
