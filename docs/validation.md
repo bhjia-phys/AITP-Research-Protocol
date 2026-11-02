@@ -77,6 +77,34 @@ changed the plan:
   - It evaluated a further wrong variant and wrote nothing into the trial folder.
   - Records: `physics/aitp-dev/e2e-reader-trial-20261101/`.
 
+**Size budget and consolidation pass (added 2026-11-02).** Of 67 live main notes in the
+researcher's workspace, 26 exceeded 300 lines and 7 exceeded 800. Openings and Current work
+stayed mostly within their limits; the scientific account was what grew, because adding is
+always the easy edit.
+- **What was added.** A budget (about 400 lines, a 30-line opening, 7 Current work entries), and
+  a consolidation pass modelled on Claude Code's memory consolidation (orient, gather drift,
+  consolidate, prune). Unlike that pass, this one proposes instead of acting and moves instead of
+  deleting. In `tidy.py`, a size line in the reply check and a once-a-day offer. Six new controls;
+  all 29 pass.
+- **The trial on `gw/crpa`.** The pass was staged, not applied, in
+  `physics/aitp-dev/consolidation-crpa-20261102/`.
+  - It took the note from 1,656 to 994 lines and Current work from 9 to 7 entries.
+  - It moved about 860 lines word for word into four new supporting notes, leaving a summary,
+    the conditions and a link for each.
+  - Mechanical checks: every baseline line outside Current work is preserved; all 50 anchors
+    and the 17 incoming anchor links survive; every staged link resolves.
+- **What the independent review caught.** It found four summaries that dropped or overstated a
+  condition, and a researcher-decision thread that had vanished from the main note. Examples:
+  - the pilots' failed raw-Coulomb gate was omitted;
+  - "no updated-state U" was written where TiO2 has a flagged one.
+
+  It also found one moved paragraph that was central reasoning. All were fixed before the
+  proposal. This is evidence that the baseline review must stay mandatory: a summary written
+  by the pass is where meaning gets lost, not the verbatim move.
+- **Limits.** The note remains over budget (994 lines). The rest is central argument, so reaching
+  400 lines would need a branch split, which is a decision for the researcher. The pass was run
+  by hand as a trial; the daily offer was not exercised in a live session.
+
 **Limits.**
 - In Codex, the decision reminder rests on two facts, not on a Codex end-to-end run:
   `last_assistant_message` is in the 0.166 Stop schema, and prompt-hook `additionalContext`
