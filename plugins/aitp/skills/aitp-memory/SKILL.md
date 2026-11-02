@@ -82,7 +82,10 @@ thread's continuation; a **scientific account** whose headings follow the physic
 when useful, **decisions and retained alternatives**. A short note can be three paragraphs.
 A research topic may also keep a `story.md` beside it: a short paper that tells the
 researcher the whole story and its key insights, revised at milestones and adding no claim
-of its own (see [the story](../aitp-writing/references/story.md)).
+of its own (see [the story](../aitp-writing/references/story.md)). A note past its
+[size budget](../aitp-writing/references/research-note.md#decide-what-stays-in-the-main-note)
+gets a [consolidation pass](references/tidy.md#the-consolidation-pass), proposed to the
+researcher, rather than further growth.
 
 Put an observation where it was produced, its interpretation where the question is
 answered, its consequence where another argument uses it, and a next action only with the

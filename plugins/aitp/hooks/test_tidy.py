@@ -159,5 +159,38 @@ with tempfile.TemporaryDirectory() as tmp:
     code, out = run(home, ["--reply-end"], dict(ev, last_assistant_message="Done."))
     expect("block" in out and "waiting on the researcher" not in out, "a reply that does not ask is not asked about it")
 
+    # The size budget: a big main note.
+    big = os.path.join(tmp, "topics", "big")
+    entries = "".join(f"- **Thread {i}** — active · 2026-11-01. Next: step {i}.\n" for i in range(9))
+    write(os.path.join(big, "research.md"), "# Big\n\n" + "Opening line.\n" * 35 + "## Current work\n\n" + entries
+          + "\n## Account\n\n" + "Account line.\n" * 500, old)
+    evb = {"session_id": "b1", "cwd": big}
+    code, out = run(home, ["--turn-start"], evb)
+    ctx = (json.loads(out).get("hookSpecificOutput") or {}).get("additionalContext", "") if out else ""
+    expect("over its size budget" in ctx and "lines (budget 400)" in ctx and "opening 37 lines" in ctx
+           and "Current work 9 entries" in ctx and "do not start it without their agreement" in ctx,
+           "the first prompt in an over-budget topic asks to offer the consolidation pass, naming what is over")
+    code, out = run(home, ["--turn-start"], {"session_id": "b2", "cwd": big})
+    expect(out == "", "the offer is made at most once a day per topic, across sessions")
+    code, out = run(home, ["--turn-start"], {"session_id": "b3", "cwd": topic})
+    expect(out == "", "a topic within its budget gets no offer")
+
+    run(home, ["--turn-start"], evb)
+    time.sleep(0.05)
+    with open(os.path.join(big, "research.md"), "a") as fh:
+        fh.write("Another account line.\n")
+    code, out = run(home, ["--reply-end"], evb)
+    expect("over their budget" in out and "big/research.md" in out and "Do not consolidate now" in out,
+           "a reply that changed an over-budget main note names its size and asks whether it replaced or only added")
+    run(home, ["--turn-start"], ev)
+    time.sleep(0.05)
+    write(os.path.join(topic, "research.md"), "# Demo\n\nSmall.\n")
+    code, out = run(home, ["--reply-end"], ev)
+    expect("block" in out and "over their budget" not in out, "a changed main note within budget gets no size line")
+
+    r = subprocess.run([sys.executable, "-I", HOOK, "--status", big, "--hours", "1"], capture_output=True, text=True,
+                       env=dict(os.environ, HOME=home))
+    expect("over budget" in r.stdout and "9 Current work entries" in r.stdout, "--status reports the note's size against the budget")
+
 print(f"{len(failures)} failure(s)")
 sys.exit(1 if failures else 0)

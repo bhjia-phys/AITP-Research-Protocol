@@ -214,6 +214,14 @@ source link. Link captions or nearby analysis to the data and script behind a
 figure; show a figure in the main note when it carries the central comparison.
 The README continues to explain locations, not duplicate the scientific account.
 
+A main note also has a size budget, because adding is always the easy edit and nothing else
+removes material: an opening of about 30 lines, at most about 7 Current work entries of a
+few lines each, and about 400 lines in all. The budget is a signal, not an error. Past it,
+a finished section with an independent role belongs in a supporting note, leaving its result,
+decisive condition and link. Memory's
+[consolidation pass](../../aitp-memory/references/tidy.md#the-consolidation-pass) does this
+with the researcher's approval.
+
 Keep useful side investigations visible through their relationship to the main
 question, even before they produce results. For an agreed independent branch,
 link its `research.md` beside the question it serves and say whether it is a

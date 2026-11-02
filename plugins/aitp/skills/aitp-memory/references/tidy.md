@@ -67,8 +67,8 @@ It skips:
 - build output;
 - frozen `before/` and `provenance/snapshots/` copies.
 
-It writes nothing inside a topic; its only state, the turn start and whether the reply asked
-for a decision, is kept in `~/.cache/aitp/turns/`.
+It writes nothing inside a topic; its only state (the turn start, whether the reply asked for a
+decision, and when each topic was last offered a consolidation pass) is kept in `~/.cache/aitp/`.
 
 ## The decision reminder
 
@@ -81,3 +81,45 @@ message answers the question, record the decision in the owning note's
 with the date, the scope and the researcher's own words, and update the waiting entry;
 otherwise the entry stays waiting. The reminder fires once and never decides what counts as
 an answer: the agent does, and never records a decision the researcher did not make.
+
+## The consolidation pass
+
+The reply check keeps each reply's files in their homes, but a main note still grows: adding
+is always the easy edit, and nothing else removes material. The consolidation pass is the
+periodic counterpart, modelled on how Claude Code consolidates its own memory: a pass with a
+[size budget](../../aitp-writing/references/research-note.md#decide-what-stays-in-the-main-note)
+whose job is to make the note shorter and truer without losing anything.
+
+**When.** When the researcher asks ("tidy", "consolidate", 整理), or when the hook says that a
+topic's main note is over its budget. Offer the pass at a natural point in the session; do not
+start it without the researcher's agreement, and at most one offer a day per topic. A pass covers
+one main note and the notes it links to; a parent and its branches are separate passes.
+
+1. **Orient.** Read the opening, Current work, the headings and the README map. Know what
+   already exists before proposing a new file, so that moved material extends an existing
+   supporting note rather than duplicating it.
+2. **Gather.** List what changed since the last pass (`tidy.py --status DIR --hours H`). Look
+   first for drift: claims in the note that newer notes, runs or decisions contradict, threads
+   that ended but are still listed, and passages that repeat what a supporting note owns. Search
+   transcripts or old notes only for something already suspected; do not reread everything.
+3. **Consolidate.** Replace each passage whose meaning has changed with the current account,
+   rather than adding to it. Fold concluded threads into the account and remove their Current
+   work entries. Merge entries that are one thread. Turn relative dates into absolute ones.
+   Correct a contradiction where the wrong claim lives, with the correction visible.
+4. **Prune.** Bring the note under its budget. Move each finished section with an independent
+   role, verbatim, into a supporting note (an existing one if it fits), with relative links
+   rewritten, and leave in the main note its result, decisive condition and link. A binding
+   decision that no longer binds becomes a one-line retained alternative. Keep central
+   derivations, assumptions and qualifications in the main note whatever their length.
+
+**Never** delete scientific content: a contradicted claim is corrected and its route kept as a
+retained alternative, and moved text keeps every condition. Do not change a number, conclusion
+or qualification; the pass rewrites organization, not results.
+
+**Propose, then apply.** The pass returns a proposal: the new outline with the line count of each
+part, the list of moves (section → target note), the threads folded or merged, and any drift
+found. Stage the rewritten note and the receiving notes outside the topic and check their links.
+Apply only after the researcher agrees, after the [AITP reviewer](../../../agents/aitp-reviewer.md)
+has compared the staged files with a baseline copy (a restructuring needs that review), and after
+confirming that the live note has not changed since the baseline. If nothing needs to change, say
+so: "the note is within its budget and current" is a valid result.
