@@ -52,7 +52,8 @@ action, using the conversation, the owning Current work entry and the current no
 intervening status question does not replace that task. Reuse recovered context only
 while it is current: after context loss or relevant external changes, recover the topic
 and its plan before acting. It does not override a review the researcher reserved, or
-authorize a new campaign.
+authorize a new campaign. If an entry it reaches is `waiting on the researcher`, name the
+pending question in the first lines of the reply and continue only the independent work.
 
 Before another expensive calculation or a newly proposed prerequisite, apply research's
 [sustained-branch check](../../aitp-research/SKILL.md#agree-on-consequential-research-choices):

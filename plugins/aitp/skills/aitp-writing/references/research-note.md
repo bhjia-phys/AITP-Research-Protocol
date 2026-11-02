@@ -172,8 +172,9 @@ opening or beside the affected entry, with one authoritative statement of its ra
 Programmes benefit from a short list:
 
 - **Binding choices**: the choice, the scope it binds and, when recorded, the date, who
-  decided and a rationale link. For example: `2026-03-01 · keep the full method as the
-  reference · comparisons in this topic, not production elsewhere · researcher · [rationale]`.
+  decided (with their words when short) and a rationale link. For example: `2026-03-01 ·
+  keep the full method as the reference · comparisons in this topic, not production
+  elsewhere · researcher ("keep the full method as the reference for now") · [rationale]`.
 - **Retained alternatives**: the route; its kind (failed under stated conditions, refuted,
   refocused, deferred, completed control, declined by the researcher, superseded); what
   survives; and, when known, a reopening condition.

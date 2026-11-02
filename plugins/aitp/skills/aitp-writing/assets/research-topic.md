@@ -59,7 +59,7 @@ suggest an order for theory, computation and compact arguments. -->
 <!-- Optional. Small notes keep these in prose where the argument uses them.
 
 Binding choices:
-- YYYY-MM-DD · the choice · the scope it binds · who decided · [rationale](...)
+- YYYY-MM-DD · the choice · the scope it binds · who decided ("their words") · [rationale](...)
 
 Retained alternatives:
 - The route · its kind (failed under stated conditions, refuted, refocused, deferred,

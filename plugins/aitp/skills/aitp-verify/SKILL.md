@@ -105,6 +105,18 @@ check what the document enables without the writer's conversation or answer key.
 scientific reviewer can then inspect original sources and calculations. Keep the two
 scopes separate; neither replaces the process review of what was actually done.
 
+The [independent reader](../../agents/aitp-reader.md) runs these reads without the
+conversation. In claim mode it receives a claim's statement, conventions and conditions, not
+its derivation, and checks it by its own route: a small explicit case, a limit, or a script it
+runs outside the research tree, chosen so that a plausible wrong formula would fail. Use it
+before a claim enters an opening as established, the story or a manuscript, and when two
+sources disagree. When its verdicts are compared with an expected answer, that answer must
+state the full decisive evidence, not only the conclusion; otherwise a reader that reaches
+the right conclusion by a wrong route passes. The main agent writes any check script that is
+kept, beside the claim's derivation, and records the reader's verdict there in one line.
+In Codex, which does not load plugin agents, start a subagent with `fork_turns="none"`, tell
+it to follow the reader file, and give it the mode and that mode's inputs only.
+
 For research notes, the [AITP reviewer](../../agents/aitp-reviewer.md) is a read-only
 second reader that checks whether the record is faithful to the work: complete, sound,
 preserved and coherent, judged from the session log and the files. Memory's

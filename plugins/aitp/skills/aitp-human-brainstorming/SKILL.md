@@ -35,6 +35,24 @@ or a material change of route that the existing agreement does not cover.
 Ask before work depends on that choice; do enough independent work to make the
 options concrete, without polishing a whole solution around an unsettled premise.
 
+The researcher's part falls at a few recognizable moments. Everything else proceeds within
+the agreement and is reported at the close.
+
+| Moment | What the researcher receives |
+| --- | --- |
+| Choosing, changing or stopping a question or branch | The candidates, what each would settle, a recommendation |
+| A consequential method choice: model, approximation, algorithm, convention or route | The options and their consequences, [as below](#make-the-question-answerable) |
+| Cost or irreversibility: a campaign, a cluster submission, an installation, a push, publication, moving other people's files | Memory's [proposal](../aitp-memory/SKILL.md#close-the-task-visibly): purpose, first action, cost and stopping condition |
+| A surprise that may change the question: sources that disagree after converting conventions, a failed check, an unexpected number | The evidence side by side, without a forced conclusion, while the investigation continues |
+| A result about to be presented as established in the topic's [story](../aitp-writing/references/story.md) or a manuscript | The claim, its status, its checks and what could still be wrong |
+| Learning, when the researcher asks or is confused | An explanation; any account in their own words is optional and theirs to write |
+| Milestones: closing a branch, revising the story, a paper's novelty, venue or authorship | The changed section or the paper's argument |
+
+A first or provisional result still enters the owning note at its true strength without
+waiting, as memory's [write decision](../aitp-memory/SKILL.md#timing-and-recovery) says.
+The researcher's acceptance is needed only before the story or a manuscript presents it
+as established.
+
 Algorithm choices can be consequential even when the physical equation is unchanged:
 switching a solver or iteration, introducing a truncation, changing the stopping
 criterion, or trading accuracy for speed can change the result, its reliability or
@@ -82,6 +100,18 @@ its evidence, what changes in the equations or procedure, and the relevant effec
 on accuracy, assumptions, cost and validation. Include retaining the current method
 when viable; do not invent alternatives merely to fill a menu. State the choice
 explicitly so the researcher can select it, rather than burying it in a progress report.
+Give each request a form the researcher can answer in one line, written as plain lines of
+the reply in the language of the conversation, keeping the label `Decision needed:` as is:
+
+```text
+Decision needed: <one question>
+Options: A — <consequence> · B — <consequence>
+I recommend: <option>, because <evidence>
+Meanwhile: <the independent work that continues, and what waits for the answer>
+```
+
+The `Decision needed:` line also lets the AITP hook remind the next reply to record the
+answer.
 Prefer the smallest useful question, usually one at a time; group closely related choices when separating them would
 force repeated interruptions. Avoid a generic request for the whole project plan,
 an exhaustive intake form or options whose consequences are indistinguishable.
@@ -104,7 +134,14 @@ prerequisites materially displace the original question.
 
 Use memory and [writing](../aitp-writing/SKILL.md) to retain a consequential decision,
 its scope, reason and reconsideration condition in the existing main or branch note,
-where the work it constrains will see it. Distinguish a proposal from agreed work and
+where the work it constrains will see it, in the
+[decisions format](../aitp-writing/references/research-note.md#decisions-and-retained-alternatives).
+Quote the researcher's words when they are short, so that a later reader can see what was
+actually decided. While an answer is pending, the owning Current work entry says
+`waiting on the researcher` and names the question; when work resumes in that topic, name
+such entries in the first reply. A message that does not answer the question leaves it
+waiting. Never record a decision the researcher did not make: a recommendation they did
+not reject is not agreement. Distinguish a proposal from agreed work and
 link the branch to its origin. An agreed change can retire an old next step without
 invalidating its earlier result: update the owning Current work entry and any affected
 parent use, keeping the reason and any condition for reopening it with the retired

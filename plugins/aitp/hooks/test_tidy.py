@@ -100,5 +100,64 @@ with tempfile.TemporaryDirectory() as tmp:
     code, out = run(home, ["--reply-end"], {"session_id": "s3", "cwd": outside})
     expect(out == "", "outside a topic with no transcript edits the hook is silent")
 
+    # A reply that asks the researcher for a decision: the next prompt is reminded to record the answer.
+    def cue_after(session, stop_event, env=None):
+        run(home, ["--turn-start"], {"session_id": session, "cwd": outside})
+        run(home, ["--reply-end"], dict({"session_id": session, "cwd": outside}, **stop_event), env)
+        return run(home, ["--turn-start"], {"session_id": session, "cwd": outside}, env)[1]
+
+    ask = ("Two options remain.\n\n**Decision needed:** use unfolding-free ratios as the primary statistic?\n"
+           "Options: A — ratios · B — unfolded spacings\nI recommend: A\nMeanwhile: the L ≤ 20 tables continue.")
+    out = cue_after("d1", {"last_assistant_message": ask})
+    d = json.loads(out) if out else {}
+    ctx = (d.get("hookSpecificOutput") or {}).get("additionalContext", "")
+    expect(d.get("hookSpecificOutput", {}).get("hookEventName") == "UserPromptSubmit" and "researcher's own words" in ctx
+           and "Never record a decision" in ctx,
+           "after a reply with 'Decision needed:', the next prompt gets one reminder to record the answer")
+    code, out = run(home, ["--turn-start"], {"session_id": "d1", "cwd": outside})
+    expect(out == "", "the reminder is given once, not on every later prompt")
+
+    out = cue_after("d2", {"last_assistant_message": "需要你决定：先做 L=22 还是先写文章？\n选项：A · B"})
+    expect("additionalContext" in out, "a request written in Chinese is recognized")
+
+    out = cue_after("d3", {"last_assistant_message": "Give each request this form:\n\n```text\nDecision needed: <one question>\n```"})
+    expect(out == "", "a quoted template line with a placeholder is not a request")
+
+    out = cue_after("d4", {"last_assistant_message": "We decided to use ratios; the decision needed no input."})
+    expect(out == "", "ordinary prose about decisions is not a request")
+
+    out = cue_after("d5", {"last_assistant_message": ask, "stop_hook_active": True})
+    expect("additionalContext" in out, "a request in the reply that follows the architecture check is still seen")
+
+    out = cue_after("d6", {"last_assistant_message": ask}, {"AITP_TIDY": "off"})
+    expect(out == "", "AITP_TIDY=off disables the reminder too")
+
+    tr2 = os.path.join(tmp, "transcript-ask.jsonl")
+    t1 = time.time()
+    rows = [
+        {"type": "user", "timestamp": iso(t1), "message": {"role": "user", "content": "which statistic?"}},
+        {"type": "assistant", "timestamp": iso(t1 + 1), "message": {"role": "assistant", "content": [
+            {"type": "text", "text": ask}]}},
+    ]
+    open(tr2, "w").write("\n".join(json.dumps(r) for r in rows) + "\n")
+    out = cue_after("d7", {"transcript_path": tr2})
+    expect("additionalContext" in out, "without last_assistant_message, the Claude Code transcript is read")
+
+    sub = [dict(rows[0]), {"type": "assistant", "isSidechain": True, "timestamp": iso(t1 + 1),
+                           "message": {"role": "assistant", "content": [{"type": "text", "text": ask}]}}]
+    tr3 = os.path.join(tmp, "transcript-sub.jsonl")
+    open(tr3, "w").write("\n".join(json.dumps(r) for r in sub) + "\n")
+    out = cue_after("d8", {"transcript_path": tr3})
+    expect(out == "", "a subagent's text is not the main reply's request")
+
+    # The reply check mentions the pending question when the asking reply also changed files.
+    run(home, ["--turn-start"], ev)
+    time.sleep(0.05)  # file times use a coarse clock: write clearly after the recorded start
+    write(os.path.join(topic, "notes", "choice.md"))
+    code, out = run(home, ["--reply-end"], dict(ev, last_assistant_message=ask))
+    expect("waiting on the researcher" in out, "a reply that asks and changes files is checked for its waiting entry")
+    code, out = run(home, ["--reply-end"], dict(ev, last_assistant_message="Done."))
+    expect("block" in out and "waiting on the researcher" not in out, "a reply that does not ask is not asked about it")
+
 print(f"{len(failures)} failure(s)")
 sys.exit(1 if failures else 0)

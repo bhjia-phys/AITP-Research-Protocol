@@ -80,6 +80,9 @@ with the question, the scope and binding constraints, the current answer at its 
 strength and the decisive gap; **Current work**, the only maintained home of each live
 thread's continuation; a **scientific account** whose headings follow the physics; and,
 when useful, **decisions and retained alternatives**. A short note can be three paragraphs.
+A research topic may also keep a `story.md` beside it: a short paper that tells the
+researcher the whole story and its key insights, revised at milestones and adding no claim
+of its own (see [the story](../aitp-writing/references/story.md)).
 
 Put an observation where it was produced, its interpretation where the question is
 answered, its consequence where another argument uses it, and a next action only with the
@@ -105,6 +108,8 @@ claim, never by dropping a claim's conditions.
 | Planning a stage of work | [Plans](references/plans.md) |
 | Handing work to another session or model, or work in parallel | [Hand-offs and parallel work](references/handoffs.md) |
 | A handoff, a context compaction, or outside work relying on a recent change | [Independent process review](#independent-process-review) |
+| When to ask the researcher, and how a request and its answer are written | [Brainstorming's moments](../aitp-human-brainstorming/SKILL.md#decide-whether-a-human-answer-is-needed) and [request format](../aitp-human-brainstorming/SKILL.md#make-the-question-answerable) |
+| A check by a reader without the conversation: a claim, the story, or a Skill on a new case | The [independent reader](../../agents/aitp-reader.md) |
 | Where things stand, a topic's history or its connections | [Status, history and continuation](references/status-and-continuation.md) |
 | A bare "continue" | [Continuing the authorized task](references/status-and-continuation.md#continue-the-authorized-task) |
 

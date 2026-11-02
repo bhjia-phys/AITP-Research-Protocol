@@ -88,6 +88,9 @@ only demonstrates replay. If no transfer check is feasible, retain that limit an
 narrow demonstrated scope; do not describe the method as generally validated. Inspect whether they select the relevant evidence,
 perform the decisive check, and respect the method's limitations. A formatting
 pass is not behavioral validation; a hand walkthrough is not an independent test.
+The [independent reader](../../agents/aitp-reader.md) in skill-trial mode gives such a test:
+it receives the Skill and the new instance, not the motivating example or your
+expectations, and reports where the instructions led it astray.
 Retain only corrections supported by the observed use.
 
 Ordinary authored examples can stay in the project without another approval
@@ -96,4 +99,6 @@ changing default behavior use the authorization already supplied for that task;
 when absent, prepare the concrete Skill before requesting that additional action.
 Do not invent human approval or install a shared Skill merely because drafting
 was requested. No fixed number of trials or separate card-approval question is
-part of this design.
+part of this design. Adding a method to AITP's shared methods changes default behaviour for
+every topic, so it is the researcher's decision: propose it at the close of the work that
+demonstrated it, with the trial's result and its limits.

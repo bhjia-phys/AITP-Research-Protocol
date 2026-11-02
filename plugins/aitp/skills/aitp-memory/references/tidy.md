@@ -67,5 +67,17 @@ It skips:
 - build output;
 - frozen `before/` and `provenance/snapshots/` copies.
 
-It writes nothing inside a topic; its only state, the turn start, is kept in
-`~/.cache/aitp/turns/`.
+It writes nothing inside a topic; its only state, the turn start and whether the reply asked
+for a decision, is kept in `~/.cache/aitp/turns/`.
+
+## The decision reminder
+
+When a reply asks the researcher for a decision with a `Decision needed:` line, as
+[brainstorming](../../aitp-human-brainstorming/SKILL.md#make-the-question-answerable) writes
+every request, the check also asks whether the owning Current work entry says
+`waiting on the researcher`. At the next prompt the hook adds one line of context: if the
+message answers the question, record the decision in the owning note's
+[decisions](../../aitp-writing/references/research-note.md#decisions-and-retained-alternatives)
+with the date, the scope and the researcher's own words, and update the waiting entry;
+otherwise the entry stays waiting. The reminder fires once and never decides what counts as
+an answer: the agent does, and never records a decision the researcher did not make.

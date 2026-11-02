@@ -1,5 +1,91 @@
 # Validation and its limits
 
+## Asking, deciding, the story and an independent reader, 2026-11-01 (1.4.0)
+
+**What it adds.**
+- aitp-human-brainstorming lists the moments that belong to the researcher. They are a
+  question or route, a consequential method choice, cost or irreversibility, a surprise,
+  presenting a result as established, learning, and milestones. Every request is written as a
+  `Decision needed:` line with options, a recommendation and the work that continues meanwhile.
+- A decision is recorded in the existing decisions format with the researcher's own words.
+  A pending one is a Current work entry `waiting on the researcher`, named again when work
+  resumes.
+- aitp-writing gains `story.md`, a short paper that tells the researcher the whole story of a
+  research topic without adding claims ([story.md](../plugins/aitp/skills/aitp-writing/references/story.md),
+  [starter](../plugins/aitp/skills/aitp-writing/assets/research-story.md)). It is admitted at a
+  topic root by the placement rules.
+- One new read-only subagent, [aitp-reader](../plugins/aitp/agents/aitp-reader.md), works in
+  claim, story and skill-trial modes. It is referenced from aitp-verify, aitp-distill,
+  aitp-human-learning and the story.
+- The existing hooks in `tidy.py` also keep decisions. Stop notes a `Decision needed:` line in
+  the Stop event's `last_assistant_message`, or in the Claude Code transcript. The next
+  UserPromptSubmit adds one line of context asking for the answer to be recorded with the
+  researcher's words, or the entry left waiting.
+- [Host permission rules](../plugins/aitp/README.md#gates-for-submissions-pushes-and-installs)
+  for submissions, pushes and installs, with a Codex rules file in
+  `assets/aitp-gates.rules`.
+
+**Independent review of the plan.** A fresh read-only reviewer checked the change plan against
+this branch, the unmerged `codex-cycle-hooks` branch and the Codex 0.166 binary. Its findings
+changed the plan:
+- **Dropped:** a PreToolUse gate. Codex rejects `permissionDecision: ask`, and a hook cannot
+  see an authorization given in the current request. Native host rules replace it.
+- **Anchored differently:** a regex on short user prompts would be noisy, so the decision cue
+  is anchored on the agent's own request line.
+- **Merged:** four proposed subagents became one reader. Codex does not load plugin agents,
+  and writing agents would break the single-writer rule.
+- **Revised:** rules that contradicted existing text. These were "If no answer", acceptance
+  before an opening, approval to draft a Skill, and "a research topic needs no story". Each was
+  revised in its owner instead.
+- **Deferred:** the 150-line memory core, which is a restructuring and needs its own baseline
+  review, and run and code layouts that conflict with the no-hash, no-ledger rules.
+
+**Tests.**
+- **Synthetic controls.** `hooks/test_tidy.py` has 23 controls, all passing: the earlier 12
+  plus 11 for the reminder. They cover a request in English or Chinese; a quoted template, or
+  prose about decisions, that is not a request; a request seen after the reply check's own
+  continuation; the transcript path; a subagent's text; `AITP_TIDY=off`; firing only once; and
+  the waiting-entry question in the reply check. One control first failed because file times
+  use a coarse clock, so a file written within milliseconds of the recorded turn start can
+  look older. The control now writes clearly after the start.
+- **Claude Code end to end (2.1.316).** Two turns of one `claude -p` session loaded this
+  branch's plugin with `--plugin-dir`, with the live AITP plugin disabled.
+  - Turn 1: asked to put a fitting choice to the researcher, the agent wrote a
+    `Decision needed:` request. It set the Fit entry to `waiting on the researcher`, the reply
+    check fired once, and the hook recorded the request.
+  - Turn 2: the answer was "drop L=8, too much correction there". The reminder reached the
+    model, and the agent recorded `2026-11-01 · fit the gap against 1/L without L = 8 · the 1/L
+    fit in this topic · researcher ("drop L=8, too much correction there") · [fit]`, with the
+    four-size fit kept as a declined alternative. The reminder state was then cleared.
+  - Records: `physics/aitp-dev/e2e-decision-cue-20261101/`.
+- **Permission rules.**
+  - Claude Code: in `claude -p` with `permissions.ask` rules and `allowedTools`
+    `Bash(git:*)`, `Bash(ssh:*)` and `Bash(sbatch:*)`, `git status` ran. `git push`,
+    `ssh host sbatch job.sh` and `sbatch job.sh` were refused, and nothing reached the bare
+    remote.
+  - Codex: `codex execpolicy check` on the rules file gives `prompt` for `sbatch`,
+    `ssh cluster sbatch`, `git push` and `npm install -g`, and no rule for `squeue`,
+    `ssh cluster squeue` and `npm install`.
+  - Records: `physics/aitp-dev/e2e-permission-gates-20261101/`.
+- **Reader trial.** A `claude -p` session delegated two claims to `aitp:aitp-reader` in claim
+  mode: the collective identity H = (S_tot² − 3L/4)/2 for S = σ/2, and a planted wrong
+  variant (S_tot² − 3L)/2.
+  - It read nothing else and derived A by its own route. It confirmed A as an operator
+    identity for L = 2, 3, 4.
+  - It refuted B with the L = 2 singlet: B is off by 9L/8, 4.5 at L = 4. It traced the error
+    to the Pauli normalization.
+  - It evaluated a further wrong variant and wrote nothing into the trial folder.
+  - Records: `physics/aitp-dev/e2e-reader-trial-20261101/`.
+
+**Limits.**
+- In Codex, the decision reminder rests on two facts, not on a Codex end-to-end run:
+  `last_assistant_message` is in the 0.166 Stop schema, and prompt-hook `additionalContext`
+  reached the model in the 0.163 probe. Codex also asks to trust the changed hooks again.
+- The story mode and the skill-trial mode were not exercised. No real topic has a `story.md`
+  yet.
+- The one-week pilot on a real thread, which is the test of whether you are asked less and
+  record more, has not been run.
+
 ## End-of-reply architecture check, 2026-11-01 (1.3.2)
 
 **What it adds.** The plugin registers two hooks, defined in `hooks/hooks.json` and implemented

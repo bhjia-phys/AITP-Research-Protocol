@@ -1,6 +1,6 @@
 {
   "name": "dsh-aitp-skills",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "description": "Portable AITP research Skills for native DeepSeek Harness profiles",
   "type": "module",
   "license": "MIT",

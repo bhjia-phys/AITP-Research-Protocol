@@ -9,7 +9,7 @@ change both together.
 
 | Location | Holds |
 | --- | --- |
-| `research.md`, `README.md` | The living note and the material map; nothing else at the topic root. |
+| `research.md`, `README.md`, `story.md` | The living note, the material map and, when kept, the [story for the researcher](../../aitp-writing/references/story.md); nothing else at the topic root. |
 | `notes/` | Derivations, reading notes, plans, meeting discussions (Markdown). |
 | `references/` | Literature itself: PDF, bib, ris. Not notes. |
 | `code/` | Reusable implementation, analysis and post-processing scripts. |

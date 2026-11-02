@@ -5,6 +5,7 @@
     "allowNames": [
       "research.md",
       "README.md",
+      "story.md",
       ".gitignore"
     ],
     "allowExtensions": [
