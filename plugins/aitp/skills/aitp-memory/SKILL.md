@@ -91,7 +91,8 @@ researcher, rather than further growth.
 Put an observation where it was produced, its interpretation where the question is
 answered, its consequence where another argument uses it, and a next action only with the
 thread that owns it. A parent lists each branch once, in its Branches list: what the branch
-contributes, its limiting condition and its state, never its next action or job state; a live
+contributes and its limiting condition, never its state, next action or job state, which stay
+in the branch's own Current work; a live
 thread owned by another topic gets a pointer entry of the same form in Current work. Run
 reports own execution and observations, plans own the sequencing of an agreed stage, and
 READMEs own locations. Qualifications outrank compactness: shorten by omitting a secondary
@@ -335,7 +336,7 @@ not determine this relation. A branch can have several scientific users.
 
 The child owns its evidence, its continuation and its upstream purpose. Each parent
 retains the branch's answer, decisive limitation, implication and link where the argument
-uses it, and one entry in its Branches list with the branch's contribution, limit and state;
+uses it, and one entry in its Branches list with the branch's contribution and limit;
 it never copies the
 child's next action, job state or run count. When the branch's answer, limitation or
 contribution changes, revise the child and affected parent passages together; continue to

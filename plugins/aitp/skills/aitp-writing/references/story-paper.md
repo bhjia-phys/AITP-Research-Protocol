@@ -14,7 +14,10 @@ A living Markdown story beside `research.md` would drift into a second working r
 paper is kept from that by four rules:
 
 - **It is an edition.** It is built at a milestone, carries its date on the title page, and is
-  never edited during work. The next edition is a new build; earlier PDFs stay as they are.
+  never edited during work. Each edition lives in its own folder,
+  `manuscripts/story/YYYY-MM-DD/`, with its complete TeX inputs, copied figures and PDF, so that
+  an earlier edition keeps its own source. The next edition starts as a copy of the previous
+  folder; its `main.tex` is edited only while that edition is being built.
 - **It holds no state.** No Current work, next actions, job states or run counts. "What is open"
   states the gap and the test that would decide it, as the record does.
 - **It is never a source.** No result appears there first. Agents recover a topic from
@@ -28,9 +31,9 @@ paper is kept from that by four rules:
 ## When and where
 
 Produce an edition when the researcher asks; offer one at a milestone (a first consequential
-result, a branch closing, before a group meeting or a manuscript). Keep the source in the topic's
-`manuscripts/story/`: `main.tex`, any `references.bib` and `figures/`, and the PDF built as
-`story-YYYY-MM-DD.pdf`. The topic README maps the folder; `research.md` links the newest edition
+result, a branch closing, before a group meeting or a manuscript). Keep each edition in the topic's `manuscripts/story/YYYY-MM-DD/`: `main.tex`, any
+`references.bib`, the figures it uses (copied, not linked), and the PDF built as
+`story-YYYY-MM-DD.pdf`. The abstract states the date of the record it was built from. The topic README maps the folder; `research.md` links the newest edition
 from its curated materials. Follow [manuscript handling](manuscripts.md) and the full JHEP
 template, with the researcher's own author block and no co-authors, e-mail or acknowledgments
 unless the researcher supplies them.
@@ -56,7 +59,8 @@ Start from the [story-paper template](../assets/story-paper.tex):
    reader should then be able to answer;
 9. optionally, an appendix with short sketches of the derivations worth remembering.
 
-Omit a section that would be empty.
+Omit a section that would be empty. Before handing an edition over, read the rendered PDF once,
+not only the source.
 
 ## Check that the paper works
 

@@ -9,8 +9,9 @@ Two hook entry points (stdin is the host's hook event JSON):
                                  for the check in skills/aitp-memory/references/tidy.md
 
 The same entry points watch a main note's size budget (BUDGET below, from aitp-writing's
-research-note.md): the Stop check names a changed research.md that is over budget, and the first
-prompt of a day in an over-budget topic carries one line asking to offer the consolidation pass.
+research-note.md): the Stop check names the session topic's research.md when it grew past the budget
+during the reply, and a prompt in an over-budget topic carries one line asking to offer the
+consolidation pass - once, then again only after a day and 10% further growth.
 
 "Asked for a decision" means the reply contains a request line "Decision needed:", the form
 that aitp-human-brainstorming gives every request; it is read from the Stop event's
@@ -33,8 +34,8 @@ before/ and provenance/snapshots/ copies. It stays silent when:
 - AITP_TIDY is "off" or "0".
 
 The check itself is done by the agent, following the rules. Nothing is moved or applied by this
-script, and it writes nothing inside a topic; its only state is the turn start and whether a
-decision was asked, kept in ~/.cache/aitp/turns/. Standard library only.
+script, and it writes nothing inside a topic; its only state is the turn start, the topic note's length then, whether a decision was asked
+(~/.cache/aitp/turns/) and when each topic was last offered a pass (~/.cache/aitp/topics/). Standard library only.
 """
 import hashlib, json, os, re, sys, time
 from datetime import datetime
@@ -45,8 +46,9 @@ DECISION_CUE = (
     "AITP: your previous reply asked the researcher for a decision ('Decision needed:'). If this "
     "message answers it, record the decision where the work it constrains will see it: the owning "
     "research.md's decisions format, with the date, the scope and the researcher's own words, and "
-    "update the Current work entry that was waiting. If it does not answer it, that entry stays "
-    "'waiting on the researcher'. Never record a decision the researcher did not make."
+    "update the Current work entry that was waiting. If it does not answer it, make sure the owning "
+    "Current work entry says 'waiting on the researcher' and names the question, so that it is not "
+    "lost. Never record a decision the researcher did not make."
 )
 
 SKIP_DIRS = {"__pycache__", "node_modules", "build", "dist", "before", ".venv", "venv"}
@@ -56,8 +58,9 @@ SCAN_BUDGET_S = 3.0
 STATE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "aitp", "turns")
 TOPIC_STATE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "aitp", "topics")
 # The main-note size budget of aitp-writing's research-note.md; past it, a consolidation pass is offered.
-BUDGET = {"lines": 400, "opening": 30, "entries": 7}
+BUDGET = {"lines": 400, "opening": 30}
 OFFER_INTERVAL_S = 86400
+OFFER_GROWTH = 1.1  # after a first offer, offer again only when the note has grown by 10%
 HERE = os.path.dirname(os.path.abspath(__file__))
 RULES = os.path.normpath(os.path.join(HERE, "..", "skills", "aitp-memory", "references", "tidy.md"))
 
@@ -172,19 +175,14 @@ def save_state(event, state):
 
 
 def note_size(path):
-    """(lines, opening lines, Current work entries) of a main note, or None if unreadable."""
+    """(lines, opening lines) of a main note, or None if unreadable. Current work entries are not
+    counted: entries may be prose or a table, and the budget for them is the agent's judgement."""
     try:
         lines = open(path, encoding="utf-8", errors="replace").read().splitlines()
     except OSError:
         return None
     heads = [i for i, line in enumerate(lines) if line.startswith("## ")]
-    opening = heads[0] if heads else len(lines)
-    entries = 0
-    cw = next((i for i in heads if re.match(r"## +Current work", lines[i])), None)
-    if cw is not None:
-        end = next((h for h in heads if h > cw), len(lines))
-        entries = sum(1 for line in lines[cw:end] if re.match(r"- +\*\*", line))
-    return len(lines), opening, entries
+    return len(lines), (heads[0] if heads else len(lines))
 
 
 def over_budget(path):
@@ -192,19 +190,19 @@ def over_budget(path):
     size = note_size(path)
     if not size:
         return []
-    n, opening, entries = size
+    n, opening = size
     out = []
     if n > BUDGET["lines"]:
         out.append(f"{n} lines (budget {BUDGET['lines']})")
     if opening > BUDGET["opening"]:
         out.append(f"opening {opening} lines ({BUDGET['opening']})")
-    if entries > BUDGET["entries"]:
-        out.append(f"Current work {entries} entries ({BUDGET['entries']})")
     return out
 
 
 def consolidation_offer(event):
-    """Once a day per topic, when the session's topic note is over budget: a line asking to offer the pass."""
+    """When the session's topic note is over budget: a line asking to offer the pass. After a first
+    offer, offer again only when a day has passed and the note has grown by OFFER_GROWTH since, so a
+    longer note the researcher has accepted stops prompting."""
     topic = find_topic(event.get("cwd") or os.getcwd())
     if not topic:
         return None
@@ -213,14 +211,16 @@ def consolidation_offer(event):
     if not over:
         return None
     f = os.path.join(TOPIC_STATE_DIR, hashlib.sha1(topic.encode("utf-8")).hexdigest()[:16] + ".json")
+    n = note_size(note)[0]
     try:
-        last = json.load(open(f, encoding="utf-8"))["offered"]
+        prev = json.load(open(f, encoding="utf-8"))
+        last, last_n = prev["offered"], prev.get("lines", 0)
     except (OSError, ValueError, KeyError):
-        last = 0
-    if time.time() - last < OFFER_INTERVAL_S:
+        last, last_n = None, 0
+    if last is not None and (time.time() - last < OFFER_INTERVAL_S or n < OFFER_GROWTH * last_n):
         return None
     os.makedirs(TOPIC_STATE_DIR, exist_ok=True)
-    json.dump({"offered": time.time(), "topic": topic}, open(f, "w", encoding="utf-8"))
+    json.dump({"offered": time.time(), "lines": n, "topic": topic}, open(f, "w", encoding="utf-8"))
     return (f"AITP: {note} is over its size budget: {', '.join(over)}. At a natural point in this "
             f"session, offer the researcher a consolidation pass ({RULES}, 'The consolidation pass'); "
             "do not start it without their agreement.")
@@ -228,7 +228,11 @@ def consolidation_offer(event):
 
 def turn_start(event):
     previous = load_state(event)
-    save_state(event, {"start": time.time(), "cwd": event.get("cwd") or os.getcwd()})
+    cwd = event.get("cwd") or os.getcwd()
+    topic = find_topic(cwd)
+    size = note_size(os.path.join(topic, "research.md")) if topic else None
+    save_state(event, {"start": time.time(), "cwd": cwd, "note": os.path.join(topic, "research.md") if topic else None,
+                       "note_lines": size[0] if size else None})
     if os.environ.get("AITP_TIDY", "").lower() not in ("off", "0", "false"):
         context = [DECISION_CUE] if previous.get("decision_asked") else []
         offer = consolidation_offer(event)
@@ -289,16 +293,13 @@ def reply_end(event):
                 lines.append(f"  - {os.path.join(t, rel)}")
     if n > LIST_MAX:
         lines.append(f"  - … and {n - LIST_MAX} more")
-    sizes = []
-    for t in sorted(by_topic):
-        for rel in sorted(by_topic[t]):
-            if os.path.basename(rel) == "research.md":
-                over = over_budget(os.path.join(t, rel))
-                if over:
-                    sizes.append(f"  - {os.path.join(t, rel)}: {', '.join(over)}")
-    size_note = ("Size: these changed main notes are over their budget:\n" + "\n".join(sizes) + "\nDid this "
-                 "reply replace passages rather than only add to them? Do not consolidate now; offer the "
-                 "consolidation pass to the researcher.\n\n") if sizes else ""
+    size_note = ""
+    note_path, before = state.get("note"), state.get("note_lines")
+    if note_path and before and topic and "research.md" in by_topic.get(topic, ()):
+        after = (note_size(note_path) or (0,))[0]
+        if after > before and after > BUDGET["lines"]:
+            size_note = (f"Size: {note_path} grew from {before} to {after} lines in this reply (budget "
+                         f"{BUDGET['lines']}). Did it replace the passages whose meaning changed, or only add?\n\n")
     note = "" if complete else " (the scan stopped at its time budget; the list may be incomplete)"
     reason = (
         f"AITP reply check: this reply changed {n} file(s) in research topics{note}:\n" + "\n".join(lines) + "\n\n"
@@ -312,7 +313,7 @@ def reply_end(event):
         "Fix clear misplacements of files this reply created or changed, "
         "within the task's scope. List anything else for the researcher in at most five lines. Never change a "
         "number or conclusion, never delete, and leave frozen copies and other people's files to the "
-        "researcher. If everything fits, say in one line: 'architecture check: ok'."
+        "researcher. If everything fits, end without further comment on this check."
     )
     print(json.dumps({"decision": "block", "reason": reason}))
     return 0
@@ -333,7 +334,7 @@ def status(argv):
     size = note_size(os.path.join(topic, "research.md"))
     if size:
         over = over_budget(os.path.join(topic, "research.md"))
-        print(f"research.md: {size[0]} lines, opening {size[1]} lines, {size[2]} Current work entries"
+        print(f"research.md: {size[0]} lines, opening {size[1]} lines"
               + (f"; over budget: {', '.join(over)}" if over else "; within budget"))
     for rel in files:
         print(f"  {rel}")

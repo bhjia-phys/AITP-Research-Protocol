@@ -37,7 +37,7 @@ reorganizations. It writes no new science.
   [move procedure](checks-and-moves.md#move-notes-without-losing-links).
 - **List the rest.** In at most five lines, give what needs the researcher: files they or another
   session made, unclear purpose, or a choice of home.
-- **Report a clean check** in one line: "architecture check: ok".
+- **A clean check needs no report.** End without further comment on it.
 
 ## Limits
 
@@ -92,7 +92,8 @@ whose job is to make the note shorter and truer without losing anything.
 
 **When.** When the researcher asks ("tidy", "consolidate", 整理), or when the hook says that a
 topic's main note is over its budget. Offer the pass at a natural point in the session; do not
-start it without the researcher's agreement, and at most one offer a day per topic. A pass covers
+start it without the researcher's agreement. The hook offers once, then again only after a day
+and about 10% further growth, so a longer note the researcher has accepted stops prompting. A pass covers
 one main note and the notes it links to; a parent and its branches are separate passes.
 
 1. **Orient.** Read the opening, Current work, the headings and the README map. Know what
@@ -111,6 +112,14 @@ one main note and the notes it links to; a parent and its branches are separate 
    rewritten, and leave in the main note its result, decisive condition and link. A binding
    decision that no longer binds becomes a one-line retained alternative. Keep central
    derivations, assumptions and qualifications in the main note whatever their length.
+
+**When the central argument alone exceeds the budget**, stop pruning and say so: the note keeps
+its length, and the researcher's acceptance ends further offers until it grows. Propose a branch
+split only for a part with its own maintainable question, evidence and continuation; a long proof
+belongs in a supporting note, not a new topic. For each candidate branch give its question, the
+sections it would take, the assets it uses, what the parent keeps (its implication and limit),
+the remaining dependencies and the resulting lengths, and always include the option of keeping one
+longer note.
 
 **Never** delete scientific content: a contradicted claim is corrected and its route kept as a
 retained alternative, and moved text keeps every condition. Do not change a number, conclusion

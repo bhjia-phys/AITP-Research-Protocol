@@ -314,13 +314,14 @@ waiting on the researcher. It is anchored on the agent's request, not on guessin
 short message is a decision, so it works in any language and fires once.
 
 They also watch a main note's [size budget](skills/aitp-writing/references/research-note.md#decide-what-stays-in-the-main-note)
-(about 400 lines, a 30-line opening, 7 Current work entries), because nothing else removes
-material from a growing note. The reply check names a changed `research.md` that is over budget
-and asks whether the reply replaced passages or only added. The first prompt of a day in an
-over-budget topic carries one line asking the agent to offer the
+(about 400 lines and a 30-line opening), because nothing else removes material from a growing
+note. When the session topic's `research.md` grows past the budget during a reply, the reply check
+asks whether the reply replaced passages or only added. A prompt in an over-budget topic carries
+one line asking the agent to offer the
 [consolidation pass](skills/aitp-memory/references/tidy.md#the-consolidation-pass), modelled on
 Claude Code's memory consolidation (auto-dream): orient, gather drift, consolidate, prune under
-the budget. Unlike that pass it proposes instead of acting, moves instead of deleting, and is
+the budget. The offer is made once, then again only after a day and about 10% further growth, so
+an accepted longer note stops prompting. Unlike that pass it proposes instead of acting, moves instead of deleting, and is
 applied only after the researcher agrees and the reviewer has compared the staged note with a
 baseline. The hooks need
 `python3` (standard library only) and keep only the turn start, that flag and the date of

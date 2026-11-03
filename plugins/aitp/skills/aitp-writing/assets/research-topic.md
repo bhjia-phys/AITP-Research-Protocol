@@ -46,9 +46,9 @@ Equivalent prose or a table is fine when it carries the same information. -->
 ## Branches
 
 <!-- Omit when there are none. Each branch once: what it contributes to this note's question,
-its limiting condition and its state (active · waiting on ... · dormant (resume condition)).
-Never its next action, job state or run count; those stay in the branch.
-- **[Branch name](branch/research.md)** — what it contributes here; its limiting condition. State. -->
+and its limiting condition. Its state, next action, job state and run count stay in the branch's own
+Current work.
+- **[Branch name](branch/research.md)** — what it contributes here; its limiting condition. -->
 
 ## Headings chosen for the argument
 

@@ -110,6 +110,29 @@ always the easy edit.
   400 lines would need a branch split, which is a decision for the researcher. The pass was run
   by hand as a trial; the daily offer was not exercised in a live session.
 
+**Second-model design review and the quantum-chaos trial (2026-11-02).** Codex `gpt-6.1-sol` at
+xhigh effort, read-only and with plugins, memories and sub-agents off, reviewed this branch against
+the researcher's goals. Its reply is in `physics/aitp-dev/codex-discussion-20261102/design-reply.md`.
+Adopted:
+- A parent's Branches entry gives contribution and limit only. In the quantum-chaos trial a reviewer
+  found that two parent state words had already drifted from the branches' own Current work; the
+  state now stays in the branch, which is also what the researcher's chosen option said.
+- Offers repeat only after a day and about 10% growth, so an accepted longer note stops prompting.
+- The reply check names a note only when it grew in that reply, and no longer asks for an offer.
+- Current work entries are not counted by the hook, since they may be prose or a table.
+- No mandatory "architecture check: ok" line.
+- The decision reminder keeps an unanswered question on record.
+- Each story-paper edition is frozen in its own dated folder with its TeX inputs and figures.
+- Split guidance for notes whose central argument exceeds the budget.
+- The post-compaction review runs only when the compacted part changed the record.
+
+Confirmed by read-only probes: before the fix, the reply check asked for an offer on every change
+to an oversized note, bypassing the daily limit. Not adopted:
+- dropping the end-of-reply check for ordinary changes, which the researcher asked for;
+- thinning the 513-line core, which is a restructuring deferred to its own review.
+
+`test_tidy.py` now has 33 controls; all pass.
+
 **Limits.**
 - In Codex, the decision reminder rests on two facts, not on a Codex end-to-end run:
   `last_assistant_message` is in the 0.166 Stop schema, and prompt-hook `additionalContext`
