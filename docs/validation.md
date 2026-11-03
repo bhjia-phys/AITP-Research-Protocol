@@ -133,6 +133,29 @@ to an oversized note, bypassing the daily limit. Not adopted:
 
 `test_tidy.py` now has 33 controls; all pass.
 
+**First story paper (quantum-chaos, edition 2026-11-02).** The paper is 11 pages in the JHEP
+template, frozen in `topics/quantum-chaos/manuscripts/story/2026-11-02/` with its TeX inputs and
+copied figures. Three independent reads shaped it:
+- **The story-mode reader**, which saw only the TeX source. It answered two of the three learning
+  questions correctly and one partly. It found undefined terms, an ambiguous sign convention,
+  insights stated more strongly than their sections, and missing Record lines.
+- **The AITP reviewer of the family note.** It found that a figure carried over from an agent
+  review overstated the agreement it described (2×10⁻⁴ against 0.017–0.094%).
+- **Codex `gpt-6.1-sol` at xhigh**, which checked the paper against the record files. It found:
+  - a reversed inequality: the record proves a lower bound on Krylov complexity;
+  - a plateau mean (0.5317(9)) that is a single point, against a true mean of 0.5297;
+  - an unsupported finite-GOE range;
+  - perturbative accuracy credited to first order when it needs second;
+  - a sign-convention switch;
+  - derived theorems presented without their pending acceptance.
+
+All of these were verified in the files and fixed before the edition was frozen.
+
+*Lesson.* A story paper inherits errors from agent-written notes in the record. Numbers it repeats
+should be read from the data files, not from a summary. Before an edition is frozen, a check against
+the record by a second model found errors that both the story-mode reader and the family-note
+reviewer missed.
+
 **Limits.**
 - In Codex, the decision reminder rests on two facts, not on a Codex end-to-end run:
   `last_assistant_message` is in the 0.166 Stop schema, and prompt-hook `additionalContext`
