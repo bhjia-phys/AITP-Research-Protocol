@@ -35,14 +35,14 @@ Whenever you edit a note in the tree, check that:
   possible outcomes would mean there.
 - The parent's opening synthesizes the branch implications needed for the overall answer
   and the decisive gap; other branch contributions appear where the argument uses them.
-  Its Current work has a pointer entry for each live branch: what the branch contributes
-  and its limiting condition, with a link. The branch's next step, job state and run
-  count stay in the branch.
+  It lists each branch once, under Branches: what the branch contributes, its limiting
+  condition and its state, with a link. Its Current work holds only the threads it owns.
+  The branch's next step, job state and run count stay in the branch.
 - A sibling or related topic is linked at the passage that depends on it, not restated.
 
 At handoff, when a branch's answer, decisive limitation or contribution has changed,
 revise the branch's opening and the parent's using passage together, the parent's
-pointer entry if the contribution or limiting condition changed, and the parent's opening
+Branches entry if the contribution, limiting condition or state changed, and the parent's opening
 if its own answer or limitation changed. A changed next step changes only the branch's
 Current work. While a checked branch result awaits integration, a parent claim it may
 change carries a brief qualification naming that result. Continue upward,

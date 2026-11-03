@@ -14,7 +14,7 @@ records instead of editing them.
 Determine the scope the question asks about, such as a topic, a campaign or all its
 materials, from the main notes' links and the calculation locations. Gather the main
 note's current answer and, from Current work, each relevant thread's disposition, date
-and next step, following pointer entries to their owning notes; the plan that governs
+and next step, following the Branches list and pointer entries to their owning notes; the plan that governs
 the work and which phases have evidence; every relevant run, whether queued, running,
 failed, finished but not analysed, or unconfirmed, using the [Slurm
 guide](../../aitp-research/references/slurm.md) for live checks where a scheduler is

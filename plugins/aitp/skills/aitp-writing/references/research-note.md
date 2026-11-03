@@ -42,7 +42,7 @@ Choose the order of explanation for the situation, not a compulsory set of headi
 | Theory tested numerically | Model and conventions; meaning of each diagnostic; predictions beside their numerical tests; combined judgment; unresolved discrimination. |
 | Learning | Connected questions, prerequisites at first use, representative calculations and the next conceptual difficulty. An agent's explanation does not establish learner understanding. |
 | Bounded diagnostic or branch | Origin and relationship to the parent, then the appropriate order above. The child owns the detail; the parent retains its implication and limitation. |
-| Parent of branches | Question and current answer; the argument, with each branch's result entering where it is used, as its implication and a link; what remains open and which branch decides it; a pointer entry in Current work for each live branch. |
+| Parent of branches | Question and current answer; the argument, with each branch's result entering where it is used, as its implication and a link; what remains open and which branch decides it; each branch once in a Branches list, with its contribution, limit and state. |
 | Deferred investigation | Usable result, unresolved issue, reason for deferral and condition for resumption. Old next steps are historical context. |
 | Deliverable | Product, audience and intended argument; artifacts and sources; evidence and outstanding checks; reproduction instructions. Artifact completion and scientific verification differ. |
 
@@ -136,13 +136,13 @@ The default form, as Markdown source with synthetic content:
 
 Equivalent prose or a table is acceptable when it carries the same information.
 
-A thread owned by a branch or another topic gets a pointer entry: the owner link, what
-it contributes here and its limiting condition.
+A branch is listed once, in the parent's Branches list, not again in Current work: the
+owner link, what it contributes here, its limiting condition and its state. A live thread
+owned by another topic gets a pointer entry of the same form in Current work.
 
 ```markdown
-- **Mesh convergence → [screening branch](screening/research.md#current-work)** —
-  supplies the interaction used in the comparison section; its 4×4 value is not yet
-  shown to be converged.
+- **[Screening branch](screening/research.md)** — supplies the interaction used in the
+  comparison section; its 4×4 value is not yet shown to be converged. Active.
 ```
 
 The parent never copies the owner's next action, job state or run count, so changing that

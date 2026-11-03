@@ -28,9 +28,9 @@ A thread this note owns:
   scope. Next: the discriminating action or the pending choice.
   [evidence](...) · [plan phase](...) · [decision](#decisions-and-retained-alternatives)
 
-A thread a branch or another topic owns:
-- **Thread name → [owning note](branch/research.md#current-work)** — what it contributes
-  here and its limiting condition. Never copy its next action, job state or run count.
+A live thread another topic owns (a branch is listed under Branches instead):
+- **Thread name → [owning note](../other-topic/research.md#current-work)** — what it
+  contributes here and its limiting condition. Never copy its next action, job state or run count.
 
 Dispositions, with a short qualifier when several things are true: active · proposed ·
 waiting on analysis · waiting on integration · waiting on the researcher · waiting on run ·
@@ -42,6 +42,13 @@ The date is the thread's last consequential change. It shows age, not verificati
 While evidence awaits interpretation or a checked branch result awaits integration, a claim
 it may change carries a brief qualification naming it.
 Equivalent prose or a table is fine when it carries the same information. -->
+
+## Branches
+
+<!-- Omit when there are none. Each branch once: what it contributes to this note's question,
+its limiting condition and its state (active · waiting on ... · dormant (resume condition)).
+Never its next action, job state or run count; those stay in the branch.
+- **[Branch name](branch/research.md)** — what it contributes here; its limiting condition. State. -->
 
 ## Headings chosen for the argument
 

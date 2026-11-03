@@ -118,9 +118,9 @@ application left outside the editing scope instead of claiming it was repaired.
 
 A topic note `research.md` asks how strongly a model's local interaction depends on the
 screening that is excluded. Its branch `screening/research.md` owns the convergence of that
-interaction with the k-point mesh. The parent's Current work carries a pointer entry:
+interaction with the k-point mesh. The parent's Branches list carries its entry:
 
-> - **Mesh convergence → screening branch** (`screening/research.md`, Current work) —
+> - **Mesh convergence → screening branch** (`screening/research.md`) —
 >   supplies the interaction used in the comparison section; values are from a 4×4 mesh,
 >   and their convergence is untested.
 
@@ -145,7 +145,7 @@ comparison assumed. The branch revises its account and its entry:
 The parent's limiting condition changed, so its pointer and the passage that used the
 value change together:
 
-> - **Mesh convergence → screening branch** (`screening/research.md`, Current work) —
+> - **Mesh convergence → screening branch** (`screening/research.md`) —
 >   supplies the interaction for the comparison section; the 4×4 value is not converged
 >   (2.4 at 6×6), so that comparison is provisional.
 
