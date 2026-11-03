@@ -1,8 +1,8 @@
 # AITP
 
-Development version 1.3.2: research memory in living main notes, research and writing
+Development version 1.4.0: research memory in living main notes, research and writing
 guidance, and direct Skill distillation. The bundle contains instructions, optional
-manuscript assets and one read-only reviewer prompt, with no runtime. This development
+manuscript assets and two read-only subagent prompts (a reviewer and an independent reader), with no runtime. This development
 tree adds the research backbone (a root note, topic trees, reachability, seeds and a
 visible close), a single entry with a research cycle, verification, computational and
 benchmark procedures, synthesis across sources, reviewed plans, hand-offs and parallel
@@ -265,6 +265,18 @@ agent could raise any of them without changing the reviewer. Claude Code loads t
 a plugin subagent, whose shell its instructions limit to read-only parsing; in Codex or Hakimi,
 give its instructions to a subagent started without the conversation, or to a separate session.
 
+[`agents/aitp-reader.md`](agents/aitp-reader.md) is the second and last subagent: an
+independent reader that sees only what its mode allows and writes nothing into the research
+tree. In **claim** mode it checks a stated claim by its own route, without the derivation,
+choosing a check that a plausible wrong formula would fail
+([aitp-verify](skills/aitp-verify/SKILL.md#commission-a-second-read)). In **story** mode it
+answers a topic's learning questions from its story paper alone
+([the story paper](skills/aitp-writing/references/story-paper.md#check-that-the-paper-works)). In
+**skill-trial** mode it applies a distilled Skill to a new case
+([aitp-distill](skills/aitp-distill/SKILL.md#check-with-a-concrete-use)). It returns located
+verdicts, and any script it ran; the main agent keeps what is worth keeping. Codex starts it
+the same way as the reviewer.
+
 ## Session reminders and the end-of-reply check
 
 <a id="session-reminders"></a>
@@ -285,15 +297,36 @@ source `compact` after an automatic compaction and pass its output to the model
 (verified on Codex 0.163).
 
 One optional end-of-reply check, [tidy.py](hooks/tidy.py), uses two hooks. `UserPromptSubmit`
-records when a reply begins, and prints nothing. `Stop` lists the files that reply changed:
+records when a reply begins. `Stop` lists the files that reply changed:
 files in the session's topic modified since then (including subagents' work) and files the
 transcript shows were edited in other topics. When there are any, it asks once for a
 [check](skills/aitp-memory/references/tidy.md) that each is in its home and linked from the
 passage that uses it. The agent fixes clear misplacements of its own files and lists the rest
 for the researcher. The check is silent when nothing changed, during its own continuation
-(`stop_hook_active`) and when `AITP_TIDY=off`. It needs `python3` (standard library only) and
-keeps only the turn start, in `~/.cache/aitp/turns/`. There are no `SessionEnd` or other hooks,
-extra summaries, checklists or mandatory note updates.
+(`stop_hook_active`) and when `AITP_TIDY=off`.
+
+The same two hooks keep the researcher's decisions. When a reply asks for one with
+[brainstorming's](skills/aitp-human-brainstorming/SKILL.md#make-the-question-answerable)
+`Decision needed:` line (read from the Stop event's `last_assistant_message`, which Claude
+Code and Codex both send), the next `UserPromptSubmit` adds one line of context: record the
+answer with the researcher's own words in the owning note's decisions, or leave the entry
+waiting on the researcher. It is anchored on the agent's request, not on guessing whether a
+short message is a decision, so it works in any language and fires once.
+
+They also watch a main note's [size budget](skills/aitp-writing/references/research-note.md#decide-what-stays-in-the-main-note)
+(about 400 lines and a 30-line opening), because nothing else removes material from a growing
+note. When the session topic's `research.md` grows past the budget during a reply, the reply check
+asks whether the reply replaced passages or only added. A prompt in an over-budget topic carries
+one line asking the agent to offer the
+[consolidation pass](skills/aitp-memory/references/tidy.md#the-consolidation-pass), modelled on
+Claude Code's memory consolidation (auto-dream): orient, gather drift, consolidate, prune under
+the budget. The offer is made once, then again only after a day and about 10% further growth, so
+an accepted longer note stops prompting. Unlike that pass it proposes instead of acting, moves instead of deleting, and is
+applied only after the researcher agrees and the reviewer has compared the staged note with a
+baseline. The hooks need
+`python3` (standard library only) and keep only the turn start, that flag and the date of
+each topic's last offer, in `~/.cache/aitp/`. There are no `SessionEnd` or other hooks, extra summaries, checklists
+or mandatory note updates.
 The [read/write rules](skills/aitp-memory/SKILL.md#timing-and-recovery) stay in
 their owning Skill. The reminders need no Python, Node or external service.
 
@@ -303,6 +336,25 @@ Either host can disable the hook through its hook settings. Start a fresh
 session after updating. See [Codex hooks](https://learn.chatgpt.com/docs/hooks)
 and [Claude hooks](https://code.claude.com/docs/en/hooks) for host controls.
 Reminders do not guarantee Skill activation, crash recovery or scientific correctness.
+
+## Gates for submissions, pushes and installs
+
+Cluster submissions, pushes and installations are the researcher's decision unless the request
+or a standing agreement covers them ([aitp-memory](skills/aitp-memory/SKILL.md#close-the-task-visibly)).
+AITP adds no hook for this: both hosts already have a native, researcher-owned gate, and a hook
+could neither read the current request nor ask in Codex. Add these rules yourself:
+
+- **Claude Code**, in `~/.claude/settings.json` or a project's `.claude/settings.json`:
+  `"permissions": {"ask": ["Bash(sbatch:*)", "Bash(scancel:*)", "Bash(ssh * sbatch *)",
+  "Bash(ssh * scancel *)", "Bash(git push:*)", "Bash(pip install:*)", "Bash(conda install:*)"]}`.
+  An `ask` rule holds even when another rule allows `Bash(git:*)`.
+- **Codex**: copy [`assets/aitp-gates.rules`](assets/aitp-gates.rules) into `~/.codex/rules/`
+  and replace `cluster` with your ssh host aliases; `codex execpolicy check` tests a command.
+
+Read-only commands such as `squeue` and `sacct` stay unprompted. A prefix rule cannot see inside
+one quoted remote command line (`ssh host "cd run && sbatch job.sh"`), so submit as
+`ssh host sbatch <script>`. Edits to frozen copies and archives are excluded by the
+[reply check's limits](skills/aitp-memory/references/tidy.md#limits), not by a hook.
 
 ## Continue with the relevant guidance
 

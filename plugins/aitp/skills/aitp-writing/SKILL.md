@@ -27,6 +27,7 @@ directly, apply that cycle and reuse context already recovered.
 | When the task involves | Read |
 | --- | --- |
 | A research note or supporting note | [Main-note writing](references/research-note.md); [supporting notes](references/supporting-notes.md) |
+| A research topic's story paper, the dated PDF that tells the researcher the whole story | [The story paper](references/story-paper.md) and its [template](assets/story-paper.tex) |
 | A construction, theorem or delicate derivation | [Formal theory](references/formal-theory.md) |
 | Data, algorithms or finite numerical tests | [Computational and mixed work](references/computational-and-mixed.md) |
 | A requested paper, TeX or PDF | [Manuscript handling](references/manuscripts.md), [journal templates](references/journal-templates.md) and the [JHEP starter](assets/jheppub-note-template.tex) |

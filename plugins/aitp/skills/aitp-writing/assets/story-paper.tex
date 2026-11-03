@@ -1,0 +1,74 @@
+\documentclass[11pt,a4paper]{article}
+\pdfoutput=1
+% The story paper of a research topic: a dated edition built from the record at a milestone.
+% See aitp-writing/references/story-paper.md. Copy jheppub.sty and JHEP.bst beside this file
+% if they are not installed. Never edit an edition during work; build the next one instead.
+\usepackage{jheppub}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,tabularx}
+\newcommand{\record}[1]{\par\smallskip\noindent{\small\textit{Record:} #1}\par}
+
+% Author block: the researcher's own, from the workspace instructions. Add co-authors, e-mail or
+% acknowledgments only when the researcher supplies them.
+\title{<Topic>: the story so far}
+\author[a]{Author name from the workspace instructions}
+\affiliation[a]{Affiliation from the workspace instructions}
+\abstract{The question; the approach; the main result at its true strength and condition; the key
+insight; what is open. Edition of YYYY-MM-DD, built from the topic's research.md.}
+\keywords{...}
+
+\begin{document}
+% \maketitle prints the title page and then the table of contents, as in the JHEP template.
+\maketitle
+\flushbottom
+
+\section{The question and why it matters}
+What is asked, in plain words; why it matters; what answering it would change.
+\record{research.md, opening}
+
+\section{Setting and conventions}
+The minimal model, its parameters and the conventions needed for the rest.
+\record{research.md, <conventions section>}
+
+\section{The story}
+% By ideas, in the order they make sense. Each step: the idea, what was done, what it showed
+% under which condition, and what it taught. Failed routes belong here. A branch is a subsection.
+\subsection{<First idea>}
+\record{<notes or runs>}
+
+\section{Key insights}
+\begin{enumerate}
+\item \textbf{<The insight in one line.>} Why it holds, with the decisive step or number. What it changes.
+\end{enumerate}
+\record{<the sections and notes each insight rests on>}
+
+\section{What is established, and how firmly}
+\begin{tabularx}{\textwidth}{@{}XllX@{}}
+\toprule
+Result & Strength & Condition & Record \\
+\midrule
+... & derived / checked / provisional & ... & ... \\
+\bottomrule
+\end{tabularx}
+
+\section{What is open, and the next decisive test}
+The gap that matters most, the result that would settle it, and what each outcome would mean.
+\record{research.md, Current work and the owning branch notes}
+
+\section{How to learn this topic}
+Prerequisites; sources; supporting notes in reading order; then three questions:
+\begin{enumerate}
+\item ...
+\end{enumerate}
+
+\appendix
+\section{Derivations worth remembering}
+Short sketches of the key steps, each naming its full note.
+\record{<the notes holding the full derivations>}
+
+% Supply an inspected bibliography only when the paper cites literature.
+% \bibliographystyle{JHEP}
+% \bibliography{references}
+\end{document}

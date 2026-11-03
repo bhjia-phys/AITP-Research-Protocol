@@ -16,7 +16,7 @@ change both together.
 | `calculations/<question>/<run>/` | One attempt: submit script, inputs, logs, outputs, short report. Free-form inside. |
 | `data/` | Raw data (`raw/`, read-only) and derived data (`derived/`). |
 | `figures/` | Final figures only; they must be rebuildable from code or a run. |
-| `manuscripts/` | Paper and lecture TeX sources, bibliography, build assets. |
+| `manuscripts/` | Paper and lecture TeX sources, bibliography, build assets; `manuscripts/story/` holds the topic's [story paper](../../aitp-writing/references/story-paper.md). |
 | `reports/` | Group-meeting/talk material, dated. |
 | `results/`, `workspace/`, `sources/`, `scripts/`, `theory/`, `manuscript/`, `development/`, `software/`, `plan/`, `analysis/` | Existing historical names. Reuse them where they already hold work; do not create them for new work. |
 

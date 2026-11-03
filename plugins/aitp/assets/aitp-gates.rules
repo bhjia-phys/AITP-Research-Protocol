@@ -1,0 +1,13 @@
+# AITP gates for Codex: commands that spend shared resources or leave the machine ask first.
+# Copy to ~/.codex/rules/ (or merge into default.rules) and replace "cluster" with your ssh host aliases.
+# Check a command offline:  codex execpolicy check --rules aitp-gates.rules sbatch job.sbatch
+# Limit: a prefix rule sees argv tokens, so ssh <host> "cd run && sbatch job.sh" (one quoted
+# remote command line) is not matched; submit with ssh <host> sbatch <script> instead.
+prefix_rule(pattern=["sbatch"], decision="prompt", justification="cluster submission needs the researcher's authorization")
+prefix_rule(pattern=["scancel"], decision="prompt", justification="cancels cluster jobs")
+prefix_rule(pattern=["ssh", "cluster", "sbatch"], decision="prompt", justification="remote cluster submission")
+prefix_rule(pattern=["ssh", "cluster", "scancel"], decision="prompt", justification="cancels remote cluster jobs")
+prefix_rule(pattern=["git", "push"], decision="prompt", justification="publishes commits")
+prefix_rule(pattern=["pip", "install"], decision="prompt", justification="installation")
+prefix_rule(pattern=["conda", "install"], decision="prompt", justification="installation")
+prefix_rule(pattern=["npm", "install", "-g"], decision="prompt", justification="global installation")

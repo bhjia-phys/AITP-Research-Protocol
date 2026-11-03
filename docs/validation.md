@@ -1,5 +1,169 @@
 # Validation and its limits
 
+## Asking, deciding, the story and an independent reader, 2026-11-01 (1.4.0)
+
+**What it adds.**
+- aitp-human-brainstorming lists the moments that belong to the researcher. They are a
+  question or route, a consequential method choice, cost or irreversibility, a surprise,
+  presenting a result as established, learning, and milestones. Every request is written as a
+  `Decision needed:` line with options, a recommendation and the work that continues meanwhile.
+- A decision is recorded in the existing decisions format with the researcher's own words.
+  A pending one is a Current work entry `waiting on the researcher`, named again when work
+  resumes.
+- aitp-writing gains the **story paper**: a dated LaTeX PDF in `manuscripts/story/` that tells
+  the researcher a research topic's whole story without adding claims
+  ([reference](../plugins/aitp/skills/aitp-writing/references/story-paper.md),
+  [template](../plugins/aitp/skills/aitp-writing/assets/story-paper.tex)). It is an edition built
+  at milestones, holds no state and is never read to recover the work.
+  - *Revised 2026-11-02 at the researcher's review.* The first design was a Markdown `story.md`
+    at the topic root. The researcher rejected it because it could become a second
+    `research.md`; it is replaced by this paper.
+  - The placement rules are back to their 1.3.2 form.
+- One new read-only subagent, [aitp-reader](../plugins/aitp/agents/aitp-reader.md), works in
+  claim, story and skill-trial modes. It is referenced from aitp-verify, aitp-distill,
+  aitp-human-learning and the story.
+- The existing hooks in `tidy.py` also keep decisions. Stop notes a `Decision needed:` line in
+  the Stop event's `last_assistant_message`, or in the Claude Code transcript. The next
+  UserPromptSubmit adds one line of context asking for the answer to be recorded with the
+  researcher's words, or the entry left waiting.
+- [Host permission rules](../plugins/aitp/README.md#gates-for-submissions-pushes-and-installs)
+  for submissions, pushes and installs, with a Codex rules file in
+  `assets/aitp-gates.rules`.
+
+**Independent review of the plan.** A fresh read-only reviewer checked the change plan against
+this branch, the unmerged `codex-cycle-hooks` branch and the Codex 0.166 binary. Its findings
+changed the plan:
+- **Dropped:** a PreToolUse gate. Codex rejects `permissionDecision: ask`, and a hook cannot
+  see an authorization given in the current request. Native host rules replace it.
+- **Anchored differently:** a regex on short user prompts would be noisy, so the decision cue
+  is anchored on the agent's own request line.
+- **Merged:** four proposed subagents became one reader. Codex does not load plugin agents,
+  and writing agents would break the single-writer rule.
+- **Revised:** rules that contradicted existing text. These were "If no answer", acceptance
+  before an opening, approval to draft a Skill, and "a research topic needs no story". Each was
+  revised in its owner instead.
+- **Deferred:** the 150-line memory core, which is a restructuring and needs its own baseline
+  review, and run and code layouts that conflict with the no-hash, no-ledger rules.
+
+**Tests.**
+- **Synthetic controls.** `hooks/test_tidy.py` has 23 controls, all passing: the earlier 12
+  plus 11 for the reminder. They cover a request in English or Chinese; a quoted template, or
+  prose about decisions, that is not a request; a request seen after the reply check's own
+  continuation; the transcript path; a subagent's text; `AITP_TIDY=off`; firing only once; and
+  the waiting-entry question in the reply check. One control first failed because file times
+  use a coarse clock, so a file written within milliseconds of the recorded turn start can
+  look older. The control now writes clearly after the start.
+- **Claude Code end to end (2.1.316).** Two turns of one `claude -p` session loaded this
+  branch's plugin with `--plugin-dir`, with the live AITP plugin disabled.
+  - Turn 1: asked to put a fitting choice to the researcher, the agent wrote a
+    `Decision needed:` request. It set the Fit entry to `waiting on the researcher`, the reply
+    check fired once, and the hook recorded the request.
+  - Turn 2: the answer was "drop L=8, too much correction there". The reminder reached the
+    model, and the agent recorded `2026-11-01 · fit the gap against 1/L without L = 8 · the 1/L
+    fit in this topic · researcher ("drop L=8, too much correction there") · [fit]`, with the
+    four-size fit kept as a declined alternative. The reminder state was then cleared.
+  - Records: `physics/aitp-dev/e2e-decision-cue-20261101/`.
+- **Permission rules.**
+  - Claude Code: in `claude -p` with `permissions.ask` rules and `allowedTools`
+    `Bash(git:*)`, `Bash(ssh:*)` and `Bash(sbatch:*)`, `git status` ran. `git push`,
+    `ssh host sbatch job.sh` and `sbatch job.sh` were refused, and nothing reached the bare
+    remote.
+  - Codex: `codex execpolicy check` on the rules file gives `prompt` for `sbatch`,
+    `ssh cluster sbatch`, `git push` and `npm install -g`, and no rule for `squeue`,
+    `ssh cluster squeue` and `npm install`.
+  - Records: `physics/aitp-dev/e2e-permission-gates-20261101/`.
+- **Reader trial.** A `claude -p` session delegated two claims to `aitp:aitp-reader` in claim
+  mode: the collective identity H = (S_tot² − 3L/4)/2 for S = σ/2, and a planted wrong
+  variant (S_tot² − 3L)/2.
+  - It read nothing else and derived A by its own route. It confirmed A as an operator
+    identity for L = 2, 3, 4.
+  - It refuted B with the L = 2 singlet: B is off by 9L/8, 4.5 at L = 4. It traced the error
+    to the Pauli normalization.
+  - It evaluated a further wrong variant and wrote nothing into the trial folder.
+  - Records: `physics/aitp-dev/e2e-reader-trial-20261101/`.
+
+**Size budget and consolidation pass (added 2026-11-02).** Of 67 live main notes in the
+researcher's workspace, 26 exceeded 300 lines and 7 exceeded 800. Openings and Current work
+stayed mostly within their limits; the scientific account was what grew, because adding is
+always the easy edit.
+- **What was added.** A budget (about 400 lines, a 30-line opening, 7 Current work entries), and
+  a consolidation pass modelled on Claude Code's memory consolidation (orient, gather drift,
+  consolidate, prune). Unlike that pass, this one proposes instead of acting and moves instead of
+  deleting. In `tidy.py`, a size line in the reply check and a once-a-day offer. Six new controls;
+  all 29 pass.
+- **The trial on `gw/crpa`.** The pass was staged, not applied, in
+  `physics/aitp-dev/consolidation-crpa-20261102/`.
+  - It took the note from 1,656 to 994 lines and Current work from 9 to 7 entries.
+  - It moved about 860 lines word for word into four new supporting notes, leaving a summary,
+    the conditions and a link for each.
+  - Mechanical checks: every baseline line outside Current work is preserved; all 50 anchors
+    and the 17 incoming anchor links survive; every staged link resolves.
+- **What the independent review caught.** It found four summaries that dropped or overstated a
+  condition, and a researcher-decision thread that had vanished from the main note. Examples:
+  - the pilots' failed raw-Coulomb gate was omitted;
+  - "no updated-state U" was written where TiO2 has a flagged one.
+
+  It also found one moved paragraph that was central reasoning. All were fixed before the
+  proposal. This is evidence that the baseline review must stay mandatory: a summary written
+  by the pass is where meaning gets lost, not the verbatim move.
+- **Limits.** The note remains over budget (994 lines). The rest is central argument, so reaching
+  400 lines would need a branch split, which is a decision for the researcher. The pass was run
+  by hand as a trial; the daily offer was not exercised in a live session.
+
+**Second-model design review and the quantum-chaos trial (2026-11-02).** Codex `gpt-6.1-sol` at
+xhigh effort, read-only and with plugins, memories and sub-agents off, reviewed this branch against
+the researcher's goals. Its reply is in `physics/aitp-dev/codex-discussion-20261102/design-reply.md`.
+Adopted:
+- A parent's Branches entry gives contribution and limit only. In the quantum-chaos trial a reviewer
+  found that two parent state words had already drifted from the branches' own Current work; the
+  state now stays in the branch, which is also what the researcher's chosen option said.
+- Offers repeat only after a day and about 10% growth, so an accepted longer note stops prompting.
+- The reply check names a note only when it grew in that reply, and no longer asks for an offer.
+- Current work entries are not counted by the hook, since they may be prose or a table.
+- No mandatory "architecture check: ok" line.
+- The decision reminder keeps an unanswered question on record.
+- Each story-paper edition is frozen in its own dated folder with its TeX inputs and figures.
+- Split guidance for notes whose central argument exceeds the budget.
+- The post-compaction review runs only when the compacted part changed the record.
+
+Confirmed by read-only probes: before the fix, the reply check asked for an offer on every change
+to an oversized note, bypassing the daily limit. Not adopted:
+- dropping the end-of-reply check for ordinary changes, which the researcher asked for;
+- thinning the 513-line core, which is a restructuring deferred to its own review.
+
+`test_tidy.py` now has 33 controls; all pass.
+
+**First story paper (quantum-chaos, edition 2026-11-02).** The paper is 11 pages in the JHEP
+template, frozen in `topics/quantum-chaos/manuscripts/story/2026-11-02/` with its TeX inputs and
+copied figures. Three independent reads shaped it:
+- **The story-mode reader**, which saw only the TeX source. It answered two of the three learning
+  questions correctly and one partly. It found undefined terms, an ambiguous sign convention,
+  insights stated more strongly than their sections, and missing Record lines.
+- **The AITP reviewer of the family note.** It found that a figure carried over from an agent
+  review overstated the agreement it described (2×10⁻⁴ against 0.017–0.094%).
+- **Codex `gpt-6.1-sol` at xhigh**, which checked the paper against the record files. It found:
+  - a reversed inequality: the record proves a lower bound on Krylov complexity;
+  - a plateau mean (0.5317(9)) that is a single point, against a true mean of 0.5297;
+  - an unsupported finite-GOE range;
+  - perturbative accuracy credited to first order when it needs second;
+  - a sign-convention switch;
+  - derived theorems presented without their pending acceptance.
+
+All of these were verified in the files and fixed before the edition was frozen.
+
+*Lesson.* A story paper inherits errors from agent-written notes in the record. Numbers it repeats
+should be read from the data files, not from a summary. Before an edition is frozen, a check against
+the record by a second model found errors that both the story-mode reader and the family-note
+reviewer missed.
+
+**Limits.**
+- In Codex, the decision reminder rests on two facts, not on a Codex end-to-end run:
+  `last_assistant_message` is in the 0.166 Stop schema, and prompt-hook `additionalContext`
+  reached the model in the 0.163 probe. Codex also asks to trust the changed hooks again.
+- The story mode and the skill-trial mode were not exercised before the first story paper.
+- The one-week pilot on a real thread, which is the test of whether you are asked less and
+  record more, has not been run.
+
 ## End-of-reply architecture check, 2026-11-01 (1.3.2)
 
 **What it adds.** The plugin registers two hooks, defined in `hooks/hooks.json` and implemented

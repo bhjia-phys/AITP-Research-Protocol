@@ -80,11 +80,20 @@ with the question, the scope and binding constraints, the current answer at its 
 strength and the decisive gap; **Current work**, the only maintained home of each live
 thread's continuation; a **scientific account** whose headings follow the physics; and,
 when useful, **decisions and retained alternatives**. A short note can be three paragraphs.
+A research topic may also have a story paper: a dated LaTeX PDF in `manuscripts/story/`
+that tells the researcher the whole story and its key insights. It is built from the record
+at milestones, holds no state and is never read to recover the work (see
+[the story paper](../aitp-writing/references/story-paper.md)). A note past its
+[size budget](../aitp-writing/references/research-note.md#decide-what-stays-in-the-main-note)
+gets a [consolidation pass](references/tidy.md#the-consolidation-pass), proposed to the
+researcher, rather than further growth.
 
 Put an observation where it was produced, its interpretation where the question is
 answered, its consequence where another argument uses it, and a next action only with the
-thread that owns it. A thread owned by a branch appears in the parent as a pointer entry:
-what it contributes and its limiting condition, never its next action or job state. Run
+thread that owns it. A parent lists each branch once, in its Branches list: what the branch
+contributes and its limiting condition, never its state, next action or job state, which stay
+in the branch's own Current work; a live
+thread owned by another topic gets a pointer entry of the same form in Current work. Run
 reports own execution and observations, plans own the sequencing of an agreed stage, and
 READMEs own locations. Qualifications outrank compactness: shorten by omitting a secondary
 claim, never by dropping a claim's conditions.
@@ -105,6 +114,8 @@ claim, never by dropping a claim's conditions.
 | Planning a stage of work | [Plans](references/plans.md) |
 | Handing work to another session or model, or work in parallel | [Hand-offs and parallel work](references/handoffs.md) |
 | A handoff, a context compaction, or outside work relying on a recent change | [Independent process review](#independent-process-review) |
+| When to ask the researcher, and how a request and its answer are written | [Brainstorming's moments](../aitp-human-brainstorming/SKILL.md#decide-whether-a-human-answer-is-needed) and [request format](../aitp-human-brainstorming/SKILL.md#make-the-question-answerable) |
+| A check by a reader without the conversation: a claim, the story paper, or a Skill on a new case | The [independent reader](../../agents/aitp-reader.md) |
 | Where things stand, a topic's history or its connections | [Status, history and continuation](references/status-and-continuation.md) |
 | A bare "continue" | [Continuing the authorized task](references/status-and-continuation.md#continue-the-authorized-task) |
 
@@ -325,7 +336,8 @@ not determine this relation. A branch can have several scientific users.
 
 The child owns its evidence, its continuation and its upstream purpose. Each parent
 retains the branch's answer, decisive limitation, implication and link where the argument
-uses it, and a pointer entry in Current work while the branch is live; it never copies the
+uses it, and one entry in its Branches list with the branch's contribution and limit;
+it never copies the
 child's next action, job state or run count. When the branch's answer, limitation or
 contribution changes, revise the child and affected parent passages together; continue to
 ancestors and known sibling users only while their meaning changes. A changed next step

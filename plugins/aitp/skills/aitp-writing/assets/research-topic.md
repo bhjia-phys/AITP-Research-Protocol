@@ -28,9 +28,9 @@ A thread this note owns:
   scope. Next: the discriminating action or the pending choice.
   [evidence](...) · [plan phase](...) · [decision](#decisions-and-retained-alternatives)
 
-A thread a branch or another topic owns:
-- **Thread name → [owning note](branch/research.md#current-work)** — what it contributes
-  here and its limiting condition. Never copy its next action, job state or run count.
+A live thread another topic owns (a branch is listed under Branches instead):
+- **Thread name → [owning note](../other-topic/research.md#current-work)** — what it
+  contributes here and its limiting condition. Never copy its next action, job state or run count.
 
 Dispositions, with a short qualifier when several things are true: active · proposed ·
 waiting on analysis · waiting on integration · waiting on the researcher · waiting on run ·
@@ -42,6 +42,13 @@ The date is the thread's last consequential change. It shows age, not verificati
 While evidence awaits interpretation or a checked branch result awaits integration, a claim
 it may change carries a brief qualification naming it.
 Equivalent prose or a table is fine when it carries the same information. -->
+
+## Branches
+
+<!-- Omit when there are none. Each branch once: what it contributes to this note's question,
+and its limiting condition. Its state, next action, job state and run count stay in the branch's own
+Current work.
+- **[Branch name](branch/research.md)** — what it contributes here; its limiting condition. -->
 
 ## Headings chosen for the argument
 
@@ -59,7 +66,7 @@ suggest an order for theory, computation and compact arguments. -->
 <!-- Optional. Small notes keep these in prose where the argument uses them.
 
 Binding choices:
-- YYYY-MM-DD · the choice · the scope it binds · who decided · [rationale](...)
+- YYYY-MM-DD · the choice · the scope it binds · who decided ("their words") · [rationale](...)
 
 Retained alternatives:
 - The route · its kind (failed under stated conditions, refuted, refocused, deferred,

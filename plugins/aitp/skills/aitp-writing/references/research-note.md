@@ -42,7 +42,7 @@ Choose the order of explanation for the situation, not a compulsory set of headi
 | Theory tested numerically | Model and conventions; meaning of each diagnostic; predictions beside their numerical tests; combined judgment; unresolved discrimination. |
 | Learning | Connected questions, prerequisites at first use, representative calculations and the next conceptual difficulty. An agent's explanation does not establish learner understanding. |
 | Bounded diagnostic or branch | Origin and relationship to the parent, then the appropriate order above. The child owns the detail; the parent retains its implication and limitation. |
-| Parent of branches | Question and current answer; the argument, with each branch's result entering where it is used, as its implication and a link; what remains open and which branch decides it; a pointer entry in Current work for each live branch. |
+| Parent of branches | Question and current answer; the argument, with each branch's result entering where it is used, as its implication and a link; what remains open and which branch decides it; each branch once in a Branches list, with its contribution and limit. |
 | Deferred investigation | Usable result, unresolved issue, reason for deferral and condition for resumption. Old next steps are historical context. |
 | Deliverable | Product, audience and intended argument; artifacts and sources; evidence and outstanding checks; reproduction instructions. Artifact completion and scientific verification differ. |
 
@@ -136,13 +136,13 @@ The default form, as Markdown source with synthetic content:
 
 Equivalent prose or a table is acceptable when it carries the same information.
 
-A thread owned by a branch or another topic gets a pointer entry: the owner link, what
-it contributes here and its limiting condition.
+A branch is listed once, in the parent's Branches list, not again in Current work: the owner link, what it contributes here and its limiting condition; its state stays in the
+branch's own Current work. A live thread
+owned by another topic gets a pointer entry of the same form in Current work.
 
 ```markdown
-- **Mesh convergence → [screening branch](screening/research.md#current-work)** —
-  supplies the interaction used in the comparison section; its 4×4 value is not yet
-  shown to be converged.
+- **[Screening branch](screening/research.md)** — supplies the interaction used in the
+  comparison section; its 4×4 value is not yet shown to be converged.
 ```
 
 The parent never copies the owner's next action, job state or run count, so changing that
@@ -172,8 +172,9 @@ opening or beside the affected entry, with one authoritative statement of its ra
 Programmes benefit from a short list:
 
 - **Binding choices**: the choice, the scope it binds and, when recorded, the date, who
-  decided and a rationale link. For example: `2026-03-01 · keep the full method as the
-  reference · comparisons in this topic, not production elsewhere · researcher · [rationale]`.
+  decided (with their words when short) and a rationale link. For example: `2026-03-01 ·
+  keep the full method as the reference · comparisons in this topic, not production
+  elsewhere · researcher ("keep the full method as the reference for now") · [rationale]`.
 - **Retained alternatives**: the route; its kind (failed under stated conditions, refuted,
   refocused, deferred, completed control, declined by the researcher, superseded); what
   survives; and, when known, a reopening condition.
@@ -212,6 +213,14 @@ would make a future reader repeat a known mistake, retain its implication and a
 source link. Link captions or nearby analysis to the data and script behind a
 figure; show a figure in the main note when it carries the central comparison.
 The README continues to explain locations, not duplicate the scientific account.
+
+A main note also has a size budget, because adding is always the easy edit and nothing else
+removes material: an opening of about 30 lines, at most about 7 Current work entries of a
+few lines each, and about 400 lines in all. The budget is a signal, not an error. Past it, a finished section with an
+independent role belongs in a supporting note, leaving its result, decisive condition and link. A
+central argument that is longer stays: say so once, and the note keeps its length. Memory's
+[consolidation pass](../../aitp-memory/references/tidy.md#the-consolidation-pass) does this
+with the researcher's approval.
 
 Keep useful side investigations visible through their relationship to the main
 question, even before they produce results. For an agreed independent branch,
