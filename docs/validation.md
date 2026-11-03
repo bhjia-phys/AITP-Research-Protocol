@@ -10,10 +10,15 @@
 - A decision is recorded in the existing decisions format with the researcher's own words.
   A pending one is a Current work entry `waiting on the researcher`, named again when work
   resumes.
-- aitp-writing gains `story.md`, a short paper that tells the researcher the whole story of a
-  research topic without adding claims ([story.md](../plugins/aitp/skills/aitp-writing/references/story.md),
-  [starter](../plugins/aitp/skills/aitp-writing/assets/research-story.md)). It is admitted at a
-  topic root by the placement rules.
+- aitp-writing gains the **story paper**: a dated LaTeX PDF in `manuscripts/story/` that tells
+  the researcher a research topic's whole story without adding claims
+  ([reference](../plugins/aitp/skills/aitp-writing/references/story-paper.md),
+  [template](../plugins/aitp/skills/aitp-writing/assets/story-paper.tex)). It is an edition built
+  at milestones, holds no state and is never read to recover the work.
+  - *Revised 2026-11-02 at the researcher's review.* The first design was a Markdown `story.md`
+    at the topic root. The researcher rejected it because it could become a second
+    `research.md`; it is replaced by this paper.
+  - The placement rules are back to their 1.3.2 form.
 - One new read-only subagent, [aitp-reader](../plugins/aitp/agents/aitp-reader.md), works in
   claim, story and skill-trial modes. It is referenced from aitp-verify, aitp-distill,
   aitp-human-learning and the story.
@@ -109,8 +114,7 @@ always the easy edit.
 - In Codex, the decision reminder rests on two facts, not on a Codex end-to-end run:
   `last_assistant_message` is in the 0.166 Stop schema, and prompt-hook `additionalContext`
   reached the model in the 0.163 probe. Codex also asks to trust the changed hooks again.
-- The story mode and the skill-trial mode were not exercised. No real topic has a `story.md`
-  yet.
+- The story mode and the skill-trial mode were not exercised before the first story paper.
 - The one-week pilot on a real thread, which is the test of whether you are asked less and
   record more, has not been run.
 

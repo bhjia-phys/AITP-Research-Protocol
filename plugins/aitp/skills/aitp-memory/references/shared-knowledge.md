@@ -414,9 +414,9 @@ An index locates explanations, including disputed or superseded ones, without de
 them correct.
 
 A research topic needs no story of questions in the shared collection: its `research.md` is
-its main line, and it links into the shared atoms and readings it uses. It may keep a
-[story for the researcher](../../aitp-writing/references/story.md) beside `research.md`,
-which retells that main line without adding claims. Knowledge and Skills also have different uses. An
+its main line, and it links into the shared atoms and readings it uses. It may have a
+[story paper](../../aitp-writing/references/story-paper.md) for the researcher, a dated PDF
+that retells that main line without adding claims. Knowledge and Skills also have different uses. An
 atom explains what an object or result means and why it holds; a distilled Skill teaches
 a reusable procedure, through [aitp-distill](../../aitp-distill/SKILL.md). One piece of
 work can feed both, with each linked to the other. Neither is created automatically from

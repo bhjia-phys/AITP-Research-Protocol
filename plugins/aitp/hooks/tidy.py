@@ -306,8 +306,8 @@ def reply_end(event):
         f"Before ending, check these changes against the topic architecture ({RULES}). For each file: is it in "
         "the home its kind and question use (the topic's README map and placement rules), and is it linked "
         "from the research.md passage, or the note, that uses its result? If a thread's state changed, does "
-        "its Current work entry say so? If a result's strength changed, do the parent passage and story.md "
-        "that use it still agree? " + ("This reply asks the researcher for a decision: does the owning "
+        "its Current work entry say so? If a result's strength changed, does the parent passage that "
+        "uses it still agree? " + ("This reply asks the researcher for a decision: does the owning "
         "Current work entry say 'waiting on the researcher'? " if asked else "") +
         "Fix clear misplacements of files this reply created or changed, "
         "within the task's scope. List anything else for the researcher in at most five lines. Never change a "

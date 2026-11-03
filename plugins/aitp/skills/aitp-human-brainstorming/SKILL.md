@@ -44,14 +44,14 @@ the agreement and is reported at the close.
 | A consequential method choice: model, approximation, algorithm, convention or route | The options and their consequences, [as below](#make-the-question-answerable) |
 | Cost or irreversibility: a campaign, a cluster submission, an installation, a push, publication, moving other people's files | Memory's [proposal](../aitp-memory/SKILL.md#close-the-task-visibly): purpose, first action, cost and stopping condition |
 | A surprise that may change the question: sources that disagree after converting conventions, a failed check, an unexpected number | The evidence side by side, without a forced conclusion, while the investigation continues |
-| A result about to be presented as established in the topic's [story](../aitp-writing/references/story.md) or a manuscript | The claim, its status, its checks and what could still be wrong |
+| A result about to be presented as established in the topic's [story paper](../aitp-writing/references/story-paper.md) or a manuscript | The claim, its status, its checks and what could still be wrong |
 | Learning, when the researcher asks or is confused | An explanation; any account in their own words is optional and theirs to write |
-| Milestones: closing a branch, revising the story, a paper's novelty, venue or authorship | The changed section or the paper's argument |
+| Milestones: closing a branch, a new edition of the story paper, a paper's novelty, venue or authorship | The changed section or the paper's argument |
 
 A first or provisional result still enters the owning note at its true strength without
 waiting, as memory's [write decision](../aitp-memory/SKILL.md#timing-and-recovery) says.
-The researcher's acceptance is needed only before the story or a manuscript presents it
-as established.
+The researcher's acceptance is needed only before the story paper or a manuscript presents
+it as established.
 
 Algorithm choices can be consequential even when the physical equation is unchanged:
 switching a solver or iteration, introducing a truncation, changing the stopping

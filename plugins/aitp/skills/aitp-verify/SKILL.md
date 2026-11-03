@@ -109,7 +109,7 @@ The [independent reader](../../agents/aitp-reader.md) runs these reads without t
 conversation. In claim mode it receives a claim's statement, conventions and conditions, not
 its derivation, and checks it by its own route: a small explicit case, a limit, or a script it
 runs outside the research tree, chosen so that a plausible wrong formula would fail. Use it
-before a claim enters an opening as established, the story or a manuscript, and when two
+before a claim enters an opening as established, the story paper or a manuscript, and when two
 sources disagree. When its verdicts are compared with an expected answer, that answer must
 state the full decisive evidence, not only the conclusion; otherwise a reader that reaches
 the right conclusion by a wrong route passes. The main agent writes any check script that is

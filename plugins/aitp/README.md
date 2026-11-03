@@ -270,8 +270,8 @@ independent reader that sees only what its mode allows and writes nothing into t
 tree. In **claim** mode it checks a stated claim by its own route, without the derivation,
 choosing a check that a plausible wrong formula would fail
 ([aitp-verify](skills/aitp-verify/SKILL.md#commission-a-second-read)). In **story** mode it
-answers a topic's learning questions from its `story.md` alone
-([the story](skills/aitp-writing/references/story.md#check-that-the-story-works)). In
+answers a topic's learning questions from its story paper alone
+([the story paper](skills/aitp-writing/references/story-paper.md#check-that-the-paper-works)). In
 **skill-trial** mode it applies a distilled Skill to a new case
 ([aitp-distill](skills/aitp-distill/SKILL.md#check-with-a-concrete-use)). It returns located
 verdicts, and any script it ran; the main agent keeps what is worth keeping. Codex starts it
