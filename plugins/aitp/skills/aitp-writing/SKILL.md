@@ -30,6 +30,7 @@ directly, apply that cycle and reuse context already recovered.
 | A construction, theorem or delicate derivation | [Formal theory](references/formal-theory.md) |
 | Data, algorithms or finite numerical tests | [Computational and mixed work](references/computational-and-mixed.md) |
 | A requested paper, TeX or PDF | [Manuscript handling](references/manuscripts.md), [journal templates](references/journal-templates.md) and the [JHEP starter](assets/jheppub-note-template.tex) |
+| Designing or reorganizing a substantive manuscript | [Scientific argument design](references/manuscripts.md#scientific-argument-design), before polishing |
 | Equation numbers, citations and links across files | [Citation conventions](references/citations.md) |
 | A written explanation for a learner | [Learning from sources](references/learning.md) |
 | Outlining a paper, when the researcher has chosen authors to learn from | That author's organization record, through [exemplar authors](../aitp-research/references/exemplar-authors.md#study-how-the-author-organizes-a-paper) |

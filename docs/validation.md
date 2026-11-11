@@ -1,5 +1,185 @@
 # Validation and its limits
 
+## Mixed writing, figures and tables, 2026-11-11 UTC
+
+[Writing v0.2](../benchmarks/writing-v0.2/README.md) extends the short v0.1 cases to
+actual connected prose, rendered figures, numerical Markdown tables and executable
+figure generators. Three self-contained synthetic packets cover finite conservation,
+spectra and dynamical clocks; a closing perturbative gap; and scalar screening with
+quadrature, exact-tail restoration and setup reuse. M03 was independently authored
+and withheld from the optimizer until the candidate guidance was frozen. It is now
+public regression material. Its already-correct caption is a preservation control.
+No private manuscript, live research data or cluster calculation was used.
+
+The existing mixed-writing reference already explains observables, conventions,
+comparison controls, numerical evidence, captions and rendered-figure inspection.
+The missing development evidence was whether these instructions improve a complete
+artifact and whether a scorer detects a scientifically wrong display. Current-version
+development outputs exposed no material failure. An exploratory two-paragraph candidate
+made backward reconstruction of a comparison and a local reader-use revision explicit;
+it was frozen and tested, then **removed**, because no material benefit was demonstrated.
+The previously retained argument-design improvements below remain unchanged. This
+iteration adds evaluation cases and evidence, not more core Skill instructions.
+
+Nine fresh Codex CLI 0.167.1 executions requested `gpt-6-astra`, reasoning `xhigh`:
+one session per case per condition, with plain guidance, frozen current AITP, or the
+candidate. Current and candidate explicitly received writing's entrypoint, manuscript,
+formal-theory and computational-and-mixed references, plus verification's entrypoint.
+They differed only by the candidate addition. The actual dirty working-tree files
+were frozen; HEAD was not used as a substitute. Each condition received identical
+case inputs and tools, with the same per-case word range. Python 3.10.12, NumPy 2.2.6
+and Matplotlib 3.10.9 were available; no fixed token cap or random seed was set.
+
+Configuration ignored user config/rules, disabled memories, plugins, apps and
+multi-agent execution, set parent-document loading to zero, disabled web search and
+enabled experimental `skip_host_skill_discovery`. No complete server-side prompt
+was captured, so isolation is configured rather than proven. These are explicit-guidance
+tests, not tests of host discovery. Every execution completed with its three requested
+artifacts and preserved all supplied inputs byte for byte. Helper failures were retained:
+missing `python` aliases recovered with `python3`, empty local rule searches, and a
+plain-M03 scalar-summation assertion that prompted a successful independent array-sum
+check. These were not hidden reruns or discarded executor outputs.
+
+An independent evaluator received anonymized artifacts, data and separate answer keys.
+It read every article/note and table, inspected every PNG, checked the decisive arithmetic
+and regenerated all nine figures byte for byte in separate audit copies. Its seven
+ordinal scores were S scientific validity, E theory-data inference, M motivation,
+C coherence, F figure, T table and R reconstructibility, each on 0–3:
+
+| Case | Plain S/E/M/C/F/T/R | Current AITP | Candidate |
+| --- | --- | --- | --- |
+| M01 | 3/3/3/3/3/3/3 | 3/3/3/3/3/3/3 | 3/3/3/3/3/3/3 |
+| M02 | 3/3/3/3/3/3/3 | 3/3/3/3/3/3/3 | 3/3/3/3/3/3/3 |
+| M03 | 3/3/3/3/3/3/3 | 3/3/3/3/3/3/3 | 3/3/3/3/3/3/3 |
+
+There were no identified critical scientific failures. All three M03 outputs retained
+the checked caption verbatim and preserved the supported positive conclusions. Output
+differences included residual-minimization explanations, table grouping and more explicit
+error derivations, but none repaired a material omission in the compared output. The
+coordinator inspected the same nine texts and plots and accepted the scientific ties.
+This remains a ceiling result on well-specified short synthetic tasks, not evidence
+that AITP improves over the capable plain model, or that the candidate improves AITP.
+No promising score difference required a repeat; no variance estimate is available.
+
+A separate evaluator check used one sound M01 output and two copies with exactly one
+planted defect each: the plot computed `t/J` while retaining the `J*t` label, or the
+table reported `9/3²` as 9. A fresh evaluator, without the mutation map, identified
+both defects and their consequences, and accepted the unchanged control:
+
+| Scoring control | S/E/M/C/F/T/R | Finding |
+| --- | --- | --- |
+| Wrong plotted transform | 0/0/3/0/0/3/2 | The graph reverses the intended comparison. |
+| Unchanged sound output | 3/3/3/3/3/3/3 | No material deficiency. |
+| Wrong table value | 0/0/3/0/3/0/2 | The table contradicts its equation, data and prose. |
+
+These are two detected artificial errors and one preservation control, not additional
+model-generated failures, a general detection rate or executor replicates. Scientific
+failures cannot be compensated by a good motivation score or a polished layout.
+
+Independent process review found an ordering defect in the original evaluator wording:
+an evaluator given the packet/key cannot subsequently perform an independent cold read.
+The procedure was clarified before final grading and applied equally to all outputs:
+reconstructibility is a source-informed audit with located support, not evidence of what
+an unprepared reader learns. Scoring axes and scientific keys stayed fixed; both rubric
+versions were retained. The exact deployed grader model was not captured. Human learning,
+long-manuscript coherence, alternative models, natural Skill loading, real chaos-paper
+transfer, journal suitability and uncertainty across repeated runs remain untested.
+
+The CLI reported the following totals over each condition's three sessions. Input counts
+include repeated conversation context across tool turns, mostly cached; they are not
+single-prompt lengths. Grader/coordinator costs are excluded.
+
+| Condition | Input tokens | Cached input tokens | Output tokens |
+| --- | ---: | ---: | ---: |
+| Plain | 870,998 | 808,320 | 34,074 |
+| Current AITP | 1,000,997 | 911,488 | 32,029 |
+| Candidate | 1,194,833 | 1,107,840 | 36,375 |
+
+The candidate showed no efficiency advantage in these runs; the sample cannot establish
+a general cost difference. Complete frozen guidance, case inputs, executor events,
+artifacts, anonymization maps, regeneration checks and both independent grade reports
+are retained in the local evaluation collection outside the public tree. The public
+benchmark has no runner dependency, runtime service or mandatory note-scoring workflow.
+
+Packaging checks pass: the three previously affected Skills validate; all 25 local
+links and four heading anchors in the new benchmark, its v0.1 pointer and this document
+resolve; eight repository JSON files parse. New benchmark Markdown and the task's
+tracked documentation diff pass whitespace checks. After retiring the candidate,
+plugin files match this iteration's starting snapshot, preserving previous writing
+improvements, unrelated changes, manuscript assets and manifests. Installed caches
+were not refreshed; no commit, push or publication was performed.
+
+## Manuscript argument design and exemplar transfer, 2026-11-11
+
+Writing's [manuscript guide](../plugins/aitp/skills/aitp-writing/references/manuscripts.md#scientific-argument-design)
+now makes the motivation, roles of different approaches, missing inferences and
+consistency across the paper explicit. Verification adds a manuscript-specific
+scientific/narrative read, and exemplar learning adds optional organization practice.
+These extend existing argument organization, reverse outlines, evidence preservation
+and reader checks; they are not newly invented capabilities or additional core Skills.
+The historical Witten analysis retains its census and genre examples while qualifying
+universal-seeming sequences with located original passages. Journal guidance separates
+suitability, argument and formatting. Assets, manifests and the seven-Skill architecture
+are unchanged.
+
+The [five public synthetic cases](../benchmarks/writing-v0.1/README.md) test a shuffled
+finite-model argument, an overclaiming theory/numerics manuscript, a motivated periodic
+inverse construction, transfer of a source's organizational decision, and an already-clear
+paragraph. They contain no private research inputs or executor-visible grading criteria.
+
+Three separate Codex CLI 0.167.1 sessions used `gpt-6-astra`, reasoning `xhigh`, the same
+five-case batch and 2400-word combined response limit: plain guidance, the actual prior
+working-tree guidance, and the revised guidance. The eight relevant Skill/reference files
+were supplied explicitly; original and revised snapshots, prompts, outputs, JSON events
+and execution conditions are retained outside the public tree. Each session completed
+successfully, with no observed file, network or other tool calls. Configuration disabled
+plugins, memories, apps and parent-document loading and enabled `skip_host_skill_discovery`;
+the latter emitted an experimental-feature warning in all three sessions. The complete
+server-side context was not captured, so this is configured isolation rather than proof
+that every possible hidden instruction was absent. It is not a natural-discovery test.
+
+The coordinator found no consequential scientific error in the three batches. All
+preserved the finite-model and fixed-seed limits, rejected the unsupported BKT and
+microscopic-derivation claims, explained the periodic compatibility condition, rejected
+the toy-model-to-microscopic identification and retained the clear paragraph unchanged.
+These basic cases did not expose an important failure of the previous guidance.
+
+A fresh subagent, given only anonymized answers, case materials and the separate
+rubric, graded scientific correctness / narrative usefulness on a 0–2 scale:
+
+| Case | Plain | Prior AITP | Revised AITP |
+| --- | --- | --- | --- |
+| W01 | 1 / 2 | 2 / 2 | 2 / 2 |
+| W02 | 2 / 2 | 2 / 2 | 2 / 2 |
+| W03 | 2 / 2 | 2 / 2 | 2 / 2 |
+| W04 | 2 / 2 | 2 / 2 | 2 / 2 |
+| W05 | 2 / 2 | 2 / 2 | 2 / 2 |
+
+The accepted deduction is a missing domain condition in the plain W01 outline:
+the exact reduced equation requires the energy to be outside the spectrum of the
+complementary block. Its later perturbative condition does not state that general
+restriction. Both AITP outputs retain it. This is a localized omission, not a false
+formula. Prior and revised AITP tie; four cases reach the ceiling in all conditions.
+The reader found useful differences in the source-transfer explanations but no material
+overall advantage. Thus the runs support a bounded regression check, not a measured
+benefit of the new instructions. The reviewer did not audit execution isolation.
+
+Input tokens were 15,823 / 31,778 / 32,973 for plain / prior / revised guidance; output
+tokens, including reasoning, were 4,402 / 6,247 / 6,843. These are single-run costs, not
+evidence of an efficiency improvement. One batch per condition supplies no estimate of
+variance; the five answers within a batch are not five independent sessions. The cases
+are public development material, not a held-out evaluation. Long-manuscript coherence,
+human learning, journal suitability and real research-writing transfer remain untested.
+No claim of general superiority follows from these runs.
+
+The three affected Skills pass `quick_validate.py`. All 83 local target links and
+29 heading anchors in the six changed plugin files and new benchmark README resolve;
+six existing JSON manifests/package files parse. The task's plugin changes pass
+`git diff --check`. Full-worktree whitespace warnings predate this patch and remain
+untouched. Byte comparisons against the starting working tree confirm preservation of
+unrelated plugin changes, manuscript assets and the corpus census. Host discovery and
+installed-cache refresh were not exercised; no installation or publication was performed.
+
 ## Portable Ren GW/RPA writing methods, 2026-10-29
 
 The LibRPA method library now includes `ren-gw-notation` and `ren-gw-writing`,

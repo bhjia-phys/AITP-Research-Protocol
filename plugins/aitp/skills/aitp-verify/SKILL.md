@@ -40,6 +40,7 @@ opened directly, apply the cycle and reuse context already recovered.
 | References and attributions | [Literature](../aitp-research/references/literature.md) |
 | A research note being reviewed or prepared for sharing | The checks relevant to its claims below; sharing alone does not request a manuscript or PDF |
 | A requested paper draft, manuscript revision or TeX/PDF deliverable | [Manuscript handling](../aitp-writing/references/manuscripts.md) |
+| Reviewing a manuscript's science and argument | [Manuscript review](#review-a-manuscript) |
 
 ## Check a derivation
 
@@ -71,6 +72,31 @@ approximation is not validation of that approximation, a finite-size trend is no
 limit, a theorem under stated hypotheses does not establish that those hypotheses describe
 the physical system, and a passed test is not physical validity. Qualify a claim where it
 reaches further than its evidence.
+
+## Review a manuscript
+
+Keep scientific validity and narrative adequacy as separate judgments; neither is
+evidence for the other. Use the scientific checks above for the claims in scope.
+For the narrative, reconstruct from the draft what the reader is asked to conclude
+and how each section contributes. Use writing's
+[argument design](../aitp-writing/references/manuscripts.md#scientific-argument-design)
+and [reverse outline](../aitp-writing/SKILL.md#revise-the-argument-as-a-whole), without
+silently repairing missing steps from expert knowledge.
+
+Check whether the motivation poses the question the body answers, definitions and
+equations have a visible purpose, distinct approaches are connected, and the abstract
+and conclusion retain the actual hypotheses and limits. An internally consistent
+account can still rest on an unsupported physical identification. A sound derivation
+can still be unusable for its intended reader.
+
+For each material finding, give the location, the failed inference or reader need,
+its consequence and the smallest adequate correction. Distinguish a scientific error,
+a missing explanation and an editorial preference. Preserve a correct subresult when
+rejecting a broader interpretation; identify an objection that remains open without
+claiming it refutes the result. Already effective organization needs no rewrite.
+Report what requires research separately from what editing can repair, and state what
+was not checked. A whole-manuscript review also checks the promises in the title and
+abstract; a local review does not certify the rest of the paper.
 
 ## Report
 

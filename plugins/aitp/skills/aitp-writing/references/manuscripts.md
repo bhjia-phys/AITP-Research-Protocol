@@ -43,6 +43,8 @@ Keep scientifically relevant negative results, assumptions and limitations. Leav
 operational run history and speculative future routes in the research memory
 unless they serve the paper's argument. A conjecture included in a paper remains
 a conjecture. Do not fill a missing proof or result to complete the manuscript.
+Use [scientific argument design](#scientific-argument-design) for a substantial new
+paper or reorganization; an already coherent passage needs no replanning.
 
 Read the opening as a new reader: can it explain the physical question, imported
 inputs, work established here, decisive conditions and remaining inference?
@@ -96,3 +98,45 @@ Deliver the actual source/PDF paths and state what was compiled or inspected.
 If an unavailable dependency prevents a build, report that limit precisely
 without presenting an older PDF as the newly edited result. Do not compile
 every linked manuscript merely because a research-memory paragraph changed.
+
+## Scientific argument design
+
+Apply writing's [argument organization](../SKILL.md#organize-by-what-establishes-the-answer)
+to the intended paper. Work privately unless an outline is requested; this is not
+a questionnaire, a separate maintained document or a fixed section template.
+
+Make the motivation specific: what physical distinction, unexplained mechanism,
+limitation or mathematical question matters, and what would knowing the answer
+change? Explain why the available description does not settle it. A classification,
+precise calculation or useful negative result need not be dressed as a paradox.
+Separate the question that motivated the work from the answer it actually reached.
+
+Trace the proposed central result through its indispensable inferences. Give each
+calculation, theorem, example and numerical comparison its actual role: establishing
+a step, discriminating explanations, testing an implementation, revealing a mechanism
+or delimiting a claim. Consider the strongest plausible objection or alternative
+explanation that the supplied evidence leaves alive. If the chain does not reach the
+proposed result, locate the missing inference and narrow the claim; a better outline
+cannot supply it. Further investigation belongs to research within its agreed scope.
+
+Choose the section order from these relationships and the reader's prerequisites.
+When several approaches are retained, explain why each is introduced, what it makes
+accessible and how it bears on the same question. Distinguish a proof dependency from
+a pedagogical example, an independent check or an alternative viewpoint. A failed
+route belongs when its failure teaches a necessary limitation; chronology alone does
+not earn it a section. Do not invent a logical necessity or a historical motivation
+for a choice whose reason is unknown. A source can explicitly motivate several valid
+organizations; the author's chosen order is not a universal rule.
+
+Check internal coherence as well as local correctness. Does the reader meet the same
+model, observable, conventions and assumptions in the introduction, derivation, figures
+and conclusion, or are changes explained? Does each claimed connection actually have
+an argument? State the conditions of a result where it is used; a later caveat cannot
+repair an earlier unqualified claim. Self-contained means that the decisive reasoning
+is followable from the agreed prerequisites and explicit imported results, not that
+every background theorem must be proved. Internal consistency alone does not establish
+physical validity.
+
+Use the [reverse outline](../SKILL.md#revise-the-argument-as-a-whole) on the resulting
+draft, then align the title, abstract and opening with what it establishes. For a
+requested review, use [manuscript review](../../aitp-verify/SKILL.md#review-a-manuscript).

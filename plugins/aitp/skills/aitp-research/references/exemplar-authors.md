@@ -111,6 +111,13 @@ around them, and it is learned from the papers with a skeleton reading:
 3. Write the paper's chain of questions.
 4. Name the job each section does.
 
+This skeleton is provisional. Read the body of a decisive passage before claiming
+what its argument establishes or why its organization works. Distinguish an author's
+explicit explanation of a choice from a reconstructed interpretation. A section can
+supply an independent test or a second viewpoint; it need not resolve an obstacle
+created by its immediate predecessor. If a collection summary overstates such a
+pattern, use the original passage and report or correct the summary within scope.
+
 Jobs seen in practice include:
 - posing the question;
 - taking up the difficulty the previous section left;
@@ -139,6 +146,19 @@ when reading, to map a source, and when writing, to find a passage that does the
 hand.
 
 ## Improve and test
+
+When the researcher wants to practise argument design, use
+[human learning](../../aitp-human-learning/SKILL.md) for an optional apprenticeship:
+give the question and necessary results before revealing the source's organization,
+invite a proposed outline or next step, then compare the scientific jobs of both
+routes. Several organizations may be sound. Discuss which assumptions, reader needs
+or explanatory gains justify the difference rather than rewarding resemblance.
+Transfer one decision to a different problem and name the condition that would make
+it fail. Deliver a requested complete explanation without waiting for an exercise
+response, and do not insert this practice into ordinary manuscript production.
+An unaided changed-problem attempt can reveal a particular decision the researcher
+can make; a polished AI rewrite or agreement with the explanation cannot establish
+independent understanding, retention or general writing ability.
 
 Retain a consequential use beside the research it served: the passage, decision and
 what its check established. An editorial adaptation needs no separate use log. Success

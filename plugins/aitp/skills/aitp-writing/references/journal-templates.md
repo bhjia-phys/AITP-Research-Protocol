@@ -4,6 +4,13 @@ The sources below were inspected on 2026-09-14. These AITP Markdown templates
 are original editorial starting points. They are not official journal templates
 or a claim of compliance with submission requirements.
 
+Keep venue suitability, scientific organization and submission formatting separate.
+For a venue recommendation, assess the actual subject, contribution, depth and
+intended readership against current official scope and author guidance. A template
+supplies no evidence of suitability or acceptance probability. Recheck current
+official requirements when preparing a submission; the dated observations below are
+not a substitute. A researcher's preferred layout for notes remains a local choice.
+
 ## What the official TeX sources provide
 
 PRL, PRX and PRB share [APS REVTeX 4.2](https://journals.aps.org/revtex).

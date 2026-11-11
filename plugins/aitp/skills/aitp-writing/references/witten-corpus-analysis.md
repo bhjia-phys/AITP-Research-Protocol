@@ -72,6 +72,10 @@ The sample includes:
 
 ## Changes Across The Period
 
+The period headings below summarize this historical sample, whose genres and
+subjects differ between periods. They do not establish an evolution of the
+author's reasoning or a generally superior later style.
+
 ### 2011-2015: construction before interpretation
 
 The long gauge/string papers commonly organize the article around a chain of
@@ -140,9 +144,35 @@ repeated at the step where each is relaxed.
 
 ## Genre Findings
 
+Read the sequences below as possible organizations observed or reconstructed in
+the sample, not invariant templates. The current Skill's dependency guidance
+takes precedence over a literal sequence here. A skeleton reading locates a
+possible structure; the decisive passages must support the proposed explanation
+of why it works.
+
+Three inspected passages delimit these generalizations:
+
+- *Fivebranes and Knots*, [1101.3216v2](https://arxiv.org/html/1101.3216v2),
+  §1.4.2, explicitly contrasts its bottom-up presentation with the more economical
+  six-dimensional starting point. The chosen order first clarifies the relation
+  to Chern-Simons theory. Explanatory order need not be the shortest formal route.
+- *Three Lectures on Topological Phases of Matter*,
+  [1510.07698v2](https://arxiv.org/html/1510.07698v2), §0 and §1.1, first gives
+  context, scope and attribution; the concrete dispersion question arrives in
+  §1.1. Opening immediately with an obstruction is not a universal requirement.
+- Witten and Yonekura, *Anomaly Inflow and the Eta-Invariant*,
+  [1909.08775v3](https://arxiv.org/html/1909.08775v3), §2.1,
+  Eqs. (2.11)–(2.14), assigns distinct factors to later derivations and contrasts
+  the nonperturbative expression with its perturbative counterpart. An equation
+  can explain the division of scientific work, not just report a calculation.
+
+These are located examples of published choices, not evidence that applying
+them improves an AI's writing. The recommendations for mixed numerical work
+below remain editorial adaptations, not a Witten-derived numerical protocol.
+
 ### Long technical construction paper
 
-The stable architecture is:
+One organizing sequence in the sampled papers is:
 
 ```text
 several motivations
@@ -160,7 +190,7 @@ It should not paraphrase the table of contents.
 
 ### Short conceptual note
 
-The stable architecture is:
+One organizing sequence in the sampled papers is:
 
 ```text
 one mismatch
@@ -178,7 +208,7 @@ orientation and conjugation.
 
 ### Theorem or proof paper
 
-The stable architecture is:
+One organizing sequence in the sampled papers is:
 
 ```text
 precise statement and why standard tools do not directly apply
@@ -208,7 +238,7 @@ checklist or a section called `Scientific contract`:
 - important omissions;
 - whether arguments are heuristic, sketched, or proved.
 
-The stable architecture is:
+One organizing sequence in the sampled papers is:
 
 ```text
 familiar question or paradox
@@ -228,7 +258,7 @@ down, and only afterward supplies more detailed proofs.
 
 ### Proposal or conjectural paper
 
-The stable architecture is:
+One organizing sequence in the sampled papers is:
 
 ```text
 puzzle
@@ -247,7 +277,7 @@ can be more precise than a vague caveat in the conclusion.
 
 ### Computational or localization paper
 
-The stable hierarchy is:
+One organizing sequence in the sampled papers is:
 
 ```text
 known solvable mechanism
@@ -332,7 +362,9 @@ true.
 
 ## Cross-Corpus Principles
 
-1. **Open with an exact mismatch.** Importance alone does not define a paper.
+1. **Make the question specific.** An exact mismatch can motivate it; background,
+   a classification target or a calculational limitation can also provide the
+   appropriate opening. Importance alone does not define a paper.
 2. **Make the new object answer the obstruction.** Definitions should repair a
    named failure.
 3. **Use controlled examples before uncontrolled generality.** State the map
