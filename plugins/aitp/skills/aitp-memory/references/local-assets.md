@@ -78,6 +78,8 @@ needed. This is a menu of useful locations, not a tree to generate in advance:
 topic/
   README.md                 Folder map and actual material locations, if needed
   research.md               Developing main argument
+  plan/<stage>/             Open stage: design and stage-owned developing argument
+  archive/<stage>/          Closed stage: retired plan and qualified outcome
   notes/                    Detailed derivations, concepts and topic-specific reading
   references/               Papers, bibliography and source documents
   code/                     Reusable code owned by this topic
@@ -96,11 +98,18 @@ while numerical work adds results or calculation bundles. Existing `calculations
 input/output/analysis bundle merely to fill these categories.
 Mixed work follows the connections between the theory and its tests.
 
+The [stage lifecycle](plans.md) connects `plan/` and `archive/` to this broader
+material menu. A substantial stage keeps its design and any stage-owned argument
+together; cross-stage explanations remain in `notes/`, and an existing result
+owner is linked rather than copied into an archive. Keep a paused stage open.
+Retirement moves only the stage-owned bundle, with link repair; it does not move
+shared code, raw run evidence or knowledge, or promote a conclusion into a proof.
+
 The same choices apply at the root, topic and any depth of genuine subquestion.
 Each main note owns the argument at its level and links to the parent or branches
 it serves; material directories are not themselves research branches. Keep original
 papers in `references/`, local reading explanations and substantial derivations in
-`notes/`, and authored article or lecture sources and their PDFs in `manuscripts/`,
+`notes/` or their owning stage bundle, and authored article or lecture sources and their PDFs in `manuscripts/`,
 unless an established home already serves that role. Shared PDFs and checkouts stay
 in their existing homes and are linked from each use, not copied into every level.
 
@@ -211,7 +220,9 @@ layouts; do not rebuild the project tree to fit a UI. Move internal files only
 where that improves their actual use within the authorized task. Before moving
 them, keep a recoverable backup of those files and the notes whose links will
 change. Repair affected incoming and outgoing ordinary links together, and check
-the moved files and their uses before retiring the old copies. Shared repositories,
+the moved files and their uses before retiring the old copies. For several files,
+[checks and moves](checks-and-moves.md) gives the procedure and two scripts; include
+the folders that link into the topic, such as a shared knowledge collection. Shared repositories,
 shared source PDFs and large data stay in place; reference their actual locations.
 Routine organization already authorized needs no additional confirmation step;
 this guide is not itself permission to relocate other research or shared assets.

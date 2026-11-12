@@ -89,6 +89,12 @@ reports own execution and observations, plans own the sequencing of an agreed st
 READMEs own locations. Qualifications outrank compactness: shorten by omitting a secondary
 claim, never by dropping a claim's conditions.
 
+For substantial staged work, keep the design and its eventual argument with the owning
+question, using the [plan and archive lifecycle](references/plans.md). Current work links
+open stages; the scientific account incorporates closed stages where their results bear
+on the question. A stage's completion changes the main judgment only to the extent its
+evidence warrants. The main note remains a readable synthesis, not a folder inventory.
+
 ## Read when
 
 | When the task involves | Read |
@@ -96,6 +102,7 @@ claim, never by dropping a claim's conditions.
 | The root note, a seed, or a discussion outcome without a topic | [The backbone](#the-backbone-at-each-level) and [discussion outcomes](#where-discussion-outcomes-land) |
 | An agreed new topic, or scattered material that needs a home | [Starting or organizing a topic](references/starting-a-topic.md) |
 | Where a script, figure, input or output belongs | [Asset placement and links](references/local-assets.md) |
+| A whole-topic check, or moving several files inside a topic | [Checks and moves](references/checks-and-moves.md) |
 | Source trees, builds, environments, tests and runs | [Numerical assets](references/numerical-assets.md) |
 | Shared concepts, source readings or a pointer row for a result | [Shared knowledge](references/shared-knowledge.md) |
 | Where a new result, failure or correction goes | The [placement table](../aitp-writing/references/research-note.md#add-move-and-remove-material-without-losing-the-thread) |

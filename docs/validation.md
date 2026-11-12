@@ -180,6 +180,63 @@ untouched. Byte comparisons against the starting working tree confirm preservati
 unrelated plugin changes, manuscript assets and the corpus census. Host discovery and
 installed-cache refresh were not exercised; no installation or publication was performed.
 
+## Question-owned stages and placement, 2026-11-11
+
+The stage guidance now connects each substantial question's open `plan/<stage>/` to
+its retired `archive/<stage>/` account. Main notes integrate qualified outcomes;
+supporting derivations, shared knowledge, code and original run evidence keep their
+owners. Paused and partial stages remain open, and archiving does not establish proof.
+
+The placement table, material map and machine-readable rule agree on these directory
+roles. The topic checker treats a retained `research.md` inside material directories as
+a study account while continuing to validate its evidence links. Isolated controls
+checked an archived account, a broken archived evidence link and a genuine nested
+question that must still receive live main-note checks.
+
+The npm package includes the shared placement rule and helper scripts; generated Python
+caches are excluded. This records source-level and isolated checks, not installed host,
+UI, scientific or workspace-wide usability acceptance.
+
+## Topic checks and note moves, 2026-11-01
+
+`aitp-memory` gains [checks and moves](../plugins/aitp/skills/aitp-memory/references/checks-and-moves.md)
+and two standard-library scripts. `check_topic.py` reports:
+- broken relative links and `#anchors`, and links into the topic from named outside folders;
+- root files the placement rules do not admit, and loose root notes;
+- missing or undated Current work entries, and unreached `notes/` files.
+
+`move_notes.py` moves files with a manifest and backup, rewrites only link targets, verifies
+the result, and reports, without editing, incoming links and code strings that name old
+paths. The current `test_topic_tools.py` suite passes 59 synthetic controls, including outside
+incoming links, source checkouts, environments and explicitly frozen copies. Topic-only checks and workspace-wide incoming
+checks have different coverage. Private research evaluations are retained outside the
+published source tree.
+
+Move preflight rejects repeated sources, resolved symlink escapes and aliased source or
+destination collisions before mutation. Dry-run and apply controls verify that refused
+operations preserve source/destination contents, symlinks, manifests and backups.
+
+Not exercised: Windows paths, non-UTF-8 text, HTML links and rewriting reference-style
+link definitions. A clean report establishes navigation only, not any scientific claim.
+
+**Independent trial.** A fresh agent was given only the reference and a different synthetic
+topic. That topic had a loose root note, a location-dependent run bundle owned by a branch,
+and an outside collection linking into the note. The agent:
+- left the run bundle in place, working out from its `__file__`-relative root why moving it
+  would retarget it;
+- edited nothing outside its scope;
+- staged, rather than applied, the one move that would have broken the outside link.
+
+It found four defects, now fixed and covered by four new controls:
+- the guidance gave no rule for an out-of-scope incoming link; it now says to stage the move
+  and ask;
+- the `--apply` backup inside a topic was read as live notes; it now goes under
+  `<manifest>-backup/before/`;
+- a rerun reported the earlier manifest and checker JSON as code naming old paths;
+- the dry run printed only counts.
+
+The trial covered one small instance; it is not a measure of general organizing quality.
+
 ## Portable Ren GW/RPA writing methods, 2026-10-29
 
 The LibRPA method library now includes `ren-gw-notation` and `ren-gw-writing`,

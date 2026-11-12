@@ -38,17 +38,7 @@ loaded inventory with `claude plugin details aitp`. In a new session, ordinary
 research requests can activate relevant Skills; `/aitp:aitp-memory` is also
 available as an explicit entry point. Installation does not rewrite research notes.
 
-For **DSH**, the development checkout also supplies a native Skills bundle:
-
-```sh
-dsh plugin --profile web add ./plugins/aitp
-```
-
-Run this from the repository root, or supply the absolute `plugins/aitp` path. The bundle uses DSH's existing filesystem Skill provider for the seven core Skills and the nested LibRPA methods; it adds no agent runtime or research UI. Isolated installation and catalog loading were checked against the local `0.2.1-rc.2` development baseline. The package's declared version range is not a compatibility test of every release. An explicit `DSH_BUNDLED_SKILL_DIR` in a nearer agent scope can override these Skills; remove the obsolete override when adopting the bundle. Claude-specific hooks do not execute merely because the Skills are installed in DSH. Research workbench and context plugins are separate capabilities, installed only when their own DSH bundle is wanted.
-
-Start a new host thread after installation.
-
-### DeepSeek Harness
+For **DeepSeek Harness (DSH)**:
 
 The development checkout also supplies a native DSH Skills bundle with no runtime of
 its own:
@@ -77,6 +67,8 @@ Claude-specific hooks do not execute merely because the Skills are installed in 
 Research workbench and context plugins are separate capabilities, installed only when
 their own DSH bundle is wanted.
 
+Start a new host thread after installation.
+
 
 ## The architecture: a backbone and the processes that grow it
 
@@ -86,6 +78,17 @@ whole research workspace (directions, cross-topic connections, seeds of new idea
 agenda and standing agreements), topic notes, and branch notes inside topics. Every
 retained paper, derivation, experiment and output has one home and a link path from the
 root and from the note that uses it.
+
+Question ownership, stage progress, evidence locations and reusable understanding are
+different parts of this structure. Each substantial question owns its main note and
+[open or archived stage bundles](skills/aitp-memory/references/plans.md); the
+[material map](skills/aitp-memory/references/local-assets.md) keeps supporting notes,
+literature, code, runs, data, figures and manuscripts at their actual homes. Shared
+[knowledge](skills/aitp-memory/references/shared-knowledge.md) explains foundations and
+source methods used by several questions. These locations are created as needed, not
+as a mandatory tree. The [placement table](skills/aitp-memory/references/asset-placement.md)
+and [machine-readable rule](assets/placement-rules.json) admit and scan `plan/` and
+`archive/`; closed stages retain qualified outcomes, not automatic proof status.
 
 The seven Skills are processes on that backbone. Each says what it reads, what it writes
 back and where, and what it can trigger next. They reuse one recovered context rather
@@ -305,6 +308,9 @@ README maps material folders and the main argument links detailed notes and thei
 assets. It offers optional layouts for new topics and shared development;
 reuse established locations and create folders for agreed independent questions,
 not as empty asset templates.
+[Checks and moves](skills/aitp-memory/references/checks-and-moves.md) adds a topic
+checker and a move script for whole-topic checks and multi-file moves, including links
+that reach the topic from other folders.
 For unfamiliar related work, [browse directory entries and note titles first](skills/aitp-memory/references/local-assets.md#browse-nearby-topics-and-shared-knowledge),
 then search and read selected notes. Short scope descriptions help choose a note;
 known useful links can be followed directly. Reuse the located context within the task.

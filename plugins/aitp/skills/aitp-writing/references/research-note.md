@@ -131,7 +131,7 @@ The default form, as Markdown source with synthetic content:
 - **Reduced-method accuracy** — active · 2026-03-04. The tested reduction is faster but
   changes the target energy by 0.04, outside the 0.01 tolerance; the full method remains
   the reference. Next: a less severe reduction under the same fixed-input control.
-  [comparison](fixed-input-report.md#reduced-versus-reference) · [plan](plans/reduction.md)
+  [comparison](fixed-input-report.md#reduced-versus-reference) · [plan](plan/reduction/plan.md)
 ```
 
 Equivalent prose or a table is acceptable when it carries the same information.
@@ -164,6 +164,16 @@ evidence, until integration happens.
 The thread owns scientific continuation: what is unresolved and what would discriminate. A
 [plan](../../aitp-memory/references/plans.md) owns the sequencing of an agreed stage, and the
 entry points to its operative phase. A run report owns execution and observations.
+
+When using the question-owned `plan/` and `archive/` convention, Current work links open
+stage plans. Explain a closed stage's qualified result in the scientific account where
+it supports or changes the argument, with a link to its archived account or existing
+result owner. These are the main note's live and established sides; they need no parallel
+status table or exhaustive list of completed tasks. Update them when the question,
+frontier, outcome or chosen route changes, rather than on every intermediate edit. Follow
+the [stage lifecycle](../../aitp-memory/references/plans.md#keep-the-plan-current-then-retire-it)
+for partial results, pauses, retirement and link repair. A result's archive location is
+not evidence that the parent question has been solved.
 
 ## Decisions and retained alternatives
 

@@ -58,6 +58,11 @@ A short plan can live in this note; a detailed phased plan is a separate
 [plan](../../aitp-memory/references/plans.md), reviewed before it runs. Link it, and the
 derivation, implementation account, scripts, inputs and results, when they have their own
 useful homes.
+For a branch using stage folders, its `plan/<stage>/` holds the open design and any
+stage-owned developing argument; closure moves them together to `archive/<stage>/`
+under the linked plan lifecycle. Existing result accounts and shared assets keep their
+homes. The parent main note retains their scientific contribution, not another copy
+of the plan or report.
 These are content needs, not a required set of documents. Preserve useful
 failures and the reasons for material changes of plan; replace obsolete next
 steps while retaining the evidence. In the originating main note, link the
