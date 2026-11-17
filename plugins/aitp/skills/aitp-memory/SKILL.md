@@ -5,6 +5,39 @@ description: Start AITP research work and substantive physics discussions here. 
 
 # The research backbone and the research cycle
 
+## What this memory is for
+
+`research.md` is the researcher's long-term memory and the backbone of the research.
+Each one is a living account of the question at its own level: a root note for the
+whole research, a note for each topic, and notes for branches inside topics.
+
+Help the researcher make the whole research clear. A main note should converge
+toward a coherent account of a question, its reasoning, evidence and remaining
+obstruction. Convergence can be a qualified result, a precise failure, or a
+better question; do not force success or erase uncertainty to make a neat paper.
+This account should help a returning agent choose the next useful inference:
+what the main question needs, which branch can supply it, and which completed or
+failed route no longer needs repeating. It is not a queue of all unfinished work.
+
+Write for that returning reader, the researcher or an agent in a later session. Keep what only
+the work can tell: the current answer at its true strength with its conditions, the reasoning
+and evidence behind it, failed routes and their reasons, decisions and who made them, and
+unresolved objections. Leave what the files already show, such as code, outputs, job states and
+version history, to those files and link them. The root note, each opening and Current work are
+read first, so they stay short and current, with detail one link below. A retained claim
+predicts that a later session can rely on it: state its support, and check it before a
+consequential step depends on it. What deserves keeping is a judgment made for the returning
+reader; the conventions below keep the notes usable and are not a checklist.
+
+The other skills are processes that grow the backbone:
+[aitp-human-learning](../aitp-human-learning/SKILL.md) for study and conceptual
+difficulty, [aitp-human-brainstorming](../aitp-human-brainstorming/SKILL.md) for the
+researcher's choices, [aitp-research](../aitp-research/SKILL.md) for investigation,
+synthesis and computation, [aitp-verify](../aitp-verify/SKILL.md) for checking claims,
+[aitp-writing](../aitp-writing/SKILL.md) for notes, papers and PDFs, and
+[aitp-distill](../aitp-distill/SKILL.md) for reusable methods. This skill keeps the
+backbone and runs the cycle around every task.
+
 ## The research cycle
 
 Start research work and substantive physics discussions here; a skill opened directly
@@ -51,26 +84,6 @@ calculation can expose a disputed claim or an unresolved algorithm choice. A ref
 back to this cycle is not an instruction to restart it. The final answer reports
 completed integration, not an intention to save later.
 
-`research.md` is the researcher's long-term memory and the backbone of the research.
-Each one is a living account of the question at its own level: a root note for the
-whole research, a note for each topic, and notes for branches inside topics. The
-other skills are processes that grow it:
-[aitp-human-learning](../aitp-human-learning/SKILL.md) for study and conceptual
-difficulty, [aitp-human-brainstorming](../aitp-human-brainstorming/SKILL.md) for the
-researcher's choices, [aitp-research](../aitp-research/SKILL.md) for investigation,
-synthesis and computation, [aitp-verify](../aitp-verify/SKILL.md) for checking claims,
-[aitp-writing](../aitp-writing/SKILL.md) for notes, papers and PDFs, and
-[aitp-distill](../aitp-distill/SKILL.md) for reusable methods. This skill keeps the
-backbone and runs the cycle around every task.
-
-Help the researcher make the whole research clear. A main note should converge
-toward a coherent account of a question, its reasoning, evidence and remaining
-obstruction. Convergence can be a qualified result, a precise failure, or a
-better question; do not force success or erase uncertainty to make a neat paper.
-This account should help a returning agent choose the next useful inference:
-what the main question needs, which branch can supply it, and which completed or
-failed route no longer needs repeating. It is not a queue of all unfinished work.
-
 ## The shape of a main note
 
 A topic or branch note has four parts, each with one job (see the
@@ -80,6 +93,12 @@ with the question, the scope and binding constraints, the current answer at its 
 strength and the decisive gap; **Current work**, the only maintained home of each live
 thread's continuation; a **scientific account** whose headings follow the physics; and,
 when useful, **decisions and retained alternatives**. A short note can be three paragraphs.
+A research topic may also keep a `story.md` beside it: a short paper that tells the
+researcher the whole story and its key insights, revised at milestones and adding no claim
+of its own (see [the story](../aitp-writing/references/story.md)). A note past its soft
+[size budget](../aitp-writing/references/research-note.md#decide-what-stays-in-the-main-note)
+gets an offer of a [consolidation pass](references/tidy.md#the-consolidation-pass),
+not automatic shortening or loss of a central argument.
 
 Put an observation where it was produced, its interpretation where the question is
 answered, its consequence where another argument uses it, and a next action only with the
@@ -103,13 +122,17 @@ evidence warrants. The main note remains a readable synthesis, not a folder inve
 | An agreed new topic, or scattered material that needs a home | [Starting or organizing a topic](references/starting-a-topic.md) |
 | Where a script, figure, input or output belongs | [Asset placement and links](references/local-assets.md) |
 | A whole-topic check, or moving several files inside a topic | [Checks and moves](references/checks-and-moves.md) |
+| The end-of-reply architecture check, or the researcher says "tidy" | [Reply check](references/tidy.md) |
 | Source trees, builds, environments, tests and runs | [Numerical assets](references/numerical-assets.md) |
 | Shared concepts, source readings or a pointer row for a result | [Shared knowledge](references/shared-knowledge.md) |
 | Where a new result, failure or correction goes | The [placement table](../aitp-writing/references/research-note.md#add-move-and-remove-material-without-losing-the-thread) |
+| Notes under Git: what changed since a checkpoint, recording a checkpoint, an earlier version | [Version history](references/version-history.md) |
 | A note with a parent or branches | [Keeping the topic tree clear](#keep-the-topic-tree-clear) |
 | Planning a stage of work | [Plans](references/plans.md) |
 | Handing work to another session or model, or work in parallel | [Hand-offs and parallel work](references/handoffs.md) |
-| A handoff, a context compaction, or outside work relying on a recent change | [Independent process review](#independent-process-review) |
+| A handoff, a context compaction, outside work relying on a recent change, or a review across sessions | [Independent process review](#independent-process-review) |
+| When to ask the researcher, and how a request and its answer are written | [Brainstorming's moments](../aitp-human-brainstorming/SKILL.md#decide-whether-a-human-answer-is-needed) and [request format](../aitp-human-brainstorming/SKILL.md#make-the-question-answerable) |
+| A check by a reader without the conversation: a claim, the story, or a Skill on a new case | The [independent reader](../../agents/aitp-reader.md) |
 | Where things stand, a topic's history or its connections | [Status, history and continuation](references/status-and-continuation.md) |
 | A bare "continue" | [Continuing the authorized task](references/status-and-continuation.md#continue-the-authorized-task) |
 
@@ -168,6 +191,17 @@ assume an unfamiliar subdirectory or missing literal filename means no note exis
   authorized organization, and otherwise name the missing navigation and continue the
   permitted discussion.
 
+A message that opens with an `Atlas context (what I am looking at)` block comes from
+Atlas, the DSH reading view: it names the topic's main note and what the researcher has
+open (a document, a section, a page or a quoted passage) by absolute path. Treat that
+note as located and the passage as the object of the request: recover what the request
+needs from the note, answer in the conversation, and place durable outcomes as the
+[outcome table](#where-discussion-outcomes-land) describes, saying where they went. The
+block only points: it is not the note's content and authorizes nothing beyond the request.
+Atlas keeps a copy of the notes in a discussion's scope and shows the researcher each edit,
+by section, to keep or revert: make each edit where the change belongs, complete enough to
+read on its own, and say in the reply what changed and why.
+
 Connect the user's request to that understanding and state the current task
 briefly: what this session should resolve or produce, and what would settle that
 task. A historical next step is context, not a substitute for today's request.
@@ -199,23 +233,17 @@ infer clear main/branch relationships from the material and establish or reuse
 their folders and notes; ordinary placement does not need another approval.
 Making an existing branch legible does not authorize starting a new investigation.
 
-Then use [aitp-research](../aitp-research/SKILL.md) for the scientific work and
-[aitp-writing](../aitp-writing/SKILL.md) when drafting or revising the argument.
-Reuse this established context when those Skills refer back here.
-
 ## Understand the whole note before changing it
 
-Locate the user-designated main note, normally `research.md`. Several independent
-questions may share a code workspace; choose the relevant note rather than
-forcing them into one paper. Read what the operation needs. Recall and status read the
+Several independent questions may share a code workspace; choose the relevant note rather
+than forcing them into one paper. Read what the operation needs. Recall and status read the
 opening and Current work, then follow the relevant entry's links. A local update reads
 the passage it changes and the passages that use it. Branch work also needs its
 relationship to the originating question, recovered as in
 [keeping the topic tree clear](#keep-the-topic-tree-clear). Before a consequential
 decision, a reinterpretation or a restructuring, read the complete affected account,
 including its conclusion and open questions, and the using passages of dependent notes.
-If it exceeds one read, read successive sections until it is understood. A title, an
-opening or a keyword hit is insufficient for that. Reuse a complete, known-current
+A title, an opening or a keyword hit is insufficient for that. Reuse a complete, known-current
 reading within the same work interval; ordinary turns do not require reading it again.
 
 For whole-topic recovery or substantive revision, privately recover the central
@@ -248,9 +276,6 @@ than reconstructing a historical fact from a plausible present-day rationale.
 
 If the note changed externally, reread the changed passages and those you will edit
 before editing; a substantive revision re-establishes the complete current argument.
-If the note is missing, establish the scope as above and use the
-researcher's material to start a small coherent note; identify unexamined
-material without manufacturing conclusions.
 Do not initialize a ledger or reconstruct all archived sessions merely to begin.
 
 ## Repair an outdated main note during use
@@ -423,7 +448,9 @@ its next action; an intervening status question does not replace it. The
 
 When finishing the requested task or handing it back, decide whether its outcome
 changes durable understanding or repairs a material gap in the retained argument.
-This is an editorial decision, not an automatic end-of-turn write:
+This is an editorial decision for the returning reader that
+[this memory serves](#what-this-memory-is-for), not an automatic end-of-turn write. The
+usual cases:
 
 - No new durable understanding and no material defect in the retained account:
   answer the user without editing memory.
@@ -484,6 +511,7 @@ your account of them. Use it, by judgment, when the record must stand on its own
 | The conversation was compacted | Your context lost detail that the session log still holds |
 | Something outside this conversation is about to rely on a recent change: a submission, a manuscript or report, a decision the researcher will act on | An error would leave the session |
 | The researcher asks | |
+| The researcher asks for a review across sessions, such as "review this week" | Each session's review saw only its own log; an outcome no session recorded, or a record a later session contradicted, shows only across sessions |
 
 Most sessions need it only after a compaction and at the end: each review covers everything
 no earlier review inspected and rechecks the researcher's questions across the whole session,
@@ -498,6 +526,14 @@ the reviewer file, and give it the absolute path of your session log (Codex:
 `~/.claude/projects/*/$CLAUDE_CODE_SESSION_ID.jsonl`) and the signal that prompted the review,
 and nothing else: no summary and no interval, since it finds its own scope in the log. Only
 independent work continues meanwhile.
+
+For a review across sessions, give it the period the researcher named and, oldest first, the
+session logs in that period that worked in the research: Codex rollouts under
+`$CODEX_HOME/sessions/YYYY/MM/DD/` whose first line names a working folder in the research, and
+Claude Code transcripts in the `~/.claude/projects/` folders of the research root and the
+folders inside it. Without a named period, continue from the coverage the last such review
+reported, or ask. It is a review on request at a natural pause, not a background process; its
+findings are assessed and applied as below.
 
 Assess its findings as [aitp-verify](../aitp-verify/SKILL.md#assess-another-models-review)
 describes and apply the valid ones yourself as the only writer: reread the passage, revise the

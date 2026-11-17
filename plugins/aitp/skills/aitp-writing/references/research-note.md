@@ -9,7 +9,7 @@ A main note has four parts, each with one job:
 
 | Part | Its job |
 | --- | --- |
-| Opening | The question; the scope (the overall objective, the agreed stage when different, and binding constraints, one line each with a link); the current answer at its true strength; the decisive reason or gap. About one screen. |
+| Opening | The question; the scope (the overall objective, the agreed stage when different, and binding constraints, one line each with a link); the current answer at its true strength, as a few findings each labelled with its kind and scope and linked to its explanation and evidence; the decisive reason or gap. About one screen, [readable in a minute](#make-the-opening-readable-in-a-minute). |
 | Current work | The only maintained home of each live thread's continuation, as [described below](#current-work). |
 | Scientific account | Setting, reasoning, decisive comparisons, objections and implications, under headings chosen for the physics. |
 | Decisions and retained alternatives | Optional: binding choices with their scope, and earlier routes with their kind, what survives and when to reopen. |
@@ -108,6 +108,38 @@ why the calculation is discriminating, and what follows from it.
 Keep the consequential evidence boundary in the scientific account: for example,
 an analytic benchmark does not demonstrate that an implementation passes it.
 
+## Make the opening readable in a minute
+
+A returning reader should grasp the topic from the opening alone and follow its links for
+depth. An opening written as a run of precise evidence boundaries is accurate but hard to
+retell; the same content reads faster in this order:
+
+1. **A figure, when the evidence already contains one that carries the central comparison.**
+   Put it first, with a caption stating what it shows at its true strength: the sizes or
+   parameters plotted, the reference values, and what still moves. Use a figure the evidence
+   already has; a new one belongs to its own analysis, with its data and script.
+2. **The question in a few lines**, naming the setting's landmarks (limits, exactly solvable
+   points, the reference method), each linked to the passage that explains it.
+3. **The answer so far**: one or two sentences, then three to six findings of one or two lines,
+   each led by its kind and scope ("Numerical, L ≤ 20:", "Proved:", "Small systems, N = 6, 8:",
+   "Conditional on the matching hypothesis:") and ending with links to the account section that
+   explains it (the owner's section while the account has none for it) and to its evidence.
+4. **What is open**: the decisive gap, linked to the note that owns it.
+5. **The scope**, as described above, linked to the binding decisions.
+
+Write each finding from its owner, not from a recollection of it. Open the branch opening,
+evidence map or data that holds the claim, and keep its scope words: which parameters, which
+sizes, which sector, saved data or a new calculation, finite size or a limit. A plain-language
+sentence that drops them overstates, for example "the spectrum is chaotic across the parameter
+range" when the owner reports GOE-like statistics only at one end of it. A sentence first
+written to show tone or structure is not yet a claim; check it against its owner before it
+enters the note.
+
+A list of findings reads faster than the same words as prose, so such an opening may run past
+the 150-to-250-word guide. Count everything the opening shows, the figure caption and the
+findings included; at about twice the guide's upper end, some 500 words, move secondary findings
+into the account, keeping each one's conditions, rather than shortening the conditions to fit.
+
 Retain research information that a publication might omit: why a plausible route
 failed, an objection that still matters, a conjecture's actual evidence, or why a
 calculation would discriminate. Put it where it affects the reasoning; the chosen next
@@ -125,15 +157,18 @@ Each entry conveys the thread; its principal disposition, with a short qualifier
 several things are true; the date of its last consequential change; the bounded frontier,
 meaning what is known and what is unresolved, with its scope; the next discriminating action
 or pending choice; and links to the evidence, the operative plan phase or the decision.
-The default form, as Markdown source with synthetic content:
+The default form, as Markdown source with synthetic content, puts the frontier and the
+continuation on separate lines, so that each entry scans in any renderer:
 
 ```markdown
-- **Reduced-method accuracy** — active · 2026-03-04. The tested reduction is faster but
-  changes the target energy by 0.04, outside the 0.01 tolerance; the full method remains
-  the reference. Next: a less severe reduction under the same fixed-input control.
-  [comparison](fixed-input-report.md#reduced-versus-reference) · [plan](plan/reduction/plan.md)
+- **Reduced-method accuracy** — active · 2026-03-04
+  - **Now:** the tested reduction is faster but changes the target energy by 0.04, outside
+    the 0.01 tolerance; the full method remains the reference.
+  - **Next:** a less severe reduction under the same fixed-input control.
+    [comparison](fixed-input-report.md#reduced-versus-reference) · [plan](plan/reduction/plan.md)
 ```
 
+Run labels, archive inventories and criterion counts stay in the report that the entry links.
 Equivalent prose or a table is acceptable when it carries the same information.
 
 A thread owned by a branch or another topic gets a pointer entry: the owner link, what
@@ -150,7 +185,9 @@ next step edits the owner only.
 
 Dispositions are prompts, not a closed set: `active`, `proposed`, `waiting on analysis`,
 `waiting on integration`, `waiting on the researcher`, `waiting on run`, `waiting on input`,
-`paused` (why), `dormant` (resume condition), `concluded`. Remove a concluded entry once its
+`paused` (why), `dormant` (resume condition), `concluded`. A `waiting on the researcher` entry
+names the question and its lettered options (`A — …; B — …`), marking the recommended one, so
+that it can be answered from the entry alone. Remove a concluded entry once its
 result, disposition and evidence route are integrated into the account. The date records
 the last consequential change: it shows age, not verification or scheduler freshness. When
 the date is unknown, write "change date unrecorded"; never substitute the date of a
@@ -182,8 +219,9 @@ opening or beside the affected entry, with one authoritative statement of its ra
 Programmes benefit from a short list:
 
 - **Binding choices**: the choice, the scope it binds and, when recorded, the date, who
-  decided and a rationale link. For example: `2026-03-01 · keep the full method as the
-  reference · comparisons in this topic, not production elsewhere · researcher · [rationale]`.
+  decided (with their words when short) and a rationale link. For example: `2026-03-01 ·
+  keep the full method as the reference · comparisons in this topic, not production
+  elsewhere · researcher ("keep the full method as the reference for now") · [rationale]`.
 - **Retained alternatives**: the route; its kind (failed under stated conditions, refuted,
   refocused, deferred, completed control, declined by the researcher, superseded); what
   survives; and, when known, a reopening condition.
@@ -197,7 +235,10 @@ Judge the main note by whether its intended reader can explain the overall
 question, the decisive reasoning, the supported answer and the remaining gap.
 It need not prove every supporting theorem, but it must explain what an imported
 result says, why it applies here and what follows from it. A definition list or
-a link cannot carry the missing central inference. Keep assumptions next to the
+a link cannot carry the missing central inference. A section that is only a pointer
+into a supporting note fails the same test: state its result, the key equation or
+number with its condition, and the mechanism in a few sentences, then link the full
+argument. Keep assumptions next to the
 conclusions that need them, including in the opening and discussion.
 
 For a learning topic, the main note may begin with a small synthesis of the
@@ -223,6 +264,17 @@ source link. Link captions or nearby analysis to the data and script behind a
 figure; show a figure in the main note when it carries the central comparison.
 The README continues to explain locations, not duplicate the scientific account.
 
+A main note has a soft size budget to expose repeated additions: an opening of about
+30 lines, about 7 Current work entries of a few lines each, and about 400 lines in all.
+These are diagnostic signals, not errors or fixed limits. Inspect repetition and finished
+sections with independent supporting roles, leaving each result, decisive condition,
+implication and link at its point of use. Do not split a central derivation, omit a live
+thread or drop qualifications just to meet the budget. Keep stage-owned design and
+argument under the [plan/archive lifecycle](../../aitp-memory/references/plans.md).
+Memory's [consolidation pass](../../aitp-memory/references/tidy.md#the-consolidation-pass)
+proposes and stages a substantial reorganization, with the researcher's agreement and
+independent preservation review before live application.
+
 Keep useful side investigations visible through their relationship to the main
 question, even before they produce results. For an agreed independent branch,
 link its `research.md` beside the question it serves and say whether it is a
@@ -230,7 +282,9 @@ prerequisite, an alternative or an independent spin-off, and what result would
 matter to the main argument. Its main note links back. The nearest README maps
 the branch folder; detailed derivations stay with their own question. Use
 [side-investigation guidance](supporting-notes.md#follow-a-side-investigation)
-without forcing every short diagnostic into a new research question.
+without forcing every short diagnostic into a new research question. When a parent lists
+several branches together, group them by the sub-question each answers, one entry per branch
+giving what it answers here and its limit.
 Keep one primary account of each branch's detailed argument. The parent retains
 its implication and limiting condition, and the child explains its purpose and
 dependencies. Memory's [topic-tree checks](../../aitp-memory/SKILL.md#keep-the-topic-tree-clear)
@@ -309,7 +363,11 @@ links and claim terminology or aliases; inspect real dependencies and name known
 uses outside the completed scope. See [corrections](supporting-notes.md#correct-claims-and-keep-earlier-routes-findable).
 
 For a substantial restructure, freeze private copies of the source and receiving notes,
-navigation, relevant index entries and incoming references. Inventory what must survive:
+navigation, relevant index entries and incoming references. Under
+[version history](../../aitp-memory/references/version-history.md), an authorized checkpoint
+that captures these files' current contents can supply that frozen copy and comparison
+baseline. Preserve any relevant uncommitted edits it does not capture separately; a rollback
+must not discard later work. Inventory what must survive:
 the question, scope and authorizations, threads and their owners, equations, hypotheses,
 units, model and source identities, negative results, proposals and missing evidence.
 Reconcile existing content in receiving files before inserting anything. Give useful

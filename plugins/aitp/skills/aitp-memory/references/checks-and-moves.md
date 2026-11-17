@@ -127,9 +127,17 @@ Synthetic controls exercise incoming links from outside a topic, source checkout
 environment exclusions, and frozen-copy handling. Their scope is recorded in the
 repository validation account; they are not evidence of scientific correctness.
 
-Not exercised:
+The integration controls on 2026-11-12 passed under WSL Ubuntu, including the symlink
+escape and alias-collision refusals. A native Windows run was incomplete: two incoming-link
+controls failed and symlink setup lacked the required privilege. Windows drive-letter
+handling and external-link backup paths therefore remain unsupported by this validation;
+do not infer that native Windows `--rewrite-incoming --apply` is safe from the WSL pass.
+In the minimal Windows reproduction, an outside-file backup retained a drive colon in
+its path and failed before moving the source or editing its incoming link. This needs a
+portable backup-key repair, not removal of the preflight safety checks.
 
-- Windows paths;
+Not exercised by those controls:
+
 - non-UTF-8 text;
 - HTML links;
 - rewriting reference-style `[label]: path` definitions. `move_notes.py` rewrites inline links

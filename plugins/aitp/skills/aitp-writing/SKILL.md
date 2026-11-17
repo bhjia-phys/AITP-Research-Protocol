@@ -27,10 +27,14 @@ directly, apply that cycle and reuse context already recovered.
 | When the task involves | Read |
 | --- | --- |
 | A research note or supporting note | [Main-note writing](references/research-note.md); [supporting notes](references/supporting-notes.md) |
+| A research topic's `story.md`, the short paper that tells the researcher the whole story | [The story](references/story.md) and its [starter](assets/research-story.md) |
 | A construction, theorem or delicate derivation | [Formal theory](references/formal-theory.md) |
 | Data, algorithms or finite numerical tests | [Computational and mixed work](references/computational-and-mixed.md) |
 | A requested paper, TeX or PDF | [Manuscript handling](references/manuscripts.md), [journal templates](references/journal-templates.md) and the [JHEP starter](assets/jheppub-note-template.tex) |
 | Designing or reorganizing a substantive manuscript | [Scientific argument design](references/manuscripts.md#scientific-argument-design), before polishing |
+| Planning a paper from research notes: thesis, claim–evidence audit, section and equation plan, opening and ending | The [paper plan](references/paper-design.md), then the [venue strategies](references/venue-strategies.md) for its readership |
+| Reviewing a draft's exposition, or writing a referee-style report | [Exposition review](references/exposition-review.md), with [worked paper edits](references/worked-paper-edits.md) |
+| A derivation or proof that needs its own note | The [derivation starter](assets/derivation-note.md), scaled to the difficulty |
 | Equation numbers, citations and links across files | [Citation conventions](references/citations.md) |
 | A written explanation for a learner | [Learning from sources](references/learning.md) |
 | Outlining a paper, when the researcher has chosen authors to learn from | That author's organization record, through [exemplar authors](../aitp-research/references/exemplar-authors.md#study-how-the-author-organizes-a-paper) |
@@ -187,7 +191,9 @@ whether the argument given proves it. Avoid repeated
 labels such as “Target”, “Checkpoint” and “Claim status” around every equation.
 Do not cross a conceptual gap with “obvious” or “after some algebra”. Do not
 manufacture an intermediate identity, proof or uncertainty estimate to make an
-unfinished argument look complete; identify the precise missing step.
+unfinished argument look complete; identify the precise missing step. In a manuscript,
+the [claim table](references/paper-design.md#state-each-claim-at-the-strength-of-its-evidence)
+matches phrasing to each status, from a definition to a conjecture.
 
 ## Keep the evidence in the right document
 

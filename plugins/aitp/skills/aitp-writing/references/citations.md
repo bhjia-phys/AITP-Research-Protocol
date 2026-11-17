@@ -59,6 +59,24 @@ generating analysis and data; a screenshot without its underlying comparison
 does not establish a numerical claim. File existence checks verify navigation,
 not mathematical content, numerical validity or rendered anchors.
 
+A theoretical argument that relies on a computed number states beside it what was
+computed, the conditions the inference needs and the uncertainty, and links the report
+that owns it:
+
+```md
+For $L\le 24$ at $g=1.32$ the gap scales as $L^{-1.00\pm0.03}$
+([finite-size scan](calculations/gap-scan/report.md#scaling), code `a1b2c3d`),
+consistent with $z=1$ but not excluding a weakly first-order transition.
+```
+
+The report keeps the code revision (noting uncommitted changes in the checkout), inputs
+and commands, so the number can be regenerated; the argument keeps only what the
+inference needs. Choose the verb by the evidence, as the
+[claim table](paper-design.md#state-each-claim-at-the-strength-of-its-evidence) does:
+a finite computation is "consistent with" or "inconsistent with" a prediction, and never
+proves a general statement. A number taken from a paper cites the paper's table, figure
+or equation and the conditions under which it was obtained.
+
 Ordinary file links are the baseline. Obsidian backlinks, block identifiers and
 embeds can improve a chosen local reading workflow, but must not be the only
 locator needed by another reader. Keep a meaningful file/section description.

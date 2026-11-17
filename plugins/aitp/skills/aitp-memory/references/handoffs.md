@@ -12,7 +12,9 @@ not say, and leave no dated hand-off files in the topic.
 - **Instructions:** one line naming the repository's instruction file and AITP's
   [research cycle](../SKILL.md#the-research-cycle), by path or host invocation, so that
   the receiver works the same way. Do not restate their content or describe their steps.
-- **Code state:** for code work, the revision and any uncommitted local changes.
+- **Code state:** for code work, the revision and any uncommitted local changes. When the
+  notes are under [version history](version-history.md), also the commit the receiver
+  should compare against.
 - **Question and current state:** two or three sentences from the main note's opening,
   the owning Current work entry, any result awaiting interpretation or integration, and
   the active plan phase if there is one.
@@ -55,6 +57,14 @@ reviewers of one draft are.
    evidence that the results fit together.
 5. A conflict the evidence cannot resolve stays visible as an open scientific question;
    do not average incompatible results into a conclusion.
+
+A standing team, a lead with members that keep their context across a piece of work,
+follows the same rules. The lead is the integrator: it briefs each member with pointers and
+the files its part needs, never whole folders; members write their reports in the team's
+own run directory; only the lead proposes edits to the notes, after an independent check of
+the claims they carry. While the team works, the owning Current work entry names its goal
+and run directory. A member never submits a cluster job: the lead prepares the exact command
+and holds it for the researcher's answer, as for any submission.
 
 When delegation is unavailable or not authorized, the same dependencies order the work
 sequentially. AITP itself does not spawn agents or schedule jobs.

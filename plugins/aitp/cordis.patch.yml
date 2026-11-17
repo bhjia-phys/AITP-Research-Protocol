@@ -5,10 +5,11 @@
       config:
         providerName: aitp-core
         includeDefaultRoots: false
-        bundledSkillDir: !!js process.getBuiltinModule('node:path').join(process.getBuiltinModule('node:path').dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('dsh-aitp-skills/package.json')), 'skills')
+        # Resolve the current profile link before the module resolver (hot reinstall may cache the old link).
+        bundledSkillDir: !!js (() => { const p = process.getBuiltinModule('node:path'); const f = process.getBuiltinModule('node:fs'); const linked = p.join(process.getBuiltinModule('node:url').fileURLToPath(new URL('.', baseUrl)), 'node_modules', 'dsh-aitp-skills'); let root; if (f.existsSync(p.join(linked, 'package.json'))) { root = f.realpathSync(linked); } else { root = p.dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('dsh-aitp-skills/package.json')); } return p.join(root, 'skills'); })()
     - id: aitp-librpa-skills
       name: '@deepseek-ai/dsh-skill-filesystem'
       config:
         providerName: aitp-librpa
         includeDefaultRoots: false
-        bundledSkillDir: !!js process.getBuiltinModule('node:path').join(process.getBuiltinModule('node:path').dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('dsh-aitp-skills/package.json')), 'skills/aitp-research/methods/librpa')
+        bundledSkillDir: !!js (() => { const p = process.getBuiltinModule('node:path'); const f = process.getBuiltinModule('node:fs'); const linked = p.join(process.getBuiltinModule('node:url').fileURLToPath(new URL('.', baseUrl)), 'node_modules', 'dsh-aitp-skills'); let root; if (f.existsSync(p.join(linked, 'package.json'))) { root = f.realpathSync(linked); } else { root = p.dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('dsh-aitp-skills/package.json')); } return p.join(root, 'skills/aitp-research/methods/librpa'); })()

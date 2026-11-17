@@ -1,8 +1,9 @@
 # AITP
 
-Development version 1.3.1: research memory in living main notes, research and writing
+Development version 1.4.0: research memory in living main notes, research and writing
 guidance, and direct Skill distillation. The bundle contains instructions, optional
-manuscript assets and one read-only reviewer prompt, with no runtime. This development
+manuscript assets and two read-only subagent prompts (a reviewer and an independent reader),
+with no runtime of its own; optional topic helpers and reply hooks use standard-library Python. This development
 tree adds the research backbone (a root note, topic trees, reachability, seeds and a
 visible close), a single entry with a research cycle, verification, computational and
 benchmark procedures, synthesis across sources, reviewed plans, hand-offs and parallel
@@ -172,7 +173,8 @@ learning](skills/aitp-writing/assets/research-theory.md) and [computational and 
 work](skills/aitp-writing/assets/research-computational.md) suggest the account's order
 and serve requested papers; their [journal
 sources](skills/aitp-writing/references/journal-templates.md) explain what was adapted
-from PRL, PRX, JHEP and PRB. Headings stay flexible, with no prescribed length. Memory
+from PRL, PRX, JHEP and PRB. Headings stay flexible; the main note's soft size budget
+signals repetition, never a requirement to remove decisive reasoning. Memory
 and writing edit the same account. It should let a returning agent choose the next
 useful inference: why the main line matters, what each branch contributes and which
 completed route need not be repeated. A folder map alone does not express these
@@ -257,18 +259,35 @@ result, decision, question and change of state recoverable, with its content), *
 edits) and **coherent** (one owner per fact, every use consistent, no appended chronology).
 It reconstructs the work from the session log and the files, not from the author's summary,
 and continues from where earlier reviews stopped; a restructuring is the same review with a
-baseline copy as the prior record. The main agent assesses each finding and remains the only
+baseline copy as the prior record. On the researcher's request it reviews the sessions of a
+period against the current record, which finds outcomes no session recorded and records that a
+later session contradicted; it runs at a natural pause, never in the background. The main
+agent assesses each finding and remains the only
 writer; the researcher decides scope and contested interpretations.
 [aitp-memory](skills/aitp-memory/SKILL.md#independent-process-review) lists the signals for
 using it: handoff, session end or delegation; a context compaction; something outside the
-conversation about to rely on a recent change; the researcher's request. Most sessions need
+conversation about to rely on a recent change; the researcher's request, including a review
+across sessions. Most sessions need
 it only after a compaction and at the end. The signals are
 host-neutral: the session reminder raises the compaction signal today, and an orchestrating
 agent could raise any of them without changing the reviewer. Claude Code loads the reviewer as
 a plugin subagent, whose shell its instructions limit to read-only parsing; in Codex or Hakimi,
 give its instructions to a subagent started without the conversation, or to a separate session.
 
-## Session reminders
+[`agents/aitp-reader.md`](agents/aitp-reader.md) is the independent reader: it sees only
+what its mode allows and writes nothing into the research tree. In **claim** mode it checks
+a stated claim by its own route without the derivation, choosing a check that a plausible
+wrong formula would fail ([aitp-verify](skills/aitp-verify/SKILL.md#commission-a-second-read)).
+In **story** mode it answers learning questions from `story.md` alone
+([the story](skills/aitp-writing/references/story.md#check-that-the-story-works)). In
+**skill-trial** mode it applies a distilled Skill to a new case
+([aitp-distill](skills/aitp-distill/SKILL.md#check-with-a-concrete-use)). It returns located
+verdicts and any script it ran; the main agent remains the only writer. Hosts without
+plugin-agent discovery use its instructions in a fresh subagent or separate session.
+
+## Session reminders and the end-of-reply check
+
+<a id="session-reminders"></a>
 
 Codex and Claude Code use one optional [SessionStart hook](hooks/hooks.json) at
 startup, resume, clear and compaction. It reads only the bundled
@@ -283,10 +302,36 @@ independent process review at the next natural pause, since the session log stil
 holds what the compacted context lost; compaction recurs as the context fills, so
 long sessions are reviewed in step with their growth. Both hosts start the hook with
 source `compact` after an automatic compaction and pass its output to the model
-(verified on Codex 0.163). There are no `Stop`, `SessionEnd` or per-turn hooks,
-extra summaries, checklists or mandatory note updates.
-The [read/write rules](skills/aitp-memory/SKILL.md#timing-and-recovery) stay in
-their owning Skill. No Python, Node or external service is needed for the hook.
+(verified on Codex 0.163).
+
+One optional end-of-reply check, [tidy.py](hooks/tidy.py), uses two hooks.
+`UserPromptSubmit` records when a reply begins. `Stop` lists the files that reply changed:
+files in the session's topic modified since then (including subagents' work), and files the
+transcript shows were edited in other topics. When there are any, it asks once for a
+[check](skills/aitp-memory/references/tidy.md) that each is in its home and linked from the
+passage that uses it. The agent fixes clear misplacements of its own files within the task's
+scope and lists the rest for the researcher. The hook moves nothing and writes nothing in a
+topic. It is silent without changes, during its own continuation (`stop_hook_active`) and
+when `AITP_TIDY=off`.
+
+The same hooks retain a decision cue, not the decision itself. When a reply asks with
+[brainstorming's](skills/aitp-human-brainstorming/SKILL.md#make-the-question-answerable)
+`Decision needed:` line, the next prompt reminds the agent to record the researcher's answer
+in the owning note, with their words, or leave the entry waiting. It reads the Stop event's
+`last_assistant_message` or the Claude transcript; it does not guess intent from a short
+answer or record a decision automatically.
+
+They also watch the main note's soft [size budget](skills/aitp-writing/references/research-note.md#decide-what-stays-in-the-main-note):
+about 400 lines overall, a 30-line opening and 7 Current work entries. Crossing these thresholds
+is an offer to inspect repetition, not an error or permission to cut reasoning. At most once
+per 24 hours per topic, a prompt asks to offer the [consolidation pass](skills/aitp-memory/references/tidy.md#the-consolidation-pass).
+The pass is proposed, staged and independently preservation-reviewed; application needs the
+researcher's agreement and comparison against the latest live files. Central reasoning,
+qualifications and the question-owned plan/archive lifecycle take precedence over the budget.
+The reply hooks use `python3` (standard library only), and keep only turn timing, the cue
+flag and offer timing under `~/.cache/aitp/`. There is no `SessionEnd` hook, research ledger
+or mandatory note write. The [read/write rules](skills/aitp-memory/SKILL.md#timing-and-recovery)
+stay in their owning Skill. The SessionStart reminders alone need no Python or service.
 
 Codex requires review and trust of a new or changed hook through its native
 hook controls before it runs; installation alone does not enable execution.
@@ -294,6 +339,27 @@ Either host can disable the hook through its hook settings. Start a fresh
 session after updating. See [Codex hooks](https://learn.chatgpt.com/docs/hooks)
 and [Claude hooks](https://code.claude.com/docs/en/hooks) for host controls.
 Reminders do not guarantee Skill activation, crash recovery or scientific correctness.
+
+## Gates for submissions, pushes and installs
+
+Cluster submissions, pushes and installations are the researcher's decision unless the
+request or an applicable standing agreement covers them
+([aitp-memory](skills/aitp-memory/SKILL.md#close-the-task-visibly)). AITP adds no enforcement
+hook: host-native, researcher-owned permission rules supply the gate. Configure them
+explicitly; installing these Skills grants no permissions.
+
+- **Claude Code:** in the user's or project's settings, an example `permissions.ask` list is
+  `Bash(sbatch:*)`, `Bash(scancel:*)`, `Bash(ssh * sbatch *)`, `Bash(ssh * scancel *)`,
+  `Bash(git push:*)`, `Bash(pip install:*)`, `Bash(conda install:*)`.
+- **Codex:** [`assets/aitp-gates.rules`](assets/aitp-gates.rules) is an optional starting point.
+  The researcher copies or merges it into their rules directory and replaces `cluster`
+  with their host aliases; `codex execpolicy check` checks a command without executing it.
+
+These are partial examples, not a sandbox or an exhaustive policy. Prefix rules do not
+see inside a quoted remote shell command such as `ssh host "cd run && sbatch job.sh"`;
+use the explicitly gated command form or the host's own broader permission policy.
+Read-only commands such as `squeue` and `sacct` are not submission permissions. No rules
+are installed automatically, and a historical permission is not a new authorization.
 
 ## Continue with the relevant guidance
 

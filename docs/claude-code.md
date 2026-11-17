@@ -4,18 +4,20 @@ Claude Code uses the same `plugins/aitp/skills/` files as Codex and Hakimi.
 Its [plugin manifest](../plugins/aitp/.claude-plugin/plugin.json) supplies native
 metadata; the [marketplace](../.claude-plugin/marketplace.json) points to that
 plugin directory. The optional [session reminder](../plugins/aitp/README.md#session-reminders)
-uses the same short text as the other hosts. No global `CLAUDE.md`, additional
-runtime or MCP service is required.
+uses the same short text as the other hosts. An optional
+[end-of-reply check](../plugins/aitp/skills/aitp-memory/references/tidy.md) asks, after a reply
+that changed topic files, whether they are in their homes and linked (`AITP_TIDY=off` disables it). No global `CLAUDE.md`, additional runtime or MCP service is required.
 
 Claude scans the default `skills/` directory for the seven core Skills. The
-manifest adds the nested `developing-librpa` directory so that the domain method
-is selectable too. Its files stay in their existing location, preserving links
+manifest additionally exposes the three nested LibRPA methods: `developing-librpa`,
+`ren-gw-notation` and `ren-gw-writing`. Its files stay in their existing location, preserving links
 to the research Skill and method library. When another domain method needs
 direct discovery in Claude, add its directory to this manifest and verify the
 component inventory. A linked method does not need a duplicate wrapper Skill.
-Claude also scans the plugin's `agents/` directory, so the read-only
-[research reviewer](../plugins/aitp/agents/aitp-reviewer.md) is available as a subagent;
-it reads the session transcript named by `CLAUDE_CODE_SESSION_ID`. The other hosts use its
+Claude also scans the plugin's `agents/` directory: the read-only
+[research reviewer](../plugins/aitp/agents/aitp-reviewer.md) reads the session transcript
+named by `CLAUDE_CODE_SESSION_ID`, while the [independent reader](../plugins/aitp/agents/aitp-reader.md)
+receives only its claim, story or skill-trial inputs. The other hosts use these
 instructions through their own subagents or a separate session.
 
 ## Install the development checkout
@@ -32,7 +34,8 @@ claude plugin details aitp
 ```
 
 The user scope enables AITP across this user's projects. Expect seven core Skills
-plus `developing-librpa`, and the `aitp-reviewer` agent. Start a new Claude session in the research workspace.
+plus the three nested LibRPA methods, and the `aitp-reviewer` and `aitp-reader` agents.
+Start a new Claude session in the research workspace.
 These instructions install the current local checkout; the published `v1.1.0`
 release predates the Claude manifest and the two human interaction Skills.
 

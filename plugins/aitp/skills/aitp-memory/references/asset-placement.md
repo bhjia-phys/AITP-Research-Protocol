@@ -9,7 +9,7 @@ change both together.
 
 | Location | Holds |
 | --- | --- |
-| `research.md`, `README.md` | The living scientific argument and the map of actual material locations. Independent subquestions have their own homes. |
+| `research.md`, `README.md`, optional `story.md` | The living scientific argument, the map of actual material locations and, when kept, the [story for the researcher](../../aitp-writing/references/story.md). Independent subquestions have their own homes. |
 | `plan/<stage>/` | An open stage's design and any stage-owned developing argument. The plan links to the question, foundations, literature method, benchmarks and dependencies. |
 | `archive/<stage>/` | A closed stage's design and qualified outcome, including useful negative results or stopped routes. Archiving does not establish a proof. |
 | `notes/` | Derivations, reading explanations and discussions, including cross-stage arguments and established supporting notes (Markdown). |

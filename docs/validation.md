@@ -1,5 +1,43 @@
 # Validation and its limits
 
+## Readable openings and answerable waiting entries, 2026-11-16
+
+The research-note guidance gained "Make the opening readable in a minute": an existing figure
+first when it carries the central comparison, findings labelled by kind and scope and linked to
+their account section and evidence, each written from its owner with its scope words kept.
+Smaller additions: a `waiting on the researcher` entry names its lettered options; a standing team
+(a lead with members) follows the parallel-work rules; a submission is put to the researcher with
+its exact command and limits unless already authorized; a recording is cited by time-stamped
+links; novelty checks follow citations both ways; and a note on reviewable edits for discussions
+started from a reading view.
+
+The opening guidance came from an author walkthrough on one private topic (kept outside this
+tree). An independent session that had only the revised reference then rewrote the opening of a
+small synthetic topic built to expose overstatement, where GOE-like statistics hold only at one
+end of the parameter range. It kept the guide's order and every scope condition, reported the
+statistics against their references without a chaos verdict, and marked an unsupported premise
+as untested. It also found two ambiguities, now resolved in the text: what the length guide
+counts, and where a finding links while the account has no section for it. Links and anchors in
+the changed files resolve. One synthetic case is a transfer check, not a measure of writing
+quality across topics.
+
+## Remote/local integration, 2026-11-12
+
+The [integration account](integration-2026-11-12.md) records how remote `5780ffe0` and
+local committed/working enhancements were reconciled, with the remote stage lifecycle and
+stronger move-tool preflight retained. Windows tidy controls passed (29); the unchanged
+remote topic-tool suite passed under WSL Ubuntu (59). Ten Skill frontmatters, eight JSON
+files, host manifest identities, Claude strict plugin/marketplace validation and active
+Markdown navigation checks passed. These are packaging and synthetic controls, not fresh
+scientific or writing-quality validation.
+
+The native Windows topic-tool run did not pass: a drive-letter assertion issue, an actual
+external-backup path defect and unavailable symlink privilege are distinguished in the
+[integration limits](integration-2026-11-12.md#native-windows-boundary-not-a-passing-move-tool-validation).
+The remote scripts were not changed to mask these failures. No host installation or new
+independent reader session was part of the integration; earlier observations below retain
+their original scope.
+
 ## Mixed writing, figures and tables, 2026-11-11 UTC
 
 [Writing v0.2](../benchmarks/writing-v0.2/README.md) extends the short v0.1 cases to

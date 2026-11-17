@@ -13,6 +13,14 @@ submission script, executable/source location and result location there. Do not
 overwrite earlier outputs to reuse a familiar path. Computational work belongs
 on resources allowed by the site's policy, ordinarily allocated compute nodes.
 
+Unless this class of run is already authorized, put the submission to the researcher before
+making it: the exact command, the run directory, the requested resources with the estimate
+behind them, and the queue limits read from the site now (for example the QOS). Submit on an
+explicit yes; a recommendation that was not refused is not agreement. After submission,
+record the job identity in the run report and the owning Current work entry
+(`waiting on run`), and follow the job with the read commands below rather than by
+resubmitting.
+
 Submit the prepared script with `sbatch --parsable job.sbatch` when authorized.
 Keep the returned identity (which can include a cluster suffix). Submission
 means acceptance by the scheduler, not execution or scientific success.

@@ -58,6 +58,9 @@ Downloaded papers retain their own licenses; link them rather than redistributin
 third-party full text inside a plugin example.
 
 Record the search boundary when discussing novelty or an apparent absence.
+For novelty or currency, follow citations both ways: the references of the closest works,
+and the recent papers that cite them (INSPIRE lists citing papers for high-energy and
+neighbouring fields).
 Failing to find a construction does not establish that no construction exists.
 If the source is unavailable, mark the claim as awaiting source inspection and
 continue only work that does not require treating it as established.

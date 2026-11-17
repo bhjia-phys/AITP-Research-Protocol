@@ -1,0 +1,134 @@
+# Check a reply's changes against the topic architecture
+
+At the end of a reply, the files that reply changed should still fit the topic's architecture:
+
+- each file sits where its kind and its question keep such material;
+- the `research.md` passage or note that uses its result links it;
+- a thread whose state changed says so in its Current work.
+
+This check keeps a topic clear around its main note, reply by reply, instead of in large
+reorganizations. It writes no new science.
+
+## When
+
+- **After a reply that changed topic files.** In Claude Code and Codex the optional,
+  host-trusted AITP hook asks for the check; installation alone does not enable it.
+  `UserPromptSubmit` records when the reply began. `Stop` lists the files changed since then:
+  every file in the session's topic with a later modification time, which includes the work of
+  subagents and shell commands, plus files the transcript shows were edited in other topics. If
+  there are any, the hook asks once for this check.
+- **On request.** When the researcher says "tidy", apply the same questions to a longer window.
+  `python3 <plugin>/hooks/tidy.py --status [DIR] --hours H` lists the files changed in the last
+  `H` hours.
+
+## Three questions for each changed file
+
+1. **What is it?** A note, script, data, figure, run output, record or scratch.
+2. **Which question does it serve?** Name the main note, branch or shared area, using the
+   topic's README map, which shows where that kind of material lives, and
+   [asset placement](asset-placement.md).
+3. **Is it in that home, and is it linked from the passage that uses its result?**
+
+## What to do
+
+- **Fix your own misplacements.** Files this reply created or changed and that are clearly
+  misplaced or unlinked are fixed within the task's scope, as ordinary placement: move a stray
+  script into its run folder or `code/`, move a note into `notes/`, add the missing link, or
+  update the owning Current work entry. Several linked Markdown files move with the
+  [move procedure](checks-and-moves.md#move-notes-without-losing-links).
+- **List the rest.** In at most five lines, give what needs the researcher: files they or another
+  session made, unclear purpose, or a choice of home.
+- **Report a clean check** in one line: "architecture check: ok".
+
+## Limits
+
+The check never does any of these:
+
+- changes a number, conclusion or qualification;
+- deletes a file;
+- edits frozen copies, archives or another person's files without approval.
+
+A larger reorganization is not this check; it follows [checks and moves](checks-and-moves.md)
+and its own agreement.
+
+## Hook behaviour
+
+The hook stays silent in these cases:
+
+- nothing changed;
+- the session is outside a topic and edited none;
+- the stop is the hook's own continuation (`stop_hook_active`);
+- `AITP_TIDY` is `off`, which is useful for automated runs.
+
+It skips:
+
+- hidden folders and caches;
+- environments;
+- nested repositories;
+- build output;
+- frozen `before/` and `provenance/snapshots/` copies.
+
+It writes nothing inside a topic; its only state (the turn start, whether the reply asked for a
+decision, and when each topic was last offered a consolidation pass) is kept in `~/.cache/aitp/`.
+
+## The decision reminder
+
+When a reply asks the researcher for a decision with a `Decision needed:` line, as
+[brainstorming](../../aitp-human-brainstorming/SKILL.md#make-the-question-answerable) writes
+every request, the check also asks whether the owning Current work entry says
+`waiting on the researcher`. At the next prompt the hook adds one line of context: if the
+message answers the question, record the decision in the owning note's
+[decisions](../../aitp-writing/references/research-note.md#decisions-and-retained-alternatives)
+with the date, the scope and the researcher's own words, and update the waiting entry;
+otherwise the entry stays waiting. The reminder fires once and never decides what counts as
+an answer: the agent does, and never records a decision the researcher did not make.
+
+## The consolidation pass
+
+The reply check keeps each reply's files in their homes, but a main note still grows: adding
+is always the easy edit, and nothing else removes material. The consolidation pass is the
+periodic counterpart, modelled on how Claude Code consolidates its own memory: a pass with a
+[size budget](../../aitp-writing/references/research-note.md#decide-what-stays-in-the-main-note)
+whose job is to make the note shorter and truer without losing anything.
+
+**When.** When the researcher asks ("tidy", "consolidate", 整理), or when the hook says that a
+topic's main note is over its budget. Offer the pass at a natural point in the session; do not
+start it without the researcher's agreement, and at most one offer a day per topic. A pass covers
+one main note and the notes it links to; a parent and its branches are separate passes.
+
+1. **Orient.** Read the opening, Current work, the headings and the README map. Know what
+   already exists before proposing a new file, so that moved material extends an existing
+   supporting note rather than duplicating it.
+2. **Gather.** List what changed since the last pass (`tidy.py --status DIR --hours H`). Look
+   first for drift: claims in the note that newer notes, runs or decisions contradict, threads
+   that ended but are still listed, and passages that repeat what a supporting note owns. Search
+   transcripts or old notes only for something already suspected; do not reread everything.
+3. **Consolidate.** Replace each passage whose meaning has changed with the current account,
+   rather than adding to it. Fold concluded threads into the account and remove their Current
+   work entries. Merge entries that are one thread. Turn relative dates into absolute ones.
+   Correct a contradiction where the wrong claim lives, with the correction visible.
+4. **Prune repetition, not reasoning.** Treat the size budget as a soft diagnostic, not a
+   target that warrants splitting a central derivation or hiding live threads. Move a finished
+   section with an independent supporting role, preserving its content and conditions, into
+   an existing note when it fits, with relative links repaired; leave its result, decisive
+   condition and implication at the point of use. A binding decision that no longer binds
+   becomes a retained alternative with its rationale. Keep central derivations, assumptions
+   and qualifications in the main note whatever their length. Keep question-owned stage
+   bundles under the [plan/archive lifecycle](plans.md), not automatically in `notes/`.
+
+**Never** delete scientific content or silently change a number, conclusion or qualification.
+The pass reorganizes, not revalidates, results. Suspected contradictions are findings for
+[verification](../../aitp-verify/SKILL.md), not permission to choose a new scientific answer.
+A separately checked correction follows the ordinary correction procedure, preserving the
+useful earlier route and its evidence; moved text keeps every condition.
+
+**Propose, then apply.** The pass returns a proposal: the new outline with the line count of each
+part, the list of moves (section → target note), the threads folded or merged, and any drift
+found. Stage the rewritten note and the receiving notes outside the topic and check their links.
+Apply only after the researcher agrees, after the [AITP reviewer](../../../agents/aitp-reviewer.md)
+has compared the staged files with a baseline copy (a restructuring needs that review).
+Use the full [restructuring handoff](../../aitp-writing/references/research-note.md#add-move-and-remove-material-without-losing-the-thread):
+compare baseline, staged and latest files, merge intervening edits, and agree on a pause
+covering affected shared notes before live application. If independent review or that handoff
+is unavailable, retain the proposal rather than apply it. If nothing needs changing, say so;
+a note that is current and needs its central reasoning may legitimately exceed the budget.

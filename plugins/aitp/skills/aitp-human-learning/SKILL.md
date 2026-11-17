@@ -91,6 +91,14 @@ independent reconstruction. Such trials diagnose an artifact; they do not demons
 human learner's mastery, speed or retention, and are not a default assessment workflow
 for ordinary conversation.
 
+A research topic's [story](../aitp-writing/references/story.md) is where the researcher meets
+the whole topic. Its learning path ends with three questions, and its optional "What I
+understand" section is the researcher's own account. Offer it after a milestone without
+requiring it. When it contains an error, add a marked correction beneath it and repair the
+explanation where the misunderstanding started; never rewrite the researcher's words. An
+[independent reader](../../agents/aitp-reader.md) in story mode tests whether the story
+alone answers those questions, which diagnoses the story, not the researcher.
+
 When a persistent topic gains a useful explanation, corrected misconception or
 unresolved question, use memory and writing to keep it in its natural note.
 Record the researcher's learning preferences or difficulties only when they are

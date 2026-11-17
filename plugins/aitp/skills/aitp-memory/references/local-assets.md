@@ -226,6 +226,9 @@ the folders that link into the topic, such as a shared knowledge collection. Sha
 shared source PDFs and large data stay in place; reference their actual locations.
 Routine organization already authorized needs no additional confirmation step;
 this guide is not itself permission to relocate other research or shared assets.
+The optional [reply check](tidy.md) checks only the current reply's changed files against
+these same homes and evidence links; a broader consolidation is proposed and staged,
+not automatic background organization.
 
 ## Keep an asset usable
 

@@ -9,7 +9,7 @@ directories. A short explanation can stay in the main note.
 | --- | --- |
 | Concept or teaching companion | Prerequisites, concrete difficulty, definitions and conventions, worked reasoning, intended capability and connection to the research passage. |
 | Source reading | Source/version and inspected passages; question answered, hypotheses, convention translations, and source argument distinguished from local reconstruction. |
-| Derivation or proof | Precise claim, assumptions and conventions, imported inputs with locators, consequential steps, meaningful checks, result and scope. |
+| Derivation or proof | Precise claim, assumptions and conventions, imported inputs with locators, consequential steps, meaningful checks, result and scope. The [derivation starter](../assets/derivation-note.md) scales these parts to the difficulty. |
 | Method or implementation | Mathematical operation, representation and approximation, operative code/version boundary, inputs and outputs, reproducible use, validation and unsupported cases. |
 | Experiment or run report | Question tested, actual inputs and source/executable identities, settings and measurement definitions, output locations, observations, failures and interpretation at that time. Execution and observation dates stay separate from later analysis or correction dates, which name the evidence and analysis version used; original observations are preserved. |
 | Analysis across runs | Why comparisons are meaningful, uncertainty treatment, selected evidence, conclusions and unresolved alternatives. |

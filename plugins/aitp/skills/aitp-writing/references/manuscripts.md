@@ -44,7 +44,10 @@ operational run history and speculative future routes in the research memory
 unless they serve the paper's argument. A conjecture included in a paper remains
 a conjecture. Do not fill a missing proof or result to complete the manuscript.
 Use [scientific argument design](#scientific-argument-design) for a substantial new
-paper or reorganization; an already coherent passage needs no replanning.
+paper or reorganization; an already coherent passage needs no replanning. The
+[paper plan](paper-design.md) gives its steps, the claim–evidence audit and the
+phrasing for each claim's status; [venue strategies](venue-strategies.md) organize the
+result for its readership.
 
 Read the opening as a new reader: can it explain the physical question, imported
 inputs, work established here, decisive conditions and remaining inference?
@@ -63,9 +66,10 @@ must not depend on unexplained workstation-specific links.
 
 For a later request to update the paper from the note, compare the new scientific
 understanding with the existing manuscript and revise all dependent claims while
-preserving the author's edits. Record the source note/version or relevant date
-briefly in an existing manuscript README or source comment when needed to avoid
-confusing drafts. A first manuscript or teaching artifact likewise records the research
+preserving the author's edits. Record the source note's version briefly in an existing
+manuscript README or source comment when needed to avoid confusing drafts: its commit
+when the notes are under [version history](../../aitp-memory/references/version-history.md),
+otherwise the relevant date. A first manuscript or teaching artifact likewise records the research
 state it incorporates in its README or a source comment. Neither document overwrites or
 synchronizes the other by default.
 
@@ -139,4 +143,5 @@ physical validity.
 
 Use the [reverse outline](../SKILL.md#revise-the-argument-as-a-whole) on the resulting
 draft, then align the title, abstract and opening with what it establishes. For a
-requested review, use [manuscript review](../../aitp-verify/SKILL.md#review-a-manuscript).
+requested review, use [manuscript review](../../aitp-verify/SKILL.md#review-a-manuscript)
+and the [exposition passes](exposition-review.md).

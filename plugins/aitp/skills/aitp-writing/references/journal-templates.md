@@ -10,6 +10,8 @@ intended readership against current official scope and author guidance. A templa
 supplies no evidence of suitability or acceptance probability. Recheck current
 official requirements when preparing a submission; the dated observations below are
 not a substitute. A researcher's preferred layout for notes remains a local choice.
+For organizing an actual paper for a readership (claim density, what the main text
+carries, where derivations go), use the [venue strategies](venue-strategies.md).
 
 ## What the official TeX sources provide
 

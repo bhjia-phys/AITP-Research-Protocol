@@ -204,6 +204,13 @@ from it to the passage and know what that passage does. It records:
 Keep quoted text short. The source itself is the reference, so the reading points
 into it rather than reproducing it.
 
+A recording, such as a lecture or a talk, is read in the same way. Its version is the
+official location and date; a passage is a moment, cited as a link to that time (for
+example `[12:30](https://example.org/talk?t=750)`), with a short phrase that finds it in a
+transcript when there is one. Keep a transcript the researcher supplies beside the reading.
+Record what was actually watched or read from the transcript: a recording that could not be
+played is located, not read.
+
 Check locators in the exact edition used. A TeX search hit may be commented out or
 inside an inactive block; included files, custom section macros and reset counters can
 change the printed numbering. Distinguish printed page numbers from physical PDF pages.
@@ -413,8 +420,10 @@ understand its whole argument and the relevant source.
 An index locates explanations, including disputed or superseded ones, without declaring
 them correct.
 
-A research topic needs no story: its `research.md` is its main line, and it links into
-the shared atoms and readings it uses. Knowledge and Skills also have different uses. An
+A research topic needs no story of questions in the shared collection: its `research.md` is
+its main line, and it links into the shared atoms and readings it uses. It may keep a
+[story for the researcher](../../aitp-writing/references/story.md) beside `research.md`,
+which retells that main line without adding claims. Knowledge and Skills also have different uses. An
 atom explains what an object or result means and why it holds; a distilled Skill teaches
 a reusable procedure, through [aitp-distill](../../aitp-distill/SKILL.md). One piece of
 work can feed both, with each linked to the other. Neither is created automatically from

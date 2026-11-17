@@ -8,15 +8,22 @@ Delete these comments as you write. -->
 shared knowledge index, for example
 "Serves [the parent question](../research.md#section) as a control · [folder map](README.md)". -->
 
-<!-- Opening: about one screen, roughly 150 to 250 words of rendered prose.
-- The question and why it matters.
+<!-- Opening: about one screen that a returning reader takes in within a minute (see
+"Make the opening readable in a minute" in the main-note guidance).
+- When the evidence already contains a figure that carries the central comparison, put it
+  first, with a caption stating what it shows at its true strength.
+- The question and why it matters, naming the setting's landmarks with links to where each
+  is explained.
+- The answer so far: one or two sentences, then three to six findings of one or two lines,
+  each led by its kind and scope ("Numerical, L ≤ 20:", "Proved:", "Small systems:") and
+  ending with links to the account section that explains it and to its evidence. Write each
+  finding from its owner and keep its scope words: what was derived, observed or imported,
+  under which assumptions, and what was checked by which route.
+- What is open: the decisive gap, linked to the note that owns it.
 - The scope: the overall objective and, when different, the currently agreed stage.
   A binding constraint that governs continuation gets one line and a link to its rationale.
-- The current answer at its true strength: what was derived, observed or imported, under
-  which assumptions, and what was checked by which route.
-- The decisive reason, or the decisive gap.
 No execution history, job states, run counts or session narrative. When the opening would
-grow, omit a secondary claim; never drop a claim's conditions. -->
+grow, move a secondary finding into the account; never drop a claim's conditions. -->
 
 ## Current work
 
@@ -24,9 +31,10 @@ grow, omit a secondary claim; never drop a claim's conditions. -->
 dormant threads. Omit the section only when there is none.
 
 A thread this note owns:
-- **Thread name** — disposition · YYYY-MM-DD. What is known and what is unresolved, with its
-  scope. Next: the discriminating action or the pending choice.
-  [evidence](...) · [plan phase](...) · [decision](#decisions-and-retained-alternatives)
+- **Thread name** — disposition · YYYY-MM-DD
+  - **Now:** what is known and what is unresolved, with its scope.
+  - **Next:** the discriminating action or the pending choice.
+    [evidence](...) · [plan phase](...) · [decision](#decisions-and-retained-alternatives)
 
 A thread a branch or another topic owns:
 - **Thread name → [owning note](branch/research.md#current-work)** — what it contributes
@@ -47,6 +55,8 @@ Equivalent prose or a table is fine when it carries the same information. -->
 
 <!-- The scientific account: setting and conventions, reasoning, decisive comparisons,
 objections and implications, in logical order, under headings that follow the physics.
+Each section states its result, the key equation or number with its condition, and the
+mechanism before it links the detailed note; a section that is only a link explains nothing.
 A branch's result enters where the argument uses it: its implication, limiting condition
 and link. Independently useful supporting detail can move to supporting notes, linked at
 use; a central derivation stays here regardless of length.
@@ -59,7 +69,7 @@ suggest an order for theory, computation and compact arguments. -->
 <!-- Optional. Small notes keep these in prose where the argument uses them.
 
 Binding choices:
-- YYYY-MM-DD · the choice · the scope it binds · who decided · [rationale](...)
+- YYYY-MM-DD · the choice · the scope it binds · who decided ("their words") · [rationale](...)
 
 Retained alternatives:
 - The route · its kind (failed under stated conditions, refuted, refocused, deferred,
