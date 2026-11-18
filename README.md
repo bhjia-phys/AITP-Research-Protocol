@@ -25,6 +25,20 @@ The dedicated writing Skill replaces the former `witten-style-theory-note`
 and absorbs `computational-physics-note`.
 Writing and research guidance do not constitute the future taste component.
 
+## Atlas in DeepSeek Harness
+
+[AITP Atlas](https://github.com/bhjia-phys/aitp-atlas) is a workbench for
+theoretical physics inside DeepSeek Harness. It opens the same `research.md`
+files, derivations, papers and calculation reports that AITP uses. A researcher
+can discuss a selected passage beside its source, review changes to the notes,
+and follow a claim back to the evidence that supports it.
+
+AITP supplies the research cycle and Skills. Atlas supplies the interface for
+reading, writing and discussing that work in DeepSeek Harness. Install the
+[AITP Skills bundle for DSH](plugins/aitp/README.md) alongside Atlas and point
+Atlas at the directory containing the root `research.md`. The same notes
+remain readable and editable in other hosts.
+
 ## A topic is a living research note
 
 Begin research work and substantive physics discussions with `aitp-memory` and its
